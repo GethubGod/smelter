@@ -150,3 +150,19 @@ order by poi.item_name, ori.received desc;
  Fixture Salmon | t        |            2 | Two fillets short on delivery
 (3 rows)
 ```
+
+## 05-order-status-changes
+
+Run at 2026-09-05T23:33:35Z against `supabase_db_agent-a435d3a57e1a702d9`.
+
+```sql
+select id, order_number, status, fulfilled_at, fulfilled_by from public.orders
+where id = '8db17aa4-b393-4f6f-bbb6-ad14f8bb84ac';
+```
+
+```
+                  id                  | order_number |  status   |        fulfilled_at        |             fulfilled_by             
+--------------------------------------+--------------+-----------+----------------------------+--------------------------------------
+ 8db17aa4-b393-4f6f-bbb6-ad14f8bb84ac |            3 | fulfilled | 2026-09-05 23:33:29.145+00 | 2d3d669b-8a9d-4536-8601-f8d42b4ac2c3
+(1 row)
+```
