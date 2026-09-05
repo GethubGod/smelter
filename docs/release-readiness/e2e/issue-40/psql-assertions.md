@@ -55,3 +55,71 @@ select login_name, credential_kind, display_name from public.login_identities or
  e2e manager      | pin             | E2E Manager
 (3 rows)
 ```
+
+## 02-quick-order-send
+
+Run at 2026-09-05T23:28:38Z against `supabase_db_agent-a435d3a57e1a702d9`.
+
+```sql
+select id, order_number, status, order_type, entry_method, location_id, created_at
+from public.orders order by created_at desc limit 2;
+select oi.id, ii.name, oi.quantity, oi.unit_type, oi.input_mode, oi.status
+from public.order_items oi join public.inventory_items ii on ii.id = oi.inventory_item_id
+where oi.order_id = (select id from public.orders order by created_at desc limit 1)
+order by ii.name;
+select id, status, created_at from public.quick_order_sessions order by created_at desc limit 1;
+```
+
+```
+                  id                  | order_number |  status   | order_type |   entry_method   |             location_id              |          created_at           
+--------------------------------------+--------------+-----------+------------+------------------+--------------------------------------+-------------------------------
+ 8db17aa4-b393-4f6f-bbb6-ad14f8bb84ac |            3 | submitted | manual     | quick_order      | 45000000-0000-4000-8000-000000000001 | 2026-09-05 23:28:27.66035+00
+ 4b000000-0000-4000-8000-000000000001 |            1 | submitted | manual     | simple_checklist | 45000000-0000-4000-8000-000000000001 | 2026-09-05 19:01:47.386252+00
+(2 rows)
+
+                  id                  |      name      | quantity | unit_type | input_mode | status  
+--------------------------------------+----------------+----------+-----------+------------+---------
+ c0e6b80c-7562-4e2e-b0e8-0c08f316e525 | Fixture Rice   |     2.00 | base      | quantity   | pending
+ ec9374f6-9917-4d43-86f7-e01fa76791e8 | Fixture Salmon |     3.00 | base      | quantity   | pending
+(2 rows)
+
+                  id                  |  status   |          created_at           
+--------------------------------------+-----------+-------------------------------
+ c10ab7b9-192c-4724-9f26-cb416037f08e | submitted | 2026-09-05 19:10:03.577336+00
+(1 row)
+```
+
+## 03-fulfillment-send-all
+
+Run at 2026-09-05T23:30:15Z against `supabase_db_agent-a435d3a57e1a702d9`.
+
+```sql
+select id, supplier_name, share_method, created_by, created_at from public.past_orders order by created_at desc limit 2;
+select item_name, unit, quantity, location_group from public.past_order_items
+where past_order_id = (select id from public.past_orders order by created_at desc limit 1) order by item_name;
+select oi.id, ii.name, oi.status from public.order_items oi
+join public.inventory_items ii on ii.id = oi.inventory_item_id order by oi.status, ii.name;
+```
+
+```
+                  id                  |   supplier_name   | share_method |              created_by              |          created_at           
+--------------------------------------+-------------------+--------------+--------------------------------------+-------------------------------
+ e2feddc6-2f42-410f-a98f-ffdde1c4e6c0 | Local QA Supplier | copy         | 2d3d669b-8a9d-4536-8601-f8d42b4ac2c3 | 2026-09-05 23:30:04.462547+00
+(1 row)
+
+   item_name    |  unit  | quantity | location_group 
+----------------+--------+----------+----------------
+ Fixture Rice   | bag    |        2 | sushi
+ Fixture Rice   | pallet |        1 | sushi
+ Fixture Salmon | fillet |        6 | sushi
+(3 rows)
+
+                  id                  |      name      | status 
+--------------------------------------+----------------+--------
+ 4c000000-0000-4000-8000-000000000003 | Fixture Nori   | sent
+ 4c000000-0000-4000-8000-000000000002 | Fixture Rice   | sent
+ c0e6b80c-7562-4e2e-b0e8-0c08f316e525 | Fixture Rice   | sent
+ 4c000000-0000-4000-8000-000000000001 | Fixture Salmon | sent
+ ec9374f6-9917-4d43-86f7-e01fa76791e8 | Fixture Salmon | sent
+(5 rows)
+```
