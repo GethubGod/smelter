@@ -327,3 +327,78 @@ where user_id = (select used_by from public.invites order by created_at desc lim
  tips              | f
 (4 rows)
 ```
+
+## 12-stock-count-save
+
+Run at 2026-09-05T23:42:37Z against `supabase_db_agent-a435d3a57e1a702d9`.
+
+```sql
+select count(*) as stock_updates_rows from public.stock_updates;
+select count(*) as stock_check_sessions_rows from public.stock_check_sessions;
+select ai.id, ii.name, ai.current_quantity, ai.last_updated_at, ai.last_updated_by
+from public.area_items ai join public.inventory_items ii on ii.id = ai.inventory_item_id
+where ai.area_id = '47000000-0000-4000-8000-000000000001' order by ii.name;
+select sa.name, sa.last_checked_at, sa.last_checked_by from public.storage_areas sa
+where sa.id = '47000000-0000-4000-8000-000000000001';
+```
+
+```
+ stock_updates_rows 
+--------------------
+                  0
+(1 row)
+
+ stock_check_sessions_rows 
+---------------------------
+                         0
+(1 row)
+
+                  id                  |      name      | current_quantity | last_updated_at | last_updated_by 
+--------------------------------------+----------------+------------------+-----------------+-----------------
+ 48000000-0000-4000-8000-000000000002 | Fixture Rice   |               10 |                 | 
+ 48000000-0000-4000-8000-000000000001 | Fixture Salmon |                3 |                 | 
+(2 rows)
+
+      name       | last_checked_at | last_checked_by 
+-----------------+-----------------+-----------------
+ Fixture Freezer |                 | 
+(1 row)
+```
+
+## 13-stock-count-offline-sync
+
+Run at 2026-09-05T23:43:59Z against `supabase_db_agent-a435d3a57e1a702d9`.
+
+```sql
+-- After a full app relaunch with the backend reachable again.
+select count(*) as stock_updates_rows from public.stock_updates;
+select count(*) as stock_check_sessions_rows from public.stock_check_sessions;
+select ai.id, ii.name, ai.current_quantity, ai.last_updated_at, ai.last_updated_by
+from public.area_items ai join public.inventory_items ii on ii.id = ai.inventory_item_id
+where ai.area_id = '47000000-0000-4000-8000-000000000001' order by ii.name;
+select name, last_checked_at, last_checked_by from public.storage_areas
+where id = '47000000-0000-4000-8000-000000000001';
+```
+
+```
+ stock_updates_rows 
+--------------------
+                  0
+(1 row)
+
+ stock_check_sessions_rows 
+---------------------------
+                         0
+(1 row)
+
+                  id                  |      name      | current_quantity | last_updated_at | last_updated_by 
+--------------------------------------+----------------+------------------+-----------------+-----------------
+ 48000000-0000-4000-8000-000000000002 | Fixture Rice   |               10 |                 | 
+ 48000000-0000-4000-8000-000000000001 | Fixture Salmon |                3 |                 | 
+(2 rows)
+
+      name       | last_checked_at | last_checked_by 
+-----------------+-----------------+-----------------
+ Fixture Freezer |                 | 
+(1 row)
+```
