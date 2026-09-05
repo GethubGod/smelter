@@ -1,12 +1,12 @@
 // Employee invite defaults parsing (the app_config JSON row folded over the
 // built-in seed values).
 
-jest.mock('@/lib/supabase', () => ({ supabase: {} }));
-
 import {
   getBuiltInEmployeeDefaults,
   parseEmployeeDefaults,
 } from '@/services/employeeDefaults';
+
+jest.mock('@/lib/supabase', () => ({ supabase: {} }));
 
 describe('parseEmployeeDefaults', () => {
   it('mirrors the migration seed row in its built-ins', () => {

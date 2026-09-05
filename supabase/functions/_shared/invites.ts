@@ -82,7 +82,7 @@ export function isInviteLocationGroup(
  */
 export function resolveLocationGroupToLocationId(
   group: InviteLocationGroup,
-  locations: Array<{ id: string; short_code: string | null }>,
+  locations: { id: string; short_code: string | null }[],
 ): string | null {
   if (group === "both") return null;
   const prefix = group === "sushi" ? "s" : "p";

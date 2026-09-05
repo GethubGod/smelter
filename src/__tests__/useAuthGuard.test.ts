@@ -1,8 +1,8 @@
+import { resolveAuthScreenGuard } from '../hooks/useAuthGuard';
+
 jest.mock('@/store', () => ({
   useAuthStore: jest.fn(),
 }));
-
-import { resolveAuthScreenGuard } from '../hooks/useAuthGuard';
 
 describe('resolveAuthScreenGuard', () => {
   const baseSnapshot = {

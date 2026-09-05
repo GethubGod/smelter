@@ -28,7 +28,6 @@ let profileRealtimeChannel: RealtimeChannel | null = null;
 let authStateSubscription: { unsubscribe: () => void } | null = null;
 let warnedMissingLastActiveColumn = false;
 let warnedMissingEmailColumn = false;
-const warnedMissingProfileColumns = new Set<string>();
 const SUSPENDED_ACCOUNT_MESSAGE = 'Account suspended. Contact a manager.';
 let activeSessionUserId: string | null = null;
 let userScopedResetPromise: Promise<void> | null = null;
@@ -409,40 +408,6 @@ async function syncProfileEmail(userId: string, email: string | null | undefined
     }
 
     console.error('Failed to sync profiles.email', error);
-  }
-}
-
-async function upsertProfileResilient(payload: Record<string, unknown>) {
-  const nextPayload = { ...payload } as Record<string, unknown>;
-  const fallbackColumns = [
-    'email',
-    'is_suspended',
-    'suspended_at',
-    'suspended_by',
-    'last_active_at',
-    'last_order_at',
-  ] as const;
-
-  while (true) {
-    const { error } = await supabase.from('profiles').upsert(nextPayload as any);
-    if (!error) return;
-
-    const missingColumn = fallbackColumns.find(
-      (column) => column in nextPayload && isMissingColumnError(error, column)
-    );
-
-    if (!missingColumn) {
-      throw error;
-    }
-
-    delete nextPayload[missingColumn];
-
-    if (!warnedMissingProfileColumns.has(missingColumn)) {
-      warnedMissingProfileColumns.add(missingColumn);
-      console.warn(
-        `profiles.${missingColumn} is unavailable. Continuing signup/profile completion without it until migrations are applied.`
-      );
-    }
   }
 }
 

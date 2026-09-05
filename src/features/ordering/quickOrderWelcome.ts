@@ -46,7 +46,7 @@ export function isQuickOrderWelcomeMessage(message: {
  */
 export function shouldShowQuickOrderWelcomeMessage(
   parsedItemCount: number,
-  messages: Array<{ role: string }>,
+  messages: { role: string }[],
 ): boolean {
   if (parsedItemCount > 0) return false;
   return !messages.some((message) => message.role === "user");

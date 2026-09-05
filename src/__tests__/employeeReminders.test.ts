@@ -13,6 +13,7 @@ jest.mock('../lib/api/client', () => ({
   listEmployeesWithStatus: jest.fn(),
 }));
 
+// eslint-disable-next-line import/first -- must load after the jest.mock() calls above so their mock vars are initialized first
 import { upsertMyChecklistOrderDayReminderRule } from '../services/employeeReminders';
 
 function upsertQuery(result: { data: unknown; error: unknown }) {

@@ -1,7 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useScaledStyles } from "@/hooks/useScaledStyles";
-import { colors, quickOrderAccent } from "@/theme/design";
+import { quickOrderAccent } from "@/theme/design";
 
 const PRIMARY_RED = quickOrderAccent;
 const PRIMARY_TEXT = "#FFFFFF";

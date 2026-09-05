@@ -471,6 +471,7 @@ function BrowseItemRowInner({
       commitQuantity,
       commitRemaining,
       inputMode,
+      item,
       quantityText,
       remainingText,
       unitType,

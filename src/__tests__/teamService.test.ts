@@ -1,8 +1,6 @@
 // Pure team-service helpers: works-at group mapping (short_code convention),
 // module summaries, and the recipient-less Messages compose link.
 
-jest.mock('@/lib/supabase', () => ({ supabase: {} }));
-
 import {
   buildInviteMessageBody,
   buildInviteSmsUrl,
@@ -11,6 +9,8 @@ import {
   summarizeModules,
 } from '@/features/team/teamService';
 import type { Location } from '@/types';
+
+jest.mock('@/lib/supabase', () => ({ supabase: {} }));
 
 const LOCATIONS: Location[] = [
   {

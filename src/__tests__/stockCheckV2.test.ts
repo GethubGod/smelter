@@ -1,14 +1,14 @@
+import {
+  calculateSuggestedOrderQty,
+  mapStockCheckStatusToQuantity,
+} from '../services/stockCheckV2';
+
 jest.mock('../lib/supabase', () => ({
   supabase: {
     rpc: jest.fn(),
     from: jest.fn(),
   },
 }));
-
-import {
-  calculateSuggestedOrderQty,
-  mapStockCheckStatusToQuantity,
-} from '../services/stockCheckV2';
 
 describe('StockCheckV2 fast status mapping', () => {
   test('maps Full to par and Out to zero', () => {

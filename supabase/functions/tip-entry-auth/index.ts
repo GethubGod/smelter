@@ -70,12 +70,12 @@ async function fetchToday(locationId: string, now: Date = new Date()) {
     .eq('location_id', locationId)
     .eq('business_date', businessDate);
   if (error) console.warn('[tip-entry-auth] today fetch failed', error);
-  const rows = (data ?? []) as Array<{
+  const rows = (data ?? []) as {
     meal_period: string;
     cash_amount: unknown;
     card_amount: unknown;
     gratuity_amount: unknown;
-  }>;
+  }[];
   const meals = new Set(rows.map((row) => row.meal_period));
   const lunchRow = rows.find((row) => row.meal_period === 'lunch');
   return {

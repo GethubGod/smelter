@@ -7,8 +7,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radii } from '@/theme/design';
-import {
+import { colors, radii ,
   glassColors,
   glassHairlineWidth,
   glassRadii,

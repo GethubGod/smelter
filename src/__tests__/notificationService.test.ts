@@ -24,6 +24,7 @@ jest.mock('../lib/supabase', () => ({
   supabase: { from: mockFrom },
 }));
 
+// eslint-disable-next-line import/first -- must load after the jest.mock() calls above so their mock vars are initialized first
 import {
   clearDeviceNotifications,
   deactivateCurrentDevicePushToken,
