@@ -22,19 +22,19 @@ const imageSize = require("image-size");
 
 const DISABLED_IMAGE_TYPES = ["icns", "jxl", "jxl-stream", "heif"];
 
-// Name of the env var metro.config.js uses to hand us the real transformer.
-// Keep this string in sync with metro.config.js.
-const UPSTREAM_ENV_VAR = "SMELTER_METRO_UPSTREAM_TRANSFORMER";
-
 imageSize.disableTypes(DISABLED_IMAGE_TYPES);
 
-const upstreamPath = process.env[UPSTREAM_ENV_VAR];
+// metro.config.js hands us the transformer we replaced through this env var.
+// Metro's workers inherit process.env, so they resolve the same module.
+// Keep the name in sync with metro.config.js.
+const upstreamPath = process.env.SMELTER_METRO_UPSTREAM_TRANSFORMER;
 
 if (!upstreamPath) {
   throw new Error(
-    `${UPSTREAM_ENV_VAR} is not set, so the real Metro transformer cannot be ` +
-      `resolved. metro.config.js sets it before handing this file to Metro as ` +
-      `transformerPath. Start the bundler through metro.config.js.`
+    "SMELTER_METRO_UPSTREAM_TRANSFORMER is not set, so the real Metro " +
+      "transformer cannot be resolved. metro.config.js sets it before handing " +
+      "this file to Metro as transformerPath. Start the bundler through " +
+      "metro.config.js."
   );
 }
 
