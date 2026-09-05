@@ -31,3 +31,27 @@ order by 1;
  users                |     3
 (6 rows)
 ```
+
+## 01-manager-sign-in
+
+Run at 2026-09-05T19:08:27Z against `supabase_db_agent-a435d3a57e1a702d9`.
+
+```sql
+select scope, success, count(*) from public.login_auth_attempts group by 1,2 order by 1,2;
+select login_name, credential_kind, display_name from public.login_identities order by login_name;
+```
+
+```
+ scope  | success | count 
+--------+---------+-------
+ client | t       |     1
+ name   | t       |     1
+(2 rows)
+
+    login_name    | credential_kind |   display_name   
+------------------+-----------------+------------------
+ e2e employee     | pin             | E2E Employee
+ e2e employee two | pin             | E2E Employee Two
+ e2e manager      | pin             | E2E Manager
+(3 rows)
+```
