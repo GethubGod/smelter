@@ -666,20 +666,28 @@ export async function sendEmployeeReminder(
       channelsAttempted.push('push');
       pushResult.attempted = true;
 
-      const { data: pushTokensRaw } = await supabaseAdmin
-        .from('device_push_tokens')
-        .select('expo_push_token')
-        .eq('user_id', employee.id)
-        .eq('active', true)
-        .order('updated_at', { ascending: false });
+      // Resolved server side, and as late as possible: a shared phone belongs
+      // to the last user who registered it, so a token the recipient no longer
+      // owns must never be targeted, even while their row lingers.
+      const { data: pushTokensRaw, error: pushTokenError } = await supabaseAdmin.rpc(
+        'active_device_push_tokens',
+        { p_user_id: employee.id }
+      );
 
-      const tokens = (pushTokensRaw ?? [])
-        .map((row: any) => sanitizeExpoPushToken(row?.expo_push_token))
-        .filter((token: string | null): token is string => Boolean(token));
+      const tokens = pushTokenError
+        ? []
+        : (pushTokensRaw ?? [])
+            .map((row: any) => sanitizeExpoPushToken(row?.expo_push_token))
+            .filter((token: string | null): token is string => Boolean(token));
 
       pushResult.tokenCount = tokens.length;
 
-      if (tokens.length === 0) {
+      if (pushTokenError) {
+        pushResult.status = 'failed';
+        pushResult.deliveryOutcome = 'failed';
+        pushResult.errorDetail =
+          pushTokenError.message || 'Unable to resolve the recipient push tokens.';
+      } else if (tokens.length === 0) {
         pushResult.status = 'no_tokens';
       } else {
         const pushDelivery = await sendExpoPush(

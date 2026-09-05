@@ -124,6 +124,26 @@ idempotent sends, actor identity, location scope, suspension, and RLS for
 display, no-module, and anonymous users. It ends with
 `PASS: kitchen requests fixture assertions all held` and rolls back.
 
+### Push token ownership fixture
+
+After a kept migration run, execute the push token ownership fixture:
+
+```sh
+docker exec -i <container-name> psql -U postgres -d postgres \
+  -v ON_ERROR_STOP=1 < scripts/local-db/push_token_ownership_fixture.sql
+```
+
+It proves the three clauses of the shared-device rule: registering a token
+claims it, the claim deactivates prior owners' rows for that token only, and
+`active_device_push_tokens` never returns a token the recipient no longer owns
+(including a stale active row that a later claim outranks). It also covers the
+reverse handover, the one-active-owner unique index, the unchanged per-user
+RLS, and the service-role-only grant on the resolver. It ends with
+`PASS: push token ownership fixture assertions all held` and rolls back.
+
+The fixture restates the table grants itself, because the baseline snapshot is
+DDL-only.
+
 ## What this does NOT prove
 
 - **No gotrue / real auth.** `auth` is a stub: only `auth.users(id, email,
