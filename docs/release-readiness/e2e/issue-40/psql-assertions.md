@@ -286,3 +286,44 @@ select email, last_sign_in_at from auth.users where email = 'e2e.manager@smelter
  e2e.manager@smelter.test | 2026-09-05 23:38:43.841169+00
 (1 row)
 ```
+
+## 11-invite-accept
+
+Run at 2026-09-05T23:41:07Z against `supabase_db_agent-a435d3a57e1a702d9`.
+
+```sql
+select id, invited_name, role, location_group, used_at, used_by, revoked_at
+from public.invites order by created_at desc limit 1;
+select u.id, u.name, u.email, u.role, l.name as location
+from public.users u left join public.locations l on l.id = u.default_location_id
+where u.id = (select used_by from public.invites order by created_at desc limit 1);
+select credential_kind, login_name, display_name from public.login_identities
+where user_id = (select used_by from public.invites order by created_at desc limit 1);
+select module_key, enabled from public.user_modules
+where user_id = (select used_by from public.invites order by created_at desc limit 1) order by module_key;
+```
+
+```
+                  id                  | invited_name |   role   | location_group |          used_at           |               used_by                | revoked_at 
+--------------------------------------+--------------+----------+----------------+----------------------------+--------------------------------------+------------
+ 1888bff2-d174-4995-ab20-fb177cf250da | E2E Invitee  | employee | sushi          | 2026-09-05 23:40:50.827+00 | 23a0d5fb-f4c3-4d2b-a6e5-0010dd139cb9 | 
+(1 row)
+
+                  id                  |    name     |                                 email                                 |   role   | location 
+--------------------------------------+-------------+-----------------------------------------------------------------------+----------+----------
+ 23a0d5fb-f4c3-4d2b-a6e5-0010dd139cb9 | E2E Invitee | join-1888bff2-d174-4995-ab20-fb177cf250da@members.babytunasystems.com | employee | 
+(1 row)
+
+ credential_kind | login_name  | display_name 
+-----------------+-------------+--------------
+ pin             | e2e invitee | E2E Invitee
+(1 row)
+
+    module_key     | enabled 
+-------------------+---------
+ ordering_advanced | f
+ ordering_simple   | t
+ stock_check       | t
+ tips              | f
+(4 rows)
+```
