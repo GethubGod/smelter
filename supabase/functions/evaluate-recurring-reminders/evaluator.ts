@@ -237,7 +237,7 @@ export async function evaluateRecurringRule({
           }
         : { push: true, in_app: true };
 
-      await sendReminder(supabaseAdmin, {
+      const sendResult = await sendReminder(supabaseAdmin, {
         employeeId: employee.id,
         managerId: rule.created_by || actorUserId,
         locationId: rule.scope === 'location'
@@ -248,6 +248,22 @@ export async function evaluateRecurringRule({
         overrideRateLimit: false,
         channels: channelConfig,
       });
+
+      // A resolver failure does not throw on the recurring path, because
+      // throwing would leave the rule unconsumed and resend it to the
+      // employees who did get their reminder. It still has to reach the run
+      // result: this employee received nothing, so it is not a reminder sent,
+      // and the cron output must say so rather than reporting success.
+      if (sendResult?.push?.tokenResolutionFailed) {
+        result.errors.push({
+          ruleId: rule.id,
+          employeeId: employee.id,
+          message: sendResult.push.errorDetail
+            || 'Unable to resolve the recipient push tokens.',
+        });
+        continue;
+      }
+
       result.remindersSent += 1;
     } catch (error: any) {
       if (error instanceof ReminderRateLimitError) {

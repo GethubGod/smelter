@@ -14,10 +14,13 @@
 -- token, and only if the clock that orders claims is server controlled. Both
 -- are enforced here, on every write, for every caller.
 --
--- Production had 0 rows in device_push_tokens on 2026-09-05. The repair,
--- deduplication, and index builds therefore have no production data to scan.
--- The migration still repairs populated local fixtures before adding its
--- constraints.
+-- Production held 0 rows in device_push_tokens when the count was taken on
+-- 2026-09-05, during round 3 of review, by the only party here with production
+-- read access. It has not been re-taken since and cannot be from a worktree.
+-- If it is ever non-zero, the repair UPDATE, the two index builds and the
+-- DISABLE TRIGGER window hold locks for their duration; lock_timeout bounds
+-- the wait to acquire a lock but not how long it is then held. The migration
+-- repairs populated local fixtures either way, before adding its constraints.
 --
 -- There is a known row-lock versus advisory-lock inversion for direct active
 -- UPDATE statements. The only client registration path is a single-row upsert,
@@ -26,9 +29,12 @@
 -- Moving registration behind a narrow RPC that takes the advisory lock before
 -- any row mutation is the follow-up; it requires an app contract change.
 
--- Bound both lock acquisition and total statement duration.
-set lock_timeout = '5s';
-set statement_timeout = '30s';
+-- Bound both lock acquisition and total statement duration. SET LOCAL, not
+-- SET: both runners wrap this file in a transaction, and a plain SET would
+-- survive the commit and silently apply to every later migration pushed over
+-- the same connection. Outside a transaction this warns and does nothing.
+set local lock_timeout = '5s';
+set local statement_timeout = '30s';
 
 -- ---------------------------------------------------------------------------
 -- Canonical token form.
@@ -182,7 +188,7 @@ end;
 $$;
 
 comment on column public.device_push_tokens.claimed_at is
-  'Server-stamped time of this user''s last activation of this token. Inactive updates preserve it, and inactive inserts are rejected.';
+  'Server-stamped time of this user''s last activation of this token. Among rows sharing a token, the newest claimed_at is the current owner. Clients cannot set it: a PostgREST upsert must send active = true, and deactivation is UPDATE only.';
 
 -- NOT NULL through a validated check: VALIDATE takes only SHARE UPDATE
 -- EXCLUSIVE, so registrations keep running, and SET NOT NULL then skips its
@@ -262,12 +268,16 @@ create index if not exists device_push_tokens_token_claimed_idx
 -- security definer: the row-level policies deliberately confine a user to
 -- their own rows, so the departing user's row can only be retired by the
 -- database on the claimant's behalf.
+--
+-- Client contract: a PostgREST upsert must send active = true. BEFORE INSERT
+-- fires before ON CONFLICT arbitration, so an upsert carrying active = false
+-- raises 22023 instead of becoming an update. Deactivate with UPDATE only.
 -- ---------------------------------------------------------------------------
 create or replace function public.claim_device_push_token()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 declare
   v_token text;
@@ -342,7 +352,7 @@ returns table (expo_push_token text, platform text, updated_at timestamptz)
 language sql
 stable
 security invoker
-set search_path = public
+set search_path = ''
 as $$
   select t.expo_push_token, t.platform, t.updated_at
   from public.device_push_tokens as t

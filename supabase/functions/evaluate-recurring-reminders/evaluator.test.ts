@@ -48,6 +48,8 @@ Deno.test('a location rule consumes mixed push results and does not resend next 
     },
   };
 
+  // employee-b's tokens cannot be resolved: the reminder row is still written,
+  // but nothing reached the phone.
   const sendReminder = async (_client: unknown, input: { employeeId: string; source: string }) => {
     if (input.source !== 'recurring') {
       throw new Error(`Expected recurring source, got ${input.source}`);
@@ -59,6 +61,8 @@ Deno.test('a location rule consumes mixed push results and does not resend next 
         status: failureCount === 1 ? 'failed' : 'sent',
         successCount: failureCount === 1 ? 0 : 1,
         failureCount,
+        tokenResolutionFailed: failureCount === 1,
+        errorDetail: failureCount === 1 ? 'schema cache is reloading' : null,
       },
     };
   };
@@ -78,11 +82,28 @@ Deno.test('a location rule consumes mixed push results and does not resend next 
   };
 
   const first = await evaluateRecurringRule(input);
-  if (!first.due || first.remindersSent !== 2) {
-    throw new Error(`Expected two reminder records on the first run: ${JSON.stringify(first)}`);
+  if (!first.due || first.remindersSent !== 1) {
+    throw new Error(
+      `Only the delivered reminder counts as sent: ${JSON.stringify(first)}`,
+    );
   }
   if (deliveries.length !== 2 || deliveries[0].failureCount !== 0 || deliveries[1].failureCount !== 1) {
     throw new Error(`Expected one accepted and one failed push: ${JSON.stringify(deliveries)}`);
+  }
+  // The run must not report success for an employee who received nothing.
+  if (first.errors.length !== 1) {
+    throw new Error(
+      `Expected exactly one error entry: ${JSON.stringify(first.errors)}`,
+    );
+  }
+  const [failure] = first.errors;
+  if (failure.ruleId !== rule.id || failure.employeeId !== 'employee-b') {
+    throw new Error(
+      `The error entry does not identify the rule and employee: ${JSON.stringify(failure)}`,
+    );
+  }
+  if (failure.message !== 'schema cache is reloading') {
+    throw new Error(`Expected the resolver error message: ${failure.message}`);
   }
   if (rule.last_triggered_at !== NOW.toISOString()) {
     throw new Error('The mixed-result location rule was not consumed');
@@ -91,5 +112,8 @@ Deno.test('a location rule consumes mixed push results and does not resend next 
   const second = await evaluateRecurringRule(input);
   if (second.due || second.remindersSent !== 0 || deliveries.length !== 2) {
     throw new Error('The next evaluation resent an already consumed location rule');
+  }
+  if (second.errors.length !== 0) {
+    throw new Error('A consumed rule reported errors on the next run');
   }
 });

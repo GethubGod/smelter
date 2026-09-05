@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
         {
           error: error.message,
           code: 'PUSH_TOKENS_UNAVAILABLE',
-          retryable: true,
+          retryable: error.retryable,
         },
         503
       );

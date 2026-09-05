@@ -62,6 +62,8 @@ export interface SendEmployeeReminderResult {
     successCount: number;
     failureCount: number;
     deliveryOutcome: 'accepted' | 'failed' | null;
+    /** The recipient's tokens could not be resolved, so nothing was sent. */
+    tokenResolutionFailed: boolean;
     receiptIds: string[];
     errorDetail: string | null;
     details?: any;
@@ -692,6 +694,7 @@ export async function sendEmployeeReminder(
     successCount: 0,
     failureCount: 0,
     deliveryOutcome: null,
+    tokenResolutionFailed: false,
     receiptIds: [],
     errorDetail: null,
   };
@@ -708,10 +711,13 @@ export async function sendEmployeeReminder(
       pushResult.tokenCount = tokens.length;
 
       if (tokenResolutionError) {
-        // Reached only when in-app was also requested, so the reminder itself
-        // did land. One unresolvable push channel, counted as one failure.
+        // Reached when in-app was also requested, and on the recurring path,
+        // which records the failure rather than throwing so one employee's
+        // resolver error cannot resend the rule to the rest. The caller has to
+        // surface tokenResolutionFailed; the reminder row was still written.
         pushResult.status = 'failed';
         pushResult.deliveryOutcome = 'failed';
+        pushResult.tokenResolutionFailed = true;
         pushResult.failureCount = 1;
         pushResult.errorDetail = tokenResolutionError.message;
       } else if (tokens.length === 0) {
