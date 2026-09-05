@@ -9,12 +9,23 @@
 -- edge function runs as service_role, so this blocks every local edge
 -- function invocation on a fresh stack (see issue #63).
 --
--- full-stack.sh applies this after the baseline snapshot AND after every
--- migration in the same load_schema run, every time load_schema runs (both
--- a fresh `up` and a `load` against an already-running stack). That order
--- matters: some tables (e.g. public.invites) are created by a migration
--- newer than the baseline cutoff, not by the baseline snapshot itself, so a
--- grant step that only ran right after the baseline load would miss them.
+-- full-stack.sh applies this file exactly once per fresh load, immediately
+-- after the baseline snapshot and BEFORE the migration loop runs. That order
+-- matters and must not change: on hosted Supabase, the platform's default
+-- privileges land on a table/function/sequence at the moment it is created,
+-- before any migration that touches it can run, so a migration's own
+-- `revoke` (47 migrations in this repo revoke something -- e.g. kitchen
+-- requests locking public.kitchen_items/public.kitchen_requests down from
+-- anon/authenticated, several revoking execute on security-definer
+-- functions) executes after the grant and sticks. The `alter default
+-- privileges` statements below reproduce that: they don't grant anything on
+-- existing objects by themselves, they make every object CREATEd afterwards
+-- (by the baseline load already done, and by every migration the loop is
+-- about to run, since both run as this same `postgres` role) inherit the
+-- grant automatically, in schema-DDL order, so each migration's revoke still
+-- runs last and wins. Applying this file after the migration loop instead
+-- would re-grant everything those revokes just removed, diverging from
+-- production on exactly the grants the RLS fixtures and E2E suites rely on.
 --
 -- Kept as its own file rather than folded into baseline_public_schema.sql
 -- so the baseline stays a faithful, mechanically-generated schema snapshot
@@ -28,12 +39,11 @@ grant all on all tables in schema public to anon, authenticated, service_role;
 grant all on all sequences in schema public to anon, authenticated, service_role;
 grant all on all functions in schema public to anon, authenticated, service_role;
 
--- Default privileges cover objects created by migrations that have not run
--- yet at the moment this file is applied within a given load_schema call
--- (none, today, since this runs last) and, more importantly, persist in the
--- database so any migration added later and picked up by a future
--- `full-stack.sh load` also grants correctly even before this file's next
--- explicit run.
+-- Default privileges for the postgres role in schema public: every table,
+-- sequence, and function that role creates from here on (the migration loop
+-- that runs immediately after this file, on every future `full-stack.sh
+-- load` too) is granted automatically at creation time, before that
+-- migration's own revoke statements (if any) run.
 alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
 alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
 alter default privileges in schema public grant all on functions to anon, authenticated, service_role;

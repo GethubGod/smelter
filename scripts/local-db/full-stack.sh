@@ -126,6 +126,18 @@ load_schema() {
   else
     echo "==> Loading production public-schema baseline"
     psql_in -v ON_ERROR_STOP=1 -q -X < "$BASELINE"
+    # Hosted Supabase's platform grants land at object-creation time, before
+    # any migration gets a chance to revoke what it needs to. Apply this here,
+    # before the migration loop below, for the same reason: the `alter
+    # default privileges` statements in this file make every table/sequence/
+    # function a later migration creates inherit the grant at creation time,
+    # so that migration's own `revoke` (47 migrations do this, e.g. kitchen
+    # requests locking down anon/authenticated, several revoking execute on
+    # security-definer functions) runs after the grant and sticks, exactly as
+    # it does in production. Running this after the migration loop instead
+    # would re-grant everything those revokes just removed.
+    echo "==> Applying Supabase default grants"
+    psql_in -v ON_ERROR_STOP=1 -q -X < "$GRANTS"
   fi
 
   psql_in -q -X -c "create table if not exists public._full_stack_applied (name text primary key, applied_at timestamptz not null default now());"
@@ -144,13 +156,6 @@ load_schema() {
     psql_in -q -X -c "insert into public._full_stack_applied (name) values ('$mig') on conflict do nothing;" < /dev/null
     applied=$((applied + 1))
   done < <(cd "$MIGRATIONS_DIR" && ls -1 *.sql | sort | awk -v c="$BASELINE_MIGRATION_CUTOFF" '$0 > c')
-
-  # Applied last, and every load_schema run (fresh or incremental), so it
-  # covers tables from the baseline snapshot and from every migration above
-  # regardless of which one created a given table. See service_role_grants.sql
-  # for why this can't live in the baseline snapshot or in a migration.
-  echo "==> Applying Supabase default grants"
-  psql_in -v ON_ERROR_STOP=1 -q -X < "$GRANTS"
 
   echo "PASS: schema loaded ($applied migration(s) applied this run)."
 }
