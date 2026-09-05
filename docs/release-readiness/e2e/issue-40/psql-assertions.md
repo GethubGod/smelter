@@ -402,3 +402,93 @@ where id = '47000000-0000-4000-8000-000000000001';
  Fixture Freezer |                 | 
 (1 row)
 ```
+
+## 14-account-deletion-before
+
+Run at 2026-09-05T23:45:01Z against `supabase_db_agent-a435d3a57e1a702d9`.
+
+```sql
+select id, name, email, role from public.users where id = '23a0d5fb-f4c3-4d2b-a6e5-0010dd139cb9';
+select count(*) as profiles from public.profiles where id = '23a0d5fb-f4c3-4d2b-a6e5-0010dd139cb9';
+select count(*) as auth_users from auth.users where id = '23a0d5fb-f4c3-4d2b-a6e5-0010dd139cb9';
+select count(*) as login_identities from public.login_identities where user_id = '23a0d5fb-f4c3-4d2b-a6e5-0010dd139cb9';
+select count(*) as user_modules from public.user_modules where user_id = '23a0d5fb-f4c3-4d2b-a6e5-0010dd139cb9';
+select id, used_by from public.invites where used_by = '23a0d5fb-f4c3-4d2b-a6e5-0010dd139cb9';
+```
+
+```
+                  id                  |    name     |                                 email                                 |   role   
+--------------------------------------+-------------+-----------------------------------------------------------------------+----------
+ 23a0d5fb-f4c3-4d2b-a6e5-0010dd139cb9 | E2E Invitee | join-1888bff2-d174-4995-ab20-fb177cf250da@members.babytunasystems.com | employee
+(1 row)
+
+ profiles 
+----------
+        1
+(1 row)
+
+ auth_users 
+------------
+          1
+(1 row)
+
+ login_identities 
+------------------
+                1
+(1 row)
+
+ user_modules 
+--------------
+            4
+(1 row)
+
+                  id                  |               used_by                
+--------------------------------------+--------------------------------------
+ 1888bff2-d174-4995-ab20-fb177cf250da | 23a0d5fb-f4c3-4d2b-a6e5-0010dd139cb9
+(1 row)
+```
+
+## 15-account-deletion-after
+
+Run at 2026-09-05T23:46:37Z against `supabase_db_agent-a435d3a57e1a702d9`.
+
+```sql
+select count(*) as auth_users from auth.users where id = '23a0d5fb-f4c3-4d2b-a6e5-0010dd139cb9';
+select count(*) as users from public.users where id = '23a0d5fb-f4c3-4d2b-a6e5-0010dd139cb9';
+select count(*) as profiles from public.profiles where id = '23a0d5fb-f4c3-4d2b-a6e5-0010dd139cb9';
+select count(*) as login_identities from public.login_identities where user_id = '23a0d5fb-f4c3-4d2b-a6e5-0010dd139cb9';
+select count(*) as user_modules from public.user_modules where user_id = '23a0d5fb-f4c3-4d2b-a6e5-0010dd139cb9';
+select id, invited_name, used_at, used_by from public.invites where id = '1888bff2-d174-4995-ab20-fb177cf250da';
+```
+
+```
+ auth_users 
+------------
+          0
+(1 row)
+
+ users 
+-------
+     0
+(1 row)
+
+ profiles 
+----------
+        0
+(1 row)
+
+ login_identities 
+------------------
+                0
+(1 row)
+
+ user_modules 
+--------------
+            0
+(1 row)
+
+                  id                  | invited_name |          used_at           | used_by 
+--------------------------------------+--------------+----------------------------+---------
+ 1888bff2-d174-4995-ab20-fb177cf250da | E2E Invitee  | 2026-09-05 23:40:50.827+00 | 
+(1 row)
+```
