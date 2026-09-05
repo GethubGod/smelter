@@ -3,14 +3,10 @@
  * New code should import directly from '@/theme/design'.
  */
 export {
-  borderRadius,
   categoryColors,
-  fontSize,
-  fontWeight,
   primaryScale,
   grayScale,
   radii,
-  shadow,
   statusColors,
   uiTints,
 } from '@/theme/design';
