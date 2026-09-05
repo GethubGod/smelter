@@ -166,3 +166,48 @@ where id = '8db17aa4-b393-4f6f-bbb6-ad14f8bb84ac';
  8db17aa4-b393-4f6f-bbb6-ad14f8bb84ac |            3 | fulfilled | 2026-09-05 23:33:29.145+00 | 2d3d669b-8a9d-4536-8601-f8d42b4ac2c3
 (1 row)
 ```
+
+## 06-reminder-send
+
+Run at 2026-09-05T23:34:13Z against `supabase_db_agent-a435d3a57e1a702d9`.
+
+```sql
+select id, employee_id, manager_id, location_id, scope, status, reminder_count, last_reminded_at from public.reminders order by created_at desc limit 1;
+select event_type, sent_at, channels_attempted, delivery_result from public.reminder_events
+where reminder_id = (select id from public.reminders order by created_at desc limit 1);
+select user_id, notification_type, title, body from public.notifications order by created_at desc limit 1;
+```
+
+```
+                  id                  |             employee_id              |              manager_id              |             location_id              |  scope   | status | reminder_count |      last_reminded_at      
+--------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------+----------+--------+----------------+----------------------------
+ 12c05095-de50-413e-a04f-b56c08bd1d3c | 92bbe53d-2842-4e57-b912-a00e2c3eaf36 | 2d3d669b-8a9d-4536-8601-f8d42b4ac2c3 | 45000000-0000-4000-8000-000000000001 | employee | active |              1 | 2026-09-05 23:34:05.719+00
+(1 row)
+
+ event_type |          sent_at           | channels_attempted |                                                                                                                                         delivery_result                                                                                                                                          
+------------+----------------------------+--------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ sent       | 2026-09-05 23:34:05.719+00 | ["in_app", "push"] | {"push": {"status": "no_tokens", "attempted": true, "receiptIds": [], "tokenCount": 0, "errorDetail": null, "failureCount": 0, "successCount": 0, "deliveryOutcome": null}, "source": "manual", "notifications_enabled": true, "in_app_notification_id": "4a3b2b98-48e4-4171-9eae-b0d83b8bc759"}
+(1 row)
+
+               user_id                | notification_type |     title      |                       body                       
+--------------------------------------+-------------------+----------------+--------------------------------------------------
+ 92bbe53d-2842-4e57-b912-a00e2c3eaf36 | employee_reminder | Order reminder | Please submit your order when you have a moment.
+(1 row)
+```
+
+## 07-reminder-scheduling
+
+Run at 2026-09-05T23:35:24Z against `supabase_db_agent-a435d3a57e1a702d9`.
+
+```sql
+select id, scope, employee_id, rule_kind, days_of_week, time_of_day, timezone,
+       condition_type, channels, enabled, created_by, created_at
+from public.recurring_reminder_rules order by created_at desc limit 1;
+```
+
+```
+                  id                  |  scope   |             employee_id              | rule_kind | days_of_week | time_of_day |      timezone       | condition_type |            channels            | enabled |              created_by              |          created_at           
+--------------------------------------+----------+--------------------------------------+-----------+--------------+-------------+---------------------+----------------+--------------------------------+---------+--------------------------------------+-------------------------------
+ e8d82633-5436-4fc9-a740-49a988f72b60 | employee | 92bbe53d-2842-4e57-b912-a00e2c3eaf36 | standard  | {2,4}        | 15:00:00    | America/Los_Angeles | no_order_today | {"push": true, "in_app": true} | t       | 2d3d669b-8a9d-4536-8601-f8d42b4ac2c3 | 2026-09-05 23:35:16.726362+00
+(1 row)
+```
