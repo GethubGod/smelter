@@ -1,6 +1,19 @@
 import { Platform, StyleSheet } from 'react-native';
 import type { ItemCategory, KnownItemCategory } from '@/types';
 
+/**
+ * @deprecated Legacy token set. `src/theme/tokens.ts` is the approved contract
+ * (docs/mockups/ui-contract/index.html) and the only set new code may import.
+ * Everything here exists because 150 screen files still reference it. Sweeps
+ * #33 to #36 migrate those screens; this file is deleted when they finish.
+ *
+ * Duplicate pairs already collapsed: borderRadius (use radii), fontSize and
+ * fontWeight (use tokens.typeScale / tokens.weight), shadow (use
+ * tokens.shadow), glassSurfacePresets, and the public typography, statusStyles,
+ * categoryTints and tabBarHeight names, which are now private behind their
+ * single surviving alias.
+ */
+
 export const primaryScale = {
   50: '#FFF3F1',
   100: '#FFE0DB',
@@ -163,7 +176,7 @@ export const spacing = {
   tabBarBottom: 16,
 } as const;
 
-export const typography = {
+const typography = {
   screenTitle: 34, // larger, bolder page titles (V2)
   cardTitle: 17, // easier to scan item names
   body: 15,
@@ -235,7 +248,7 @@ const knownCategoryTints: Record<KnownItemCategory, { background: string; icon: 
 
 const defaultCategoryTint = { background: grayScale[100], icon: grayScale[600] };
 
-export const categoryTints: Record<string, { background: string; icon: string }> = knownCategoryTints;
+const categoryTints: Record<string, { background: string; icon: string }> = knownCategoryTints;
 
 export function getCategoryTint(category: ItemCategory): { background: string; icon: string } {
   return (knownCategoryTints as Record<string, { background: string; icon: string }>)[category] ?? defaultCategoryTint;
@@ -254,7 +267,7 @@ export const uiTints = {
   neutral: { background: grayScale[100], icon: grayScale[600] },
 } as const;
 
-export const statusStyles = {
+const statusStyles = {
   success: { text: colors.statusGreen, background: colors.statusGreenBg },
   warning: { text: colors.statusAmber, background: colors.statusAmberBg },
   danger: { text: colors.statusRed, background: colors.statusRedBg },
@@ -262,58 +275,7 @@ export const statusStyles = {
   draft: { text: colors.textSecondary, background: colors.glassCircle },
 } as const;
 
-export const tabBarHeight = Platform.OS === 'ios' ? 84 : 76;
-
-/* ─── Derived aliases (previously in constants/theme.ts) ──────────── */
-
-export const borderRadius = {
-  sm: 4,
-  md: radii.stepper,
-  lg: radii.button,
-  xl: radii.card,
-  full: radii.circle,
-} as const;
-
-export const fontSize = {
-  xs: 12,
-  sm: 14,
-  base: 16,
-  lg: 18,
-  xl: 20,
-  '2xl': 24,
-  '3xl': 30,
-} as const;
-
-export const fontWeight = {
-  normal: '400',
-  medium: '500',
-  semibold: '600',
-  bold: '700',
-} as const;
-
-export const shadow = {
-  sm: {
-    shadowColor: colors.background,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0,
-  },
-  md: {
-    shadowColor: colors.background,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0,
-  },
-  lg: {
-    shadowColor: colors.background,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0,
-  },
-} as const;
+const tabBarHeight = Platform.OS === 'ios' ? 84 : 76;
 
 export const categoryColors: Record<string, string> = {
   fish: categoryTints.fish.icon,
@@ -396,24 +358,6 @@ export const glassRadii = {
 } as const;
 
 export const glassHairlineWidth = hairline;
-
-export const glassSurfacePresets = {
-  subtle: {
-    overlayColor: colors.glass,
-    blurIntensity: 0,
-    fallbackColor: colors.glass,
-  },
-  medium: {
-    overlayColor: colors.glassCircle,
-    blurIntensity: 0,
-    fallbackColor: colors.glassCircle,
-  },
-  strong: {
-    overlayColor: colors.glassStrong,
-    blurIntensity: 0,
-    fallbackColor: colors.glassStrong,
-  },
-} as const;
 
 export const categoryGlassTints = categoryTints;
 
