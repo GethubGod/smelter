@@ -123,3 +123,30 @@ join public.inventory_items ii on ii.id = oi.inventory_item_id order by oi.statu
  ec9374f6-9917-4d43-86f7-e01fa76791e8 | Fixture Salmon | sent
 (5 rows)
 ```
+
+## 04-receive-delivery
+
+Run at 2026-09-05T23:31:46Z against `supabase_db_agent-a435d3a57e1a702d9`.
+
+```sql
+select id, past_order_id, received_by, status, created_at from public.order_receipts order by created_at desc limit 1;
+select poi.item_name, ori.received, ori.received_qty, ori.note
+from public.order_receipt_items ori
+join public.past_order_items poi on poi.id = ori.past_order_item_id
+where ori.receipt_id = (select id from public.order_receipts order by created_at desc limit 1)
+order by poi.item_name, ori.received desc;
+```
+
+```
+                  id                  |            past_order_id             |             received_by              | status  |          created_at           
+--------------------------------------+--------------------------------------+--------------------------------------+---------+-------------------------------
+ caefa09c-03b5-4781-957c-c8cbce087639 | e2feddc6-2f42-410f-a98f-ffdde1c4e6c0 | 2d3d669b-8a9d-4536-8601-f8d42b4ac2c3 | partial | 2026-09-05 23:31:07.274827+00
+(1 row)
+
+   item_name    | received | received_qty |             note              
+----------------+----------+--------------+-------------------------------
+ Fixture Rice   | t        |              | 
+ Fixture Rice   | t        |              | 
+ Fixture Salmon | t        |            2 | Two fillets short on delivery
+(3 rows)
+```
