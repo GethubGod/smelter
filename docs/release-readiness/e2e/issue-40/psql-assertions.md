@@ -211,3 +211,78 @@ from public.recurring_reminder_rules order by created_at desc limit 1;
  e8d82633-5436-4fc9-a740-49a988f72b60 | employee | 92bbe53d-2842-4e57-b912-a00e2c3eaf36 | standard  | {2,4}        | 15:00:00    | America/Los_Angeles | no_order_today | {"push": true, "in_app": true} | t       | 2d3d669b-8a9d-4536-8601-f8d42b4ac2c3 | 2026-09-05 23:35:16.726362+00
 (1 row)
 ```
+
+## 08-invite-create
+
+Run at 2026-09-05T23:36:07Z against `supabase_db_agent-a435d3a57e1a702d9`.
+
+```sql
+select id, invited_name, role, location_group, module_preset, expires_at, created_by, used_at, revoked_at
+from public.invites order by created_at desc limit 1;
+```
+
+```
+                  id                  | invited_name |   role   | location_group |                                       module_preset                                       |         expires_at         |              created_by              | used_at | revoked_at 
+--------------------------------------+--------------+----------+----------------+-------------------------------------------------------------------------------------------+----------------------------+--------------------------------------+---------+------------
+ 1888bff2-d174-4995-ab20-fb177cf250da | E2E Invitee  | employee | sushi          | {"tips": false, "stock_check": true, "ordering_simple": true, "ordering_advanced": false} | 2026-09-12 23:35:58.984+00 | 2d3d669b-8a9d-4536-8601-f8d42b4ac2c3 |         | 
+(1 row)
+```
+
+## 09-credential-change
+
+Run at 2026-09-05T23:36:56Z against `supabase_db_agent-a435d3a57e1a702d9`.
+
+```sql
+select login_name, credential_kind, md5(secret_hash) as secret_hash_md5, updated_at, updated_by
+from public.login_identities where login_name = 'e2e manager';
+```
+
+```
+ login_name  | credential_kind |         secret_hash_md5          |          updated_at           |              updated_by              
+-------------+-----------------+----------------------------------+-------------------------------+--------------------------------------
+ e2e manager | pin             | b3cc992658e341b8ebd70da32188324f | 2026-09-05 23:36:49.716508+00 | 2d3d669b-8a9d-4536-8601-f8d42b4ac2c3
+(1 row)
+```
+
+## 10-login-after-credential-change
+
+Run at 2026-09-05T23:38:56Z against `supabase_db_agent-a435d3a57e1a702d9`.
+
+```sql
+select scope, success, count(*), max(created_at) as latest
+from public.login_auth_attempts group by 1,2 order by 1,2;
+select email, last_sign_in_at from auth.users where email = 'e2e.manager@smelter.test';
+```
+
+```
+ERROR:  column "created_at" does not exist
+LINE 1: select scope, success, count(*), max(created_at) as latest
+                                             ^
+          email           |        last_sign_in_at        
+--------------------------+-------------------------------
+ e2e.manager@smelter.test | 2026-09-05 23:38:43.841169+00
+(1 row)
+```
+
+## 10-login-after-credential-change
+
+Run at 2026-09-05T23:39:03Z against `supabase_db_agent-a435d3a57e1a702d9`.
+
+```sql
+select scope, success, count(*), max(attempted_at) as latest
+from public.login_auth_attempts group by 1,2 order by 1,2;
+select email, last_sign_in_at from auth.users where email = 'e2e.manager@smelter.test';
+```
+
+```
+ scope  | success | count |            latest             
+--------+---------+-------+-------------------------------
+ client | t       |     2 | 2026-09-05 23:38:43.765161+00
+ name   | t       |     2 | 2026-09-05 23:38:43.765161+00
+(2 rows)
+
+          email           |        last_sign_in_at        
+--------------------------+-------------------------------
+ e2e.manager@smelter.test | 2026-09-05 23:38:43.841169+00
+(1 row)
+```
