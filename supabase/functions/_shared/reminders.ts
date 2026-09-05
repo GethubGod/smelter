@@ -6,6 +6,7 @@ import {
   type ChecklistLocationGroup,
   type ChecklistReminderMessage,
 } from './reminderDelivery.ts';
+import { canonicalizeExpoPushToken } from './expoPushToken.ts';
 
 export {
   buildChecklistOrderDayMessage,
@@ -69,10 +70,10 @@ export interface SendEmployeeReminderResult {
 }
 
 /**
- * The recipient's push tokens could not be resolved. Raised before anything is
- * written, so a caller can retry the whole reminder without having consumed
- * it. Only thrown when push is the sole requested channel; when in-app was
- * also requested the reminder still lands and push is recorded as failed.
+ * The recipient's push tokens could not be resolved. Manual push-only sends
+ * throw this before creating or updating reminder delivery records. Stale
+ * reminder cleanup may already have resolved an old thread. Recurring sends
+ * record the push failure and consume the recurring rule for the day.
  */
 export class PushTokenResolutionError extends Error {
   retryable = true;
@@ -104,16 +105,6 @@ function minutesBetween(nowIso: string, thenIso: string): number {
   const now = new Date(nowIso).getTime();
   const then = new Date(thenIso).getTime();
   return Math.max(0, Math.floor((now - then) / (1000 * 60)));
-}
-
-function sanitizeExpoPushToken(token: string): string | null {
-  if (typeof token !== 'string') return null;
-  const trimmed = token.trim();
-  if (!trimmed) return null;
-  if (!trimmed.startsWith('ExponentPushToken[') && !trimmed.startsWith('ExpoPushToken[')) {
-    return null;
-  }
-  return trimmed;
 }
 
 function chunkArray<T>(items: T[], size: number): T[][] {
@@ -584,16 +575,16 @@ export async function sendEmployeeReminder(
   const shouldAttemptInApp = input.channels?.in_app !== false;
   const pushChannelRequested = input.channels?.push !== false;
 
-  // Resolved before anything is written. A push-only reminder whose tokens
-  // cannot be resolved must leave the reminder thread and the recurring rule
-  // untouched, so the next run retries it instead of the transient failure
-  // consuming the day's reminder.
+  // Resolve before writing this delivery. Manual push-only sends fail before
+  // their reminder and event writes. Recurring sends record a failed push and
+  // still consume the rule, so another employee is not sent a duplicate.
+  // resolveStaleReminderIfNeeded may already have closed an old thread above.
   //
   // Ownership is checked server side here rather than by filtering the table:
   // a shared phone belongs to the last user who registered it, so a token the
   // recipient no longer owns must never be targeted.
   let resolvedTokens: string[] = [];
-  let tokenResolutionError: string | null = null;
+  let tokenResolutionError: PushTokenResolutionError | null = null;
 
   if (pushChannelRequested && notificationsEnabled) {
     const { data: pushTokensRaw, error: pushTokenError } = await supabaseAdmin.rpc(
@@ -602,14 +593,15 @@ export async function sendEmployeeReminder(
     );
 
     if (pushTokenError) {
-      tokenResolutionError =
-        pushTokenError.message || 'Unable to resolve the recipient push tokens.';
-      if (!shouldAttemptInApp) {
-        throw new PushTokenResolutionError(tokenResolutionError);
+      tokenResolutionError = new PushTokenResolutionError(
+        pushTokenError.message || 'Unable to resolve the recipient push tokens.',
+      );
+      if (!shouldAttemptInApp && input.source !== 'recurring') {
+        throw tokenResolutionError;
       }
     } else {
       resolvedTokens = (pushTokensRaw ?? [])
-        .map((row: any) => sanitizeExpoPushToken(row?.expo_push_token))
+        .map((row: any) => canonicalizeExpoPushToken(row?.expo_push_token))
         .filter((token: string | null): token is string => Boolean(token));
     }
   }
@@ -721,7 +713,7 @@ export async function sendEmployeeReminder(
         pushResult.status = 'failed';
         pushResult.deliveryOutcome = 'failed';
         pushResult.failureCount = 1;
-        pushResult.errorDetail = tokenResolutionError;
+        pushResult.errorDetail = tokenResolutionError.message;
       } else if (tokens.length === 0) {
         pushResult.status = 'no_tokens';
       } else {

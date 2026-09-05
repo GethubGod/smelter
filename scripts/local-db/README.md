@@ -17,7 +17,7 @@ This harness answers a narrower, more useful question instead:
 | --- | --- |
 | `baseline_public_schema.sql` | Full DDL snapshot of prod's `public` schema (project `whrohvitvmcrmedepurd`): 75 tables with columns/defaults/generated columns, PK/unique/check constraints, FKs, 2 sequences, 55 functions, 45 triggers, all non-constraint indexes, RLS enablement and all 142 policies. Generated 2026-08-11 via read-only `pg_catalog` / `information_schema` queries (`pg_get_constraintdef`, `pg_get_indexdef`, `pg_get_functiondef`, `pg_get_triggerdef`, `pg_policies`). |
 | `auth_stub.sql` | Minimal stand-in for Supabase-managed dependencies: roles `anon` / `authenticated` / `service_role`, an `auth` schema with a minimal `auth.users` table, and `auth.uid()` / `auth.role()` / `auth.jwt()` stubs that read the `request.jwt.claim.*` GUCs (null-safe). |
-| `verify-migrations.sh` | The runner. Disposable `postgres:17` Docker container on a random free localhost port; loads `auth_stub.sql`, then `baseline_public_schema.sql`, then applies every migration newer than the snapshot cutoff plus any older branch-new migration, in timestamp order. Fails loudly on the first error; always removes the container via an EXIT trap unless `--keep` is passed. |
+| `verify-migrations.sh` | The runner. Disposable `postgres:17` Docker container on a Docker-assigned localhost port; loads `auth_stub.sql`, then `baseline_public_schema.sql`, then applies every migration newer than the snapshot cutoff plus any older branch-new migration, in timestamp order. Each SQL file runs with `--single-transaction`, so a failed migration does not leave a partial schema. The runner fails on the first error and removes the container through an EXIT trap unless `--keep` is passed. |
 
 ## Usage
 
@@ -137,12 +137,14 @@ It proves the three clauses of the shared-device rule: registering a token
 claims it, the claim deactivates prior owners' rows for that token only, and
 `active_device_push_tokens` never returns a token the recipient no longer owns
 (including a stale active row that a later claim outranks, and a late sign-out
-whose `updated_at` is newer than the active owner's claim). It also covers the
-canonical token form (a padded spelling collapses onto the existing token and
-claims it, a non-token is refused), the server-owned ownership clock (a
-non-activating write cannot move `claimed_at` or the token), the reverse
-handover, the one-active-owner unique index, the unchanged per-user RLS, and
-the service-role-only grant on the resolver. It ends with
+whose `updated_at` is newer than the active owner's claim). It rewinds and
+reapplies the ownership migration inside the fixture transaction to cover the
+backfill. Cases include leading and trailing U+FEFF, U+00A0, both wrapped
+around one token, and a newer inactive canonical row beside an older active
+padded alias. Runtime checks cover the same Unicode canonicalization, exact
+token grammar, inactive-insert rejection, the server-owned ownership clock,
+reverse handover, the one-active-owner unique index, unchanged per-user RLS,
+and the service-role-only resolver grant. It ends with
 `PASS: push token ownership fixture assertions all held` and rolls back.
 
 The fixture restates the table grants itself, because the baseline snapshot is

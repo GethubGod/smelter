@@ -13,20 +13,31 @@
 -- Ownership comparisons are only sound on a single canonical spelling of a
 -- token, and only if the clock that orders claims is server controlled. Both
 -- are enforced here, on every write, for every caller.
+--
+-- Production had 0 rows in device_push_tokens on 2026-09-05. The repair,
+-- deduplication, and index builds therefore have no production data to scan.
+-- The migration still repairs populated local fixtures before adding its
+-- constraints.
+--
+-- There is a known row-lock versus advisory-lock inversion for direct active
+-- UPDATE statements. The only client registration path is a single-row upsert,
+-- and the only other client path is the deactivate UPDATE. In the rare cycle,
+-- PostgreSQL aborts one registration and the client repeats it on next launch.
+-- Moving registration behind a narrow RPC that takes the advisory lock before
+-- any row mutation is the follow-up; it requires an app contract change.
 
--- The table is small (at most one row per user per device) and every statement
--- below is bounded, so a lock wait is a bug rather than something to sit out.
+-- Bound both lock acquisition and total statement duration.
 set lock_timeout = '5s';
+set statement_timeout = '30s';
 
 -- ---------------------------------------------------------------------------
 -- Canonical token form.
 -- ---------------------------------------------------------------------------
 
--- Mirrors sanitizeExpoPushToken in supabase/functions/_shared/reminders.ts:
--- trim, then require an Expo token prefix. Kept immutable so the check
--- constraint below can use it. Postgres \s and JavaScript String.trim() differ
--- on exotic Unicode spaces; neither appears in an Expo token, and anything that
--- still disagrees is rejected outright by the prefix test.
+-- Mirrors canonicalizeExpoPushToken in the edge functions. btrim receives the
+-- complete ECMAScript trim set: ASCII whitespace, NBSP, the Unicode space
+-- separators, the two Unicode line separators, and BOM. The validator below
+-- then requires the exact Expo token grammar and rejects whitespace inside it.
 create or replace function public.canonical_expo_push_token(p_token text)
 returns text
 language sql
@@ -34,7 +45,13 @@ immutable
 parallel safe
 set search_path = ''
 as $$
-  select nullif(regexp_replace(coalesce(p_token, ''), '^\s+|\s+$', '', 'g'), '')
+  select nullif(
+    btrim(
+      coalesce(p_token, ''),
+      U&'\0009\000A\000B\000C\000D\0020\00A0\1680\2000\2001\2002\2003\2004\2005\2006\2007\2008\2009\200A\2028\2029\202F\205F\3000\FEFF'
+    ),
+    ''
+  )
 $$;
 
 comment on function public.canonical_expo_push_token(text) is
@@ -48,7 +65,12 @@ parallel safe
 set search_path = ''
 as $$
   select p_token is not null
-     and (p_token like 'ExponentPushToken[%' or p_token like 'ExpoPushToken[%')
+     and p_token ~ '^Expo(nent)?PushToken\[[^]]+\]$'
+     and p_token = translate(
+       p_token,
+       U&'\0009\000A\000B\000C\000D\0020\00A0\1680\2000\2001\2002\2003\2004\2005\2006\2007\2008\2009\200A\2028\2029\202F\205F\3000\FEFF',
+       ''
+     )
 $$;
 
 comment on function public.is_expo_push_token(text) is
@@ -75,22 +97,22 @@ begin
     alter table public.device_push_tokens disable trigger set_device_push_tokens_updated_at;
   end if;
 
-  -- 1. Rows the sender could never have delivered to. sanitizeExpoPushToken
+  -- 1. Rows the sender could never deliver to. canonicalizeExpoPushToken
   --    drops them, so they hold no reachable device, but they would block the
   --    canonical-form constraint.
   delete from public.device_push_tokens
   where not public.is_expo_push_token(public.canonical_expo_push_token(expo_push_token));
 
   -- 2. Two spellings of one token by one user are one registration. Keep the
-  --    active row, then the most recently written, and drop the aliases so the
-  --    (user_id, expo_push_token) unique constraint survives canonicalization.
+  --    most recently written row, then prefer active only as a tie-breaker.
+  --    This preserves a newer logout over an older active padded spelling.
   delete from public.device_push_tokens as t
   using (
     select
       id,
       row_number() over (
         partition by user_id, public.canonical_expo_push_token(expo_push_token)
-        order by active desc, updated_at desc, created_at desc, id desc
+        order by updated_at desc, active desc, created_at desc, id desc
       ) as alias_rank
     from public.device_push_tokens
   ) as ranked
@@ -160,7 +182,7 @@ end;
 $$;
 
 comment on column public.device_push_tokens.claimed_at is
-  'Server-stamped time of this user''s last registration of this token. Among rows sharing a token, the newest claimed_at is the current owner.';
+  'Server-stamped time of this user''s last activation of this token. Inactive updates preserve it, and inactive inserts are rejected.';
 
 -- NOT NULL through a validated check: VALIDATE takes only SHARE UPDATE
 -- EXCLUSIVE, so registrations keep running, and SET NOT NULL then skips its
@@ -216,12 +238,10 @@ alter table public.device_push_tokens
 --
 -- Not CREATE INDEX CONCURRENTLY: it cannot run inside a transaction block, and
 -- both of this repo's runners wrap a migration in one (scripts/local-db/
--- full-stack.sh applies with --single-transaction, and the Supabase CLI does
--- the same on push). The production row count is unknown from this worktree,
--- which has no read access to the production database, but the table holds at
--- most one row per user per device for a single-restaurant tenant, so both
--- builds are expected to be sub-second. lock_timeout above bounds the damage
--- if that assumption is wrong.
+-- full-stack.sh and verify-migrations.sh apply with --single-transaction, and
+-- the Supabase CLI does the same on push). Production had 0 rows on 2026-09-05,
+-- so the builds have no production data to scan. The timeouts above still
+-- protect other environments and future replays.
 -- ---------------------------------------------------------------------------
 create unique index if not exists device_push_tokens_one_active_owner_idx
   on public.device_push_tokens (expo_push_token)
@@ -252,6 +272,11 @@ as $$
 declare
   v_token text;
 begin
+  if tg_op = 'INSERT' and new.active is not true then
+    raise exception 'inactive device push token inserts are not allowed; deactivate an existing row with UPDATE'
+      using errcode = '22023';
+  end if;
+
   -- A non-activating update is a deactivation, not a registration. The
   -- ownership clock and the token identity are server owned, so pin them back
   -- rather than raising: sign-out must never fail because the client sent a
@@ -271,12 +296,6 @@ begin
   end if;
 
   new.expo_push_token := v_token;
-
-  if new.active is not true then
-    -- An inactive insert claims nothing, but its clock is still server owned.
-    new.claimed_at := clock_timestamp();
-    return new;
-  end if;
 
   -- Serialize claims on one token. Without this, two first-time registrations
   -- of the same token race: both see no active row, and the unique index below
@@ -316,7 +335,8 @@ execute function public.claim_device_push_token();
 
 -- security invoker: the only caller is the service role, which already reads
 -- this table, so there is nothing to elevate. Rows are returned only when the
--- recipient is still the token's current owner.
+-- recipient is still the token's current owner. Every claimed_at considered
+-- here was stamped by an activation or reconstructed from legacy history.
 create or replace function public.active_device_push_tokens(p_user_id uuid)
 returns table (expo_push_token text, platform text, updated_at timestamptz)
 language sql

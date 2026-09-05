@@ -135,7 +135,9 @@ Deno.serve(async (req) => {
     }
 
     if (error instanceof PushTokenResolutionError) {
-      // Nothing was written, so the caller can send the same reminder again.
+      // This delivery did not create or update its reminder records, so the
+      // caller can retry. Earlier stale-thread cleanup may have resolved an old
+      // reminder before token resolution failed.
       return jsonResponse(
         {
           error: error.message,

@@ -165,29 +165,27 @@ Deno.test("a push-only reminder that cannot resolve tokens writes nothing", asyn
   }
 });
 
-Deno.test("the recurring path throws too, so the rule is not marked triggered", async () => {
+Deno.test("a recurring push-only resolver failure is recorded as one failed push", async () => {
   const { client, writes } = makeClient(RESOLVER_FAILURE);
 
-  let caught: unknown = null;
-  try {
-    await sendEmployeeReminder(
-      client,
-      baseInput({ source: "recurring", channels: { push: true, in_app: false } }),
-    );
-  } catch (error) {
-    caught = error;
-  }
+  const result = await sendEmployeeReminder(
+    client,
+    baseInput({ source: "recurring", channels: { push: true, in_app: false } }),
+  );
 
-  if (!(caught instanceof PushTokenResolutionError)) {
-    throw new Error(`Expected PushTokenResolutionError, got ${caught}`);
+  if (result.push.status !== "failed" || result.push.deliveryOutcome !== "failed") {
+    throw new Error("Expected the recurring push attempt to be recorded as failed");
   }
-  if ((caught as Error).message !== "schema cache is reloading") {
-    throw new Error("Expected the resolver error to reach the caller");
+  if (result.push.successCount !== 0 || result.push.failureCount !== 1) {
+    throw new Error(
+      `Expected 0 successes and 1 failure, got ${result.push.successCount}/${result.push.failureCount}`,
+    );
   }
-  // evaluate-recurring-reminders skips last_triggered_at on this error, so the
-  // reminder thread must not have advanced either.
-  if (writes.length !== 0) {
-    throw new Error(`Expected no writes, saw ${writtenTables(writes)}`);
+  if (result.push.errorDetail !== "schema cache is reloading") {
+    throw new Error("Expected the resolver error to be stored on the push result");
+  }
+  if (writtenTables(writes) !== "reminders,reminder_events") {
+    throw new Error(`Unexpected write sequence: ${writtenTables(writes)}`);
   }
 });
 
