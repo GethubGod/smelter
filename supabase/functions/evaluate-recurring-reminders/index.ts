@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2?no-dts
 import { corsHeaders } from '../_shared/cors.ts';
 import {
   getChecklistOrderDayReminderMessage,
+  PushTokenResolutionError,
   ReminderRateLimitError,
   getReminderSystemSettings,
   getRequesterFromToken,
@@ -254,6 +255,7 @@ Deno.serve(async (req) => {
   let remindersSent = 0;
   let skippedByCondition = 0;
   let skippedByRateLimit = 0;
+  let retryablePushFailures = 0;
   const errors: { ruleId: string; employeeId?: string; message: string }[] = [];
 
   for (const rule of enabledRules) {
@@ -296,6 +298,12 @@ Deno.serve(async (req) => {
     }
 
     dueRules += 1;
+
+    // A retryable failure must not consume the rule for the day: leaving
+    // last_triggered_at alone lets the next evaluation try the employees that
+    // failed, while the ones already reminded are held off by the per-employee
+    // rate limit.
+    let ruleHasRetryableFailure = false;
 
     const candidateEmployees =
       rule.scope === 'employee'
@@ -386,6 +394,17 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        if (error instanceof PushTokenResolutionError) {
+          ruleHasRetryableFailure = true;
+          retryablePushFailures += 1;
+          errors.push({
+            ruleId: rule.id,
+            employeeId: employee.id,
+            message: error.message,
+          });
+          continue;
+        }
+
         errors.push({
           ruleId: rule.id,
           employeeId: employee.id,
@@ -394,7 +413,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (!dryRun) {
+    if (!dryRun && !ruleHasRetryableFailure) {
       await supabaseAdmin
         .from('recurring_reminder_rules')
         .update({ last_triggered_at: new Date().toISOString() })
@@ -409,6 +428,7 @@ Deno.serve(async (req) => {
     remindersSent,
     skippedByCondition,
     skippedByRateLimit,
+    retryablePushFailures,
     errors,
     dryRun,
   });

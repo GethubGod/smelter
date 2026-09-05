@@ -68,6 +68,21 @@ export interface SendEmployeeReminderResult {
   settings: ReminderSystemSettings;
 }
 
+/**
+ * The recipient's push tokens could not be resolved. Raised before anything is
+ * written, so a caller can retry the whole reminder without having consumed
+ * it. Only thrown when push is the sole requested channel; when in-app was
+ * also requested the reminder still lands and push is recorded as failed.
+ */
+export class PushTokenResolutionError extends Error {
+  retryable = true;
+
+  constructor(message: string) {
+    super(message);
+    this.name = 'PushTokenResolutionError';
+  }
+}
+
 export class ReminderRateLimitError extends Error {
   retryAfterSeconds: number;
 
@@ -566,6 +581,39 @@ export async function sendEmployeeReminder(
     }
   }
 
+  const shouldAttemptInApp = input.channels?.in_app !== false;
+  const pushChannelRequested = input.channels?.push !== false;
+
+  // Resolved before anything is written. A push-only reminder whose tokens
+  // cannot be resolved must leave the reminder thread and the recurring rule
+  // untouched, so the next run retries it instead of the transient failure
+  // consuming the day's reminder.
+  //
+  // Ownership is checked server side here rather than by filtering the table:
+  // a shared phone belongs to the last user who registered it, so a token the
+  // recipient no longer owns must never be targeted.
+  let resolvedTokens: string[] = [];
+  let tokenResolutionError: string | null = null;
+
+  if (pushChannelRequested && notificationsEnabled) {
+    const { data: pushTokensRaw, error: pushTokenError } = await supabaseAdmin.rpc(
+      'active_device_push_tokens',
+      { p_user_id: employee.id }
+    );
+
+    if (pushTokenError) {
+      tokenResolutionError =
+        pushTokenError.message || 'Unable to resolve the recipient push tokens.';
+      if (!shouldAttemptInApp) {
+        throw new PushTokenResolutionError(tokenResolutionError);
+      }
+    } else {
+      resolvedTokens = (pushTokensRaw ?? [])
+        .map((row: any) => sanitizeExpoPushToken(row?.expo_push_token))
+        .filter((token: string | null): token is string => Boolean(token));
+    }
+  }
+
   let reminderRow: any = null;
   let eventType: 'sent' | 'reminded_again' = 'sent';
 
@@ -610,8 +658,6 @@ export async function sendEmployeeReminder(
     reminderRow = createdReminder;
   }
 
-  const shouldAttemptInApp = input.channels?.in_app !== false;
-  const pushChannelRequested = input.channels?.push !== false;
   const channelsAttempted: string[] = [];
 
   const reminderTitle = 'Order reminder';
@@ -666,27 +712,16 @@ export async function sendEmployeeReminder(
       channelsAttempted.push('push');
       pushResult.attempted = true;
 
-      // Resolved server side, and as late as possible: a shared phone belongs
-      // to the last user who registered it, so a token the recipient no longer
-      // owns must never be targeted, even while their row lingers.
-      const { data: pushTokensRaw, error: pushTokenError } = await supabaseAdmin.rpc(
-        'active_device_push_tokens',
-        { p_user_id: employee.id }
-      );
-
-      const tokens = pushTokenError
-        ? []
-        : (pushTokensRaw ?? [])
-            .map((row: any) => sanitizeExpoPushToken(row?.expo_push_token))
-            .filter((token: string | null): token is string => Boolean(token));
-
+      const tokens = resolvedTokens;
       pushResult.tokenCount = tokens.length;
 
-      if (pushTokenError) {
+      if (tokenResolutionError) {
+        // Reached only when in-app was also requested, so the reminder itself
+        // did land. One unresolvable push channel, counted as one failure.
         pushResult.status = 'failed';
         pushResult.deliveryOutcome = 'failed';
-        pushResult.errorDetail =
-          pushTokenError.message || 'Unable to resolve the recipient push tokens.';
+        pushResult.failureCount = 1;
+        pushResult.errorDetail = tokenResolutionError;
       } else if (tokens.length === 0) {
         pushResult.status = 'no_tokens';
       } else {

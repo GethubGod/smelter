@@ -136,13 +136,28 @@ docker exec -i <container-name> psql -U postgres -d postgres \
 It proves the three clauses of the shared-device rule: registering a token
 claims it, the claim deactivates prior owners' rows for that token only, and
 `active_device_push_tokens` never returns a token the recipient no longer owns
-(including a stale active row that a later claim outranks). It also covers the
-reverse handover, the one-active-owner unique index, the unchanged per-user
-RLS, and the service-role-only grant on the resolver. It ends with
+(including a stale active row that a later claim outranks, and a late sign-out
+whose `updated_at` is newer than the active owner's claim). It also covers the
+canonical token form (a padded spelling collapses onto the existing token and
+claims it, a non-token is refused), the server-owned ownership clock (a
+non-activating write cannot move `claimed_at` or the token), the reverse
+handover, the one-active-owner unique index, the unchanged per-user RLS, and
+the service-role-only grant on the resolver. It ends with
 `PASS: push token ownership fixture assertions all held` and rolls back.
 
 The fixture restates the table grants itself, because the baseline snapshot is
 DDL-only.
+
+Concurrent claims need two connections, so they live in a separate script:
+
+```sh
+scripts/local-db/push_token_concurrency_check.sh <container-name>
+```
+
+Two users register the same token with no active row to arbitrate between
+them. It asserts the later registration wins and no unique violation is raised,
+and it fails if the second session did not actually contend for the lock. It
+cleans up its own rows and leaves the container running.
 
 ## What this does NOT prove
 

@@ -9,13 +9,20 @@
 --   1. A device token belongs to the last user who registers it.
 --   2. A new registration deactivates prior owners' rows.
 --   3. A send never targets a token whose current owner is not the recipient.
+-- plus the canonical token form and the server-owned ownership clock that the
+-- three clauses rest on.
+--
+-- Concurrent claims are covered separately, by
+-- scripts/local-db/push_token_concurrency_check.sh, which needs two sessions.
 
 \set ON_ERROR_STOP on
 
 \set user_a '''aaaaaaaa-2000-4000-8000-000000000001'''
 \set user_b '''aaaaaaaa-2000-4000-8000-000000000002'''
 \set shared_token '''ExponentPushToken[fixture-shared-device]'''
+\set spaced_token '''  ExponentPushToken[fixture-shared-device] '''
 \set other_token '''ExponentPushToken[fixture-user-a-tablet]'''
+\set late_signout_token '''ExponentPushToken[fixture-late-signout]'''
 
 begin;
 
@@ -159,13 +166,141 @@ $$;
 reset role;
 
 -- ---------------------------------------------------------------------------
--- Handover is reversible: the original user reclaims the device on next login.
+-- A padded spelling is the same device. The Data API is reachable directly, so
+-- a client can send whitespace the app would have trimmed. It must collapse
+-- onto the existing token rather than open a second, unowned lane to the same
+-- phone. B currently owns the device; A re-registers with the padded form.
 -- ---------------------------------------------------------------------------
 select set_config('request.jwt.claim.sub', :user_a, false);
 set role authenticated;
 
 insert into public.device_push_tokens (user_id, expo_push_token, platform, active)
-values (:user_a, :shared_token, 'ios', true)
+values (:user_a, :spaced_token, 'ios', true)
+on conflict (user_id, expo_push_token)
+do update set platform = excluded.platform, active = true;
+
+reset role;
+
+do $$
+declare
+  v_rows_for_a integer;
+  v_padded_rows integer;
+  v_a_shared boolean;
+  v_b_shared boolean;
+begin
+  select count(*) into v_rows_for_a
+  from public.device_push_tokens
+  where user_id = 'aaaaaaaa-2000-4000-8000-000000000001';
+
+  select count(*) into v_padded_rows
+  from public.device_push_tokens
+  where expo_push_token <> btrim(expo_push_token);
+
+  select active into v_a_shared
+  from public.device_push_tokens
+  where user_id = 'aaaaaaaa-2000-4000-8000-000000000001'
+    and expo_push_token = 'ExponentPushToken[fixture-shared-device]';
+
+  select active into v_b_shared
+  from public.device_push_tokens
+  where user_id = 'aaaaaaaa-2000-4000-8000-000000000002'
+    and expo_push_token = 'ExponentPushToken[fixture-shared-device]';
+
+  if v_padded_rows <> 0 then
+    raise exception 'FAIL: a padded token spelling was stored verbatim';
+  end if;
+  if v_rows_for_a <> 2 then
+    raise exception 'FAIL: the padded spelling created a second row, % rows for the user', v_rows_for_a;
+  end if;
+  if v_a_shared is not true or v_b_shared is not false then
+    raise exception 'FAIL: the padded registration did not claim the device';
+  end if;
+  raise notice 'ok: a padded token spelling collapses onto the canonical token and claims it';
+end;
+$$;
+
+-- A value that cannot be canonicalized into an Expo token is refused outright.
+select set_config('request.jwt.claim.sub', :user_a, false);
+set role authenticated;
+
+do $$
+begin
+  begin
+    insert into public.device_push_tokens (user_id, expo_push_token, platform, active)
+    values ('aaaaaaaa-2000-4000-8000-000000000001', '   ', 'ios', true);
+    raise exception 'FAIL: a blank token was accepted';
+  exception
+    when invalid_parameter_value then
+      raise notice 'ok: a value that is not an Expo token is refused';
+  end;
+end;
+$$;
+
+reset role;
+
+-- ---------------------------------------------------------------------------
+-- The ownership clock is server owned. A former owner holds a row they may
+-- update freely under RLS; neither claimed_at nor the token identity may move
+-- on a write that does not activate the row.
+-- ---------------------------------------------------------------------------
+select set_config('request.jwt.claim.sub', :user_b, false);
+set role authenticated;
+
+update public.device_push_tokens
+set claimed_at = 'infinity'::timestamptz,
+    expo_push_token = 'ExponentPushToken[fixture-hijack]',
+    platform = 'android'
+where user_id = 'aaaaaaaa-2000-4000-8000-000000000002'
+  and expo_push_token = 'ExponentPushToken[fixture-shared-device]';
+
+reset role;
+
+do $$
+declare
+  v_claimed timestamptz;
+  v_platform text;
+  v_hijack integer;
+  v_a_tokens text[];
+begin
+  select claimed_at, platform into v_claimed, v_platform
+  from public.device_push_tokens
+  where user_id = 'aaaaaaaa-2000-4000-8000-000000000002'
+    and expo_push_token = 'ExponentPushToken[fixture-shared-device]';
+
+  select count(*) into v_hijack
+  from public.device_push_tokens
+  where expo_push_token = 'ExponentPushToken[fixture-hijack]';
+
+  if v_claimed is null or v_claimed = 'infinity'::timestamptz then
+    raise exception 'FAIL: a client rewrote the ownership clock';
+  end if;
+  if v_hijack <> 0 then
+    raise exception 'FAIL: a client moved an inactive row onto another token';
+  end if;
+  if v_platform <> 'android' then
+    raise exception 'FAIL: the pin-back blocked an ordinary column update';
+  end if;
+
+  -- Read as the owner of the resolver rather than switching role mid-block.
+  select coalesce(array_agg(expo_push_token order by expo_push_token), '{}')
+  into v_a_tokens
+  from public.active_device_push_tokens('aaaaaaaa-2000-4000-8000-000000000001');
+
+  if not ('ExponentPushToken[fixture-shared-device]' = any (v_a_tokens)) then
+    raise exception 'FAIL: a forged claim locked the real owner out: %', v_a_tokens;
+  end if;
+  raise notice 'ok: a non-activating write cannot move the clock or the token';
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Handover is reversible: B reclaims the device on next login.
+-- ---------------------------------------------------------------------------
+select set_config('request.jwt.claim.sub', :user_b, false);
+set role authenticated;
+
+insert into public.device_push_tokens (user_id, expo_push_token, platform, active)
+values (:user_b, :shared_token, 'ios', true)
 on conflict (user_id, expo_push_token)
 do update set platform = excluded.platform, active = true;
 
@@ -186,7 +321,7 @@ begin
   where user_id = 'aaaaaaaa-2000-4000-8000-000000000002'
     and expo_push_token = 'ExponentPushToken[fixture-shared-device]';
 
-  if v_a_shared is not true or v_b_shared is not false then
+  if v_b_shared is not true or v_a_shared is not false then
     raise exception 'FAIL: re-registering did not hand the device back';
   end if;
   raise notice 'ok: ownership follows the most recent registration in both directions';
@@ -204,7 +339,7 @@ begin
   begin
     insert into public.device_push_tokens (user_id, expo_push_token, platform, active)
     values (
-      'aaaaaaaa-2000-4000-8000-000000000002',
+      'aaaaaaaa-2000-4000-8000-000000000001',
       'ExponentPushToken[fixture-shared-device]',
       'ios',
       true
@@ -219,17 +354,23 @@ begin
 end;
 $$;
 
-alter table public.device_push_tokens enable trigger device_push_tokens_claim_device;
+-- A late sign-out writing after the current owner registered must not read as
+-- a newer claim: the inactive row carries a newer updated_at but an older
+-- claimed_at, and the active owner stays reachable. This is the shape the
+-- migration's backfill has to produce for legacy rows.
+insert into public.device_push_tokens
+  (user_id, expo_push_token, platform, active, created_at, updated_at, claimed_at)
+values
+  (
+    'aaaaaaaa-2000-4000-8000-000000000001', 'ExponentPushToken[fixture-late-signout]', 'ios',
+    true, '2026-01-01 00:00:00+00', '2026-01-01 00:00:00+00', '2026-01-01 00:00:00+00'
+  ),
+  (
+    'aaaaaaaa-2000-4000-8000-000000000002', 'ExponentPushToken[fixture-late-signout]', 'ios',
+    false, '2025-12-01 00:00:00+00', '2026-06-01 00:00:00+00', '2025-12-01 00:00:00+00'
+  );
 
--- A's row is active again after the reclaim above. Give B the newer claim
--- without reactivating B: the shape left behind when the current owner signs
--- out normally while an earlier owner's row was never retired. The stale
--- active row must still not be targetable. B's row stays inactive, so this
--- update does not fire the claim trigger.
-update public.device_push_tokens
-set claimed_at = clock_timestamp()
-where user_id = 'aaaaaaaa-2000-4000-8000-000000000002'
-  and expo_push_token = 'ExponentPushToken[fixture-shared-device]';
+alter table public.device_push_tokens enable trigger device_push_tokens_claim_device;
 
 set role service_role;
 
@@ -241,7 +382,36 @@ begin
   into v_a_tokens
   from public.active_device_push_tokens('aaaaaaaa-2000-4000-8000-000000000001');
 
-  if 'ExponentPushToken[fixture-shared-device]' = any (v_a_tokens) then
+  if not ('ExponentPushToken[fixture-late-signout]' = any (v_a_tokens)) then
+    raise exception 'FAIL: a late sign-out outranked the active owner: %', v_a_tokens;
+  end if;
+  raise notice 'ok: a newer deactivation does not outrank the active owner';
+end;
+$$;
+
+reset role;
+
+-- The mirror case: a stale active row must lose to a later claim, even when
+-- the later claimant has since signed out. Only B's claim moves; A's row stays
+-- active, which is exactly the state the resolver has to see through.
+alter table public.device_push_tokens disable trigger device_push_tokens_claim_device;
+update public.device_push_tokens
+set claimed_at = clock_timestamp()
+where user_id = 'aaaaaaaa-2000-4000-8000-000000000002'
+  and expo_push_token = 'ExponentPushToken[fixture-late-signout]';
+alter table public.device_push_tokens enable trigger device_push_tokens_claim_device;
+
+set role service_role;
+
+do $$
+declare
+  v_a_tokens text[];
+begin
+  select coalesce(array_agg(expo_push_token order by expo_push_token), '{}')
+  into v_a_tokens
+  from public.active_device_push_tokens('aaaaaaaa-2000-4000-8000-000000000001');
+
+  if 'ExponentPushToken[fixture-late-signout]' = any (v_a_tokens) then
     raise exception 'FAIL: a stale active row outranked a later claim: %', v_a_tokens;
   end if;
   raise notice 'ok: a later claim beats a stale active row on the same token';
