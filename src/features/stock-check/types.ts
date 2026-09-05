@@ -30,6 +30,14 @@ export interface StockCheckItem {
   areaName: string;
   parLevel: number;
   unitType: UnitType;
+  /**
+   * The unit configured on the `area_items` row. `unitType` above is the
+   * user's display/entry preference and may be toggled away from it; the
+   * database ledger (`stock_updates.new_quantity`,
+   * `area_items.current_quantity`) is always denominated in this one, so the
+   * write path converts into it before calling `record_stock_check_count`.
+   */
+  configuredUnitType: UnitType;
   packUnit: string;
   baseUnit: string;
   packSize: number;

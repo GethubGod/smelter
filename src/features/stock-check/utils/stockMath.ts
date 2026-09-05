@@ -132,6 +132,29 @@ export function computeNeedToOrder(item: {
   return deficitBase;
 }
 
+/**
+ * Converts a wheel-picker entry into the unit configured on the `area_items`
+ * row (`configuredUnitType`). That is the unit `record_stock_check_count`
+ * persists into `stock_updates.new_quantity` and `area_items.current_quantity`,
+ * so the write path must convert before it leaves the device — the user's
+ * chosen `stockUnit` is only how they preferred to count.
+ *
+ * Rounded to 3 decimals so a base-unit count of a pack-configured item does
+ * not carry binary-float noise into the ledger.
+ */
+export function countedQuantityInConfiguredUnit(input: {
+  configuredUnitType: UnitType;
+  packSize: number;
+  stockUnit: UnitType;
+  stockAmount: number;
+  stockPieces: number;
+}): number {
+  const totalBase = totalStockInBase(input);
+  if (input.configuredUnitType === 'base') return totalBase;
+  const packSize = clampInt(input.packSize) || 1;
+  return Math.round((totalBase / packSize) * 1000) / 1000;
+}
+
 /* ──────────────────────────────────────────────────────────────────────────
  * Display helpers.
  * ──────────────────────────────────────────────────────────────────────── */

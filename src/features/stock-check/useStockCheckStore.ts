@@ -2,6 +2,11 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAreaItems, getStorageAreas } from '@/lib/api/stock';
+import {
+  completeStockCheck,
+  recordStockCheckCount,
+  startOrResumeStockCheck,
+} from '@/services/stockCheckV2';
 import type { ItemCategory, UnitType } from '@/types';
 import type {
   AreaProgress,
@@ -10,7 +15,11 @@ import type {
   StockCheckProgress,
   StockCheckStatus,
 } from './types';
-import { computeNeedToOrder, totalStockInBase } from './utils/stockMath';
+import {
+  computeNeedToOrder,
+  countedQuantityInConfiguredUnit,
+  totalStockInBase,
+} from './utils/stockMath';
 
 const STORAGE_KEY = 'stock-check-store-v1';
 const STORAGE_VERSION = 1;
@@ -37,6 +46,37 @@ interface PersistedRow {
   stockAmount?: number;
   stockPieces?: number;
 }
+
+/**
+ * One database write the guided walk still owes the server.
+ *
+ * The stock-check UI is local-first: a count lands in `itemsById` instantly
+ * and is mirrored into `perLocationState` for offline redisplay. The row it
+ * represents in `stock_updates` / `area_items` is written through this queue,
+ * which survives a relaunch in AsyncStorage and drains on the next stock
+ * screen mount or on a NetInfo reconnect. The shape mirrors the pending-update
+ * queue in `src/store/stockStore.ts`: last write per target wins, ordered by
+ * `createdAt`, entries removed only once the server has accepted them.
+ */
+interface PendingCountOp {
+  id: string;
+  kind: 'count';
+  locationId: string;
+  /** `area_items.id` — the `p_area_item_id` argument of the RPC. */
+  areaItemId: string;
+  /** Count expressed in the area item's configured unit. */
+  quantity: number;
+  createdAt: string;
+}
+
+interface PendingCompleteOp {
+  id: string;
+  kind: 'complete';
+  locationId: string;
+  createdAt: string;
+}
+
+export type PendingStockCheckOp = PendingCountOp | PendingCompleteOp;
 
 interface PersistedLocationState {
   rows: Record<string, PersistedRow>;
@@ -67,6 +107,18 @@ interface StockCheckState {
   /** Loading + error UI flags. */
   isLoading: boolean;
   loadError: string | null;
+  /** Database writes still owed, persisted across launches. */
+  pendingOps: PendingStockCheckOp[];
+  /** True while `syncPendingOps` is draining the queue. */
+  isSyncing: boolean;
+  /** Last time the queue drained empty. */
+  lastSyncAt: string | null;
+  /**
+   * Why the queue could not drain. Non-null means counts are saved on the
+   * device but not yet in the database. Surfaced to any consumer that wants
+   * an honest offline state; the store never suppresses it silently.
+   */
+  syncError: string | null;
 
   loadLocation: (locationId: string) => Promise<void>;
   selectArea: (areaId: string) => void;
@@ -101,6 +153,16 @@ interface StockCheckState {
     entry: { stockUnit: UnitType; stockAmount: number; stockPieces: number },
   ) => void;
   resetSelection: () => void;
+  /**
+   * Opens (or resumes) the server-side walk for a location. Best effort: a
+   * failure here is not surfaced as a load error because the count queue
+   * opens a session on its own when it drains.
+   */
+  openSession: (locationId: string) => Promise<void>;
+  /** Enqueue one owed write, replacing any earlier write for the same target. */
+  queueStockCheckOp: (op: PendingStockCheckOp) => void;
+  /** Drain the queue through the stock-check RPCs. Safe to call at any time. */
+  syncPendingOps: () => Promise<void>;
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -188,6 +250,10 @@ const INITIAL_STATE: Pick<
   | 'perLocationState'
   | 'isLoading'
   | 'loadError'
+  | 'pendingOps'
+  | 'isSyncing'
+  | 'lastSyncAt'
+  | 'syncError'
 > = {
   locationId: null,
   areas: [],
@@ -197,7 +263,53 @@ const INITIAL_STATE: Pick<
   perLocationState: {},
   isLoading: false,
   loadError: null,
+  pendingOps: [],
+  isSyncing: false,
+  lastSyncAt: null,
+  syncError: null,
 };
+
+/**
+ * In-progress session id per location, resolved through
+ * `start_or_resume_stock_check`. Deliberately in memory rather than persisted:
+ * a stored id can go stale (completed or abandoned server-side) and the RPC is
+ * already idempotent, so re-resolving after a relaunch is both cheaper to
+ * reason about and always correct.
+ */
+const sessionIdByLocation = new Map<string, string>();
+
+let opSequence = 0;
+
+function nextOpId(): string {
+  opSequence += 1;
+  return `stock-check-op-${Date.now()}-${opSequence}`;
+}
+
+/** Stable identity of an op's write target — the queue keeps one op per key. */
+function opTargetKey(op: PendingStockCheckOp): string {
+  return op.kind === 'count'
+    ? `count:${op.locationId}:${op.areaItemId}`
+    : `complete:${op.locationId}`;
+}
+
+async function resolveSessionId(locationId: string): Promise<string> {
+  const cached = sessionIdByLocation.get(locationId);
+  if (cached) return cached;
+  const session = await startOrResumeStockCheck(locationId);
+  sessionIdByLocation.set(locationId, session.id);
+  return session.id;
+}
+
+/** Test seam: drops the resolved-session cache between cases. */
+export function __resetStockCheckSessionCache(): void {
+  sessionIdByLocation.clear();
+}
+
+function errorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === 'string' && error) return error;
+  return 'Stock counts could not be saved to the server.';
+}
 
 export const useStockCheckStore = create<StockCheckState>()(
   persist(
@@ -275,6 +387,7 @@ export const useStockCheckStore = create<StockCheckState>()(
                 areaName: area.name,
                 parLevel: par,
                 unitType,
+                configuredUnitType,
                 packUnit,
                 baseUnit,
                 packSize,
@@ -312,6 +425,12 @@ export const useStockCheckStore = create<StockCheckState>()(
             isLoading: false,
             loadError: null,
           });
+
+          // Open the server-side walk and drain anything the last visit could
+          // not write. Both are best effort and deliberately not awaited: the
+          // list is already usable and neither should block or fail the load.
+          void get().openSession(locationId);
+          void get().syncPendingOps();
         } catch (error) {
           const message =
             error instanceof Error ? error.message : 'Failed to load stock check';
@@ -540,24 +659,190 @@ export const useStockCheckStore = create<StockCheckState>()(
           checkedAt: Date.now(),
           status,
         };
-        set(applyItemUpdate(state, next));
+        const update = applyItemUpdate(state, next);
+        set(update);
+
+        // Local-first: the row above is already on screen. Everything below
+        // only queues the matching database write.
+        const locationId = state.locationId;
+        if (!locationId) return;
+
+        const createdAt = new Date().toISOString();
+        get().queueStockCheckOp({
+          id: nextOpId(),
+          kind: 'count',
+          locationId,
+          areaItemId: item.id,
+          quantity: countedQuantityInConfiguredUnit({
+            configuredUnitType: item.configuredUnitType,
+            packSize: item.packSize,
+            stockUnit,
+            stockAmount,
+            stockPieces,
+          }),
+          createdAt,
+        });
+
+        // Complete the walk exactly on the transition into "everything
+        // counted". Guarding on the transition keeps one session per pass:
+        // completing again on every later edit would force the next count to
+        // open a fresh session.
+        const before = computeOverallProgress(state.areas, state.itemsById);
+        const after = computeOverallProgress(
+          state.areas,
+          update.itemsById ?? state.itemsById,
+        );
+        if (
+          after.totalItems > 0
+          && before.checkedItems < before.totalItems
+          && after.checkedItems >= after.totalItems
+        ) {
+          get().queueStockCheckOp({
+            id: nextOpId(),
+            kind: 'complete',
+            locationId,
+            createdAt,
+          });
+        }
+
+        void get().syncPendingOps();
       },
 
       resetSelection: () => {
         set({ expandingItemId: null });
+      },
+
+      openSession: async (locationId) => {
+        if (!locationId) return;
+        try {
+          await resolveSessionId(locationId);
+        } catch {
+          // Offline or the RPC is unreachable. The queue opens a session of
+          // its own when it drains, so there is nothing to report here and
+          // nothing the user could act on yet.
+          sessionIdByLocation.delete(locationId);
+        }
+      },
+
+      queueStockCheckOp: (op) => {
+        set((state) => {
+          const key = opTargetKey(op);
+          const existingIndex = state.pendingOps.findIndex(
+            (entry) => opTargetKey(entry) === key,
+          );
+          if (existingIndex >= 0) {
+            const nextOps = [...state.pendingOps];
+            // Replaced ops take a fresh id on purpose: an in-flight drain
+            // matches by id, so the superseded write can never be marked
+            // synced on the newer value's behalf.
+            nextOps[existingIndex] = op;
+            return { pendingOps: nextOps };
+          }
+          return { pendingOps: [...state.pendingOps, op] };
+        });
+      },
+
+      syncPendingOps: async () => {
+        if (get().isSyncing) return;
+
+        // Drop writes older than the offline-retention window rather than
+        // retrying them forever against pars that have since moved on.
+        const cutoff = Date.now() - STATE_MAX_AGE_MS;
+        const fresh = get().pendingOps.filter(
+          (op) => new Date(op.createdAt).getTime() >= cutoff,
+        );
+        if (fresh.length !== get().pendingOps.length) {
+          set({ pendingOps: fresh });
+        }
+        if (fresh.length === 0) {
+          if (get().syncError) set({ syncError: null });
+          return;
+        }
+
+        set({ isSyncing: true });
+
+        const ordered = [...fresh].sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        );
+        const syncedIds = new Set<string>();
+        let failure: string | null = null;
+
+        try {
+          for (const op of ordered) {
+            // Skip anything superseded by a newer count while we were mid-drain.
+            if (!get().pendingOps.some((entry) => entry.id === op.id)) continue;
+            try {
+              const sessionId = await resolveSessionId(op.locationId);
+              if (op.kind === 'count') {
+                await recordStockCheckCount(sessionId, op.areaItemId, {
+                  entryMode: 'numeric',
+                  quantity: op.quantity,
+                });
+              } else {
+                await completeStockCheck(sessionId);
+                // A completed session cannot accept counts, so the next one
+                // has to start a new pass.
+                sessionIdByLocation.delete(op.locationId);
+              }
+              syncedIds.add(op.id);
+            } catch (error) {
+              // Any failure invalidates the cached session: offline, or the
+              // session was completed/abandoned elsewhere. Re-resolving on the
+              // next attempt covers both.
+              sessionIdByLocation.delete(op.locationId);
+              failure = errorMessage(error);
+            }
+          }
+        } finally {
+          set((state) => {
+            const pendingOps = state.pendingOps.filter(
+              (op) => !syncedIds.has(op.id),
+            );
+            return {
+              pendingOps,
+              isSyncing: false,
+              lastSyncAt:
+                pendingOps.length === 0
+                  ? new Date().toISOString()
+                  : state.lastSyncAt,
+              syncError: pendingOps.length === 0 ? null : failure,
+            };
+          });
+        }
+
+        // Counts committed while the drain was running are still owed. One
+        // extra pass picks them up; it is gated on the drain having succeeded
+        // so a genuine outage cannot spin.
+        if (!failure && get().pendingOps.length > 0) {
+          await get().syncPendingOps();
+        }
       },
     }),
     {
       name: STORAGE_KEY,
       version: STORAGE_VERSION,
       storage: createJSONStorage(() => AsyncStorage),
-      // Persist only the per-location offline edits — runtime data (areas,
-      // itemsById) is rehydrated from Supabase on each loadLocation.
-      partialize: (state) => ({ perLocationState: state.perLocationState }),
+      // Persist the per-location offline edits and the writes still owed to
+      // the server — runtime data (areas, itemsById) is rehydrated from
+      // Supabase on each loadLocation.
+      partialize: (state) => ({
+        perLocationState: state.perLocationState,
+        pendingOps: state.pendingOps,
+        lastSyncAt: state.lastSyncAt,
+      }),
       migrate: (persisted, _from) => {
-        const state = persisted as { perLocationState?: Record<string, PersistedLocationState> } | null;
+        const state = persisted as {
+          perLocationState?: Record<string, PersistedLocationState>;
+          pendingOps?: PendingStockCheckOp[];
+          lastSyncAt?: string | null;
+        } | null;
+        // Owed writes are carried across versions untouched: dropping them
+        // would silently lose counts the user already saw accepted.
+        const pendingOps = Array.isArray(state?.pendingOps) ? state.pendingOps : [];
+        const lastSyncAt = typeof state?.lastSyncAt === 'string' ? state.lastSyncAt : null;
         if (!state?.perLocationState) {
-          return { perLocationState: {} } as Partial<StockCheckState>;
+          return { perLocationState: {}, pendingOps, lastSyncAt } as Partial<StockCheckState>;
         }
         const now = Date.now();
         const fresh: Record<string, PersistedLocationState> = {};
@@ -566,7 +851,14 @@ export const useStockCheckStore = create<StockCheckState>()(
             fresh[locId] = entry;
           }
         }
-        return { perLocationState: fresh } as Partial<StockCheckState>;
+        return { perLocationState: fresh, pendingOps, lastSyncAt } as Partial<StockCheckState>;
+      },
+      onRehydrateStorage: () => (state) => {
+        // Next-launch flush: counts saved while the API was unreachable go up
+        // as soon as the persisted queue is back in memory.
+        if (state && state.pendingOps.length > 0) {
+          void state.syncPendingOps();
+        }
       },
     },
   ),
