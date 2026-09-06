@@ -1,0 +1,25 @@
+Command (env vars redacted to key type; no secret values or catalogue data below):
+RUN_QUICK_ORDER_INVENTORY_AUDIT=1 \
+EXPO_PUBLIC_SUPABASE_URL=<production project URL from EAS production environment> \
+EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<production sb_publishable_ key from EAS production environment> \
+npx jest --runInBand --watchman=false quickOrderInventoryAudit --testPathIgnorePatterns=/node_modules/
+
+Credential source: `eas env:list --environment production` (read-only), matching the project URL
+already committed in web/SETUP.md and web/next.config.ts. No service-role key was requested,
+stored, or used.
+
+Result:
+
+FAIL src/__tests__/quickOrderInventoryAudit.test.ts
+  quick order active inventory recognition audit
+    ✕ recognizes every active inventory item by exact name and simple variants (775 ms)
+
+  ● quick order active inventory recognition audit › recognizes every active inventory item by exact name and simple variants
+
+    Inventory recognition audit is blocked: no inventory rows are visible with the public key. Run against an authorized local fixture or supply a server-only audit credential. Zero rows cannot prove recognition.
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 1 total
+Snapshots:   0 total
+Time:        4.074 s
+Ran all test suites matching /quickOrderInventoryAudit/i.
