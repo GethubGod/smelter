@@ -1,6 +1,4 @@
 import { ScrollView, TouchableOpacity, Text, View } from 'react-native';
-import type { ItemCategory } from '@/types';
-import { getCategoryLabel } from '@/constants';
 import { getCategoryTint, glassColors, glassHairlineWidth, glassRadii } from '@/theme/design';
 import { getCategoryShortLabel } from '@/features/browse/config';
 

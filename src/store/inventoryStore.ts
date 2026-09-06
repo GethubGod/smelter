@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { InventoryItem, ItemCategory, SupplierCategory } from '@/types';
-import type { KnownItemCategory, KnownSupplierCategory } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { listInventory } from '@/lib/api/client';
 import { normalizeInventoryItemUnits } from '@/lib/inventoryUnits';

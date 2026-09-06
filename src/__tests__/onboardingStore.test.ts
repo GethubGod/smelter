@@ -1,3 +1,5 @@
+import { useOnboardingStore } from '@/features/auth/onboardingStore';
+
 const acceptInviteOnboarding = jest.fn();
 const signInWithName = jest.fn();
 const verifyOtp = jest.fn();
@@ -18,8 +20,6 @@ jest.mock('@/lib/supabase', () => ({
 jest.mock('@/store/authStore', () => ({
   useAuthStore: { getState: () => ({ adoptExternalSession }) },
 }));
-
-import { useOnboardingStore } from '@/features/auth/onboardingStore';
 
 const preview = {
   invitedName: 'Nate',

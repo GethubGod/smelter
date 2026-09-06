@@ -203,8 +203,8 @@ async function callGemini(input: {
 /** Match spoken names to the roster: exact, then unique prefix, then contains. */
 function matchPeople(
   spoken: string[],
-  roster: Array<{ id: string; name: string }>,
-): { matched: Array<{ id: string; name: string }>; unmatched: string[] } {
+  roster: { id: string; name: string }[],
+): { matched: { id: string; name: string }[]; unmatched: string[] } {
   const matched = new Map<string, { id: string; name: string }>();
   const unmatched: string[] = [];
   for (const raw of spoken) {
@@ -301,7 +301,7 @@ Deno.serve(async (req) => {
       .eq('active', true)
       .or(`location_id.is.null,location_id.eq.${session.location_id}`);
     if (rosterError) throw rosterError;
-    const roster = (rosterRows ?? []) as Array<{ id: string; name: string }>;
+    const roster = (rosterRows ?? []) as { id: string; name: string }[];
 
     const startedAt = Date.now();
     const audioBase64 = arrayBufferToBase64(await audio.arrayBuffer());

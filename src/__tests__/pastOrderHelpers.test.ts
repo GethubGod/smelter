@@ -6,11 +6,6 @@
  */
 
 // Mock RN and Supabase dependencies that sharedHelpers imports transitively
-jest.mock('react-native', () => ({ Platform: { OS: 'ios' } }));
-jest.mock('@/lib/supabase', () => ({ supabase: {} }));
-jest.mock('@/store/authStore', () => ({ useAuthStore: { getState: () => ({}) } }));
-jest.mock('@/lib/notifications', () => ({ getNotificationsModule: () => null }));
-
 import {
   createLastOrderedAnyKey,
   createLastOrderedLocationIdKey,
@@ -27,6 +22,11 @@ import type {
   LastOrderedQuantityCacheValue,
   PastOrder,
 } from '../store/orderStore.types';
+
+jest.mock('react-native', () => ({ Platform: { OS: 'ios' } }));
+jest.mock('@/lib/supabase', () => ({ supabase: {} }));
+jest.mock('@/store/authStore', () => ({ useAuthStore: { getState: () => ({}) } }));
+jest.mock('@/lib/notifications', () => ({ getNotificationsModule: () => null }));
 
 // ── Cache Key Generation ─────────────────────────────────────
 

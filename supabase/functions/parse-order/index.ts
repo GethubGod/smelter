@@ -25,8 +25,6 @@ import type {
   ItemAllowedUnitRule,
   ParsedItem,
   ParserCorrection,
-  ParseFlag,
-  ParseResponse,
   ParseSuggestion,
   QuickOrderAliasRule,
   QuickOrderMessage,
@@ -2070,30 +2068,6 @@ async function callLlm(prompt: string, model: string | null = null) {
   const provider = chooseProvider();
   if (!provider) throw new Error('No LLM provider configured.');
   return provider === 'gemini' ? await callGemini(prompt, model) : await callClaude(prompt, model);
-}
-
-function safeParseFailureResponse(flags: ParseFlag[] = []): ParseResponse {
-  const assistantMessage = 'I had trouble reading that. Please try again or add the item manually.';
-  return {
-    status: 'needs_review',
-    assistant_message: assistantMessage,
-    reply_text: assistantMessage,
-    parsed_items: [],
-    flags,
-    suggestions: [],
-    pending_actions: [],
-    pending_clarifications: [],
-    session_state: { total_items: 0, ready_to_submit: false },
-    diagnostics: {
-      parser_version: PARSER_VERSION,
-      parse_mode: 'error',
-      items_received: 0,
-      items_accepted: 0,
-      items_rejected: 0,
-      rejected_reasons: flags.map((flag) => flag.reason ?? flag.type),
-      pending_action_count: 0,
-    },
-  };
 }
 
 Deno.serve(async (req) => {

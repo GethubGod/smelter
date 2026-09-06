@@ -1,7 +1,7 @@
 import { normalizeLoginName } from "./loginNames.ts";
 
 Deno.test("normalizeLoginName lowercases, trims, and collapses whitespace", () => {
-  const cases: Array<[string, string | null]> = [
+  const cases: [string, string | null][] = [
     ["Nate", "nate"],
     ["  NATE   Fixture ", "nate fixture"],
     ["Nate\tFixture", "nate fixture"],

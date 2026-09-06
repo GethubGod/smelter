@@ -20,8 +20,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuthStore, useInventoryStore, useOrderStore, useSettingsStore } from '@/store';
 import {
   InventoryItem,
-} from '@/types';
-import { KNOWN_ITEM_CATEGORIES, KNOWN_SUPPLIER_CATEGORIES } from '@/types';
+ KNOWN_ITEM_CATEGORIES, KNOWN_SUPPLIER_CATEGORIES } from '@/types';
 import { getCategoryLabel, getSupplierCategoryLabel, categoryColors, colors } from '@/constants';
 import { LoadingIndicator } from '@/components';
 import { getInventoryWithStock, InventoryWithStock } from '@/lib/api/stock';
@@ -47,10 +46,6 @@ const CATEGORY_EMOJI: Record<string, string> = {
   alcohol: '🍺',
   packaging: '📦',
 };
-
-function getCategoryEmoji(category: string): string {
-  return CATEGORY_EMOJI[category] ?? '📋';
-}
 
 const COUNT_UNITS = ['portion', 'each', 'lb', 'case', 'bag', 'bottle', 'jar', 'pack'] as const;
 const ORDER_UNITS = ['lb', 'case', 'each', 'bag', 'bottle', 'jar', 'pack'] as const;

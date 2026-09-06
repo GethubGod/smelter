@@ -10,6 +10,7 @@ jest.mock('../lib/supabase', () => ({
   },
 }));
 
+// eslint-disable-next-line import/first -- must load after the jest.mock() calls above so their mock vars are initialized first
 import {
   createHolidayTemplate,
   createHolidayTemplateItem,
