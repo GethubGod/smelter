@@ -40,6 +40,7 @@ import type {
   FulfillmentSupplierPreviewItem,
   OrderLaterSupplierOption,
 } from '@/features/fulfillment/components';
+import { buildSendAllSuppliersParam } from '@/features/fulfillment/sendAll/sendAllParams';
 import { loadSupplierLookup, invalidateSupplierCache } from '@/services/supplierResolver';
 import type { PendingFulfillmentDataResult } from '@/services/fulfillmentDataSource';
 import { useManagedRefresh } from '@/hooks/useManagedRefresh';
@@ -1759,13 +1760,11 @@ function FulfillmentScreen() {
     router.push({
       pathname: '/(manager)/fulfillment-send-all',
       params: {
-        suppliers: encodeURIComponent(
-          JSON.stringify(
-            sendableGroups.map((group) => ({
-              id: group.supplierId,
-              name: group.supplierName,
-            }))
-          )
+        // Plain id list, handed over unencoded: expo-router encodes route params
+        // once and decodes them twice, so anything encoded here is destroyed in
+        // transit. Send All reads the supplier names from the supplier lookup.
+        suppliers: buildSendAllSuppliersParam(
+          sendableGroups.map((group) => ({ id: group.supplierId }))
         ),
       },
     } as any);
