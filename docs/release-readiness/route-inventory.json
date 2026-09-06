@@ -2,17 +2,21 @@
   {
     "file": "app/(auth)/complete-profile.tsx",
     "route": "(auth)/complete-profile",
-    "status": "Not exercised",
+    "status": "Blocked",
     "evidence": [
-      "No direct runtime evidence recorded for this route. Source inspection and shared unit tests do not establish an end-to-end pass."
+      "e2e/issue-39/33-auth-complete-profile.png",
+      "e2e/issue-39/34-auth-complete-profile-forced.png",
+      "e2e/issue-39/35-auth-complete-profile-deeplink.png",
+      "Not reachable at runtime. A fresh email/password account signs straight into the checklist, and forcing profiles.profile_completed = false plus full_name = null in the loopback database is repaired back to completed on the next launch, so the screen never renders. Direct deep link redirects home. Tracked as issue #59."
     ]
   },
   {
     "file": "app/(auth)/invite-hello.tsx",
     "route": "(auth)/invite-hello",
-    "status": "Not exercised",
+    "status": "Pass",
     "evidence": [
-      "No direct runtime evidence recorded for this route. Source inspection and shared unit tests do not establish an end-to-end pass."
+      "e2e/issue-39/01-auth-invite-hello.png",
+      "babytunasystems://join?token=<invite> renders 'Hello, Route Audit Tester' with Step 1 of 2 and a working Continue button against a real invite row in the loopback database."
     ]
   },
   {
@@ -27,33 +31,39 @@
   {
     "file": "app/(auth)/ready.tsx",
     "route": "(auth)/ready",
-    "status": "Not exercised",
+    "status": "Pass",
     "evidence": [
-      "No direct runtime evidence recorded for this route. Source inspection and shared unit tests do not establish an end-to-end pass."
+      "e2e/issue-39/05-auth-ready.png",
+      "e2e/issue-39/71-auth-ready-pin.png",
+      "Reached twice by completing the invited onboarding flow: once with a password ('Your Sushi order list is ready') and once with a PIN ('Your Poki & Pho order list is ready'). 'See today's list' entered the app."
     ]
   },
   {
     "file": "app/(auth)/secure-password.tsx",
     "route": "(auth)/secure-password",
-    "status": "Not exercised",
+    "status": "Pass",
     "evidence": [
-      "No direct runtime evidence recorded for this route. Source inspection and shared unit tests do not establish an end-to-end pass."
+      "e2e/issue-39/04-auth-secure-password.png",
+      "Password entered and submitted. accept-invite consumed the token, a login_identities row was written with credential_kind = password, and the session landed on Ready."
     ]
   },
   {
     "file": "app/(auth)/secure-pin.tsx",
     "route": "(auth)/secure-pin",
-    "status": "Not exercised",
+    "status": "Pass",
     "evidence": [
-      "No direct runtime evidence recorded for this route. Source inspection and shared unit tests do not establish an end-to-end pass."
+      "e2e/issue-39/69-auth-secure-pin-entry.png",
+      "e2e/issue-39/70-auth-secure-pin-entered.png",
+      "Four digit entry plus the confirm step. A login_identities row was written with credential_kind = pin and the session landed on Ready."
     ]
   },
   {
     "file": "app/(auth)/secure.tsx",
     "route": "(auth)/secure",
-    "status": "Not exercised",
+    "status": "Pass",
     "evidence": [
-      "No direct runtime evidence recorded for this route. Source inspection and shared unit tests do not establish an end-to-end pass."
+      "e2e/issue-39/02-auth-secure.png",
+      "Step 2 of 2 with both option cards. Both cards navigate. Deep linking without an invite token redirects to welcome, as the source intends."
     ]
   },
   {
@@ -150,17 +160,19 @@
   {
     "file": "app/(manager)/fulfillment-confirmation.tsx",
     "route": "(manager)/fulfillment-confirmation",
-    "status": "Not exercised",
+    "status": "Pass",
     "evidence": [
-      "No direct runtime evidence recorded for this route. Source inspection and shared unit tests do not establish an end-to-end pass."
+      "e2e/issue-39/58-manager-fulfillment-confirmation.png",
+      "Opened from Fulfillment with a real submitted order. Review Order, message preview and per item unit selectors all rendered. Share finalized the supplier order and wrote a past_orders row."
     ]
   },
   {
     "file": "app/(manager)/fulfillment-history-detail.tsx",
     "route": "(manager)/fulfillment-history-detail",
-    "status": "Not exercised",
+    "status": "Pass",
     "evidence": [
-      "No direct runtime evidence recorded for this route. Source inspection and shared unit tests do not establish an end-to-end pass."
+      "e2e/issue-39/64-manager-fulfillment-history-detail.png",
+      "Deep linked with ?id=<past_orders.id> produced by the Send flow. Summary, item lines and the sent message rendered from the database."
     ]
   },
   {
@@ -175,9 +187,13 @@
   {
     "file": "app/(manager)/fulfillment-send-all.tsx",
     "route": "(manager)/fulfillment-send-all",
-    "status": "Not exercised",
+    "status": "Fail",
     "evidence": [
-      "No direct runtime evidence recorded for this route. Source inspection and shared unit tests do not establish an end-to-end pass."
+      "e2e/issue-39/61-fulfillment-before-sendall.png",
+      "e2e/issue-39/62-sendall-empty-bug.png",
+      "e2e/issue-39/66-fulfillment-second-order.png",
+      "e2e/issue-39/67-manager-send-all-repro2.png",
+      "The route renders, but with one supplier ready the screen shows 'Nothing left to send'. Reproduced twice from the in-app Send All button and once by deep link. Tracked as issue #60."
     ]
   },
   {
@@ -365,17 +381,21 @@
   {
     "file": "app/(manager)/quick-order.tsx",
     "route": "(manager)/quick-order",
-    "status": "Not exercised",
+    "status": "Pass",
     "evidence": [
-      "No direct runtime evidence recorded for this route. Source inspection and shared unit tests do not establish an end-to-end pass."
+      "e2e/issue-39/50-manager-quick-order.png",
+      "e2e/issue-39/54-manager-quick-order-parsed.png",
+      "e2e/issue-39/56-manager-order-submitted.png",
+      "Typed order parsed into Fixture Salmon and Fixture Rice, confirmed and submitted. A new orders row with status submitted appeared in the loopback database."
     ]
   },
   {
     "file": "app/(manager)/voice.tsx",
     "route": "(manager)/voice",
-    "status": "Not exercised",
+    "status": "Pass",
     "evidence": [
-      "No direct runtime evidence recorded for this route. Source inspection and shared unit tests do not establish an end-to-end pass."
+      "e2e/issue-39/51-manager-voice-redirect.png",
+      "SMART_ORDER_ENABLED is false, so the route redirects to manager home. Confirmed at runtime from a manager session."
     ]
   },
   {
@@ -390,9 +410,12 @@
   {
     "file": "app/(tabs)/draft.tsx",
     "route": "(tabs)/draft",
-    "status": "Not exercised",
+    "status": "Partial",
     "evidence": [
-      "No direct runtime evidence recorded for this route. Source inspection and shared unit tests do not establish an end-to-end pass."
+      "e2e/issue-39/18-tabs-draft.png",
+      "e2e/issue-39/10-tabs-draft-module-gate.png",
+      "e2e/issue-39/25-draft-cta-repro.png",
+      "Renders the empty state, the ordering_advanced gate redirects a checklist-only employee, and 'Start Quick Order' navigates. No content state exists: nothing outside the screen writes to draftStore, and no route links to draft. Tracked as issue #61."
     ]
   },
   {
@@ -407,17 +430,20 @@
   {
     "file": "app/(tabs)/index.tsx",
     "route": "(tabs)/index",
-    "status": "Not exercised",
+    "status": "Pass",
     "evidence": [
-      "No direct runtime evidence recorded for this route. Source inspection and shared unit tests do not establish an end-to-end pass."
+      "e2e/issue-39/07a-tabs-settings-before.png",
+      "e2e/issue-39/07b-tabs-index-deeplink.png",
+      "From Settings, deep linking /(tabs) forwarded to the first visible pill tab (the Order checklist)."
     ]
   },
   {
     "file": "app/(tabs)/inventory-browse.tsx",
     "route": "(tabs)/inventory-browse",
-    "status": "Not exercised",
+    "status": "Pass",
     "evidence": [
-      "No direct runtime evidence recorded for this route. Source inspection and shared unit tests do not establish an end-to-end pass."
+      "e2e/issue-39/26-tabs-inventory-browse.png",
+      "Deep linked with ?category=fish&focusSearch=1. Location header, category rail and the fixture catalogue rendered. Not gated by any module."
     ]
   },
   {
@@ -440,9 +466,10 @@
   {
     "file": "app/(tabs)/profile.tsx",
     "route": "(tabs)/profile",
-    "status": "Not exercised",
+    "status": "Pass",
     "evidence": [
-      "No direct runtime evidence recorded for this route. Source inspection and shared unit tests do not establish an end-to-end pass."
+      "e2e/issue-39/09-tabs-profile.png",
+      "Name, email, location, Change PIN or password, Privacy choices and Delete account all rendered for an employee session."
     ]
   },
   {
@@ -503,9 +530,10 @@
   {
     "file": "app/(tabs)/voice.tsx",
     "route": "(tabs)/voice",
-    "status": "Not exercised",
+    "status": "Pass",
     "evidence": [
-      "No direct runtime evidence recorded for this route. Source inspection and shared unit tests do not establish an end-to-end pass."
+      "e2e/issue-39/08-tabs-voice-redirect.png",
+      "Redirects to /(tabs) by design. Confirmed at runtime from an employee session."
     ]
   },
   {
@@ -521,9 +549,10 @@
   {
     "file": "app/inventory-browse.tsx",
     "route": "inventory-browse",
-    "status": "Not exercised",
+    "status": "Pass",
     "evidence": [
-      "No direct runtime evidence recorded for this route. Source inspection and shared unit tests do not establish an end-to-end pass."
+      "e2e/issue-39/27-root-inventory-browse-redirect.png",
+      "Deep linking /inventory-browse?category=fish forwarded to /(tabs)/inventory-browse with the params preserved."
     ]
   },
   {
@@ -628,9 +657,12 @@
   {
     "file": "app/suspended.tsx",
     "route": "suspended",
-    "status": "Not exercised",
+    "status": "Blocked",
     "evidence": [
-      "No direct runtime evidence recorded for this route. Source inspection and shared unit tests do not establish an end-to-end pass."
+      "e2e/issue-39/37-suspended-no-session.png",
+      "e2e/issue-39/40-suspended-relaunch.png",
+      "e2e/issue-39/41-suspended-signin-attempt.png",
+      "Not reachable at runtime. Without a session the route redirects to login. Suspending a signed-in employee signs them out to welcome on next launch, and signing in as a suspended user is refused inline on the sign-in screen, so the screen never renders. Tracked as issue #62."
     ]
   }
 ]
