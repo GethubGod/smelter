@@ -26,6 +26,7 @@ jest.mock('../services/stockCheckV2', () => ({
   completeStockCheck: completeStockCheckMock,
 }));
 
+// eslint-disable-next-line import/first -- must load after the jest.mock() calls above so their mock vars are initialized first
 import {
   __resetStockCheckSessionCache,
   useStockCheckStore,
