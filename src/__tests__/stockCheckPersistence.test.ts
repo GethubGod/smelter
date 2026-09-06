@@ -31,26 +31,29 @@ import {
   useStockCheckStore,
 } from '../features/stock-check/useStockCheckStore';
 
-const LOCATION_ID = '47000000-0000-4000-8000-000000000001';
-const AREA_ID = '46000000-0000-4000-8000-000000000001';
+// Ids and units mirror scripts/release-readiness/seed-local-mobile-e2e.sql,
+// the fixture the issue was reproduced against.
+const LOCATION_ID = '45000000-0000-4000-8000-000000000001';
+const AREA_ID = '47000000-0000-4000-8000-000000000001';
 const SALMON_ID = '48000000-0000-4000-8000-000000000001';
 const RICE_ID = '48000000-0000-4000-8000-000000000002';
-const SESSION_ID = '49000000-0000-4000-8000-000000000001';
+const SESSION_ID = '4d000000-0000-4000-8000-000000000001';
 
-function areaItemRow(id: string, name: string) {
+function areaItemRow(id: string, name: string, baseUnit: string, packUnit: string, packSize: number) {
   return {
     id,
     area_id: AREA_ID,
     par_level: 8,
     max_quantity: 8,
-    unit_type: 'pack',
+    // area_items.unit_type is a free-text count label, not 'pack'/'base'.
+    unit_type: baseUnit,
     inventory_item: {
       id: `inv-${id}`,
       name,
-      category: 'seafood',
-      pack_unit: 'case',
-      base_unit: 'lb',
-      pack_size: 10,
+      category: 'fish',
+      pack_unit: packUnit,
+      base_unit: baseUnit,
+      pack_size: packSize,
     },
   };
 }
@@ -68,8 +71,8 @@ async function loadFixtureLocation(): Promise<void> {
     { id: AREA_ID, name: 'Fixture Freezer', sort_order: 0, location_id: LOCATION_ID },
   ]);
   getAreaItemsMock.mockResolvedValue([
-    areaItemRow(SALMON_ID, 'Fixture Salmon'),
-    areaItemRow(RICE_ID, 'Fixture Rice'),
+    areaItemRow(SALMON_ID, 'Fixture Salmon', 'fillet', 'case', 10),
+    areaItemRow(RICE_ID, 'Fixture Rice', 'bag', 'pallet', 20),
   ]);
   await useStockCheckStore.getState().loadLocation(LOCATION_ID);
   await flushMicrotasks();
@@ -122,18 +125,19 @@ describe('stock-check count persistence', () => {
 
     await flushMicrotasks();
 
+    // area_items.unit_type is 'fillet' and pack_size is 10, so 6 cases is
+    // 60 fillets in the ledger the RPC writes.
     expect(recordStockCheckCountMock).toHaveBeenCalledWith(SESSION_ID, SALMON_ID, {
       entryMode: 'numeric',
-      quantity: 6,
+      quantity: 60,
     });
     expect(useStockCheckStore.getState().pendingOps).toHaveLength(0);
     expect(useStockCheckStore.getState().syncError).toBeNull();
   });
 
-  test('a count entered in base units is converted into the area item unit', async () => {
+  test('a count entered in the count unit is recorded as entered', async () => {
     await loadFixtureLocation();
 
-    // pack_size 10: 25 lb of a case-configured item is 2.5 cases.
     useStockCheckStore.getState().commitStockEntry(SALMON_ID, {
       stockUnit: 'base',
       stockAmount: 25,
@@ -143,7 +147,24 @@ describe('stock-check count persistence', () => {
 
     expect(recordStockCheckCountMock).toHaveBeenCalledWith(SESSION_ID, SALMON_ID, {
       entryMode: 'numeric',
-      quantity: 2.5,
+      quantity: 25,
+    });
+  });
+
+  test('loose pieces are folded into the recorded count', async () => {
+    await loadFixtureLocation();
+
+    // 2 cases plus 3 loose fillets = 23 fillets.
+    useStockCheckStore.getState().commitStockEntry(SALMON_ID, {
+      stockUnit: 'pack',
+      stockAmount: 2,
+      stockPieces: 3,
+    });
+    await flushMicrotasks();
+
+    expect(recordStockCheckCountMock).toHaveBeenCalledWith(SESSION_ID, SALMON_ID, {
+      entryMode: 'numeric',
+      quantity: 23,
     });
   });
 
@@ -218,7 +239,7 @@ describe('stock-check offline queue', () => {
       kind: 'count',
       locationId: LOCATION_ID,
       areaItemId: SALMON_ID,
-      quantity: 6,
+      quantity: 60,
     });
     expect(state.syncError).toBe('Network request failed');
   });
@@ -241,7 +262,7 @@ describe('stock-check offline queue', () => {
 
     expect(recordStockCheckCountMock).toHaveBeenLastCalledWith(SESSION_ID, SALMON_ID, {
       entryMode: 'numeric',
-      quantity: 6,
+      quantity: 60,
     });
     const state = useStockCheckStore.getState();
     expect(state.pendingOps).toHaveLength(0);
@@ -293,14 +314,14 @@ describe('stock-check offline queue', () => {
 
     const pendingOps = useStockCheckStore.getState().pendingOps;
     expect(pendingOps).toHaveLength(1);
-    expect(pendingOps[0]).toMatchObject({ quantity: 9 });
+    expect(pendingOps[0]).toMatchObject({ quantity: 90 });
 
     recordStockCheckCountMock.mockResolvedValue({ areaItemId: SALMON_ID });
     await useStockCheckStore.getState().syncPendingOps();
 
     expect(recordStockCheckCountMock).toHaveBeenLastCalledWith(SESSION_ID, SALMON_ID, {
       entryMode: 'numeric',
-      quantity: 9,
+      quantity: 90,
     });
     expect(useStockCheckStore.getState().pendingOps).toHaveLength(0);
   });
@@ -320,13 +341,13 @@ describe('stock-check offline queue', () => {
     await flushMicrotasks();
     expect(useStockCheckStore.getState().pendingOps).toHaveLength(1);
 
-    const NEXT_SESSION_ID = '49000000-0000-4000-8000-000000000002';
+    const NEXT_SESSION_ID = '4d000000-0000-4000-8000-000000000002';
     startOrResumeStockCheckMock.mockResolvedValue({ id: NEXT_SESSION_ID, locationId: LOCATION_ID });
     await useStockCheckStore.getState().syncPendingOps();
 
     expect(recordStockCheckCountMock).toHaveBeenLastCalledWith(NEXT_SESSION_ID, SALMON_ID, {
       entryMode: 'numeric',
-      quantity: 6,
+      quantity: 60,
     });
     expect(useStockCheckStore.getState().pendingOps).toHaveLength(0);
   });

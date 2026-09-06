@@ -17,7 +17,8 @@ import type {
 } from './types';
 import {
   computeNeedToOrder,
-  countedQuantityInConfiguredUnit,
+  countedQuantityInCountUnit,
+  resolveCountUnitType,
   totalStockInBase,
 } from './utils/stockMath';
 
@@ -387,7 +388,11 @@ export const useStockCheckStore = create<StockCheckState>()(
                 areaName: area.name,
                 parLevel: par,
                 unitType,
-                configuredUnitType,
+                countUnitType: resolveCountUnitType(
+                  row.unit_type,
+                  packUnit,
+                  baseUnit,
+                ),
                 packUnit,
                 baseUnit,
                 packSize,
@@ -673,8 +678,8 @@ export const useStockCheckStore = create<StockCheckState>()(
           kind: 'count',
           locationId,
           areaItemId: item.id,
-          quantity: countedQuantityInConfiguredUnit({
-            configuredUnitType: item.configuredUnitType,
+          quantity: countedQuantityInCountUnit({
+            countUnitType: item.countUnitType,
             packSize: item.packSize,
             stockUnit,
             stockAmount,

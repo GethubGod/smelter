@@ -132,25 +132,53 @@ export function computeNeedToOrder(item: {
   return deficitBase;
 }
 
+function normalizeUnitLabel(value: string | null | undefined): string {
+  return typeof value === 'string' ? value.trim().toLowerCase() : '';
+}
+
 /**
- * Converts a wheel-picker entry into the unit configured on the `area_items`
- * row (`configuredUnitType`). That is the unit `record_stock_check_count`
- * persists into `stock_updates.new_quantity` and `area_items.current_quantity`,
- * so the write path must convert before it leaves the device — the user's
+ * Resolves which of the item's two units `area_items.unit_type` names.
+ *
+ * The column is free text and holds the item's count unit ("fillet", "bag"),
+ * not the literal words "pack" or "base", so the label is matched against the
+ * inventory item's own unit names. An unrecognised label falls back to the
+ * base unit: that is what the column means everywhere else it is read
+ * (`getGuidedStockCheck` surfaces it as `countUnit`) and it is the finest
+ * granularity, so par and reorder-point comparisons stay meaningful.
+ */
+export function resolveCountUnitType(
+  areaItemUnitLabel: string | null | undefined,
+  packUnit: string,
+  baseUnit: string,
+): UnitType {
+  const label = normalizeUnitLabel(areaItemUnitLabel);
+  if (!label) return 'base';
+  if (label === 'base') return 'base';
+  if (label === 'pack') return 'pack';
+  if (label === normalizeUnitLabel(baseUnit)) return 'base';
+  if (label === normalizeUnitLabel(packUnit)) return 'pack';
+  return 'base';
+}
+
+/**
+ * Converts a wheel-picker entry into the unit the `area_items` row is
+ * denominated in. That is what `record_stock_check_count` persists into
+ * `stock_updates.new_quantity` and `area_items.current_quantity`, so the
+ * conversion has to happen before the write leaves the device: the user's
  * chosen `stockUnit` is only how they preferred to count.
  *
- * Rounded to 3 decimals so a base-unit count of a pack-configured item does
- * not carry binary-float noise into the ledger.
+ * Rounded to 3 decimals so counting a pack-denominated item in base units
+ * does not carry binary-float noise into the ledger.
  */
-export function countedQuantityInConfiguredUnit(input: {
-  configuredUnitType: UnitType;
+export function countedQuantityInCountUnit(input: {
+  countUnitType: UnitType;
   packSize: number;
   stockUnit: UnitType;
   stockAmount: number;
   stockPieces: number;
 }): number {
   const totalBase = totalStockInBase(input);
-  if (input.configuredUnitType === 'base') return totalBase;
+  if (input.countUnitType === 'base') return totalBase;
   const packSize = clampInt(input.packSize) || 1;
   return Math.round((totalBase / packSize) * 1000) / 1000;
 }

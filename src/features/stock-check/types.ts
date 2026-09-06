@@ -31,13 +31,15 @@ export interface StockCheckItem {
   parLevel: number;
   unitType: UnitType;
   /**
-   * The unit configured on the `area_items` row. `unitType` above is the
-   * user's display/entry preference and may be toggled away from it; the
-   * database ledger (`stock_updates.new_quantity`,
-   * `area_items.current_quantity`) is always denominated in this one, so the
-   * write path converts into it before calling `record_stock_check_count`.
+   * Which of the item's two units `area_items.unit_type` names. That column
+   * is a free-text count label ("fillet", "bag"), and the whole database
+   * ledger for the row - `current_quantity`, `par_level`, `reorder_point`,
+   * `stock_updates.new_quantity` - is denominated in it. The write path
+   * converts the wheel entry into this unit before calling
+   * `record_stock_check_count`, so what the user counted in never changes
+   * what lands in the ledger.
    */
-  configuredUnitType: UnitType;
+  countUnitType: UnitType;
   packUnit: string;
   baseUnit: string;
   packSize: number;
