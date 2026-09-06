@@ -141,10 +141,16 @@ function normalizeUnitLabel(value: string | null | undefined): string {
  *
  * The column is free text and holds the item's count unit ("fillet", "bag"),
  * not the literal words "pack" or "base", so the label is matched against the
- * inventory item's own unit names. An unrecognised label falls back to the
- * base unit: that is what the column means everywhere else it is read
- * (`getGuidedStockCheck` surfaces it as `countUnit`) and it is the finest
- * granularity, so par and reorder-point comparisons stay meaningful.
+ * inventory item's own unit names first. That ordering matters: an item can
+ * legitimately be sold in packs and counted in a unit *named* "pack" (Fixture
+ * Nori counts in "pack" and orders in "case"), and treating that label as the
+ * keyword would record cases where the ledger wants packs.
+ *
+ * The keywords are only a fallback for rows configured with them literally.
+ * Anything else falls back to the base unit: that is what the column means
+ * everywhere else it is read (`getGuidedStockCheck` surfaces it as
+ * `countUnit`) and it is the finest granularity, so par and reorder-point
+ * comparisons stay meaningful.
  */
 export function resolveCountUnitType(
   areaItemUnitLabel: string | null | undefined,
@@ -153,10 +159,10 @@ export function resolveCountUnitType(
 ): UnitType {
   const label = normalizeUnitLabel(areaItemUnitLabel);
   if (!label) return 'base';
-  if (label === 'base') return 'base';
-  if (label === 'pack') return 'pack';
   if (label === normalizeUnitLabel(baseUnit)) return 'base';
   if (label === normalizeUnitLabel(packUnit)) return 'pack';
+  if (label === 'base') return 'base';
+  if (label === 'pack') return 'pack';
   return 'base';
 }
 

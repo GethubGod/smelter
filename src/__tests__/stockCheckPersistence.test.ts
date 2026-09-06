@@ -37,6 +37,7 @@ const LOCATION_ID = '45000000-0000-4000-8000-000000000001';
 const AREA_ID = '47000000-0000-4000-8000-000000000001';
 const SALMON_ID = '48000000-0000-4000-8000-000000000001';
 const RICE_ID = '48000000-0000-4000-8000-000000000002';
+const NORI_ID = '48000000-0000-4000-8000-000000000003';
 const SESSION_ID = '4d000000-0000-4000-8000-000000000001';
 
 function areaItemRow(id: string, name: string, baseUnit: string, packUnit: string, packSize: number) {
@@ -148,6 +149,32 @@ describe('stock-check count persistence', () => {
     expect(recordStockCheckCountMock).toHaveBeenCalledWith(SESSION_ID, SALMON_ID, {
       entryMode: 'numeric',
       quantity: 25,
+    });
+  });
+
+  test('a count unit literally named "pack" is still the base unit, not the order unit', async () => {
+    // Fixture Nori: area_items.unit_type = 'pack', which is also the inventory
+    // item's base unit, while it orders by the case (50 packs). Reading the
+    // label as the 'pack' keyword would record 1 where the ledger wants 50.
+    getStorageAreasMock.mockResolvedValue([
+      { id: AREA_ID, name: 'Fixture Dry Storage', sort_order: 0, location_id: LOCATION_ID },
+    ]);
+    getAreaItemsMock.mockResolvedValue([
+      areaItemRow(NORI_ID, 'Fixture Nori', 'pack', 'case', 50),
+    ]);
+    await useStockCheckStore.getState().loadLocation(LOCATION_ID);
+    await flushMicrotasks();
+
+    useStockCheckStore.getState().commitStockEntry(NORI_ID, {
+      stockUnit: 'pack',
+      stockAmount: 1,
+      stockPieces: 0,
+    });
+    await flushMicrotasks();
+
+    expect(recordStockCheckCountMock).toHaveBeenCalledWith(SESSION_ID, NORI_ID, {
+      entryMode: 'numeric',
+      quantity: 50,
     });
   });
 
