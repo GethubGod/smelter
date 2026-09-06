@@ -49,6 +49,7 @@ import {
   computeAreaProgress,
   useStockCheckStore,
 } from './useStockCheckStore';
+import { useStockCheckSync } from './useStockCheckSync';
 import type { StockCheckItem } from './types';
 
 // Reanimated's `createAnimatedComponent` returns a wrapper that drops
@@ -107,6 +108,9 @@ export function StockCheckScreenView({ stationId }: StockCheckScreenViewProps) {
   const sheetRef = useRef<SetStockBottomSheetRef | null>(null);
 
   const listRef = useRef<FlatList<StockCheckItem> | null>(null);
+
+  // Counts saved while the API was unreachable go up as soon as it is back.
+  useStockCheckSync();
 
   useEffect(() => {
     if (location?.id) {

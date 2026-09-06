@@ -40,6 +40,7 @@ import {
   computeOverallProgress,
   useStockCheckStore,
 } from './useStockCheckStore';
+import { useStockCheckSync } from './useStockCheckSync';
 
 function StockHomeScreenImpl() {
   const ds = useScaledStyles();
@@ -66,6 +67,9 @@ function StockHomeScreenImpl() {
 
   const [refreshing, setRefreshing] = useState(false);
   const [locationDropdownOpen, setLocationDropdownOpen] = useState(false);
+
+  // Counts saved while the API was unreachable go up as soon as it is back.
+  useStockCheckSync();
 
   useEffect(() => {
     if (location?.id) {
