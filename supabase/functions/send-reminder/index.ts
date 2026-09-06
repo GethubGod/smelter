@@ -2,6 +2,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2?no-dts';
 import { corsHeaders } from '../_shared/cors.ts';
 import {
+  PushTokenResolutionError,
   ReminderRateLimitError,
   getRequesterFromToken,
   sendEmployeeReminder,
@@ -130,6 +131,20 @@ Deno.serve(async (req) => {
           code: 'RATE_LIMITED',
         },
         429
+      );
+    }
+
+    if (error instanceof PushTokenResolutionError) {
+      // This delivery did not create or update its reminder records, so the
+      // caller can retry. Earlier stale-thread cleanup may have resolved an old
+      // reminder before token resolution failed.
+      return jsonResponse(
+        {
+          error: error.message,
+          code: 'PUSH_TOKENS_UNAVAILABLE',
+          retryable: error.retryable,
+        },
+        503
       );
     }
 

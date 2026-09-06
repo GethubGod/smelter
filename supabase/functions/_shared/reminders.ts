@@ -6,6 +6,7 @@ import {
   type ChecklistLocationGroup,
   type ChecklistReminderMessage,
 } from './reminderDelivery.ts';
+import { canonicalizeExpoPushToken } from './expoPushToken.ts';
 
 export {
   buildChecklistOrderDayMessage,
@@ -61,11 +62,28 @@ export interface SendEmployeeReminderResult {
     successCount: number;
     failureCount: number;
     deliveryOutcome: 'accepted' | 'failed' | null;
+    /** The recipient's tokens could not be resolved, so nothing was sent. */
+    tokenResolutionFailed: boolean;
     receiptIds: string[];
     errorDetail: string | null;
     details?: any;
   };
   settings: ReminderSystemSettings;
+}
+
+/**
+ * The recipient's push tokens could not be resolved. Manual push-only sends
+ * throw this before creating or updating reminder delivery records. Stale
+ * reminder cleanup may already have resolved an old thread. Recurring sends
+ * record the push failure and consume the recurring rule for the day.
+ */
+export class PushTokenResolutionError extends Error {
+  retryable = true;
+
+  constructor(message: string) {
+    super(message);
+    this.name = 'PushTokenResolutionError';
+  }
 }
 
 export class ReminderRateLimitError extends Error {
@@ -89,16 +107,6 @@ function minutesBetween(nowIso: string, thenIso: string): number {
   const now = new Date(nowIso).getTime();
   const then = new Date(thenIso).getTime();
   return Math.max(0, Math.floor((now - then) / (1000 * 60)));
-}
-
-function sanitizeExpoPushToken(token: string): string | null {
-  if (typeof token !== 'string') return null;
-  const trimmed = token.trim();
-  if (!trimmed) return null;
-  if (!trimmed.startsWith('ExponentPushToken[') && !trimmed.startsWith('ExpoPushToken[')) {
-    return null;
-  }
-  return trimmed;
 }
 
 function chunkArray<T>(items: T[], size: number): T[][] {
@@ -566,6 +574,40 @@ export async function sendEmployeeReminder(
     }
   }
 
+  const shouldAttemptInApp = input.channels?.in_app !== false;
+  const pushChannelRequested = input.channels?.push !== false;
+
+  // Resolve before writing this delivery. Manual push-only sends fail before
+  // their reminder and event writes. Recurring sends record a failed push and
+  // still consume the rule, so another employee is not sent a duplicate.
+  // resolveStaleReminderIfNeeded may already have closed an old thread above.
+  //
+  // Ownership is checked server side here rather than by filtering the table:
+  // a shared phone belongs to the last user who registered it, so a token the
+  // recipient no longer owns must never be targeted.
+  let resolvedTokens: string[] = [];
+  let tokenResolutionError: PushTokenResolutionError | null = null;
+
+  if (pushChannelRequested && notificationsEnabled) {
+    const { data: pushTokensRaw, error: pushTokenError } = await supabaseAdmin.rpc(
+      'active_device_push_tokens',
+      { p_user_id: employee.id }
+    );
+
+    if (pushTokenError) {
+      tokenResolutionError = new PushTokenResolutionError(
+        pushTokenError.message || 'Unable to resolve the recipient push tokens.',
+      );
+      if (!shouldAttemptInApp && input.source !== 'recurring') {
+        throw tokenResolutionError;
+      }
+    } else {
+      resolvedTokens = (pushTokensRaw ?? [])
+        .map((row: any) => canonicalizeExpoPushToken(row?.expo_push_token))
+        .filter((token: string | null): token is string => Boolean(token));
+    }
+  }
+
   let reminderRow: any = null;
   let eventType: 'sent' | 'reminded_again' = 'sent';
 
@@ -610,8 +652,6 @@ export async function sendEmployeeReminder(
     reminderRow = createdReminder;
   }
 
-  const shouldAttemptInApp = input.channels?.in_app !== false;
-  const pushChannelRequested = input.channels?.push !== false;
   const channelsAttempted: string[] = [];
 
   const reminderTitle = 'Order reminder';
@@ -654,6 +694,7 @@ export async function sendEmployeeReminder(
     successCount: 0,
     failureCount: 0,
     deliveryOutcome: null,
+    tokenResolutionFailed: false,
     receiptIds: [],
     errorDetail: null,
   };
@@ -666,20 +707,20 @@ export async function sendEmployeeReminder(
       channelsAttempted.push('push');
       pushResult.attempted = true;
 
-      const { data: pushTokensRaw } = await supabaseAdmin
-        .from('device_push_tokens')
-        .select('expo_push_token')
-        .eq('user_id', employee.id)
-        .eq('active', true)
-        .order('updated_at', { ascending: false });
-
-      const tokens = (pushTokensRaw ?? [])
-        .map((row: any) => sanitizeExpoPushToken(row?.expo_push_token))
-        .filter((token: string | null): token is string => Boolean(token));
-
+      const tokens = resolvedTokens;
       pushResult.tokenCount = tokens.length;
 
-      if (tokens.length === 0) {
+      if (tokenResolutionError) {
+        // Reached when in-app was also requested, and on the recurring path,
+        // which records the failure rather than throwing so one employee's
+        // resolver error cannot resend the rule to the rest. The caller has to
+        // surface tokenResolutionFailed; the reminder row was still written.
+        pushResult.status = 'failed';
+        pushResult.deliveryOutcome = 'failed';
+        pushResult.tokenResolutionFailed = true;
+        pushResult.failureCount = 1;
+        pushResult.errorDetail = tokenResolutionError.message;
+      } else if (tokens.length === 0) {
         pushResult.status = 'no_tokens';
       } else {
         const pushDelivery = await sendExpoPush(
