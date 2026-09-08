@@ -40,7 +40,16 @@ Baseline Release build and launch passed on the repo's pinned Smelter QA simulat
 
 ## Final measurements and checks
 
-Pending integrated verification. Operation and render counts will be reported separately from native timings. Unit tests with synthetic catalog fixtures do not establish production frame-rate or latency improvements.
+Measured with `node scripts/measure-performance-work.cjs`. The script loads the actual baseline helpers from Git and compares them with the worktree, including output equivalence checks.
+
+| Synthetic workload | Baseline | Updated |
+| --- | --- | --- |
+| 1,000 catalog items, 20 full-scan searches | 20,000 name reads and 20,000 alias reads | 1,000 of each, including index construction |
+| 200 cart lines, 100 reads without changing the cart | 100 arrays and 20,000 distinct item objects | One array and 200 distinct item objects |
+
+Search ranking and result limits also match the baseline. These are counts of avoided work, not production frame-rate or latency measurements.
+
+Integrated checks and remaining request/render measurements are pending.
 
 ## Test before merging
 
