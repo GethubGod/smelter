@@ -16,13 +16,22 @@ function normalize(value: string): string {
   return value.trim().toLowerCase();
 }
 
-/**
- * Filters the full inventory catalog by name or alias. Name-prefix matches
- * rank ahead of name substring matches, which rank ahead of alias matches,
- * preserving catalog order within each tier.
- */
-export function filterCatalogItems(
-  items: InventoryItem[],
+export interface CatalogSearchEntry {
+  item: InventoryItem;
+  normalizedName: string;
+  normalizedAliases: string[];
+}
+
+export function buildCatalogSearchIndex(items: InventoryItem[]): CatalogSearchEntry[] {
+  return items.map((item) => ({
+    item,
+    normalizedName: normalize(item.name),
+    normalizedAliases: (item.aliases ?? []).map(normalize),
+  }));
+}
+
+export function filterCatalogSearchIndex(
+  index: CatalogSearchEntry[],
   query: string,
   limit: number = MAX_SEARCH_RESULTS,
 ): InventoryItem[] {
@@ -33,21 +42,33 @@ export function filterCatalogItems(
   const substring: InventoryItem[] = [];
   const alias: InventoryItem[] = [];
 
-  for (const item of items) {
-    const name = normalize(item.name);
-    if (name.startsWith(normalized)) {
-      prefix.push(item);
-    } else if (name.includes(normalized)) {
-      substring.push(item);
+  for (const entry of index) {
+    if (entry.normalizedName.startsWith(normalized)) {
+      prefix.push(entry.item);
+    } else if (entry.normalizedName.includes(normalized)) {
+      substring.push(entry.item);
     } else if (
-      (item.aliases ?? []).some((entry) => normalize(entry).includes(normalized))
+      entry.normalizedAliases.some((value) => value.includes(normalized))
     ) {
-      alias.push(item);
+      alias.push(entry.item);
     }
     if (prefix.length >= limit) break;
   }
 
   return [...prefix, ...substring, ...alias].slice(0, limit);
+}
+
+/**
+ * Filters the full inventory catalog by name or alias. Name-prefix matches
+ * rank ahead of name substring matches, which rank ahead of alias matches,
+ * preserving catalog order within each tier.
+ */
+export function filterCatalogItems(
+  items: InventoryItem[],
+  query: string,
+  limit: number = MAX_SEARCH_RESULTS,
+): InventoryItem[] {
+  return filterCatalogSearchIndex(buildCatalogSearchIndex(items), query, limit);
 }
 
 export interface VoiceAddition {

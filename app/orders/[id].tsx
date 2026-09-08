@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useShallow } from 'zustand/react/shallow';
 import { useOrderStore, useAuthStore } from '@/store';
 import { OrderItemWithInventory } from '@/types';
 import { statusColors, ORDER_STATUS_LABELS, getCategoryLabel, categoryColors, colors } from '@/constants';
@@ -25,7 +26,9 @@ export default function OrderDetailScreen() {
   const ds = useScaledStyles();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const orderId = Array.isArray(params.id) ? params.id[0] : params.id;
-  const { user, viewMode } = useAuthStore();
+  const { user, viewMode } = useAuthStore(
+    useShallow((state) => ({ user: state.user, viewMode: state.viewMode })),
+  );
   const {
     currentOrder,
     fetchOrder,
@@ -33,7 +36,16 @@ export default function OrderDetailScreen() {
     updateOrderStatus,
     cancelOrder,
     isLoading,
-  } = useOrderStore();
+  } = useOrderStore(
+    useShallow((state) => ({
+      currentOrder: state.currentOrder,
+      fetchOrder: state.fetchOrder,
+      submitOrder: state.submitOrder,
+      updateOrderStatus: state.updateOrderStatus,
+      cancelOrder: state.cancelOrder,
+      isLoading: state.isLoading,
+    })),
+  );
   const [isUpdating, setIsUpdating] = useState(false);
   const [fulfilledByUser, setFulfilledByUser] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);

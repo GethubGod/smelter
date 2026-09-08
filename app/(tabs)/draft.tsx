@@ -9,6 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, router } from 'expo-router';
+import { useShallow } from 'zustand/react/shallow';
 import {
   triggerImpactHaptic,
   triggerNotificationHaptic,
@@ -53,20 +54,46 @@ export default function DraftRoute() {
 
 function DraftScreen() {
   const ds = useScaledStyles();
-  const { locations } = useAuthStore();
+  const locations = useAuthStore((state) => state.locations);
   const {
-    getItems,
+    itemsByLocation,
     updateItem,
     removeItem,
     clearLocationDraft,
     clearAllDrafts,
-    getTotalItemCount,
-    getAllLocationIds,
-  } = useDraftStore();
-  const { addToCart } = useOrderStore();
+  } = useDraftStore(
+    useShallow((state) => ({
+      itemsByLocation: state.itemsByLocation,
+      updateItem: state.updateItem,
+      removeItem: state.removeItem,
+      clearLocationDraft: state.clearLocationDraft,
+      clearAllDrafts: state.clearAllDrafts,
+    })),
+  );
+  const addToCart = useOrderStore((state) => state.addToCart);
 
-  const totalItemCount = getTotalItemCount();
-  const locationIdsWithItems = getAllLocationIds();
+  const totalItemCount = useMemo(
+    () =>
+      Object.values(itemsByLocation).reduce(
+        (total, items) => total + Object.keys(items).length,
+        0,
+      ),
+    [itemsByLocation],
+  );
+  const locationIdsWithItems = useMemo(
+    () =>
+      Object.keys(itemsByLocation).filter(
+        (locationId) => Object.keys(itemsByLocation[locationId]).length > 0,
+      ),
+    [itemsByLocation],
+  );
+  const getItems = useCallback(
+    (locationId: string) =>
+      Object.values(itemsByLocation[locationId] ?? {}).sort(
+        (left, right) => right.addedAt - left.addedAt,
+      ),
+    [itemsByLocation],
+  );
 
   // Get locations that have items
   const locationsWithItems = useMemo(() => {
