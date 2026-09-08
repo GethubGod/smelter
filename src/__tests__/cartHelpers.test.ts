@@ -12,6 +12,7 @@ import {
   isSubmittableCartItem,
   normalizeCartItem,
   normalizeLocationCart,
+  getLocationCart,
   normalizeCartByLocation,
   normalizeCartContext,
   mergeCartItem,
@@ -249,6 +250,69 @@ describe('normalizeLocationCart', () => {
     expect(result).toHaveLength(2);
     expect(result[0].inventoryItemId).toBe('abc');
     expect(result[1].inventoryItemId).toBe('def');
+  });
+});
+
+describe('getLocationCart', () => {
+  test('normalizes each cart reference once and reuses the safe result', () => {
+    const cart = [
+      makeCartItem({ id: 'cart-1', inventoryItemId: 'item-1' }),
+      makeCartItem({ id: 'cart-2', inventoryItemId: 'item-2' }),
+    ];
+    const cartByLocation = { 'location-1': cart };
+
+    const first = getLocationCart(cartByLocation, 'location-1');
+    const second = getLocationCart(cartByLocation, 'location-1');
+
+    expect(first).not.toBe(cart);
+    expect(second).toBe(first);
+    expect(Object.isFrozen(first)).toBe(true);
+    expect(Object.isFrozen(first[0])).toBe(true);
+    expect(first).toEqual(cart);
+  });
+
+  test('keeps location-specific legacy IDs when one raw cart is reused', () => {
+    const sharedLegacyCart = [
+      { inventoryItemId: 'item-1', quantity: 2 },
+    ] as unknown as CartItem[];
+
+    const firstLocation = getLocationCart(
+      { 'location-a': sharedLegacyCart },
+      'location-a',
+    );
+    const secondLocation = getLocationCart(
+      { 'location-b': sharedLegacyCart },
+      'location-b',
+    );
+
+    expect(firstLocation[0].id).toContain('location-a');
+    expect(secondLocation[0].id).toContain('location-b');
+    expect(firstLocation[0].id).not.toBe(secondLocation[0].id);
+  });
+
+  test('keeps legacy validation when reading a new cart reference', () => {
+    const legacyCart = [
+      { inventoryItemId: 'valid', quantity: 2 },
+      { inventoryItemId: '', quantity: 4 },
+      { inventoryItemId: 'zero', quantity: 0 },
+    ] as unknown as CartItem[];
+
+    const result = getLocationCart({ location: legacyCart }, 'location');
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      inventoryItemId: 'valid',
+      inputMode: 'quantity',
+      quantityRequested: 2,
+    });
+  });
+
+  test('returns the same stable empty cart for a missing location', () => {
+    const first = getLocationCart({}, 'missing-1');
+    const second = getLocationCart({}, 'missing-2');
+
+    expect(first).toBe(second);
+    expect(first).toEqual([]);
   });
 });
 

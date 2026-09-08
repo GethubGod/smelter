@@ -19,8 +19,15 @@ const refreshSessionMock = jest.fn();
 const onAuthStateChangeMock = jest.fn();
 const removeChannelMock = jest.fn();
 
+type MockLocationRow = { id: string; name: string; short_code?: string };
+
 const invalidatePendingOrderRequestsMock = jest.fn();
+const invalidatePendingInventoryRequestsMock = jest.fn();
 const invalidatePendingStockRequestsMock = jest.fn();
+const locationsResponseMock = jest.fn<
+  Promise<{ data: MockLocationRow[] }>,
+  []
+>(async () => ({ data: [] }));
 
 const orderStoreMock = {
   getInitialState: jest.fn(() => ({})),
@@ -56,7 +63,7 @@ const tunaSpecialistStoreMock = {
 function createLocationsQuery() {
   return {
     eq: jest.fn(() => ({
-      order: jest.fn(async () => ({ data: [] })),
+      order: locationsResponseMock,
     })),
   };
 }
@@ -104,7 +111,10 @@ jest.mock('@/lib/supabase', () => ({
 
 jest.mock('../store/orderStore', () => ({ useOrderStore: orderStoreMock, invalidatePendingOrderRequests: invalidatePendingOrderRequestsMock }));
 jest.mock('../store/draftStore', () => ({ useDraftStore: draftStoreMock }));
-jest.mock('../store/inventoryStore', () => ({ useInventoryStore: inventoryStoreMock }));
+jest.mock('../store/inventoryStore', () => ({
+  useInventoryStore: inventoryStoreMock,
+  invalidatePendingInventoryRequests: invalidatePendingInventoryRequestsMock,
+}));
 jest.mock('../store/stockStore', () => ({ useStockStore: stockStoreMock, invalidatePendingStockRequests: invalidatePendingStockRequestsMock }));
 jest.mock('../store/fulfillmentStore', () => ({ useFulfillmentStore: fulfillmentStoreMock }));
 jest.mock('../store/tunaSpecialistStore', () => ({ useTunaSpecialistStore: tunaSpecialistStoreMock }));
@@ -121,6 +131,14 @@ async function flushMicrotasks(iterations = 8) {
   for (let index = 0; index < iterations; index += 1) {
     await Promise.resolve();
   }
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
 }
 
 describe('useAuthStore sign-out flow', () => {
@@ -142,6 +160,7 @@ describe('useAuthStore sign-out flow', () => {
     getSessionMock.mockResolvedValue({ data: { session: null } });
     setSessionMock.mockResolvedValue({ data: { session: null }, error: null });
     refreshSessionMock.mockResolvedValue({ data: { session: null }, error: null });
+    locationsResponseMock.mockResolvedValue({ data: [] });
     onAuthStateChangeMock.mockImplementation((callback: (event: string, session: any) => void) => {
       authChangeCallback = callback;
       return {
@@ -160,6 +179,50 @@ describe('useAuthStore sign-out flow', () => {
     consoleWarnSpy.mockRestore();
     consoleErrorSpy.mockRestore();
     jest.useRealTimers();
+  });
+
+  test('shares one location request across concurrent callers', async () => {
+    const response = deferred<{ data: { id: string; name: string }[] }>();
+    locationsResponseMock.mockReturnValueOnce(response.promise);
+
+    const first = useAuthStore.getState().fetchLocations();
+    const second = useAuthStore.getState().fetchLocations();
+    await Promise.resolve();
+    expect(locationsResponseMock).toHaveBeenCalledTimes(1);
+
+    response.resolve({ data: [{ id: 'location-1', name: 'Sushi' }] });
+    await expect(Promise.all([first, second])).resolves.toEqual([
+      [{ id: 'location-1', name: 'Sushi' }],
+      [{ id: 'location-1', name: 'Sushi' }],
+    ]);
+  });
+
+  test('does not join or publish a location request from before sign-out', async () => {
+    const oldResponse = deferred<{ data: MockLocationRow[] }>();
+    const newResponse = deferred<{ data: MockLocationRow[] }>();
+    locationsResponseMock
+      .mockReturnValueOnce(oldResponse.promise)
+      .mockReturnValueOnce(newResponse.promise);
+    useAuthStore.setState({
+      session: { user: { id: 'old-user' } } as any,
+    });
+
+    const oldLoad = useAuthStore.getState().fetchLocations();
+    await Promise.resolve();
+    const signingOut = useAuthStore.getState().signOut();
+    const newLoad = useAuthStore.getState().fetchLocations();
+    await Promise.resolve();
+
+    expect(locationsResponseMock).toHaveBeenCalledTimes(2);
+    newResponse.resolve({ data: [{ id: 'new-location', name: 'Poki' }] });
+    await newLoad;
+    oldResponse.resolve({ data: [{ id: 'old-location', name: 'Sushi' }] });
+    await expect(oldLoad).resolves.toEqual([]);
+    await signingOut;
+
+    expect(useAuthStore.getState().locations).toEqual([
+      { id: 'new-location', name: 'Poki' },
+    ]);
   });
 
   test('clears local auth state and resolves even if Supabase signOut never resolves', async () => {
@@ -206,9 +269,12 @@ describe('useAuthStore sign-out flow', () => {
     expect(mockAsyncStorage.removeItem).toHaveBeenCalledWith('babytuna-auth');
     expect(mockAsyncStorage.multiRemove).toHaveBeenCalled();
     expect(invalidatePendingOrderRequestsMock).toHaveBeenCalledTimes(1);
+    expect(invalidatePendingInventoryRequestsMock).toHaveBeenCalledTimes(1);
     expect(invalidatePendingStockRequestsMock).toHaveBeenCalledTimes(1);
     expect(invalidatePendingOrderRequestsMock.mock.invocationCallOrder[0])
       .toBeLessThan(orderStoreMock.setState.mock.invocationCallOrder[0]);
+    expect(invalidatePendingInventoryRequestsMock.mock.invocationCallOrder[0])
+      .toBeLessThan(inventoryStoreMock.setState.mock.invocationCallOrder[0]);
     expect(invalidatePendingStockRequestsMock.mock.invocationCallOrder[0])
       .toBeLessThan(stockStoreMock.setState.mock.invocationCallOrder[0]);
     expect(clearSupabaseStoredSessionMock).toHaveBeenCalledTimes(1);

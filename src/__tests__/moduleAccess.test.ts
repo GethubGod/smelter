@@ -4,11 +4,11 @@
  * tab sets live when a manager flips a toggle.
  */
 
-const mockGetMyModules = jest.fn();
+const mockGetModulesForUser = jest.fn();
 const mockSubscribeToMyModules = jest.fn();
 
 jest.mock('@/services/userModules', () => ({
-  getMyModules: (...args: unknown[]) => mockGetMyModules(...args),
+  getModulesForUser: (...args: unknown[]) => mockGetModulesForUser(...args),
   subscribeToMyModules: (...args: unknown[]) => mockSubscribeToMyModules(...args),
 }));
 
@@ -195,7 +195,7 @@ describe('module store', () => {
   });
 
   it('loads the effective module set and marks the store ready', async () => {
-    mockGetMyModules.mockResolvedValue([{ key: 'stock_check', enabled: true }]);
+    mockGetModulesForUser.mockResolvedValue([{ key: 'stock_check', enabled: true }]);
 
     await useModuleStore.getState().load('user-1');
 
@@ -204,10 +204,11 @@ describe('module store', () => {
       fetched: [{ key: 'stock_check', enabled: true }],
       status: 'ready',
     });
+    expect(mockGetModulesForUser).toHaveBeenCalledWith('user-1');
   });
 
   it('falls back to no data (role defaults downstream) when the fetch fails', async () => {
-    mockGetMyModules.mockRejectedValue(new Error('network down'));
+    mockGetModulesForUser.mockRejectedValue(new Error('network down'));
 
     await useModuleStore.getState().load('user-1');
 
@@ -221,10 +222,10 @@ describe('module store', () => {
   });
 
   it('keeps last-known data when a refresh for the same user fails', async () => {
-    mockGetMyModules.mockResolvedValueOnce([{ key: 'tips', enabled: true }]);
+    mockGetModulesForUser.mockResolvedValueOnce([{ key: 'tips', enabled: true }]);
     await useModuleStore.getState().load('user-1');
 
-    mockGetMyModules.mockRejectedValueOnce(new Error('flaky'));
+    mockGetModulesForUser.mockRejectedValueOnce(new Error('flaky'));
     await useModuleStore.getState().load('user-1');
 
     expect(useModuleStore.getState()).toMatchObject({
@@ -234,11 +235,11 @@ describe('module store', () => {
   });
 
   it('drops stale data when a different user loads', async () => {
-    mockGetMyModules.mockResolvedValueOnce([{ key: 'tips', enabled: true }]);
+    mockGetModulesForUser.mockResolvedValueOnce([{ key: 'tips', enabled: true }]);
     await useModuleStore.getState().load('user-1');
 
     let resolveSecond: (value: unknown) => void = () => {};
-    mockGetMyModules.mockReturnValueOnce(
+    mockGetModulesForUser.mockReturnValueOnce(
       new Promise((resolve) => {
         resolveSecond = resolve;
       }),
@@ -263,9 +264,9 @@ describe('module store', () => {
 
   it('does not restore revoked modules when an older request finishes last', async () => {
     let resolveOlder: (value: unknown) => void = () => {};
-    mockGetMyModules.mockReturnValueOnce(new Promise((resolve) => { resolveOlder = resolve; }));
+    mockGetModulesForUser.mockReturnValueOnce(new Promise((resolve) => { resolveOlder = resolve; }));
     const older = useModuleStore.getState().load('user-1');
-    mockGetMyModules.mockResolvedValueOnce([{ key: 'fulfillment', enabled: false }]);
+    mockGetModulesForUser.mockResolvedValueOnce([{ key: 'fulfillment', enabled: false }]);
     await useModuleStore.getState().load('user-1');
     resolveOlder([{ key: 'fulfillment', enabled: true }]);
     await older;
@@ -275,10 +276,10 @@ describe('module store', () => {
 
   it('ignores an old request after reset and sign-in by the same user', async () => {
     let resolveOlder: (value: unknown) => void = () => {};
-    mockGetMyModules.mockReturnValueOnce(new Promise((resolve) => { resolveOlder = resolve; }));
+    mockGetModulesForUser.mockReturnValueOnce(new Promise((resolve) => { resolveOlder = resolve; }));
     const older = useModuleStore.getState().load('user-1');
     useModuleStore.getState().reset();
-    mockGetMyModules.mockResolvedValueOnce([{ key: 'fulfillment', enabled: false }]);
+    mockGetModulesForUser.mockResolvedValueOnce([{ key: 'fulfillment', enabled: false }]);
     await useModuleStore.getState().load('user-1');
     resolveOlder([{ key: 'fulfillment', enabled: true }]);
     await older;
@@ -293,21 +294,22 @@ describe('module store', () => {
       realtimeCallback = onChange;
       return unsubscribe;
     });
-    mockGetMyModules.mockResolvedValue([{ key: 'ordering_simple', enabled: true }]);
+    mockGetModulesForUser.mockResolvedValue([{ key: 'ordering_simple', enabled: true }]);
 
     const releaseA = acquireModuleAccess('user-1');
     const releaseB = acquireModuleAccess('user-1');
     await flushPromises();
 
     expect(mockSubscribeToMyModules).toHaveBeenCalledTimes(1);
-    expect(mockGetMyModules).toHaveBeenCalledTimes(1);
+    expect(mockSubscribeToMyModules).toHaveBeenCalledWith(expect.any(Function), 'user-1');
+    expect(mockGetModulesForUser).toHaveBeenCalledTimes(1);
 
     // A manager flips a toggle → realtime callback → reload (live tab flip).
-    mockGetMyModules.mockResolvedValue([{ key: 'ordering_simple', enabled: false }]);
+    mockGetModulesForUser.mockResolvedValue([{ key: 'ordering_simple', enabled: false }]);
     realtimeCallback();
     await flushPromises();
 
-    expect(mockGetMyModules).toHaveBeenCalledTimes(2);
+    expect(mockGetModulesForUser).toHaveBeenCalledTimes(2);
     expect(useModuleStore.getState().fetched).toEqual([
       { key: 'ordering_simple', enabled: false },
     ]);
