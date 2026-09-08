@@ -13,7 +13,7 @@ Ten targeted changes to reduce repeated requests, allocations, and React renders
 1. Cache cart normalization by immutable input and location.
 2. Share concurrent inventory loads and retain forced follow-up refreshes.
 3. Reuse the known session user ID during module bootstrap.
-4. Batch and paginate stock-area item reads.
+4. Skip serialization and storage writes when persisted inventory data has not changed.
 5. Share concurrent location catalog loads.
 6. Update the Quick Order scrollbar with Reanimated shared values.
 7. Stabilize `useScaledStyles` and its subscriptions.
@@ -49,7 +49,29 @@ Measured with `node scripts/measure-performance-work.cjs`. The script loads the 
 
 Search ranking and result limits also match the baseline. These are counts of avoided work, not production frame-rate or latency measurements.
 
-Integrated checks and remaining request/render measurements are pending.
+| Integrated command | Result |
+| --- | --- |
+| `npm run typecheck` | Passed. |
+| `npm run lint` | Passed, zero warnings allowed. |
+| `npm run test:ci` | Passed: 74 suites, 1,082 tests. One existing suite/test skipped. |
+| `node scripts/measure-performance-work.cjs` | Passed baseline equivalence and work-count assertions. |
+| `git diff --check` | Passed. |
+| `scripts/sim.sh assert` | Passed for the pinned Smelter QA device. |
+| `scripts/sim.sh io screenshot /private/tmp/smelter-perf-final.png` | Passed; final app welcome screen visually inspected. |
+
+The root-layout regression test was also run against actual baseline source. A location-catalog update produced two total navigation renders before the change and one afterward. The updated test verifies that sign-in still mounts subscriptions and sign-out cleans them up. Request tests cover coalescing, forced follow-up refreshes, and account transitions. Persistence tests cover failed writes, retries, hydration, and conflicting pending writes.
+
+The integrated Release build passed with compiler/bundler warnings using XcodeBuildMCP, which ran:
+
+```sh
+/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -workspace /private/tmp/smelter-performance/ios/Babytuna.xcworkspace -scheme Babytuna -configuration Release -skipMacroValidation -destination "platform=iOS Simulator,id=EF05F833-2AC4-4383-8688-36C51B956BCF" -collect-test-diagnostics never -derivedDataPath /private/tmp/smelter-performance/ios/build build
+```
+
+Artifact: `/private/tmp/smelter-performance/ios/build/Build/Products/Release-iphonesimulator/Babytuna.app`.
+
+The app was installed and launched through `scripts/sim.sh` on Smelter QA, then left running for testing. The final JavaScript bundle SHA-256 is `f7809114ece330d0155ea02bff786256a181c47dc5d24b68c25b2c8ce434b33d`. OTA updates were disabled only in this generated simulator artifact, which was ad hoc signed and verified, so a cached update cannot replace the branch under test. No tracked native configuration changed. No Metro or background test runner remains.
+
+There was no signed-in simulator session. Authenticated inventory, ordering, and account-switch flows remain manual validation items; no device latency or frame-rate improvement is claimed. The live recognition audit remains blocked as described above. An additional independent relaunch was rejected by automatic approval review because it would interrupt the running app. Read-only screenshot, artifact hash, plist, and code-signature checks succeeded instead.
 
 ## Test before merging
 
@@ -59,7 +81,7 @@ Use the Release simulator build from this worktree and sign in with an existing 
 - Type name and alias searches. Confirm the same results and prefix ranking, then change location and search again.
 - Open manager inventory in both list and compact views. Check row actions, bulk selection, reorder feedback, and search.
 - In Quick Order, create enough local lines to scroll the order card. Check the scrollbar, edit/remove actions, and Dynamic Type.
-- Open a stock location with several areas. Check every area's items and refresh after a count changes. Verify offline counts still restore.
+- Refresh inventory, go offline, and reopen it. Confirm cached inventory still restores and new inventory edits still persist.
 - Change display settings, switch employee/manager views, and sign out and back in. Confirm styles update and no prior account's inventory or locations appear.
 
 Do not send real supplier orders or change production stock solely for this test.

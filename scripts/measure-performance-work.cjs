@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* global __dirname */
 
 // Deterministic work counts on synthetic fixtures, not device timing claims.
 const assert = require('node:assert/strict');
