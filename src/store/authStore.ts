@@ -173,6 +173,22 @@ function isTransitionStaleError(error: unknown): boolean {
   return error instanceof Error && error.message === AUTH_TRANSITION_STALE_MESSAGE;
 }
 
+const SUSPENDED_ACCOUNT_ERROR_FLAG = '__suspendedAccountError__';
+
+function createSuspendedAccountError(message: string): Error {
+  const error = new Error(message) as Error & { [SUSPENDED_ACCOUNT_ERROR_FLAG]?: true };
+  error[SUSPENDED_ACCOUNT_ERROR_FLAG] = true;
+  return error;
+}
+
+function isSuspendedAccountError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    (error as Error & { [SUSPENDED_ACCOUNT_ERROR_FLAG]?: true })[SUSPENDED_ACCOUNT_ERROR_FLAG] ===
+      true
+  );
+}
+
 function getAuthErrorMessage(error: unknown, fallbackMessage: string): string {
   const rawMessage =
     error instanceof Error
@@ -486,7 +502,6 @@ interface AuthState {
 
 const USER_SCOPED_STORAGE_KEYS = [
   'order-storage',
-  'draft-storage',
   'inventory-storage',
   'stock-storage',
   'babytuna-fulfillment',
@@ -538,14 +553,12 @@ async function clearUserScopedClientState() {
     try {
       const [
         { useOrderStore, invalidatePendingOrderRequests },
-        { useDraftStore },
         { useInventoryStore, invalidatePendingInventoryRequests },
         { useStockStore, invalidatePendingStockRequests },
         { useFulfillmentStore },
         { useTunaSpecialistStore },
       ] = await Promise.all([
         import('./orderStore'),
-        import('./draftStore'),
         import('./inventoryStore'),
         import('./stockStore'),
         import('./fulfillmentStore'),
@@ -557,7 +570,6 @@ async function clearUserScopedClientState() {
       invalidatePendingStockRequests();
       await Promise.all([
         resetPersistedStore('order-storage', useOrderStore as unknown as PersistedStoreApi),
-        resetPersistedStore('draft-storage', useDraftStore as unknown as PersistedStoreApi),
         resetPersistedStore('inventory-storage', useInventoryStore as unknown as PersistedStoreApi),
         resetPersistedStore('stock-storage', useStockStore as unknown as PersistedStoreApi),
         resetPersistedStore('babytuna-fulfillment', useFulfillmentStore as unknown as PersistedStoreApi),
@@ -679,7 +691,7 @@ export const useAuthStore = create<AuthState>()(
           await resetSignedOutClientState(transitionId);
         }
 
-        throw new Error(message);
+        throw createSuspendedAccountError(message);
       };
 
       const clearExplicitSignOutFlag = () => {
@@ -932,13 +944,19 @@ export const useAuthStore = create<AuthState>()(
 
         if (profile?.is_suspended) {
           if (params?.shouldThrowOnSuspended === false) {
-            explicitSignOutInProgress = true;
-            const transitionId = beginAuthTransition();
-            void signOutLocalSupabaseSession('Failed to sign out suspended session cleanly');
-            await resetSignedOutClientState(transitionId);
-            return { profile, suspended: true };
+            // Session restore (issue #62). Keep the session and the suspended
+            // profile in state. The route guards (resolveProtectedAuthGuard /
+            // resolveAuthScreenGuard) send the user to /suspended, which
+            // explains the situation and offers Sign Out.
+            //
+            // `suspended: false` is deliberate: hydrateAuthenticatedSession
+            // returns null early when it is true, which would skip user
+            // hydration and leave the guard without a user. Nothing else
+            // reads this flag.
+            return { profile, suspended: false };
           }
 
+          // Explicit sign-in paths keep the inline refusal.
           await forceSignOutSuspended();
         }
 
@@ -1097,6 +1115,10 @@ export const useAuthStore = create<AuthState>()(
           suspended = result.suspended;
         } catch (profileError) {
           if (isTransitionStaleError(profileError)) throw profileError;
+          // A suspended account is not a hydration hiccup. The explicit
+          // sign-in paths (shouldThrowOnSuspended: true) rely on this error
+          // reaching them so they can show the inline refusal.
+          if (isSuspendedAccountError(profileError)) throw profileError;
           console.warn('Profile hydration failed (non-fatal):', profileError);
           profile = get().profile;
         }

@@ -651,7 +651,7 @@
       "e2e/issue-39/37-suspended-no-session.png",
       "e2e/issue-39/40-suspended-relaunch.png",
       "e2e/issue-39/41-suspended-signin-attempt.png",
-      "Routing now sends a restored suspended session to /suspended instead of home, and the screen's Sign Out button is covered by src/__tests__/suspendedRouting.test.ts. Still Blocked at runtime: src/store/authStore.ts signs a suspended session out during initialize (shouldThrowOnSuspended: false), so the guard never sees the suspended profile. Sign-in stays an inline refusal by design. Re-drive on the simulator once the authStore change lands. Tracked as issue #62."
+      "Routing sends a restored suspended session to /suspended instead of home, and the screen's Sign Out button is covered by src/__tests__/suspendedRouting.test.ts. The runtime half landed too: src/store/authStore.ts now keeps the session and the suspended profile during initialize (shouldThrowOnSuspended: false) so the guard sees it, covered by src/__tests__/authStore.authFlow.test.ts. Sign-in stays an inline refusal by design and now propagates that message. Not yet re-driven on the simulator; proof is tests only. Tracked as issue #62."
     ]
   }
 ]
