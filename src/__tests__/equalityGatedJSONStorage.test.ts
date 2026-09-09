@@ -10,10 +10,31 @@ interface PersistedState {
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((done) => {
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((done, fail) => {
     resolve = done;
+    reject = fail;
   });
-  return { promise, resolve };
+  return { promise, resolve, reject };
+}
+
+function lastWrittenItems(
+  setItemMock: jest.Mock<Promise<void>, [string, string]>,
+): PersistedState['items'] {
+  const lastCall = setItemMock.mock.calls[setItemMock.mock.calls.length - 1];
+  if (!lastCall) throw new Error('Expected at least one native write.');
+  const parsed: unknown = JSON.parse(lastCall[1]);
+  if (
+    typeof parsed !== 'object' ||
+    parsed === null ||
+    !('state' in parsed) ||
+    typeof parsed.state !== 'object' ||
+    parsed.state === null ||
+    !('items' in parsed.state)
+  ) {
+    throw new Error('Unexpected persisted payload shape.');
+  }
+  return parsed.state.items as PersistedState['items'];
 }
 
 function setupStorage(initialValue: string | null = null) {
@@ -100,9 +121,86 @@ describe('createEqualityGatedJSONStorage', () => {
       state: { items: itemsA, isLoading: true, error: null },
     });
 
-    expect(rawStorage.setItem).toHaveBeenCalledTimes(3);
+    expect(rawStorage.setItem).toHaveBeenCalledTimes(2);
     pendingWrite.resolve();
     await Promise.all([writeB, writeA]);
+    expect(rawStorage.setItem).toHaveBeenCalledTimes(3);
+    expect(lastWrittenItems(setItemMock)).toEqual(itemsA);
+  });
+
+  test('the newest value is on disk when the older write settles last', async () => {
+    // Regression for PR #75 P1: without serialized writes, an older write that
+    // completed after a newer one left stale inventory as the final value.
+    const { rawStorage, setItemMock, storage } = setupStorage();
+    const itemsOld = [{ id: 'item-old' }];
+    const itemsNew = [{ id: 'item-new' }];
+    const oldWrite = deferred<void>();
+    setItemMock.mockReturnValueOnce(oldWrite.promise);
+
+    const writeOld = storage.setItem('inventory', {
+      state: { items: itemsOld, isLoading: false, error: null },
+    });
+    const writeNew = storage.setItem('inventory', {
+      state: { items: itemsNew, isLoading: false, error: null },
+    });
+
+    // The newer write waits for the older one instead of racing it.
+    expect(rawStorage.setItem).toHaveBeenCalledTimes(1);
+    oldWrite.resolve();
+    await Promise.all([writeOld, writeNew]);
+
+    expect(rawStorage.setItem).toHaveBeenCalledTimes(2);
+    expect(lastWrittenItems(setItemMock)).toEqual(itemsNew);
+
+    // Nothing further is written for the value already on disk.
+    await storage.setItem('inventory', {
+      state: { items: itemsNew, isLoading: true, error: null },
+    });
+    expect(rawStorage.setItem).toHaveBeenCalledTimes(2);
+  });
+
+  test('coalesces values requested behind an in-flight write into one write', async () => {
+    const { rawStorage, setItemMock, storage } = setupStorage();
+    const first = deferred<void>();
+    setItemMock.mockReturnValueOnce(first.promise);
+    const itemsC = [{ id: 'item-c' }];
+
+    const writeA = storage.setItem('inventory', {
+      state: { items: [{ id: 'item-a' }], isLoading: false, error: null },
+    });
+    const writeB = storage.setItem('inventory', {
+      state: { items: [{ id: 'item-b' }], isLoading: false, error: null },
+    });
+    const writeC = storage.setItem('inventory', {
+      state: { items: itemsC, isLoading: false, error: null },
+    });
+
+    first.resolve();
+    await Promise.all([writeA, writeB, writeC]);
+
+    expect(rawStorage.setItem).toHaveBeenCalledTimes(2);
+    expect(lastWrittenItems(setItemMock)).toEqual(itemsC);
+  });
+
+  test('a queued write still runs after the in-flight write fails', async () => {
+    const { rawStorage, setItemMock, storage } = setupStorage();
+    const failing = deferred<void>();
+    setItemMock.mockReturnValueOnce(failing.promise);
+    const itemsNew = [{ id: 'item-new' }];
+
+    const writeOld = storage.setItem('inventory', {
+      state: { items: [{ id: 'item-old' }], isLoading: false, error: null },
+    });
+    const writeNew = storage.setItem('inventory', {
+      state: { items: itemsNew, isLoading: false, error: null },
+    });
+
+    failing.reject(new Error('disk unavailable'));
+    await expect(writeOld).rejects.toThrow('disk unavailable');
+    await expect(writeNew).resolves.toBeUndefined();
+
+    expect(rawStorage.setItem).toHaveBeenCalledTimes(2);
+    expect(lastWrittenItems(setItemMock)).toEqual(itemsNew);
   });
 
   test('persists a version change even when the selected state is unchanged', async () => {
