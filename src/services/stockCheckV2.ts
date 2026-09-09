@@ -541,9 +541,9 @@ export async function getStockCheckPars(locationId: string): Promise<StockCheckP
 
   if (error) throw error;
 
-  return ((data ?? []) as Array<AreaItemRow & {
+  return ((data ?? []) as (AreaItemRow & {
     area: { id: string; name: string; location_id: string } | null;
-  }>).flatMap((row) => {
+  })[]).flatMap((row) => {
     const area = row.area;
     const inventoryItem = asInventoryItem(row.inventory_item);
     if (!area || !inventoryItem) return [];

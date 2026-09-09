@@ -181,7 +181,7 @@ function percentile(sortedAsc: number[], fraction: number): number {
  * median. Never blocks a save — the UI asks for confirmation.
  */
 export function checkAnomaly(
-  history: Array<{ cash: number; card: number }>,
+  history: { cash: number; card: number }[],
   cash: number,
   card: number,
 ): AnomalyResult {

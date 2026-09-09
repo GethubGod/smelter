@@ -24,7 +24,7 @@ type MockFlag = {
   message: string;
   raw_token?: string;
   item_id?: string;
-  possible_matches?: Array<{ item_id: string; item_name: string }>;
+  possible_matches?: { item_id: string; item_name: string }[];
   reason?: string;
 };
 
@@ -203,7 +203,6 @@ export async function runMockParser(input: MockParserInput): Promise<MockParserO
         });
       }
     } else if (matches.length > 1) {
-      const bestMatch = matches[0];
       parsedItems.push({
         item_id: null,
         item_name: searchText || token,

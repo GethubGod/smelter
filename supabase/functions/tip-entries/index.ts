@@ -56,7 +56,7 @@ async function loadSlot(locationId: string, businessDate: string, meal: string) 
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
-  const people: Array<{ id: string; weight: number }> = (data.tip_entry_people ?? []).map(
+  const people: { id: string; weight: number }[] = (data.tip_entry_people ?? []).map(
     (row: { tip_employee_id: string; share_weight: unknown }) => ({
       id: row.tip_employee_id,
       weight: Number(row.share_weight),
@@ -93,12 +93,12 @@ async function fetchToday(locationId: string, businessDate: string, now: Date) {
     .eq('location_id', locationId)
     .eq('business_date', businessDate);
   if (error) throw error;
-  const rows = (data ?? []) as Array<{
+  const rows = (data ?? []) as {
     meal_period: string;
     cash_amount: unknown;
     card_amount: unknown;
     gratuity_amount: unknown;
-  }>;
+  }[];
   const meals = new Set(rows.map((row) => row.meal_period));
   const lunchRow = rows.find((row) => row.meal_period === 'lunch');
   return {

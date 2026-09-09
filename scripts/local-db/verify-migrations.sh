@@ -42,38 +42,38 @@ if ! command -v docker >/dev/null 2>&1; then
   exit 1
 fi
 
-# Random free port on localhost.
-PORT="$(python3 - <<'PYEOF'
-import socket
-s = socket.socket()
-s.bind(("127.0.0.1", 0))
-print(s.getsockname()[1])
-s.close()
-PYEOF
-)"
-
 CONTAINER="verify-migrations-$$-$RANDOM"
+PORT=""
+CONTAINER_STARTED=false
 
 cleanup() {
   local code=$?
-  if $KEEP; then
+  if $KEEP && $CONTAINER_STARTED; then
     echo ""
     echo "--keep: container '$CONTAINER' left running on 127.0.0.1:$PORT"
     echo "  connect: docker exec -it $CONTAINER psql -U postgres"
     echo "  or:      psql postgresql://postgres:postgres@127.0.0.1:$PORT/postgres"
     echo "  remove:  docker rm -f $CONTAINER"
-  else
+  elif $CONTAINER_STARTED; then
     docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
   fi
   exit $code
 }
 trap cleanup EXIT
 
-echo "==> Starting postgres:17 container '$CONTAINER' on 127.0.0.1:$PORT"
+echo "==> Starting postgres:17 container '$CONTAINER'"
 docker run -d --name "$CONTAINER" \
   -e POSTGRES_PASSWORD=postgres \
-  -p "127.0.0.1:$PORT:5432" \
+  -p "127.0.0.1::5432" \
+  -v "$REPO_ROOT:/workspace:ro" \
   postgres:17 >/dev/null
+CONTAINER_STARTED=true
+PORT="$(docker port "$CONTAINER" 5432/tcp | sed -n 's/.*://p' | head -1)"
+if [[ -z "$PORT" ]]; then
+  echo "ERROR: docker did not publish the postgres port" >&2
+  exit 1
+fi
+echo "    published on 127.0.0.1:$PORT"
 
 echo -n "==> Waiting for postgres to accept connections"
 for i in $(seq 1 60); do
@@ -97,7 +97,7 @@ docker exec "$CONTAINER" pg_isready -U postgres -d postgres >/dev/null
 run_sql_file() {
   local file="$1"
   docker exec -i "$CONTAINER" psql -U postgres -d postgres \
-    -v ON_ERROR_STOP=1 -q -X < "$file"
+    -v ON_ERROR_STOP=1 -q -X --single-transaction < "$file"
 }
 
 echo "==> Loading auth stub ($(basename "$AUTH_STUB"))"

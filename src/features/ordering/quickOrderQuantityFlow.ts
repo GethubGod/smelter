@@ -60,7 +60,7 @@ const FALLBACK_UNITS = ['lb', 'case', 'pack', 'each'] as const;
  * the same segmented layout. Non-standard units (e.g. "bottle") get appended
  * after these in {@link resolveQuantityUnitOptions}.
  */
-const STANDARD_UNITS: ReadonlyArray<{ canonical: string; value: string; label: string }> = [
+const STANDARD_UNITS: readonly { canonical: string; value: string; label: string }[] = [
   { canonical: 'pack', value: 'pack', label: 'pack' },
   { canonical: 'cs', value: 'case', label: 'case' },
   { canonical: 'lb', value: 'lb', label: 'lb' },

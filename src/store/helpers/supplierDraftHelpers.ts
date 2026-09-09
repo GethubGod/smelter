@@ -2,7 +2,6 @@
 
 import { UnitType } from '@/types';
 import type {
-  FulfillmentLocationGroup,
   OrderLaterItem,
   SupplierDraftItem,
   SupplierDraftsBySupplier,

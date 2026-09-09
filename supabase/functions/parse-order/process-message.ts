@@ -670,30 +670,6 @@ function buildContextPatch(input: {
   };
 }
 
-function applyAllowedUnitRulesToCatalog(
-  catalog: CatalogItem[],
-  rules: ItemAllowedUnitRule[],
-): CatalogItem[] {
-  if (!Array.isArray(rules) || rules.length === 0) return catalog;
-  const unitsByItem = new Map<string, string[]>();
-  for (const rule of rules) {
-    if (!rule.item_id || typeof rule.unit !== 'string' || !rule.unit.trim()) continue;
-    const current = unitsByItem.get(rule.item_id) ?? [];
-    current.push(rule.unit.trim());
-    if (rule.order_unit && rule.order_unit.trim()) {
-      current.push(rule.order_unit.trim());
-    }
-    unitsByItem.set(rule.item_id, current);
-  }
-  if (unitsByItem.size === 0) return catalog;
-  return catalog.map((item) => {
-    const allowedUnits = unitsByItem.get(item.id);
-    return allowedUnits && allowedUnits.length > 0
-      ? { ...item, allowed_units: [...new Set(allowedUnits)] }
-      : item;
-  });
-}
-
 function buildInventoryModeReviewItems(input: {
   segments: string[];
   statusSegments?: string[];
@@ -786,10 +762,6 @@ function normalizeInventoryStatusText(value: string | null | undefined): string 
 
 function isModeControllableClassification(classification: string): boolean {
   return classification === 'order_entry' || classification === 'current_stock_update';
-}
-
-function isShortItemQuantityMessage(message: string, unitAliases: UnitAliasMap): boolean {
-  return isInventoryDraftMessage(message, unitAliases, { requireQuantity: true });
 }
 
 function isInventoryDraftMessage(

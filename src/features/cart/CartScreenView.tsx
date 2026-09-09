@@ -187,7 +187,6 @@ export function CartScreenView({
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const cartScreenBlurTargetRef = useRef<View>(null);
 
-  const selectedLocation = useAuthStore((state) => state.location);
   const cartLocationIds = useMemo(
     () =>
       Object.keys(activeCartByLocation).filter(

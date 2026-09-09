@@ -1,10 +1,3 @@
-jest.mock('../lib/supabase', () => ({
-  supabase: {
-    auth: { getUser: jest.fn() },
-    from: jest.fn(),
-  },
-}));
-
 import type { ReceiptDetail, ReceiptLine } from '@/services/orderReceiving';
 import {
   buildSaveLines,
@@ -17,6 +10,13 @@ import {
   receiveReducer,
   type ReceiveState,
 } from '@/features/simpleOrder/receiving/receiveLineState';
+
+jest.mock('../lib/supabase', () => ({
+  supabase: {
+    auth: { getUser: jest.fn() },
+    from: jest.fn(),
+  },
+}));
 
 function makeReceiptLine(overrides: Partial<ReceiptLine> = {}): ReceiptLine {
   return {

@@ -1,15 +1,3 @@
-jest.mock('expo-file-system/legacy', () => ({
-  deleteAsync: jest.fn(),
-}));
-
-jest.mock('@/lib/supabase', () => ({
-  supabase: {
-    auth: {
-      getSession: jest.fn(),
-    },
-  },
-}));
-
 import { supabase } from '@/lib/supabase';
 import {
   formatQuickOrderVoiceText,
@@ -22,6 +10,18 @@ import {
   reduceQuickOrderVoiceState,
   transcribeQuickOrderVoiceFile,
 } from '../features/ordering/quickOrderVoice';
+
+jest.mock('expo-file-system/legacy', () => ({
+  deleteAsync: jest.fn(),
+}));
+
+jest.mock('@/lib/supabase', () => ({
+  supabase: {
+    auth: {
+      getSession: jest.fn(),
+    },
+  },
+}));
 
 const mockedGetSession = supabase.auth.getSession as jest.Mock;
 

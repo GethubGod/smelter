@@ -1,6 +1,6 @@
 // Past-order and last-ordered-quantity helper functions for orderStore.
 
-import { Order, UnitType } from '@/types';
+import { Order } from '@/types';
 import type {
   FulfillmentLocationGroup,
   LastOrderedQuantityCacheValue,
@@ -17,7 +17,6 @@ import {
   createFulfillmentId,
   normalizeHistoryLookupUnit,
   normalizeLocationGroup,
-  normalizeSupplierId,
   toIsoString,
   toJsonObject,
   toStringArray,

@@ -1,12 +1,11 @@
 import React from 'react';
 import { StyleProp, StyleSheet, ViewStyle } from 'react-native';
-import { colors } from '@/theme/design';
-import { GlassView } from './GlassView';
-import {
+import { colors ,
   glassColors,
   glassHairlineWidth,
   glassRadii,
 } from '@/theme/design';
+import { GlassView } from './GlassView';
 
 type GlassIntensity = 'subtle' | 'medium' | 'strong';
 

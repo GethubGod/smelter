@@ -7,8 +7,13 @@ Rules for every agent (Claude, Codex, or other) working in this repo.
 This Mac runs a second project (Nellit) with its own booted simulator. Two
 simulators are typically booted at once.
 
-- Target device: iPhone 17 Pro Max, iOS 26.2, UDID
-  `FCADAB49-3A22-4167-B3EB-F794BEB32D9E`.
+- Target device: Smelter Release QA iPhone 17 Pro Max, iOS 26.2, UDID
+  `EF05F833-2AC4-4383-8688-36C51B956BCF`. This is what `scripts/sim.sh` pins.
+- The old target UDID `FCADAB49-3A22-4167-B3EB-F794BEB32D9E` no longer exists
+  on this Mac. Do not use it.
+- A second free device, iPhone 17 Pro Max UDID
+  `493660C2-D09B-4B39-AC50-705FFD205948`, may be used by explicit UDID if
+  the primary target is busy with another worker.
 - Forbidden device: UDID `7C0CA22A-4895-44BA-BF7E-F53BB5CAF7F8` (Nellit).
   It also carries a stale `com.babytuna.systems` build, so launching there
   looks plausible and produces garbage results.

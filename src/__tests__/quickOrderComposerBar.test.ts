@@ -3,6 +3,7 @@ import renderer, { ReactTestRendererJSON } from 'react-test-renderer';
 import { QuickOrderComposerBar } from '../features/ordering/QuickOrderComposerBar';
 
 jest.mock('react-native', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock factories cannot reference the top-level React import (babel-plugin-jest-hoist restriction)
   const React = require('react');
   const createComponent = (name: string) => {
     const Component = React.forwardRef(
@@ -42,6 +43,7 @@ jest.mock('react-native', () => {
 });
 
 jest.mock('react-native-reanimated', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock factories cannot reference the top-level React import (babel-plugin-jest-hoist restriction)
   const React = require('react');
   const createComponent = (name: string) => {
     const Component = React.forwardRef(
@@ -82,6 +84,7 @@ jest.mock('react-native-svg', () => {
 });
 
 jest.mock('@expo/vector-icons', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock factories cannot reference the top-level React import (babel-plugin-jest-hoist restriction)
   const React = require('react');
   const Ionicons = (props: Record<string, unknown>) => React.createElement('Ionicons', props);
   Ionicons.glyphMap = {};

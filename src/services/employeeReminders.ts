@@ -183,18 +183,6 @@ function isoOrNull(value: any): string | null {
   return d.toISOString();
 }
 
-function daysSince(lastOrderIso: string | null): number | null {
-  if (!lastOrderIso) return null;
-  const orderDate = new Date(lastOrderIso);
-  if (Number.isNaN(orderDate.getTime())) return null;
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  const orderStart = new Date(orderDate);
-  orderStart.setHours(0, 0, 0, 0);
-  const diff = now.getTime() - orderStart.getTime();
-  return diff < 0 ? 0 : Math.floor(diff / (1000 * 60 * 60 * 24));
-}
-
 async function loadSettings(): Promise<{
   overdueThresholdDays: number;
   reminderRateLimitMinutes: number;

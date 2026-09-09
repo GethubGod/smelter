@@ -2,6 +2,14 @@
  * Re-exports from the canonical design file.
  * New code should import directly from '@/theme/design'.
  */
+import {
+  colors as designColors,
+  primaryScale,
+  grayScale,
+  uiTints,
+  spacing as designSpacing,
+} from '@/theme/design';
+
 export {
   categoryColors,
   primaryScale,
@@ -9,14 +17,6 @@ export {
   radii,
   statusColors,
   uiTints,
-} from '@/theme/design';
-
-import {
-  colors as designColors,
-  primaryScale,
-  grayScale,
-  uiTints,
-  spacing as designSpacing,
 } from '@/theme/design';
 
 /** Convenience alias with flattened semantic names */

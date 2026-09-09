@@ -46,6 +46,7 @@ import {
   buildSendAllMessage,
   countUnresolvedRemaining,
 } from './sendAllMessage';
+import { parseSendAllSuppliersParam } from './sendAllParams';
 import {
   createSendAllQueue,
   getSendAllQueueProgress,
@@ -60,11 +61,6 @@ import {
   glassSpacing,
 } from '@/theme/design';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-
-interface SendAllSupplierParam {
-  id: string;
-  name: string;
-}
 
 interface SendAllCard {
   supplierId: string;
@@ -85,26 +81,6 @@ const CHANNEL_ICONS: Record<SupplierContactChannel, keyof typeof Ionicons.glyphM
   share_sheet: 'share-outline',
 };
 
-function parseSupplierParams(raw: string | string[] | undefined): SendAllSupplierParam[] {
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  if (!value) return [];
-  try {
-    const parsed = JSON.parse(decodeURIComponent(value));
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .map((entry) => ({
-        id: typeof entry?.id === 'string' ? entry.id.trim() : '',
-        name:
-          typeof entry?.name === 'string' && entry.name.trim().length > 0
-            ? entry.name.trim()
-            : 'Supplier',
-      }))
-      .filter((entry) => entry.id.length > 0);
-  } catch {
-    return [];
-  }
-}
-
 function assertNoReportedInSendAllMessage(message: string) {
   if (__DEV__ && /\breported\b/i.test(message)) {
     throw new Error('Send All supplier message cannot contain "reported".');
@@ -114,7 +90,18 @@ function assertNoReportedInSendAllMessage(message: string) {
 export function SendAllScreen() {
   const ds = useScaledStyles();
   const params = useLocalSearchParams<{ suppliers?: string }>();
-  const supplierParams = useMemo(() => parseSupplierParams(params.suppliers), [params.suppliers]);
+  const supplierParams = useMemo(
+    () => parseSendAllSuppliersParam(params.suppliers),
+    [params.suppliers]
+  );
+  // This screen lives in the manager tab navigator, so it stays mounted after
+  // the first visit. The signature is what tells a later Send All (different
+  // suppliers, or the first real one after a param-less visit) apart from a
+  // plain re-focus of the same queue.
+  const supplierIdSignature = useMemo(
+    () => supplierParams.map((entry) => entry.id).join(','),
+    [supplierParams]
+  );
 
   const { user, locations } = useAuthStore(
     useShallow((state) => ({ user: state.user, locations: state.locations }))
@@ -172,9 +159,12 @@ export function SendAllScreen() {
           supplierDraftItems: getSupplierDraftItems(id) as any,
         });
         if (data.regularItems.length === 0 && data.remainingItems.length === 0) return;
+        // The route param carries ids only, so the display name comes from the
+        // supplier lookup (a legacy param may still supply one).
+        const lookupName = supplierLookup.supplierById.get(id)?.name;
         next[id] = {
           supplierId: id,
-          supplierName: name,
+          supplierName: lookupName?.trim() || name || 'Supplier',
           regularItems: data.regularItems,
           remainingItems: data.remainingItems,
         };
@@ -188,7 +178,11 @@ export function SendAllScreen() {
     }
   }, [fetchPendingFulfillmentOrders, getSupplierDraftItems, managerLocationIds, supplierParams]);
 
-  // Initial load: card data + supplier contacts + queue.
+  // Load card data + supplier contacts + queue for the supplier ids currently in
+  // the route params. Re-runs when that list changes: the screen is a tab route
+  // and is never unmounted, so without this a queue built from an earlier visit
+  // (including a param-less deep link, which builds an empty one) would survive
+  // every later Send All and render "Nothing left to send".
   useEffect(() => {
     let active = true;
     (async () => {
@@ -226,8 +220,10 @@ export function SendAllScreen() {
     return () => {
       active = false;
     };
+    // loadCards is rebuilt on every store/param change; the supplier id list is
+    // the only input that should restart the queue.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [supplierIdSignature]);
 
   // Reload card data and reconcile the queue. Cards that no longer have pending
   // items were archived elsewhere — mark them completed. A successful refresh

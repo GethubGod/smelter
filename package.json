@@ -7,7 +7,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "lint:drift": "eslint app src --config eslint.drift.config.js -f json | node -e \"let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{const r=JSON.parse(d),f=[];let n=0;for(const x of r){const c=x.messages.filter(m=>m.ruleId==='smelter/no-design-drift').length;if(c){f.push([x.filePath.replace(process.cwd()+'/',''),c]);n+=c;}}f.sort((a,b)=>b[1]-a[1]);for(const [p,c] of f)console.log(String(c).padStart(5)+'  '+p);console.log('\\\\nsmelter/no-design-drift: '+n+' violations across '+f.length+' files');});\"",
     "typecheck": "tsc --noEmit",
     "test": "jest",
@@ -84,7 +84,10 @@
   "overrides": {
     "shell-quote": "1.10.0",
     "brace-expansion@^1.0.0": "1.1.18",
-    "postcss": "8.5.28"
+    "postcss": "8.5.28",
+    "xcode": {
+      "uuid": "11.1.1"
+    }
   },
   "expo": {
     "doctor": {

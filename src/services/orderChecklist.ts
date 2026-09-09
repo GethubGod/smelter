@@ -629,7 +629,7 @@ export async function archiveDirectSend(
   if (historyError) throw historyError;
 }
 
-function validateSendLines(lines: ChecklistSendLine[]): asserts lines is Array<ChecklistSendLine & { itemId: string }> {
+function validateSendLines(lines: ChecklistSendLine[]): asserts lines is (ChecklistSendLine & { itemId: string })[] {
   if (lines.length === 0) {
     throw new Error('Select at least one checklist item to send.');
   }

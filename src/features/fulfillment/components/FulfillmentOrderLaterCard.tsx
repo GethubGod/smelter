@@ -5,7 +5,6 @@ import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { GlassSurface } from '@/components';
 import {
   glassColors,
-  glassHairlineWidth,
   glassRadii,
 } from '@/theme/design';
 

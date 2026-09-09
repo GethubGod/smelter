@@ -3,6 +3,7 @@ import renderer from 'react-test-renderer';
 import { QuickOrderListCard } from '../features/ordering/QuickOrderListCard';
 
 jest.mock('react-native', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock factories cannot reference the top-level React import (babel-plugin-jest-hoist restriction)
   const React = require('react');
   const createComponent = (name: string) => {
     const Component = React.forwardRef(({ children, ...props }: { children?: React.ReactNode }, ref: React.Ref<unknown>) =>
@@ -25,6 +26,7 @@ jest.mock('react-native', () => {
 });
 
 jest.mock('@expo/vector-icons', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock factories cannot reference the top-level React import (babel-plugin-jest-hoist restriction)
   const React = require('react');
   return {
     Ionicons: (props: Record<string, unknown>) => React.createElement('Ionicons', props),
@@ -32,6 +34,7 @@ jest.mock('@expo/vector-icons', () => {
 });
 
 jest.mock('react-native-reanimated', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock factories cannot reference the top-level React import (babel-plugin-jest-hoist restriction)
   const React = require('react');
   const createComponent = (name: string) => {
     const Component = React.forwardRef(

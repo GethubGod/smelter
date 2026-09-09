@@ -5,17 +5,17 @@
  */
 
 // Mock RN and Supabase dependencies that sharedHelpers imports transitively
-jest.mock('react-native', () => ({ Platform: { OS: 'ios' } }));
-jest.mock('@/lib/supabase', () => ({ supabase: {} }));
-jest.mock('@/store/authStore', () => ({ useAuthStore: { getState: () => ({}) } }));
-jest.mock('@/lib/notifications', () => ({ getNotificationsModule: () => null }));
-
 import {
   normalizeSupplierDraftItem,
   normalizeSupplierDrafts,
   normalizeOrderLaterItem,
   normalizeOrderLaterQueue,
 } from '../store/helpers/supplierDraftHelpers';
+
+jest.mock('react-native', () => ({ Platform: { OS: 'ios' } }));
+jest.mock('@/lib/supabase', () => ({ supabase: {} }));
+jest.mock('@/store/authStore', () => ({ useAuthStore: { getState: () => ({}) } }));
+jest.mock('@/lib/notifications', () => ({ getNotificationsModule: () => null }));
 
 // ── normalizeSupplierDraftItem ───────────────────────────────
 
