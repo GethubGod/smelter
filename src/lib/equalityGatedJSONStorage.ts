@@ -5,34 +5,41 @@ import {
   type StorageValue,
 } from 'zustand/middleware';
 
+interface PersistIdentity<Key> {
+  key: Key;
+  version: number | undefined;
+}
+
+type Operation<State, Key> =
+  | { kind: 'write'; identity: PersistIdentity<Key>; value: StorageValue<State> }
+  | { kind: 'remove' };
+
 interface StoredKey<State, Key> {
+  /** Bumped whenever the known disk identity changes or an operation starts. */
   revision: number;
+  /** Identity of the value known to be on disk, or null when unknown or absent. */
   persisted: PersistIdentity<Key> | null;
   inFlight: {
-    identity: PersistIdentity<Key>;
+    operation: Operation<State, Key>;
     promise: Promise<unknown>;
   } | null;
   queued: {
-    identity: PersistIdentity<Key>;
-    value: StorageValue<State>;
+    operation: Operation<State, Key>;
     resolve: (result: unknown) => void;
     reject: (error: unknown) => void;
     promise: Promise<unknown>;
   } | null;
 }
 
-interface PersistIdentity<Key> {
-  key: Key;
-  version: number | undefined;
-}
+const noop = () => undefined;
 
 /**
  * JSON persistence that avoids serialization and native writes while the
- * selected persisted value is unchanged. Writes for one storage name are
- * serialized: while a native write is in flight, the newest requested value
- * waits and is written once the in-flight write settles, so the last value
- * on disk is always the newest one requested. Failed writes remain eligible
- * for retry.
+ * selected persisted value is unchanged. Operations for one storage name
+ * (writes and removes) are serialized: while one is in flight, the newest
+ * requested operation waits and runs once the in-flight one settles, so the
+ * last value on disk is always the newest one requested. A failed operation
+ * makes the disk identity unknown, so the next request always writes.
  */
 export function createEqualityGatedJSONStorage<State, Key>(
   getStorage: () => StateStorage,
@@ -60,38 +67,76 @@ export function createEqualityGatedJSONStorage<State, Key>(
     return created;
   };
 
-  const startWrite = (
+  const operationIdentity = (
+    operation: Operation<State, Key>,
+  ): PersistIdentity<Key> | null =>
+    operation.kind === 'write' ? operation.identity : null;
+
+  const operationsEqual = (
+    left: Operation<State, Key>,
+    right: Operation<State, Key>,
+  ): boolean => {
+    if (left.kind === 'remove' || right.kind === 'remove') {
+      return left.kind === right.kind;
+    }
+    return identitiesEqual(left.identity, right.identity);
+  };
+
+  /** True when the operation would leave disk exactly as it is known to be. */
+  const alreadyOnDisk = (
+    storedKey: StoredKey<State, Key>,
+    operation: Operation<State, Key>,
+  ): boolean => {
+    if (operation.kind === 'remove') return false;
+    return (
+      storedKey.persisted !== null &&
+      identitiesEqual(storedKey.persisted, operation.identity)
+    );
+  };
+
+  const start = (
     name: string,
     storedKey: StoredKey<State, Key>,
-    identity: PersistIdentity<Key>,
-    value: StorageValue<State>,
+    operation: Operation<State, Key>,
   ): Promise<unknown> => {
     const previousRevision = storedKey.revision;
     storedKey.revision = previousRevision + 1;
 
-    let write: unknown | Promise<unknown>;
+    let result: unknown | Promise<unknown>;
     try {
-      write = jsonStorage.setItem(name, value);
+      result =
+        operation.kind === 'write'
+          ? jsonStorage.setItem(name, operation.value)
+          : jsonStorage.removeItem(name);
     } catch (error) {
       storedKey.revision = previousRevision;
       throw error;
     }
 
-    const promise = Promise.resolve(write).then(
-      (result) => {
-        storedKey.persisted = identity;
+    const promise = Promise.resolve(result).then(
+      (settled) => {
+        storedKey.persisted = operationIdentity(operation);
+        storedKey.revision += 1;
         storedKey.inFlight = null;
         drainQueue(name, storedKey);
-        return result;
+        return settled;
       },
       (error: unknown) => {
+        // The backing store may or may not have changed. Forget what is on
+        // disk so the next request for any value writes it.
+        storedKey.persisted = null;
+        storedKey.revision += 1;
         storedKey.inFlight = null;
         drainQueue(name, storedKey);
         throw error;
       },
     );
+    // Callers that await still see the rejection. zustand's persist calls
+    // setItem without handling the promise, so mark it handled here to avoid
+    // an unhandled rejection for a native storage failure.
+    promise.catch(noop);
 
-    storedKey.inFlight = { identity, promise };
+    storedKey.inFlight = { operation, promise };
     return promise;
   };
 
@@ -99,21 +144,48 @@ export function createEqualityGatedJSONStorage<State, Key>(
     const queued = storedKey.queued;
     if (!queued) return;
     storedKey.queued = null;
-    if (
-      storedKey.persisted &&
-      identitiesEqual(storedKey.persisted, queued.identity)
-    ) {
+    if (alreadyOnDisk(storedKey, queued.operation)) {
       queued.resolve(undefined);
       return;
     }
     try {
-      startWrite(name, storedKey, queued.identity, queued.value).then(
-        queued.resolve,
-        queued.reject,
-      );
+      start(name, storedKey, queued.operation).then(queued.resolve, queued.reject);
     } catch (error) {
       queued.reject(error);
     }
+  };
+
+  const request = (
+    name: string,
+    operation: Operation<State, Key>,
+  ): Promise<unknown> | void => {
+    const storedKey = getStoredKey(name);
+
+    if (storedKey.queued) {
+      // Only the newest requested operation runs after the in-flight one
+      // settles. Earlier queued operations are superseded.
+      storedKey.queued.operation = operation;
+      return storedKey.queued.promise;
+    }
+
+    if (storedKey.inFlight) {
+      if (operationsEqual(storedKey.inFlight.operation, operation)) {
+        return storedKey.inFlight.promise;
+      }
+      let resolve!: (result: unknown) => void;
+      let reject!: (error: unknown) => void;
+      const promise = new Promise<unknown>((done, fail) => {
+        resolve = done;
+        reject = fail;
+      });
+      promise.catch(noop);
+      storedKey.queued = { operation, resolve, reject, promise };
+      return promise;
+    }
+
+    if (alreadyOnDisk(storedKey, operation)) return;
+
+    return start(name, storedKey, operation);
   };
 
   return {
@@ -122,6 +194,7 @@ export function createEqualityGatedJSONStorage<State, Key>(
       const revision = storedKey.revision;
       const value = await jsonStorage.getItem(name);
 
+      // Only trust the read when nothing started or completed meanwhile.
       if (storedKey.revision === revision) {
         if (value) {
           storedKey.persisted = {
@@ -136,45 +209,13 @@ export function createEqualityGatedJSONStorage<State, Key>(
       return value;
     },
 
-    setItem: (name, value) => {
-      const storedKey = getStoredKey(name);
-      const nextIdentity: PersistIdentity<Key> = {
-        key: selectKey(value.state),
-        version: value.version,
-      };
+    setItem: (name, value) =>
+      request(name, {
+        kind: 'write',
+        identity: { key: selectKey(value.state), version: value.version },
+        value,
+      }),
 
-      if (storedKey.queued) {
-        // Only the newest requested value is written after the in-flight
-        // write settles. Earlier queued values are superseded.
-        storedKey.queued.identity = nextIdentity;
-        storedKey.queued.value = value;
-        return storedKey.queued.promise;
-      }
-
-      if (storedKey.inFlight) {
-        if (identitiesEqual(storedKey.inFlight.identity, nextIdentity)) {
-          return storedKey.inFlight.promise;
-        }
-        let resolve!: (result: unknown) => void;
-        let reject!: (error: unknown) => void;
-        const promise = new Promise<unknown>((done, fail) => {
-          resolve = done;
-          reject = fail;
-        });
-        storedKey.queued = { identity: nextIdentity, value, resolve, reject, promise };
-        return promise;
-      }
-
-      if (storedKey.persisted && identitiesEqual(storedKey.persisted, nextIdentity)) {
-        return;
-      }
-
-      return startWrite(name, storedKey, nextIdentity, value);
-    },
-
-    removeItem: (name) => {
-      keysByStorageName.delete(name);
-      return jsonStorage.removeItem(name);
-    },
+    removeItem: (name) => request(name, { kind: 'remove' }),
   };
 }
