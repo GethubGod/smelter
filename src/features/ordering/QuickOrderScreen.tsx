@@ -117,6 +117,11 @@ import {
   toFriendlyQuickOrderError,
 } from "./quickOrderErrors";
 import {
+  applyQuickOrderCartUpdate,
+  normalizePersistedQuickOrderItems,
+  QUICK_ORDER_CART_APPLY_ERROR_CODE,
+} from "./quickOrderSendGuards";
+import {
   buildSendSnapDelays,
   calculateQuickOrderBottomScrollOffset,
   calculateQuickOrderBottomPadding,
@@ -162,7 +167,6 @@ import {
   getParsedItemDisplayName,
   getParsedItemIssue,
   getParsedItemKey,
-  hasParsedItemName,
   isUuid,
   mergeQuickOrderParsedItemsDetailed,
   removeParsedItem,
@@ -604,30 +608,12 @@ function devIdFingerprint(id: string | null | undefined): string | null {
   return devTextFingerprint(id);
 }
 
-function normalizeParsedItems(value: unknown): ParsedQuickOrderItem[] {
-  if (!Array.isArray(value)) return [];
-
-  return (
-    value
-      .map((entry) =>
-        entry && typeof entry === "object"
-          ? (entry as ParsedQuickOrderItem)
-          : null,
-      )
-      // Keep anything we can render a row for: a name, a raw token, or an id. A
-      // nameless item still gets a visible "Unknown item" row + issue indicator
-      // rather than being silently dropped.
-      .filter((entry): entry is ParsedQuickOrderItem =>
-        Boolean(
-          entry &&
-          (hasParsedItemName(entry) ||
-            entry.raw_token?.trim() ||
-            entry.raw_text?.trim() ||
-            entry.item_id),
-        ),
-      )
-  );
-}
+/**
+ * Rebuilds the parsed-item cart from persisted / message-embedded JSON. Lives
+ * in `quickOrderSendGuards` so a rehydrated row is normalized exactly like a
+ * freshly parsed one. See the note there about unresolved units.
+ */
+const normalizeParsedItems = normalizePersistedQuickOrderItems;
 
 function normalizeSuggestions(value: unknown): QuickOrderSuggestion[] {
   if (!Array.isArray(value)) return [];
@@ -3965,10 +3951,18 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
       // If the user typed a bare quantity ("1pk", "2 cases") and the most
       // recent item in the order is still missing a quantity, prepend that
       // item's name so the parser applies the quantity to the right line.
-      const rawText = rewriteBareQuantityWithContext(
-        rawTextInput,
-        parsedItems,
-      );
+      // A rehydrated cart can hold rows in states this rewrite has never seen,
+      // so a failure here falls back to the text the user typed rather than
+      // taking the whole screen down.
+      let rawText = rawTextInput;
+      try {
+        rawText = rewriteBareQuantityWithContext(rawTextInput, parsedItems);
+      } catch (rewriteError) {
+        console.warn(
+          "[QuickOrder] bare-quantity rewrite failed, sending the raw text:",
+          rewriteError,
+        );
+      }
       const trimmed = rawText.trim();
       if (!trimmed || isSendingRef.current || isSending) {
         return;
@@ -4307,13 +4301,14 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
           operationResult: QuickOrderOperationResult | null;
         };
 
-        let applySnapshot: ParseApplySnapshot | undefined;
-
-        setParsedItems((currentParsed) => {
-          if (requestGeneration !== requestGenerationRef.current) {
-            return currentParsed;
-          }
-
+        // React runs a state updater during the render phase, so anything this
+        // body throws reaches the screen's error boundary and replaces the whole
+        // surface (issue #70). It is computed here and committed through
+        // `applyQuickOrderCartUpdate`, which leaves the cart untouched and
+        // reports the failure as an inline error pill instead.
+        const computeParseApply = (
+          currentParsed: ParsedQuickOrderItem[],
+        ): { items: ParsedQuickOrderItem[]; snapshot: ParseApplySnapshot } => {
           let operationResult: QuickOrderOperationResult | null = null;
           let operationBase = currentParsed;
           if (operations.length > 0) {
@@ -4402,7 +4397,7 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
             }
           }
 
-          applySnapshot = {
+          const nextSnapshot: ParseApplySnapshot = {
             nextParsedItems: mergeResult.items,
             assistantMessage: {
               id: createMessageId(),
@@ -4433,8 +4428,39 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
             operationResult,
           };
 
-          return applySnapshot.nextParsedItems;
+          return { items: nextSnapshot.nextParsedItems, snapshot: nextSnapshot };
+        };
+
+        let applySnapshot: ParseApplySnapshot | undefined;
+        let applyError: unknown = null;
+
+        setParsedItems((currentParsed) => {
+          if (requestGeneration !== requestGenerationRef.current) {
+            return currentParsed;
+          }
+
+          const applied = applyQuickOrderCartUpdate(currentParsed, () =>
+            computeParseApply(currentParsed),
+          );
+          applySnapshot = applied.snapshot ?? undefined;
+          applyError = applied.error;
+          return applied.items;
         });
+
+        if (applyError) {
+          console.warn("[QuickOrder] cart_apply_failed:", applyError);
+          if (
+            activeSessionId &&
+            requestGeneration === requestGenerationRef.current
+          ) {
+            await appendErrorMessage(
+              optimisticMessages,
+              activeSessionId,
+              QUICK_ORDER_CART_APPLY_ERROR_CODE,
+            );
+          }
+          return;
+        }
 
         if (!applySnapshot || requestGeneration !== requestGenerationRef.current) {
           return;
