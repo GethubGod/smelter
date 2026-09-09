@@ -6,7 +6,8 @@ export type StockCheckStatus = 'unchecked' | 'needs_order' | 'low' | 'at_par';
  * Local row model that drives the Stock Check UI.
  *
  * Naming follows the spec:
- *  - `parLevel` = required par count (e.g., 4 cases)
+ *  - `parLevel` = required par count, denominated in `countUnitType` (the
+ *    unit `area_items.unit_type` names), never in the wheel's current unit
  *  - `orderQuantity` = the value that drives the +/− stepper (the user's chosen
  *    order amount). When status is `needs_order` and the user hasn't entered a
  *    value yet, we surface `parLevel` as the suggested order in the subtitle.
@@ -44,10 +45,11 @@ export interface StockCheckItem {
   baseUnit: string;
   packSize: number;
   /**
-   * Computed deficit in `unitType` units, derived from the wheel-picker
-   * stock entry on commit. Kept on the row so the existing cart pipeline
-   * (`addLineItem(item.id, item.orderQuantity, item.unitType, …)`) and the
-   * `computeAreaProgress` predicate keep working without surgery.
+   * Computed deficit in `countUnitType` units, derived from the wheel-picker
+   * stock entry on commit. It is denominated in the count unit because
+   * `parLevel` is, so the two are directly comparable. Kept on the row so the
+   * existing cart pipeline and the `computeAreaProgress` predicate keep
+   * working without surgery.
    */
   orderQuantity: number;
   checked: boolean;

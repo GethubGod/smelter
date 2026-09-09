@@ -13,6 +13,10 @@ import { invalidateCachePrefix } from '@/lib/queryCache';
 import { useSettingsStore } from './settingsStore';
 import { useSimpleOrderUiStore } from './simpleOrderUiStore';
 import { clearHomeInsightsCache } from '@/features/home/homeInsightsCache';
+import {
+  notifyAuthSessionCleared,
+  notifyAuthSessionRestored,
+} from '@/features/stock-check/queueDrainGate';
 
 type ViewMode = 'employee' | 'manager';
 type OAuthProvider = 'google' | 'apple';
@@ -474,7 +478,6 @@ interface AuthState {
     password: string,
     name: string
   ) => Promise<SignUpResult>;
-  completeProfile: (fullName: string, accessCode: string) => Promise<User>;
   signOut: () => Promise<void>;
   deleteSelfAccount: (confirmText: string) => Promise<void>;
   updateDefaultLocation: (locationId: string) => Promise<void>;
@@ -661,6 +664,9 @@ export const useAuthStore = create<AuthState>()(
       const resetSignedOutClientState = async (transitionId?: number) => {
         applySignedOutState();
         clearExplicitSignOutFlag();
+        // Re-arm the launch drain so the next user's queue flushes once their
+        // own session is restored.
+        notifyAuthSessionCleared();
         await clearSignedOutClientStateForTransition(transitionId);
       };
 
@@ -1165,6 +1171,12 @@ export const useAuthStore = create<AuthState>()(
           }
         });
 
+        // The session is usable, so anything queued for an authenticated RPC
+        // can go now. The stock-check queue used to fire off its own rehydrate
+        // and hit a null `auth.uid()` at launch (issue #74); it now waits for
+        // this. Fires once per session; later refreshes are no-ops.
+        notifyAuthSessionRestored();
+
         return user;
       };
 
@@ -1643,47 +1655,6 @@ export const useAuthStore = create<AuthState>()(
           return { status: 'authenticated', user };
         } catch (error) {
           throw new Error(getAuthErrorMessage(error, 'Unable to create your account. Please try again.'));
-        } finally {
-          set({ isLoading: false });
-        }
-      },
-
-      completeProfile: async (fullName, accessCode) => {
-        beginAuthTransition();
-        set({ isLoading: true });
-        try {
-          const { session } = get();
-          if (!session?.user) {
-            throw new Error('Missing session. Please sign in again.');
-          }
-
-          const normalizedName = fullName.trim();
-          if (!normalizedName) {
-            throw new Error('Please enter your full name.');
-          }
-
-          const role = await validateAccessCode(accessCode, session.user.email);
-          const provider = getSessionAuthProvider(session.user);
-
-          const user = await hydrateAuthenticatedSession(session, {
-            bootstrapInput: {
-              email: session.user.email ?? null,
-              fullName: normalizedName,
-              role,
-              provider,
-              profileCompleted: true,
-            },
-            repairIfNeeded: true,
-            shouldThrowOnSuspended: true,
-          });
-
-          if (!user) {
-            throw new Error('Unable to complete your account setup. Please try again.');
-          }
-
-          return user;
-        } catch (error) {
-          throw new Error(getAuthErrorMessage(error, 'Unable to complete your profile. Please try again.'));
         } finally {
           set({ isLoading: false });
         }
