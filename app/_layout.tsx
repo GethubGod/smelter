@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import {
   LogBox,
   View,
@@ -10,6 +10,7 @@ import {
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useShallow } from "zustand/react/shallow";
 import { useAuthStore, useDisplayStore } from "@/store";
 import { useInventorySubscription, useOrderSubscription } from "@/hooks";
 import { supabase, supabaseConfigError } from "@/lib/supabase";
@@ -53,7 +54,13 @@ function ThemeManager() {
 }
 
 export default function RootLayout() {
-  const { initialize, isInitialized, session } = useAuthStore();
+  const { initialize, isInitialized, session } = useAuthStore(
+    useShallow((state) => ({
+      initialize: state.initialize,
+      isInitialized: state.isInitialized,
+      session: state.session,
+    })),
+  );
   const theme = useDisplayStore((state) => state.theme);
   const reduceMotion = useDisplayStore((state) => state.reduceMotion);
 

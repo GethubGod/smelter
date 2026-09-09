@@ -32,6 +32,11 @@ const SUSPENDED_ACCOUNT_MESSAGE = 'Account suspended. Contact a manager.';
 let activeSessionUserId: string | null = null;
 let userScopedResetPromise: Promise<void> | null = null;
 let authStateTransitionId = 0;
+interface LocationRequest {
+  transitionId: number;
+  promise: Promise<Location[]>;
+}
+let activeLocationRequest: LocationRequest | null = null;
 let identityRepairRpcAvailable: boolean | null = null;
 let warnedIdentityRepairRpcUnavailable = false;
 let explicitSignOutInProgress = false;
@@ -531,7 +536,7 @@ async function clearUserScopedClientState() {
       const [
         { useOrderStore, invalidatePendingOrderRequests },
         { useDraftStore },
-        { useInventoryStore },
+        { useInventoryStore, invalidatePendingInventoryRequests },
         { useStockStore, invalidatePendingStockRequests },
         { useFulfillmentStore },
         { useTunaSpecialistStore },
@@ -545,6 +550,7 @@ async function clearUserScopedClientState() {
       ]);
 
       invalidatePendingOrderRequests();
+      invalidatePendingInventoryRequests();
       invalidatePendingStockRequests();
       await Promise.all([
         resetPersistedStore('order-storage', useOrderStore as unknown as PersistedStoreApi),
@@ -1194,15 +1200,36 @@ export const useAuthStore = create<AuthState>()(
       setViewMode: (mode) => set({ viewMode: mode }),
 
       fetchLocations: async () => {
-        const { data } = await supabase
-          .from('locations')
-          .select('*')
-          .eq('active', true)
-          .order('name');
+        const transitionId = authStateTransitionId;
+        if (activeLocationRequest?.transitionId === transitionId) {
+          return activeLocationRequest.promise;
+        }
 
-        const locations = data || [];
-        set({ locations });
-        return locations;
+        const request: LocationRequest = {
+          transitionId,
+          promise: Promise.resolve([]),
+        };
+        activeLocationRequest = request;
+        request.promise = Promise.resolve()
+          .then(async () => {
+            const { data } = await supabase
+              .from('locations')
+              .select('*')
+              .eq('active', true)
+              .order('name');
+
+            if (transitionId !== authStateTransitionId) return [];
+            const locations = data || [];
+            set({ locations });
+            return locations;
+          })
+          .finally(() => {
+            if (activeLocationRequest === request) {
+              activeLocationRequest = null;
+            }
+          });
+
+        return request.promise;
       },
 
       fetchProfile: async () => {

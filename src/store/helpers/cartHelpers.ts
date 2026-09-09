@@ -148,8 +148,27 @@ export function normalizeLocationCart(rawCart: unknown, locationId = 'unknown'):
     .filter((item): item is CartItem => Boolean(item));
 }
 
+const EMPTY_LOCATION_CART: CartItem[] = [];
+Object.freeze(EMPTY_LOCATION_CART);
+const normalizedLocationCartCache = new WeakMap<CartItem[], Map<string, CartItem[]>>();
+
 export function getLocationCart(cartByLocation: CartByLocation, locationId: string): CartItem[] {
-  return normalizeLocationCart(cartByLocation[locationId] || [], locationId);
+  const rawCart = cartByLocation[locationId];
+  if (!rawCart) return EMPTY_LOCATION_CART;
+
+  const cachedByLocation = normalizedLocationCartCache.get(rawCart);
+  const cached = cachedByLocation?.get(locationId);
+  if (cached) return cached;
+
+  const normalized = normalizeLocationCart(rawCart, locationId);
+  normalized.forEach((item) => Object.freeze(item));
+  Object.freeze(normalized);
+  if (cachedByLocation) {
+    cachedByLocation.set(locationId, normalized);
+  } else {
+    normalizedLocationCartCache.set(rawCart, new Map([[locationId, normalized]]));
+  }
+  return normalized;
 }
 
 export function normalizeCartByLocation(rawCartByLocation: unknown): CartByLocation {

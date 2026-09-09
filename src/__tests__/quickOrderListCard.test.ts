@@ -1,6 +1,11 @@
 import React from 'react';
 import renderer from 'react-test-renderer';
-import { QuickOrderListCard } from '../features/ordering/QuickOrderListCard';
+import {
+  getScrollbarThumbGeometry,
+  QuickOrderListCard,
+} from '../features/ordering/QuickOrderListCard';
+import { useScaledStyles } from '@/hooks/useScaledStyles';
+import type { ParsedQuickOrderItem } from '@/features/ordering/quickOrderItems';
 
 jest.mock('react-native', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock factories cannot reference the top-level React import (babel-plugin-jest-hoist restriction)
@@ -46,24 +51,38 @@ jest.mock('react-native-reanimated', () => {
   };
 
   const View = createComponent('Animated.View');
+  const ScrollView = createComponent('ScrollView');
+  type MockScrollEvent = {
+    contentOffset: { y: number };
+    contentSize: { height: number };
+    layoutMeasurement: { height: number };
+  };
   return {
     __esModule: true,
-    default: { View, createAnimatedComponent: (Component: React.ComponentType) => Component },
+    default: {
+      View,
+      ScrollView,
+      createAnimatedComponent: (Component: React.ComponentType) => Component,
+    },
     View,
     Easing: { bezier: jest.fn(() => jest.fn()) },
-    useAnimatedStyle: jest.fn((factory) => factory()),
-    useSharedValue: jest.fn((value) => ({ value })),
-    withTiming: jest.fn((value) => value),
+    useAnimatedScrollHandler: jest.fn(
+      (handler: (event: MockScrollEvent) => void) =>
+        (event: { nativeEvent: MockScrollEvent }) => handler(event.nativeEvent),
+    ),
+    useAnimatedStyle: jest.fn((factory: () => unknown) => factory()),
+    useSharedValue: jest.fn((value: unknown) => ({ value })),
+    withTiming: jest.fn((value: unknown) => value),
   };
 });
 
 jest.mock('@/hooks/useScaledStyles', () => ({
-  useScaledStyles: () => ({
+  useScaledStyles: jest.fn(() => ({
     spacing: (value: number) => value,
     radius: (value: number) => value,
     fontSize: (value: number) => value,
     icon: (value: number) => value,
-  }),
+  })),
 }));
 
 jest.mock('@/lib/haptics', () => ({
@@ -124,6 +143,33 @@ describe('QuickOrderListCard', () => {
     expect(rendered).toContain('2 cases');
     expect(rendered).toContain('Masago');
     expect(rendered).toContain('1 case');
+  });
+
+  test('fills the scrollbar track when content does not overflow', () => {
+    expect(getScrollbarThumbGeometry({
+      viewportHeight: 160,
+      contentHeight: 120,
+      offsetY: 40,
+      minThumbHeight: 28,
+    })).toEqual({ height: 160, top: 0 });
+  });
+
+  test('keeps the scrollbar thumb inside the track at both scroll limits', () => {
+    const start = getScrollbarThumbGeometry({
+      viewportHeight: 160,
+      contentHeight: 640,
+      offsetY: -20,
+      minThumbHeight: 28,
+    });
+    const end = getScrollbarThumbGeometry({
+      viewportHeight: 160,
+      contentHeight: 640,
+      offsetY: 600,
+      minThumbHeight: 28,
+    });
+
+    expect(start).toEqual({ height: 40, top: 0 });
+    expect(end).toEqual({ height: 40, top: 120 });
   });
 
   test('groups multiple units for the same item under one row with full unit words', () => {
@@ -273,5 +319,50 @@ describe('QuickOrderListCard', () => {
     expect(rendered.indexOf('Ground Garlic')).toBeLessThan(rendered.indexOf('Edamame'));
     expect(rendered.indexOf('Edamame')).toBeLessThan(rendered.indexOf('Shrimp (Frozen)'));
     expect(rendered.indexOf('Shrimp (Frozen)')).toBeLessThan(rendered.indexOf('Albacore'));
+  });
+
+  test('updates the custom scrollbar without a React render on each scroll event', () => {
+    const mockedUseScaledStyles = jest.mocked(useScaledStyles);
+    const items: ParsedQuickOrderItem[] = Array.from({ length: 6 }, (_, index) => ({
+      item_id: `item-${index}`,
+      item_name: `Item ${index}`,
+      quantity: index + 1,
+      unit: 'case',
+      status: 'valid',
+      needs_clarification: false,
+      unresolved: false,
+    }));
+    let component!: renderer.ReactTestRenderer;
+    renderer.act(() => {
+      component = renderer.create(
+        React.createElement(QuickOrderListCard, {
+          items,
+          issueCount: 0,
+          isSubmitting: false,
+          onEditItem: jest.fn(),
+          onResolveQuantity: jest.fn(),
+          onRemoveItems: jest.fn(),
+          onConfirm: jest.fn(),
+          onHeightChange: jest.fn(),
+        }),
+      );
+    });
+
+    const scrollView = component.root.find((node) => String(node.type) === 'ScrollView');
+    const renderCountBeforeScroll = mockedUseScaledStyles.mock.calls.length;
+
+    renderer.act(() => {
+      scrollView.props.onScroll({
+        nativeEvent: {
+          contentOffset: { x: 0, y: 40 },
+          contentSize: { width: 320, height: 360 },
+          layoutMeasurement: { width: 320, height: 156 },
+        },
+      });
+    });
+
+    expect(mockedUseScaledStyles).toHaveBeenCalledTimes(renderCountBeforeScroll);
+
+    renderer.act(() => component.unmount());
   });
 });

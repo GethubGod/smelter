@@ -177,6 +177,14 @@ export function BrowseInventoryScreenView({
         .sort((left, right) => left.name.localeCompare(right.name)),
     [activeLocationId, items],
   );
+  const browseSearchIndex = useMemo(
+    () =>
+      allItemsSorted.map((item) => ({
+        item,
+        normalizedName: item.name.toLowerCase(),
+      })),
+    [allItemsSorted],
+  );
   const dynamicCategories = useMemo(() => buildCategoryList(items), [items]);
   const sortedLocations = useMemo(
     () => [...locations].sort((a, b) => a.name.localeCompare(b.name)),
@@ -205,18 +213,18 @@ export function BrowseInventoryScreenView({
     [allItemsSorted, initialFocusItemId],
   );
 
-  const filteredBrowseItems = useMemo(
-    () =>
-      allItemsSorted.filter((item) => {
+  const filteredBrowseItems = useMemo(() => {
+    const normalizedSearch = browseSearchQuery.trim().toLowerCase();
+    return browseSearchIndex
+      .filter(({ item, normalizedName }) => {
         const matchesCategory =
           !browseCategory || item.category === browseCategory;
         const matchesSearch =
-          browseSearchQuery.trim().length === 0 ||
-          item.name.toLowerCase().includes(browseSearchQuery.trim().toLowerCase());
+          normalizedSearch.length === 0 || normalizedName.includes(normalizedSearch);
         return matchesCategory && matchesSearch;
-      }),
-    [allItemsSorted, browseCategory, browseSearchQuery],
-  );
+      })
+      .map(({ item }) => item);
+  }, [browseCategory, browseSearchIndex, browseSearchQuery]);
   const focusedBrowseItemIndex = useMemo(
     () =>
       initialFocusItemId

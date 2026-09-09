@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useFocusEffect, router } from 'expo-router';
+import { useShallow } from 'zustand/react/shallow';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/constants';
 import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
@@ -107,8 +108,14 @@ export default function FulfillmentHistoryRoute() {
 }
 
 function FulfillmentHistoryScreen() {
-  const { user } = useAuthStore();
-  const { pastOrders, fetchPastOrders, flushPendingPastOrderSync } = useOrderStore();
+  const user = useAuthStore((state) => state.user);
+  const { pastOrders, fetchPastOrders, flushPendingPastOrderSync } = useOrderStore(
+    useShallow((state) => ({
+      pastOrders: state.pastOrders,
+      fetchPastOrders: state.fetchPastOrders,
+      flushPendingPastOrderSync: state.flushPendingPastOrderSync,
+    })),
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const [supplierById, setSupplierById] = useState<Record<string, SupplierLookupRow>>({});

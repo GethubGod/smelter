@@ -60,7 +60,11 @@ import {
 } from './checklistSelection';
 import { buildDirectSendLines } from './directSendFlow';
 import { deriveDisplaySections, type DisplaySection } from './displaySections';
-import { filterCatalogItems, type VoiceAddition } from './catalogSearch';
+import {
+  buildCatalogSearchIndex,
+  filterCatalogSearchIndex,
+  type VoiceAddition,
+} from './catalogSearch';
 import { unitOptionsForLine } from './unitOptions';
 import { ChecklistItemRow } from './components/ChecklistItemRow';
 import { ChecklistSettingsSheet } from './components/ChecklistSettingsSheet';
@@ -278,9 +282,14 @@ export function SimpleOrderScreen() {
     [inventoryItems, location?.id],
   );
 
+  const catalogSearchIndex = useMemo(
+    () => buildCatalogSearchIndex(searchableItems),
+    [searchableItems],
+  );
+
   const searchResults = useMemo(
-    () => filterCatalogItems(searchableItems, searchQuery),
-    [searchQuery, searchableItems],
+    () => filterCatalogSearchIndex(catalogSearchIndex, searchQuery),
+    [catalogSearchIndex, searchQuery],
   );
 
   const handleVoiceApply = useCallback(

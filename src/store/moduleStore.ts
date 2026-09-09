@@ -5,7 +5,7 @@
 
 import { create } from 'zustand';
 import {
-  getMyModules,
+  getModulesForUser,
   subscribeToMyModules,
   type ModuleState,
 } from '@/services/userModules';
@@ -40,7 +40,7 @@ export const useModuleStore = create<ModuleStoreState>((set, get) => ({
     });
 
     try {
-      const states = await getMyModules();
+      const states = await getModulesForUser(userId);
       if (get().userId !== userId || loadId !== latestLoadId) return; // user changed mid-flight
       set({ fetched: states, status: 'ready' });
     } catch (error) {
@@ -72,9 +72,12 @@ export function acquireModuleAccess(userId: string): () => void {
     unsubscribeRealtime?.();
     subscribedUserId = userId;
     void useModuleStore.getState().load(userId);
-    unsubscribeRealtime = subscribeToMyModules(() => {
-      void useModuleStore.getState().load(userId);
-    });
+    unsubscribeRealtime = subscribeToMyModules(
+      () => {
+        void useModuleStore.getState().load(userId);
+      },
+      userId,
+    );
   }
 
   let released = false;

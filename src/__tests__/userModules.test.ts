@@ -136,4 +136,36 @@ describe('user modules service', () => {
     unsubscribe();
     expect(mockSupabase.removeChannel).toHaveBeenCalledWith(channel);
   });
+
+  it('subscribes with a known user id without another auth request', async () => {
+    const channel = {
+      on: jest.fn(),
+      subscribe: jest.fn(),
+    };
+    channel.on.mockReturnValue(channel);
+    channel.subscribe.mockReturnValue(channel);
+    mockSupabase.channel.mockReturnValue(channel);
+
+    subscribeToMyModules(jest.fn(), 'known-user-id');
+    await flushPromises();
+
+    expect(mockSupabase.auth.getUser).not.toHaveBeenCalled();
+    expect(mockSupabase.channel).toHaveBeenCalledWith(
+      'user-module-updates-known-user-id',
+    );
+  });
+
+  it('keeps known-user subscription setup best effort', () => {
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+    mockSupabase.channel.mockImplementationOnce(() => {
+      throw new Error('realtime unavailable');
+    });
+
+    expect(() => subscribeToMyModules(jest.fn(), 'known-user-id')).not.toThrow();
+    expect(consoleError).toHaveBeenCalledWith(
+      'Failed to subscribe to module updates',
+      expect.any(Error),
+    );
+    consoleError.mockRestore();
+  });
 });

@@ -26,7 +26,35 @@ jest.mock('../store/authStore', () => ({
 }));
 
 // eslint-disable-next-line import/first -- must load after the jest.mock() calls above so their mock vars are initialized first
-import { useInventoryStore } from '../store/inventoryStore';
+import {
+  invalidatePendingInventoryRequests,
+  useInventoryStore,
+} from '../store/inventoryStore';
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
+function inventoryItem(id: string, name: string) {
+  return {
+    id,
+    name,
+    category: 'fish',
+    supplier_category: 'fish_supplier',
+    supplier_id: 'supplier-1',
+    location_id: null,
+    base_unit: 'lb',
+    pack_unit: 'case',
+    pack_size: 1,
+    active: true,
+    created_at: '2026-03-23T00:00:00.000Z',
+    created_by: 'user-1',
+  };
+}
 
 function createInventoryQueryResult(result: { data: unknown; error: unknown }) {
   const query: {
@@ -50,6 +78,7 @@ describe('useInventoryStore.fetchItems', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    invalidatePendingInventoryRequests();
     listInventoryMock.mockReset();
     signOutMock.mockReset();
     supabaseMock.from.mockReset();
@@ -145,5 +174,81 @@ describe('useInventoryStore.fetchItems', () => {
       },
     ]);
     expect(useInventoryStore.getState().error).toBeNull();
+  });
+
+  test('shares one inventory request across concurrent callers', async () => {
+    const request = deferred<{ data: ReturnType<typeof inventoryItem>[]; error: null }>();
+    listInventoryMock.mockReturnValue(request.promise);
+
+    const first = useInventoryStore.getState().fetchItems();
+    const second = useInventoryStore.getState().fetchItems();
+
+    await Promise.resolve();
+    expect(listInventoryMock).toHaveBeenCalledTimes(1);
+
+    request.resolve({ data: [inventoryItem('item-1', 'Salmon')], error: null });
+    await Promise.all([first, second]);
+    expect(useInventoryStore.getState().items.map((item) => item.id)).toEqual(['item-1']);
+  });
+
+  test('runs one follow-up refresh when force arrives during a request', async () => {
+    const firstRequest = deferred<{ data: ReturnType<typeof inventoryItem>[]; error: null }>();
+    listInventoryMock
+      .mockReturnValueOnce(firstRequest.promise)
+      .mockResolvedValueOnce({ data: [inventoryItem('item-2', 'Tuna')], error: null });
+
+    const initial = useInventoryStore.getState().fetchItems();
+    await Promise.resolve();
+    expect(listInventoryMock).toHaveBeenCalledTimes(1);
+    const forced = useInventoryStore.getState().fetchItems({ force: true });
+
+    firstRequest.resolve({ data: [inventoryItem('item-1', 'Salmon')], error: null });
+    await Promise.all([initial, forced]);
+
+    expect(listInventoryMock).toHaveBeenCalledTimes(2);
+    expect(useInventoryStore.getState().items.map((item) => item.id)).toEqual(['item-2']);
+  });
+
+  test('does not join or publish an inventory request from a cleared session', async () => {
+    const oldRequest = deferred<{ data: ReturnType<typeof inventoryItem>[]; error: null }>();
+    const newRequest = deferred<{ data: ReturnType<typeof inventoryItem>[]; error: null }>();
+    listInventoryMock
+      .mockReturnValueOnce(oldRequest.promise)
+      .mockReturnValueOnce(newRequest.promise);
+
+    const oldLoad = useInventoryStore.getState().fetchItems();
+    invalidatePendingInventoryRequests();
+    const newLoad = useInventoryStore.getState().fetchItems();
+
+    await Promise.resolve();
+    expect(listInventoryMock).toHaveBeenCalledTimes(2);
+    newRequest.resolve({ data: [inventoryItem('new-item', 'Tuna')], error: null });
+    await newLoad;
+    oldRequest.resolve({ data: [inventoryItem('old-item', 'Salmon')], error: null });
+    await oldLoad;
+
+    expect(useInventoryStore.getState().items.map((item) => item.id)).toEqual(['new-item']);
+  });
+
+  test('does not persist loading or error updates when cached items are unchanged', async () => {
+    const items = Array.from({ length: 2_001 }, (_, index) =>
+      inventoryItem(`item-${index}`, `Item ${index}`),
+    );
+    useInventoryStore.setState({ items });
+    await Promise.resolve();
+    mockAsyncStorage.setItem.mockClear();
+
+    useInventoryStore.setState({ isLoading: true });
+    useInventoryStore.setState({ error: 'network down' });
+    await Promise.resolve();
+
+    expect(mockAsyncStorage.setItem).not.toHaveBeenCalled();
+
+    useInventoryStore.setState({
+      items: [...items, inventoryItem('item-new', 'New item')],
+    });
+    await Promise.resolve();
+
+    expect(mockAsyncStorage.setItem).toHaveBeenCalledTimes(1);
   });
 });

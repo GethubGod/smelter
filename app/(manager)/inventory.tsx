@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore, useInventoryStore, useOrderStore, useSettingsStore } from '@/store';
 import {
   InventoryItem,
@@ -30,6 +31,12 @@ import { useStockNetworkStatus } from '@/hooks';
 import { useManagedRefresh } from '@/hooks/useManagedRefresh';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { normalizeInventoryPackSize } from '@/lib/inventoryUnits';
+import {
+  ManagerInventoryRow,
+  type ManagerInventoryStatus as InventoryStatus,
+  type ManagerInventoryStockItem as InventoryStockItem,
+} from '@/features/inventory/ManagerInventoryRow';
+import { selectManagerInventoryOrderState } from '@/features/inventory/managerInventorySelectors';
 
 
 const categories = [...KNOWN_ITEM_CATEGORIES];
@@ -54,21 +61,6 @@ const REORDER_BAR_HEIGHT = 72;
 const BULK_BAR_HEIGHT = 88;
 
 const ADD_EMOJIS = ['🐟', '🥩', '🥬', '🧊', '❄️', '🍶', '🍺', '📦', '🥗', '🍜'];
-
-const STATUS_COLORS = {
-  critical: colors.error,
-  low: colors.warning,
-  good: colors.success,
-} as const;
-
-type InventoryStatus = 'critical' | 'low' | 'good';
-
-type InventoryStockItem = InventoryWithStock & {
-  status: InventoryStatus;
-  overdue: boolean;
-  fillPercent: number;
-  areaLabel: string;
-};
 
 interface AreaItemEdit {
   id: string;
@@ -105,17 +97,6 @@ const initialForm: NewItemForm = {
   pack_size: '1',
 };
 
-const getRelativeTime = (timestamp: string | null) => {
-  if (!timestamp) return 'Never updated';
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) return 'Never updated';
-  const diffMs = Date.now() - date.getTime();
-  const hours = Math.round(diffMs / (1000 * 60 * 60));
-  const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
-  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
-  return `${days} day${days === 1 ? '' : 's'} ago`;
-};
-
 const getStatus = (item: InventoryWithStock): InventoryStatus => {
   if (item.current_quantity <= 0) return 'critical';
   if (item.current_quantity < item.min_quantity) return 'critical';
@@ -123,14 +104,26 @@ const getStatus = (item: InventoryWithStock): InventoryStatus => {
   return 'good';
 };
 
+const getInventoryItemKey = (item: InventoryStockItem) => item.id;
+
 export default function ManagerInventoryScreen() {
   const ds = useScaledStyles();
-  const { user, locations } = useAuthStore();
-  const { addItem, fetchItems } = useInventoryStore();
-  const { addToCart, getTotalCartCount } = useOrderStore();
-  const { inventoryView, setInventoryView } = useSettingsStore();
+  const { user, locations } = useAuthStore(
+    useShallow((state) => ({ user: state.user, locations: state.locations })),
+  );
+  const { addItem, fetchItems } = useInventoryStore(
+    useShallow((state) => ({ addItem: state.addItem, fetchItems: state.fetchItems })),
+  );
+  const { addToCart, cartCount } = useOrderStore(
+    useShallow(selectManagerInventoryOrderState),
+  );
+  const { inventoryView, setInventoryView } = useSettingsStore(
+    useShallow((state) => ({
+      inventoryView: state.inventoryView,
+      setInventoryView: state.setInventoryView,
+    })),
+  );
   useStockNetworkStatus();
-  const cartCount = getTotalCartCount('manager');
 
   const headerIconSize = Math.max(44, ds.icon(40));
   const badgeSize = Math.max(18, ds.icon(20));
@@ -1304,211 +1297,36 @@ export default function ManagerInventoryScreen() {
     showToastMessage,
   ]);
 
-  const renderListItem = ({ item }: { item: InventoryStockItem }) => {
-    const statusColor = STATUS_COLORS[item.status];
-    const reorderQty = Math.max(item.max_quantity - item.current_quantity, 0);
-    const key = `${item.inventory_item.id}-${item.location.id}`;
-    const added = addedKeys[key];
-    const isSelected = !!bulkSelectedIds[item.id];
-    const relativeTime = getRelativeTime(item.last_updated_at);
+  const renderInventoryItem = useCallback(
+    ({ item }: { item: InventoryStockItem }) => {
+      const key = `${item.inventory_item.id}-${item.location.id}`;
+      return (
+        <ManagerInventoryRow
+          item={item}
+          variant={inventoryView}
+          added={Boolean(addedKeys[key])}
+          isBulkMode={isBulkMode}
+          isSelected={Boolean(bulkSelectedIds[item.id])}
+          onOpen={openEditModal}
+          onEnterBulk={enterBulkMode}
+          onToggleBulk={toggleBulkSelection}
+          onAddToReorder={handleAddToReorder}
+        />
+      );
+    },
+    [
+      addedKeys,
+      bulkSelectedIds,
+      enterBulkMode,
+      handleAddToReorder,
+      inventoryView,
+      isBulkMode,
+      openEditModal,
+      toggleBulkSelection,
+    ],
+  );
 
-    return (
-      <TouchableOpacity
-        activeOpacity={0.9}
-        style={{ marginBottom: ds.spacing(12) }}
-        onPress={() => (isBulkMode ? toggleBulkSelection(item.id) : openEditModal(item))}
-        onLongPress={() => {
-          if (!isBulkMode) enterBulkMode(item);
-        }}
-      >
-        <View
-          className="bg-white rounded-2xl border border-gray-100"
-          style={{
-            paddingHorizontal: ds.spacing(16),
-            paddingVertical: ds.spacing(14),
-            shadowColor: colors.background,
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 2,
-            elevation: 1,
-          }}
-        >
-          <View className="flex-row items-start justify-between">
-            <View className="flex-row items-center flex-1" style={{ paddingRight: ds.spacing(8) }}>
-              {isBulkMode && (
-                <Ionicons
-                  name={isSelected ? 'checkbox' : 'square-outline'}
-                  size={ds.icon(20)}
-                  color={isSelected ? colors.primary[500] : colors.gray[400]}
-                  style={{ marginRight: ds.spacing(8) }}
-                />
-              )}
-              <Text style={{ fontSize: ds.fontSize(18), marginRight: ds.spacing(8) }}>
-                {CATEGORY_EMOJI[item.inventory_item.category] ?? '📦'}
-              </Text>
-              <Text
-                className="font-semibold text-gray-900"
-                style={{ fontSize: ds.fontSize(15) }}
-                numberOfLines={1}
-              >
-                {item.inventory_item.name}
-              </Text>
-            </View>
-            <View
-              className="rounded-full"
-              style={{
-                width: ds.spacing(10),
-                height: ds.spacing(10),
-                backgroundColor: statusColor,
-                marginTop: ds.spacing(4),
-              }}
-            />
-          </View>
-
-          <Text
-            className="text-gray-500"
-            style={{
-              fontSize: ds.fontSize(12),
-              marginTop: ds.spacing(4),
-            }}
-          >
-            {item.areaLabel} • {item.location.name}
-          </Text>
-
-          <View style={{ marginTop: ds.spacing(12) }}>
-            <View
-              className="rounded-full bg-gray-200 overflow-hidden"
-              style={{ height: ds.spacing(6) }}
-            >
-              <View
-                className="h-full rounded-full"
-                style={{ width: `${Math.round(item.fillPercent)}%`, backgroundColor: statusColor }}
-              />
-            </View>
-            <View className="flex-row justify-between" style={{ marginTop: ds.spacing(6) }}>
-              <Text className="text-gray-600" style={{ fontSize: ds.fontSize(12) }}>
-                {item.current_quantity} {item.unit_type}
-              </Text>
-              <Text className="text-gray-500" style={{ fontSize: ds.fontSize(12) }}>
-                Min {item.min_quantity} • Max {item.max_quantity}
-              </Text>
-            </View>
-          </View>
-
-          <View
-            className="flex-row items-center justify-between"
-            style={{ marginTop: ds.spacing(10) }}
-          >
-            <Text className="text-gray-400" style={{ fontSize: ds.fontSize(11) }}>
-              {relativeTime === 'Never updated' ? relativeTime : `Updated ${relativeTime}`}
-            </Text>
-            {item.status === 'critical' && reorderQty > 0 && !isBulkMode ? (
-              <TouchableOpacity
-                className={`rounded-full border ${added ? 'border-green-500' : 'border-orange-500'}`}
-                style={{
-                  paddingHorizontal: ds.spacing(12),
-                  paddingVertical: ds.spacing(6),
-                  minHeight: Math.max(32, ds.icon(28)),
-                  justifyContent: 'center',
-                }}
-                onPress={(event) => {
-                  event.stopPropagation?.();
-                  handleAddToReorder(item);
-                }}
-              >
-                <Text
-                  className={`font-semibold ${added ? 'text-green-600' : 'text-orange-600'}`}
-                  style={{ fontSize: ds.fontSize(12) }}
-                >
-                  {added ? '✓ Added' : `Reorder ${reorderQty}`}
-                </Text>
-              </TouchableOpacity>
-            ) : null}
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  const renderCompactItem = ({ item }: { item: InventoryStockItem }) => {
-    const statusColor = STATUS_COLORS[item.status];
-    const reorderQty = Math.max(item.max_quantity - item.current_quantity, 0);
-    const key = `${item.inventory_item.id}-${item.location.id}`;
-    const added = addedKeys[key];
-    const isSelected = !!bulkSelectedIds[item.id];
-
-    return (
-      <TouchableOpacity
-        activeOpacity={0.9}
-        className="bg-white border border-gray-100 rounded-2xl overflow-hidden"
-        style={{ marginBottom: ds.spacing(8) }}
-        onPress={() => (isBulkMode ? toggleBulkSelection(item.id) : openEditModal(item))}
-        onLongPress={() => {
-          if (!isBulkMode) enterBulkMode(item);
-        }}
-      >
-        <View
-          className="flex-row items-center"
-          style={{
-            paddingHorizontal: ds.spacing(16),
-            paddingVertical: ds.spacing(12),
-          }}
-        >
-          {isBulkMode && (
-            <Ionicons
-              name={isSelected ? 'checkbox' : 'square-outline'}
-              size={ds.icon(18)}
-              color={isSelected ? colors.primary[500] : colors.gray[400]}
-              style={{ marginRight: ds.spacing(8) }}
-            />
-          )}
-          <Text style={{ fontSize: ds.fontSize(18), marginRight: ds.spacing(8) }}>
-            {CATEGORY_EMOJI[item.inventory_item.category] ?? '📦'}
-          </Text>
-          <View className="flex-1">
-            <Text
-              className="font-semibold text-gray-900"
-              style={{ fontSize: ds.fontSize(14) }}
-              numberOfLines={1}
-            >
-              {item.inventory_item.name}
-            </Text>
-            <Text className="text-gray-500" style={{ fontSize: ds.fontSize(12) }}>
-              {item.current_quantity} / {item.max_quantity} {item.unit_type}
-            </Text>
-          </View>
-          <View className="flex-row items-center">
-            <View
-              className="rounded-full"
-              style={{
-                width: ds.spacing(10),
-                height: ds.spacing(10),
-                backgroundColor: statusColor,
-                marginRight: ds.spacing(8),
-              }}
-            />
-            {item.status === 'critical' && reorderQty > 0 && !isBulkMode ? (
-              <TouchableOpacity
-                className={`rounded-full items-center justify-center border ${added ? 'border-green-500' : 'border-orange-500'}`}
-                style={{
-                  width: Math.max(36, ds.icon(32)),
-                  height: Math.max(36, ds.icon(32)),
-                }}
-                onPress={(event) => {
-                  event.stopPropagation?.();
-                  handleAddToReorder(item);
-                }}
-              >
-                <Ionicons name={added ? 'checkmark' : 'add'} size={ds.icon(16)} color={added ? colors.success : colors.primary[500]} />
-              </TouchableOpacity>
-            ) : null}
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  const renderEmptyState = () => {
+  const renderEmptyState = useCallback(() => {
     let icon = '🎉';
     let title = 'All items are well stocked!';
     let subtitle = 'No items need reordering at this time.';
@@ -1544,7 +1362,44 @@ export default function ManagerInventoryScreen() {
         </Text>
       </View>
     );
-  };
+  }, [categoryFilter, debouncedQuery, ds, selectedStat]);
+
+  const renderListEmpty = useCallback(
+    () =>
+      isStockLoading ? (
+        <View className="items-center justify-center" style={{ paddingVertical: ds.spacing(48) }}>
+          <Text className="text-gray-400" style={{ fontSize: ds.fontSize(14) }}>
+            Loading inventory...
+          </Text>
+        </View>
+      ) : (
+        renderEmptyState()
+      ),
+    [ds, isStockLoading, renderEmptyState],
+  );
+
+  const inventoryListContentStyle = useMemo(
+    () => ({
+      paddingHorizontal: ds.spacing(16),
+      paddingBottom: isBulkMode
+        ? BULK_BAR_HEIGHT + ds.spacing(16)
+        : stats.reorder > 0
+          ? REORDER_BAR_HEIGHT + ds.spacing(16)
+          : ds.spacing(24),
+    }),
+    [ds, isBulkMode, stats.reorder],
+  );
+
+  const inventoryRefreshControl = useMemo(
+    () => (
+      <RefreshControl
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        tintColor={colors.primary[500]}
+      />
+    ),
+    [onRefresh, refreshing],
+  );
 
   const bulkItemCount = parseBulkInput().length;
 
@@ -1873,28 +1728,11 @@ export default function ManagerInventoryScreen() {
 
         <FlatList
           data={sortedItems}
-          renderItem={inventoryView === 'list' ? renderListItem : renderCompactItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{
-            paddingHorizontal: ds.spacing(16),
-            paddingBottom: isBulkMode
-              ? BULK_BAR_HEIGHT + ds.spacing(16)
-              : stats.reorder > 0
-                ? REORDER_BAR_HEIGHT + ds.spacing(16)
-                : ds.spacing(24),
-          }}
-          ListEmptyComponent={() => (isStockLoading ? (
-            <View className="items-center justify-center" style={{ paddingVertical: ds.spacing(48) }}>
-              <Text className="text-gray-400" style={{ fontSize: ds.fontSize(14) }}>Loading inventory...</Text>
-            </View>
-          ) : renderEmptyState())}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={colors.primary[500]}
-            />
-          }
+          renderItem={renderInventoryItem}
+          keyExtractor={getInventoryItemKey}
+          contentContainerStyle={inventoryListContentStyle}
+          ListEmptyComponent={renderListEmpty}
+          refreshControl={inventoryRefreshControl}
         />
 
         {!isBulkMode && stats.reorder > 0 && (

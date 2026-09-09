@@ -1,29 +1,85 @@
-import { useDisplayStore } from '@/store/displayStore';
+import { useCallback, useMemo } from 'react';
+import { PixelRatio } from 'react-native';
+import { useShallow } from 'zustand/react/shallow';
+import { computeScaledFontSize, useDisplayStore } from '@/store/displayStore';
 
 export function useScaledStyles() {
-  const store = useDisplayStore();
+  const {
+    scaledSpacing,
+    scaledRadius,
+    iconSize,
+    buttonH,
+    buttonFont,
+    buttonPadH,
+    cardPad,
+    rowH,
+    textScale,
+    uiScale,
+    reduceMotion,
+    theme,
+  } = useDisplayStore(
+    useShallow((store) => ({
+      scaledSpacing: store.scaledSpacing,
+      scaledRadius: store.scaledRadius,
+      iconSize: store.iconSize,
+      buttonH: store.buttonHeight(),
+      buttonFont: store.buttonFontSize(),
+      buttonPadH: store.buttonPaddingH(),
+      cardPad: store.cardPadding(),
+      rowH: store.itemRowHeight(),
+      textScale: store.textScale,
+      uiScale: store.uiScale,
+      reduceMotion: store.reduceMotion,
+      theme: store.theme,
+    })),
+  );
+  const systemFontScale = PixelRatio.getFontScale();
+  const fontSize = useCallback(
+    (basePx: number) => computeScaledFontSize(basePx, textScale, uiScale),
+    // PixelRatio is not observable. This invalidates memoized styles on the next render,
+    // while computeScaledFontSize still reads the current value at call time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [systemFontScale, textScale, uiScale],
+  );
 
-  return {
-    // Scaling functions
-    fontSize: store.scaledFontSize,
-    spacing: store.scaledSpacing,
-    radius: store.scaledRadius,
-    icon: store.iconSize,
+  return useMemo(
+    () => ({
+      // Scaling functions
+      fontSize,
+      spacing: scaledSpacing,
+      radius: scaledRadius,
+      icon: iconSize,
 
-    // Button values
-    buttonH: store.buttonHeight(),
-    buttonFont: store.buttonFontSize(),
-    buttonPadH: store.buttonPaddingH(),
+      // Button values
+      buttonH,
+      buttonFont,
+      buttonPadH,
 
-    // Layout values
-    cardPad: store.cardPadding(),
-    rowH: store.itemRowHeight(),
+      // Layout values
+      cardPad,
+      rowH,
 
-    // Raw values for direct access
-    textScale: store.textScale,
-    isLarge: store.uiScale === 'large',
-    isCompact: store.uiScale === 'compact',
-    reduceMotion: store.reduceMotion,
-    theme: store.theme,
-  };
+      // Raw values for direct access
+      textScale,
+      isLarge: uiScale === 'large',
+      isCompact: uiScale === 'compact',
+      reduceMotion,
+      theme,
+    }),
+    [
+      buttonFont,
+      buttonH,
+      buttonPadH,
+      cardPad,
+      fontSize,
+      iconSize,
+      reduceMotion,
+      scaledRadius,
+      scaledSpacing,
+      rowH,
+      textScale,
+      theme,
+      uiScale,
+    ],
+  );
 }
