@@ -92,29 +92,34 @@ export function totalStockInBase(input: {
 }
 
 /**
- * Converts the configured par level into base units, mirroring the
- * unit-type stored on the inventory row. This keeps the deficit math
- * meaningful regardless of which unit the inventory team configured par in.
+ * Converts the configured par level into base units.
+ *
+ * `countUnitType` is the unit `area_items` denominates the whole row in
+ * (`resolveCountUnitType` below resolves it from `area_items.unit_type`), and
+ * `par_level` is stored in that unit. It is deliberately NOT the wheel's
+ * `unitType`: what the user chose to count in never changes what par means.
  */
 export function parInBase(input: {
   parLevel: number;
-  unitType: UnitType;
+  countUnitType: UnitType;
   packSize: number;
 }): number {
   const par = clampInt(input.parLevel);
   const ps = clampInt(input.packSize) || 1;
-  return input.unitType === 'pack' ? par * ps : par;
+  return input.countUnitType === 'pack' ? par * ps : par;
 }
 
 /**
- * Computes the order deficit (in `unitType` units) for a given stock entry.
+ * Computes the order deficit for a given stock entry, expressed in the row's
+ * count unit. That is the same unit as `par_level`, so the number reads
+ * against the par shown on the sheet.
  *
  * Returns an integer. Negative results (over-stocked) are clamped to 0 to
  * match the design — surplus stock never produces a negative order number.
  */
 export function computeNeedToOrder(item: {
   parLevel: number;
-  unitType: UnitType;
+  countUnitType: UnitType;
   packSize: number;
   stockUnit: UnitType;
   stockAmount: number;
@@ -123,7 +128,7 @@ export function computeNeedToOrder(item: {
   const total = totalStockInBase(item);
   const par = parInBase(item);
   const deficitBase = Math.max(0, par - total);
-  if (item.unitType === 'pack') {
+  if (item.countUnitType === 'pack') {
     const ps = clampInt(item.packSize) || 1;
     // Round up so a partial pack still triggers a full pack order — the
     // safer side of the deficit when the chef is ordering by case.
@@ -233,17 +238,21 @@ export function formatStockDisplay(item: StockCheckItem): string {
 /**
  * Builds the small "par 3 lb · 1 case ≈ 50 lb" subtitle for the bottom
  * sheet header. Omits the conversion clause when pack metadata is missing.
+ *
+ * Par is labelled with the row's count unit, never the wheel's current unit:
+ * `area_items.par_level` is stored in the count unit, so labelling it with
+ * anything else states a par the database does not hold.
  */
 export function formatParSubtitle(item: {
   parLevel: number;
-  unitType: UnitType;
+  countUnitType: UnitType;
   packUnit: string;
   baseUnit: string;
   packSize: number;
 }): string {
   const par = clampInt(item.parLevel);
   const parUnit =
-    item.unitType === 'pack'
+    item.countUnitType === 'pack'
       ? item.packUnit || item.baseUnit || 'each'
       : item.baseUnit || item.packUnit || 'each';
   const head = `par ${par} ${parUnit}`;

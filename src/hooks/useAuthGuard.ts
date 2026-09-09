@@ -75,14 +75,14 @@ export function resolveProtectedAuthGuard(
     return { isChecking: true, redirectTo: null, resolvedRole };
   }
 
-  if (!profile.profile_completed) {
-    // If an auth operation is in progress the profile may not have been
-    // repaired yet. Treat this as "still loading" to avoid a premature
-    // redirect to complete-profile that bounces back once hydration finishes.
-    if (isLoading) {
-      return { isChecking: true, redirectTo: null, resolvedRole };
-    }
-    return { isChecking: false, redirectTo: '/(auth)/complete-profile', resolvedRole };
+  // `profile_completed` no longer gates routing (issue #59). Every shipped
+  // entry path arrives with a name: invites carry the real one, email sign-in
+  // derives one during profile repair. The screen that used to collect it was
+  // unreachable, so it was deleted rather than left as a redirect target.
+  if (isLoading && !profile.profile_completed) {
+    // Hydration is still repairing the profile. Hold rather than route on a
+    // half-built one.
+    return { isChecking: true, redirectTo: null, resolvedRole };
   }
 
   if (profile.is_suspended) {
@@ -144,24 +144,15 @@ export function resolveAuthScreenGuard(
     };
   }
 
-  // Session exists but profile is still null — hydration is in progress.
-  // Stay on the current auth screen and let the sign-in button show its
-  // own loading state. Do NOT redirect to complete-profile prematurely.
+  // Session exists but profile is still null: hydration is in progress. Stay
+  // on the current auth screen and let the sign-in button show its own
+  // loading state rather than routing on a profile we do not have yet.
   if (!profile) {
     return {
       isChecking: false,
       redirectTo: null,
       resolvedRole,
       authenticatedRedirectTo: null,
-    };
-  }
-
-  if (!profile.profile_completed) {
-    return {
-      isChecking: false,
-      redirectTo: '/(auth)/complete-profile',
-      resolvedRole,
-      authenticatedRedirectTo: '/(auth)/complete-profile',
     };
   }
 

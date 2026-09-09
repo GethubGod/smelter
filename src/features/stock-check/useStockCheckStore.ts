@@ -16,6 +16,10 @@ import type {
   StockCheckStatus,
 } from './types';
 import {
+  notifyStockQueueRehydrated,
+  registerStockQueueDrain,
+} from './queueDrainGate';
+import {
   computeNeedToOrder,
   countedQuantityInCountUnit,
   resolveCountUnitType,
@@ -34,8 +38,9 @@ interface PersistedRow {
   hasNote: boolean;
   noteText: string;
   /**
-   * Optional so older caches keep loading. When absent, hydration falls
-   * back to the inventory item's configured `unit_type` or 'pack'.
+   * The user's chosen wheel unit. Optional so older caches keep loading;
+   * when absent, hydration falls back to the row's count unit (resolved from
+   * `area_items.unit_type`).
    */
   unitType?: UnitType;
   /**
@@ -364,10 +369,16 @@ export const useStockCheckStore = create<StockCheckState>()(
               const packUnit = inv.pack_unit ?? '';
               const baseUnit = inv.base_unit ?? '';
               const packSize = Number(inv.pack_size ?? 0) || 0;
-              const configuredUnitType: UnitType =
-                row.unit_type === 'base' ? 'base' : 'pack';
-              const unitType: UnitType =
-                cached?.unitType ?? configuredUnitType;
+              // `area_items.unit_type` is a free-text count label ("fillet",
+              // "bag"), not the literal words 'pack'/'base'. Matching it
+              // against the literal only, as this used to, made every real
+              // unit name resolve to 'pack' and inflated par by `pack_size`.
+              const countUnitType = resolveCountUnitType(
+                row.unit_type,
+                packUnit,
+                baseUnit,
+              );
+              const unitType: UnitType = cached?.unitType ?? countUnitType;
               // Hydrate the wheel-picker triple. Older caches missing these
               // fields fall back to the configured unit + zero stock so the
               // sheet always opens to a valid position.
@@ -388,11 +399,7 @@ export const useStockCheckStore = create<StockCheckState>()(
                 areaName: area.name,
                 parLevel: par,
                 unitType,
-                countUnitType: resolveCountUnitType(
-                  row.unit_type,
-                  packUnit,
-                  baseUnit,
-                ),
+                countUnitType,
                 packUnit,
                 baseUnit,
                 packSize,
@@ -627,7 +634,7 @@ export const useStockCheckStore = create<StockCheckState>()(
         // downstream rewiring.
         const orderQuantity = computeNeedToOrder({
           parLevel: item.parLevel,
-          unitType: item.unitType,
+          countUnitType: item.countUnitType,
           packSize: item.packSize,
           stockUnit,
           stockAmount,
@@ -858,16 +865,24 @@ export const useStockCheckStore = create<StockCheckState>()(
         }
         return { perLocationState: fresh, pendingOps, lastSyncAt } as Partial<StockCheckState>;
       },
-      onRehydrateStorage: () => (state) => {
-        // Next-launch flush: counts saved while the API was unreachable go up
-        // as soon as the persisted queue is back in memory.
-        if (state && state.pendingOps.length > 0) {
-          void state.syncPendingOps();
-        }
+      onRehydrateStorage: () => () => {
+        // Next-launch flush: the persisted queue is back in memory, but the
+        // Supabase session is not necessarily restored yet. The gate holds
+        // the drain until the auth store reports a session, otherwise the
+        // stock-check RPCs run with a null `auth.uid()` and fail (issue #74).
+        notifyStockQueueRehydrated();
       },
     },
   ),
 );
+
+// The launch drain runs from the gate, not from `onRehydrateStorage` directly,
+// so it waits for the auth store to report a restored session. Registered at
+// module load: expo-router pulls every route in at startup, so this module is
+// evaluated before the first screen renders.
+registerStockQueueDrain(() => {
+  void useStockCheckStore.getState().syncPendingOps();
+});
 
 /**
  * Returns a partial state update applying a single-row change.
