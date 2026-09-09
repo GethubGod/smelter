@@ -5,15 +5,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { auth, color, radius, size, space, tracking, typeScale, weight } from '@/theme/tokens';
 
-export interface ScreenHeaderProps {
+interface ScreenHeaderBaseProps {
   title: string;
-  /** `root` is a tab screen and has no back. `pushed` has the circle back button. */
-  mode?: 'root' | 'pushed';
   subtitle?: string;
   /** One right-hand slot: a `Button size="small"`, a chip, or a header icon. */
   right?: React.ReactNode;
-  /** Required in `pushed` mode. */
-  onBack?: () => void;
   /** Render on the black auth surface. */
   onDark?: boolean;
   /** The header owns the top safe-area padding so screens stop doing it. */
@@ -22,6 +18,28 @@ export interface ScreenHeaderProps {
   testID?: string;
   style?: StyleProp<ViewStyle>;
 }
+
+/**
+ * `mode` and `onBack` are one decision, not two.
+ *
+ * A pushed header without a handler used to type-check and then render no back
+ * control at all, stranding the screen. Modelling the two modes as a union
+ * makes that a compile error, and makes a stray `onBack` on a root header an
+ * error too.
+ */
+export type ScreenHeaderProps = ScreenHeaderBaseProps &
+  (
+    | {
+        /** `root` is a tab screen and has no back. */
+        mode?: 'root';
+        onBack?: never;
+      }
+    | {
+        /** `pushed` has the circle back button, so it must have a handler. */
+        mode: 'pushed';
+        onBack: () => void;
+      }
+  );
 
 /**
  * The only screen header (contract variant H1).
@@ -62,7 +80,8 @@ export function ScreenHeader({
       ]}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: ds.spacing(space[3]) }}>
-        {pushed && onBack ? (
+        {/* The union above guarantees a handler whenever mode is pushed. */}
+        {pushed ? (
           <TouchableOpacity
             onPress={onBack}
             activeOpacity={0.8}

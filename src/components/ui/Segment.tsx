@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { color, radius, space, typeScale, weight } from '@/theme/tokens';
+import { color, radius, size, space, typeScale, weight } from '@/theme/tokens';
 
 export interface SegmentOption<T extends string> {
   value: T;
@@ -30,6 +30,13 @@ export function Segment<T extends string>({
   style,
 }: SegmentProps<T>) {
   const ds = useScaledStyles();
+  // The rendered pill keeps the contract height, so the track keeps its shape;
+  // the 44pt target is restored with vertical hitSlop, the same trick Button
+  // and Chip use. Horizontal slop is unnecessary: each option is flex: 1, so it
+  // already spans its share of the full row width. minHeight rather than a
+  // fixed height, so the pill can still grow with the large text setting.
+  const optionHeight = ds.spacing(size.chip);
+  const slop = Math.max(0, Math.ceil((size.touchMin - optionHeight) / 2));
 
   return (
     <View
@@ -56,10 +63,12 @@ export function Segment<T extends string>({
             accessibilityRole="radio"
             accessibilityLabel={option.label}
             accessibilityState={{ selected, checked: selected }}
+            hitSlop={{ top: slop, bottom: slop, left: 0, right: 0 }}
             style={{
               flex: 1,
               alignItems: 'center',
               justifyContent: 'center',
+              minHeight: optionHeight,
               paddingVertical: ds.spacing(space[2] - 1),
               borderRadius: radius.pill,
               backgroundColor: selected ? color.accent : 'transparent',

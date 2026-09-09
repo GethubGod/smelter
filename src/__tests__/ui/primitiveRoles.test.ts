@@ -8,12 +8,15 @@
 import React from 'react';
 import renderer, { type ReactTestInstance } from 'react-test-renderer';
 
+/* A jest.mock factory may only `require`; an import would hoist above the mock. */
+/* eslint-disable @typescript-eslint/no-require-imports */
 jest.mock('react-native', () => require('./nativeMocks').reactNative());
 jest.mock('@expo/vector-icons', () => require('./nativeMocks').vectorIcons());
 jest.mock('react-native-safe-area-context', () => require('./nativeMocks').safeAreaContext());
 jest.mock('@/hooks/useScaledStyles', () => require('./nativeMocks').scaledStyles());
 jest.mock('@/components/LoadingIndicator', () => require('./nativeMocks').loadingIndicator());
 jest.mock('@/components/BottomSheetShell', () => require('./nativeMocks').bottomSheetShell());
+/* eslint-enable @typescript-eslint/no-require-imports */
 
 // The mocks above must land before the primitives load.
 /* eslint-disable import/first */
@@ -152,6 +155,25 @@ describe('Segment', () => {
     radios[2].props.onPress();
     expect(onChange).toHaveBeenCalledWith('both');
   });
+
+  it('keeps a 44pt target on the 32pt option pill', () => {
+    const root = render(
+      React.createElement(Segment, {
+        value: 'sushi',
+        onChange: jest.fn(),
+        options: [
+          { value: 'sushi', label: 'Sushi' },
+          { value: 'poki', label: 'Poki' },
+        ],
+      }),
+    );
+    for (const radio of withRole(root, 'radio')) {
+      const style = radio.props.style as { minHeight: number };
+      const slop = radio.props.hitSlop as { top: number; bottom: number };
+      expect(style.minHeight).toBe(32);
+      expect(style.minHeight + slop.top + slop.bottom).toBeGreaterThanOrEqual(44);
+    }
+  });
 });
 
 describe('StatusPill', () => {
@@ -193,6 +215,22 @@ describe('ScreenHeader', () => {
     expect(back.props.accessibilityLabel).toBe('Back');
     back.props.onPress();
     expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('makes a pushed header without onBack a type error', () => {
+    // Type level, not runtime: a pushed header that cannot go back is the bug
+    // this union exists to stop. The assertion is that this file compiles.
+    // @ts-expect-error mode="pushed" requires onBack.
+    const stranded = React.createElement(ScreenHeader, { title: 'Invite', mode: 'pushed' });
+    expect(stranded).toBeTruthy();
+
+    const strayHandler = React.createElement(ScreenHeader, {
+      title: 'Checklist',
+      mode: 'root',
+      // @ts-expect-error a root header has no back control to hand a handler to.
+      onBack: jest.fn(),
+    });
+    expect(strayHandler).toBeTruthy();
   });
 
   it('owns the top safe-area padding', () => {
@@ -276,6 +314,24 @@ describe('Loading', () => {
     const root = render(React.createElement(Loading, { size: 'inline', label: 'Sending' }));
     expect(hosts(root, (node) => node.props.accessibilityLabel === 'Sending')).toHaveLength(1);
     expect(byHost(root, 'LoadingIndicator')).toHaveLength(1);
+  });
+
+  it('carries the label on the screen spinner too, and forwards it', () => {
+    const root = render(React.createElement(Loading, { label: 'Loading orders' }));
+    const [spinner] = withRole(root, 'progressbar');
+    expect(spinner.props.accessible).toBe(true);
+    expect(spinner.props.accessibilityLabel).toBe('Loading orders');
+    expect(byHost(root, 'LoadingIndicator')[0].props.text).toBe('Loading orders');
+  });
+
+  it('hides the indicator so its hard-coded label cannot win', () => {
+    // LoadingIndicator announces a fixed "Loading"; only the wrapper's label
+    // should reach VoiceOver.
+    const root = render(React.createElement(Loading, { label: 'Loading orders' }));
+    const hidden = hosts(root, (node) => node.props.accessibilityElementsHidden === true);
+    expect(hidden).toHaveLength(1);
+    expect(hidden[0].props.importantForAccessibility).toBe('no-hide-descendants');
+    expect(byHost(hidden[0], 'LoadingIndicator')).toHaveLength(1);
   });
 
   it('centres the screen spinner', () => {

@@ -4,7 +4,10 @@
  * check: if someone edits a token, this test tells them the contract moved and
  * the HTML has to move with it.
  */
+/* A jest.mock factory may only `require`; an import would hoist above the mock. */
+/* eslint-disable @typescript-eslint/no-require-imports */
 jest.mock('react-native', () => require('./nativeMocks').reactNative());
+/* eslint-enable @typescript-eslint/no-require-imports */
 
 // The react-native stub must land before the tokens load.
 /* eslint-disable import/first */

@@ -8,6 +8,7 @@ export interface LoadingProps {
   size?: 'screen' | 'inline';
   /** Inline spinners inherit the surrounding text colour. */
   color?: string;
+  /** Announced by VoiceOver. Give it context: "Loading orders", not "Loading". */
   label?: string;
   testID?: string;
   style?: StyleProp<ViewStyle>;
@@ -19,6 +20,11 @@ export interface LoadingProps {
  * `LoadingIndicator` is the single host of the native `ActivityIndicator`;
  * everything else in the app goes through this wrapper so there is one size,
  * one colour and one accessibility label.
+ *
+ * `LoadingIndicator` announces itself as a progressbar labelled "Loading",
+ * which would drown out the caller's `label`. This wrapper is the labelled
+ * accessibility element and the indicator underneath it is hidden from the
+ * tree, so VoiceOver reads the caller's label exactly once.
  */
 export function Loading({
   size = 'screen',
@@ -27,16 +33,35 @@ export function Loading({
   testID,
   style,
 }: LoadingProps) {
+  const indicator = (
+    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <LoadingIndicator
+        size={size === 'inline' ? 'small' : 'medium'}
+        color={tint ?? color.accent}
+        text={label}
+      />
+    </View>
+  );
+
   if (size === 'inline') {
     return (
-      <View accessibilityLabel={label} testID={testID} style={style}>
-        <LoadingIndicator size="small" color={tint ?? color.accent} />
+      <View
+        accessible
+        accessibilityRole="progressbar"
+        accessibilityLabel={label}
+        testID={testID}
+        style={style}
+      >
+        {indicator}
       </View>
     );
   }
 
   return (
     <View
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={label}
       testID={testID}
       style={[
         {
@@ -48,7 +73,7 @@ export function Loading({
         style,
       ]}
     >
-      <LoadingIndicator size="medium" color={tint ?? color.accent} />
+      {indicator}
     </View>
   );
 }
