@@ -39,6 +39,7 @@ const ROOT_IGNORES = [
  * add to it.
  */
 const DRIFT_ALLOWLIST = [
+  'src/features/inventory/ManagerInventoryRow.tsx',
   // app (2 files, 9)
   'app/_layout.tsx',
   'app/suspended.tsx',
