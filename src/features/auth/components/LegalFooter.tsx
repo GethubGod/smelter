@@ -1,5 +1,6 @@
 import { Alert, Linking, Text, TouchableOpacity, View } from 'react-native';
-import { authTheme } from '@/theme/design';
+import { useScaledStyles } from '@/hooks/useScaledStyles';
+import { auth, space, typeScale } from '@/theme/tokens';
 import { PRIVACY_URL, TERMS_URL } from '../legal';
 
 async function openLegalUrl(url: string) {
@@ -12,16 +13,23 @@ async function openLegalUrl(url: string) {
   }
 }
 
-/** Terms · Privacy policy — pinned to the bottom of every auth screen. */
+/** Terms and Privacy policy, pinned to the bottom of every auth screen. */
 export function LegalFooter() {
+  const ds = useScaledStyles();
+  const linkStyle = {
+    fontSize: ds.fontSize(typeScale.caption),
+    color: auth.dim,
+    textDecorationLine: 'underline' as const,
+  };
+
   return (
     <View
       style={{
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 14,
-        gap: 6,
+        paddingVertical: ds.spacing(space[4]),
+        gap: ds.spacing(space[2] - 2),
       }}
     >
       <TouchableOpacity
@@ -30,32 +38,16 @@ export function LegalFooter() {
         onPress={() => openLegalUrl(TERMS_URL)}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 6 }}
       >
-        <Text
-          style={{
-            fontSize: 11,
-            color: authTheme.legal,
-            textDecorationLine: 'underline',
-          }}
-        >
-          Terms
-        </Text>
+        <Text style={linkStyle}>Terms</Text>
       </TouchableOpacity>
-      <Text style={{ fontSize: 11, color: authTheme.legal }}>·</Text>
+      <Text style={{ fontSize: ds.fontSize(typeScale.caption), color: auth.dim }}>·</Text>
       <TouchableOpacity
         accessibilityRole="link"
         accessibilityLabel="Privacy policy"
         onPress={() => openLegalUrl(PRIVACY_URL)}
         hitSlop={{ top: 10, bottom: 10, left: 6, right: 10 }}
       >
-        <Text
-          style={{
-            fontSize: 11,
-            color: authTheme.legal,
-            textDecorationLine: 'underline',
-          }}
-        >
-          Privacy policy
-        </Text>
+        <Text style={linkStyle}>Privacy policy</Text>
       </TouchableOpacity>
     </View>
   );

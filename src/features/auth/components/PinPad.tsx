@@ -1,7 +1,8 @@
 import { Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerImpactHaptic, ImpactFeedbackStyle } from '@/lib/haptics';
-import { authTheme } from '@/theme/design';
+import { auth, color, radius, size, space, typeScale, weight } from '@/theme/tokens';
 import { PIN_LENGTH } from '@/services/loginCredentials';
 
 interface PinDotsProps {
@@ -9,15 +10,18 @@ interface PinDotsProps {
   error?: boolean;
 }
 
-/** Four entry dots; filled ones turn accent (alert red on mismatch). */
+/** Four entry dots; filled ones turn accent. */
 export function PinDots({ filled, error = false }: PinDotsProps) {
+  const ds = useScaledStyles();
+  const dot = ds.spacing(space[3] + 2);
+
   return (
     <View
       style={{
         flexDirection: 'row',
         justifyContent: 'center',
-        gap: 14,
-        marginVertical: 18,
+        gap: ds.spacing(space[4] - 2),
+        marginVertical: ds.spacing(space[5] - 2),
       }}
     >
       {Array.from({ length: PIN_LENGTH }, (_, index) => {
@@ -26,12 +30,12 @@ export function PinDots({ filled, error = false }: PinDotsProps) {
           <View
             key={index}
             style={{
-              width: 14,
-              height: 14,
-              borderRadius: 7,
-              borderWidth: 1.5,
-              borderColor: on ? authTheme.accent : 'rgba(255, 255, 255, 0.35)',
-              backgroundColor: on ? authTheme.accent : 'transparent',
+              width: dot,
+              height: dot,
+              borderRadius: radius.pill,
+              borderWidth: 1,
+              borderColor: on ? color.accent : auth.wellBorder,
+              backgroundColor: on ? color.accent : auth.well,
               opacity: error ? 0.55 : 1,
             }}
           />
@@ -54,46 +58,63 @@ const PAD_ROWS: string[][] = [
   ['', '0', 'backspace'],
 ];
 
-/** Custom 4-digit pad: digit wells, backspace, haptic ticks. */
+/** Four-digit pad: digit wells, backspace, haptic ticks. */
 export function PinPad({ onDigit, onBackspace, disabled = false }: PinPadProps) {
-  const handlePress = (key: string) => {
+  const ds = useScaledStyles();
+  const key = Math.max(size.touchMin, ds.spacing(size.button));
+
+  const handlePress = (pressed: string) => {
     triggerImpactHaptic(ImpactFeedbackStyle.Light);
-    if (key === 'backspace') {
+    if (pressed === 'backspace') {
       onBackspace();
     } else {
-      onDigit(key);
+      onDigit(pressed);
     }
   };
 
   return (
-    <View style={{ gap: 10 }}>
+    <View style={{ gap: ds.spacing(space[3] - 2) }}>
       {PAD_ROWS.map((row, rowIndex) => (
-        <View key={rowIndex} style={{ flexDirection: 'row', gap: 10 }}>
-          {row.map((key, keyIndex) =>
-            key === '' ? (
+        <View
+          key={rowIndex}
+          style={{ flexDirection: 'row', gap: ds.spacing(space[3] - 2) }}
+        >
+          {row.map((padKey, keyIndex) =>
+            padKey === '' ? (
               <View key={keyIndex} style={{ flex: 1 }} />
             ) : (
               <TouchableOpacity
                 key={keyIndex}
-                onPress={() => handlePress(key)}
+                onPress={() => handlePress(padKey)}
                 disabled={disabled}
                 activeOpacity={0.7}
-                accessibilityLabel={key === 'backspace' ? 'Delete digit' : `Digit ${key}`}
+                accessibilityRole="button"
+                accessibilityLabel={padKey === 'backspace' ? 'Delete digit' : `Digit ${padKey}`}
                 style={{
                   flex: 1,
-                  height: 56,
-                  borderRadius: 16,
+                  height: key,
+                  borderRadius: radius.control,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: key === 'backspace' ? 'transparent' : authTheme.well,
+                  backgroundColor: padKey === 'backspace' ? 'transparent' : auth.well,
                   opacity: disabled ? 0.5 : 1,
                 }}
               >
-                {key === 'backspace' ? (
-                  <Ionicons name="backspace-outline" size={24} color={authTheme.textDim} />
+                {padKey === 'backspace' ? (
+                  <Ionicons
+                    name="backspace-outline"
+                    size={ds.icon(size.icon)}
+                    color={auth.dim}
+                  />
                 ) : (
-                  <Text style={{ fontSize: 22, fontWeight: '700', color: authTheme.text }}>
-                    {key}
+                  <Text
+                    style={{
+                      fontSize: ds.fontSize(typeScale.title),
+                      fontWeight: weight.bold,
+                      color: auth.text,
+                    }}
+                  >
+                    {padKey}
                   </Text>
                 )}
               </TouchableOpacity>
