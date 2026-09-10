@@ -3,7 +3,7 @@ import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetShell } from '@/components/BottomSheetShell';
-import { LoadingIndicator } from '@/components';
+import { Loading } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerSelectionHaptic } from '@/lib/haptics';
 import { color, radius, typeScale, weight } from '@/theme/tokens';
@@ -84,7 +84,7 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
   } else if (orders === null) {
     body = (
       <View style={{ paddingVertical: ds.spacing(24), alignItems: 'center' }}>
-        <LoadingIndicator size="small" color={color.accent} />
+        <Loading size="inline" color={color.accent} label="Loading" />
       </View>
     );
   } else if (detailOrder) {

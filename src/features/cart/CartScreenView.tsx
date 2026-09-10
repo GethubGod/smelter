@@ -25,10 +25,9 @@ import {
   ConfirmLocationBottomSheet,
   GlassSurface,
   ItemActionSheet,
-  LoadingIndicator,
 } from '@/components';
 import type { ItemActionSheetSection } from '@/components';
-import { getTabBarClearance, Sheet } from '@/components/ui';
+import { getTabBarClearance, Loading, Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { completePendingRemindersForUser } from '@/services/notificationService';
 import type { OrderingMode } from '@/features/ordering/types';
@@ -1345,7 +1344,7 @@ export function CartScreenView({
         >
           {isSubmittingThisLocation ? (
             <>
-              <LoadingIndicator size="small" />
+              <Loading size="inline" color={color.onAccent} label="Submitting" />
               <Text style={{ fontSize: ds.fontSize(typeScale.title), color: color.card, fontWeight: '700', marginLeft: ds.spacing(8) }}>
                 Submitting...
               </Text>

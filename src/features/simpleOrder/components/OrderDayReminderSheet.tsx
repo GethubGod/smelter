@@ -3,7 +3,7 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetShell } from '@/components/BottomSheetShell';
-import { LoadingIndicator } from '@/components';
+import { Loading } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import {
   ImpactFeedbackStyle,
@@ -157,7 +157,7 @@ export function OrderDayReminderSheet({
   if (isLoading) {
     body = (
       <View style={{ paddingVertical: ds.spacing(24), alignItems: 'center' }}>
-        <LoadingIndicator size="small" color={color.accent} />
+        <Loading size="inline" color={color.accent} label="Loading" />
       </View>
     );
   } else if (loadError) {
