@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Platform, Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Platform, Text, View } from 'react-native';
 import { Redirect } from 'expo-router';
 import { useAuthStore, useSettingsStore } from '@/store';
 import { getNotificationsModule } from '@/lib/notifications';
@@ -10,13 +9,9 @@ import {
   SettingsScreenLayout,
   SettingsSectionLabel,
 } from '@/components/settings';
+import { Button, ListRow, Loading } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import {
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-  glassSpacing,
-} from '@/theme/design';
+import { color as tokenColor, space, typeScale, weight } from '@/theme/tokens';
 
 interface DebugInfo {
   permissionStatus: string;
@@ -116,7 +111,7 @@ function NotificationsDebugContent() {
     }
   };
 
-  const renderRow = (label: string, value: string | number | boolean | null) => {
+  const renderRow = (label: string, value: string | number | boolean | null, last = false) => {
     const display =
       value === null
         ? 'null'
@@ -125,149 +120,85 @@ function NotificationsDebugContent() {
             ? 'true'
             : 'false'
           : String(value);
-    const color =
+    // Status colours are reserved for state, and this diagnostic row is state.
+    const valueColor =
       value === true || value === 'granted'
-        ? glassColors.successText
+        ? tokenColor.good
         : value === false || value === 'denied'
-          ? glassColors.dangerText
-          : glassColors.textPrimary;
+          ? tokenColor.alert
+          : tokenColor.ink;
 
     return (
-      <View
+      <ListRow
         key={label}
-        style={{
-          flexDirection: 'row',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          paddingHorizontal: ds.spacing(16),
-          paddingVertical: ds.spacing(14),
-          borderBottomWidth: glassHairlineWidth,
-          borderBottomColor: glassColors.divider,
-        }}
-      >
-        <Text
-          style={{
-            flex: 1,
-            paddingRight: ds.spacing(12),
-            fontSize: ds.fontSize(13),
-            color: glassColors.textSecondary,
-          }}
-        >
-          {label}
-        </Text>
-        <Text
-          style={{
-            maxWidth: '55%',
-            fontSize: ds.fontSize(13),
-            color,
-            textAlign: 'right',
-            fontWeight: '600',
-          }}
-          selectable
-          numberOfLines={2}
-        >
-          {display}
-        </Text>
-      </View>
+        title={label}
+        last={last}
+        right={
+          <Text
+            style={{
+              maxWidth: '55%',
+              fontSize: ds.fontSize(typeScale.secondary),
+              color: valueColor,
+              textAlign: 'right',
+              fontWeight: weight.semibold,
+            }}
+            selectable
+            numberOfLines={2}
+          >
+            {display}
+          </Text>
+        }
+      />
     );
   };
 
   return (
-    <SettingsScreenLayout title="Notifications Debug">
-      <SettingsSectionLabel
-        label="Diagnostics"
-        description="Development-only notification state and token visibility inside the same settings shell."
-      />
+    <SettingsScreenLayout
+      title="Notifications debug"
+      subtitle="Development-only notification state and token visibility."
+    >
+      <SettingsSectionLabel label="Diagnostics" />
 
       <SettingsGroup>
         {loading ? (
-          <View style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(18) }}>
-            <Text
-              style={{
-                fontSize: ds.fontSize(14),
-                color: glassColors.textSecondary,
-              }}
-            >
-              Loading...
-            </Text>
+          <View style={{ paddingVertical: ds.spacing(space[5]) }}>
+            <Loading size="inline" label="Loading debug info" style={{ alignItems: 'center' }} />
           </View>
         ) : info ? (
           <>
-            {renderRow('OS Permission', info.permissionStatus)}
-            {renderRow('Local pushEnabled Toggle', info.localPushEnabled)}
+            {renderRow('OS permission', info.permissionStatus)}
+            {renderRow('Local pushEnabled toggle', info.localPushEnabled)}
             {renderRow('DB notifications_enabled', info.profileNotificationsEnabled)}
-            {renderRow('Active DB Tokens', info.dbTokenCount)}
+            {renderRow('Active DB tokens', info.dbTokenCount)}
             {renderRow(
-              'Last Push Token',
+              'Last push token',
               info.lastPushToken ? `...${info.lastPushToken.slice(-20)}` : 'none',
             )}
-            {renderRow('Scheduled Notifications', info.scheduledCount)}
-            {renderRow('Platform', Platform.OS)}
+            {renderRow('Scheduled notifications', info.scheduledCount)}
+            {renderRow('Platform', Platform.OS, true)}
           </>
         ) : null}
       </SettingsGroup>
 
       <View
         style={{
-          paddingHorizontal: glassSpacing.screen,
-          paddingTop: ds.spacing(16),
-          gap: ds.spacing(10),
+          paddingHorizontal: ds.spacing(space[4]),
+          paddingTop: ds.spacing(space[4]),
+          gap: ds.spacing(space[3]),
         }}
       >
-        <TouchableOpacity
-          onPress={sendTestNotification}
-          activeOpacity={0.82}
-          style={{
-            minHeight: Math.max(48, ds.buttonH),
-            borderRadius: glassRadii.button,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: glassColors.accent,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: ds.fontSize(15),
-              fontWeight: '700',
-              color: glassColors.textOnPrimary,
-            }}
-          >
-            Send Test Local Notification
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
+        <Button
+          label="Send test local notification"
+          onPress={() => void sendTestNotification()}
+        />
+        <Button
+          variant="secondary"
+          icon="refresh-outline"
+          label="Refresh"
           onPress={() => {
             void refresh();
           }}
-          activeOpacity={0.82}
-          style={{
-            minHeight: Math.max(48, ds.buttonH),
-            borderRadius: glassRadii.button,
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexDirection: 'row',
-            backgroundColor: glassColors.mediumFill,
-            borderWidth: glassHairlineWidth,
-            borderColor: glassColors.controlBorder,
-          }}
-        >
-          <Ionicons
-            name="refresh-outline"
-            size={ds.icon(18)}
-            color={glassColors.textSecondary}
-          />
-          <Text
-            style={{
-              marginLeft: ds.spacing(8),
-              fontSize: ds.fontSize(15),
-              fontWeight: '700',
-              color: glassColors.textSecondary,
-            }}
-          >
-            Refresh
-          </Text>
-        </TouchableOpacity>
+        />
       </View>
     </SettingsScreenLayout>
   );
