@@ -13,6 +13,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/constants';
 import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
+import { ScreenHeader } from '@/components/ui';
 import { useAuthStore, useOrderStore } from '@/store';
 import { supabase } from '@/lib/supabase';
 import { useManagedRefresh } from '@/hooks/useManagedRefresh';
@@ -203,21 +204,14 @@ function FulfillmentHistoryScreen() {
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }} edges={['top', 'left', 'right']}>
       <ManagerScaleContainer>
-        <View className="px-4 py-3 border-b flex-row items-center" style={{ backgroundColor: color.card, borderColor: color.hairline }}>
-          <TouchableOpacity
-            onPress={() => router.replace('/(manager)/fulfillment')}
-            className="p-2 mr-2"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="arrow-back" size={20} color={colors.gray[700]} />
-          </TouchableOpacity>
-          <View className="flex-1">
-            <Text className="font-bold" style={{ fontSize: typeScale.title, color: color.ink }}>Past Orders</Text>
-            <Text style={{ fontSize: typeScale.secondary, color: color.ink2 }}>
-              {filteredOrders.length} order{filteredOrders.length === 1 ? '' : 's'}
-            </Text>
-          </View>
-        </View>
+        <ScreenHeader
+          title="Past Orders"
+          subtitle={`${filteredOrders.length} order${filteredOrders.length === 1 ? '' : 's'}`}
+          mode="pushed"
+          onBack={() => router.replace('/(manager)/fulfillment')}
+          includeSafeArea={false}
+          style={{ backgroundColor: color.card, borderBottomWidth: 1, borderColor: color.hairline }}
+        />
 
         <View className="px-4 pt-4 pb-2" style={{ backgroundColor: color.page }}>
           <View className="border px-3 py-2.5 flex-row items-center" style={{ backgroundColor: color.card, borderRadius: radius.control, borderColor: color.hairlineStrong }}>

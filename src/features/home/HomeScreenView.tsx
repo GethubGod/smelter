@@ -24,8 +24,8 @@ import {
   AddButton,
   GlassSurface,
   IdentityHeader,
-  LoadingIndicator,
 } from '@/components';
+import { Loading } from '@/components/ui';
 import { colors } from '@/constants';
 import {
   glassColors,
@@ -780,7 +780,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
         edges={['top', 'left', 'right']}
       >
         <View className="flex-1 items-center justify-center">
-          <LoadingIndicator showText text="Loading home..." />
+          <Loading label="Loading home" />
         </View>
       </SafeAreaView>
     );

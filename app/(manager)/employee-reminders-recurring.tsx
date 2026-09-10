@@ -28,6 +28,7 @@ import {
   upsertRecurringReminderRule,
 } from '@/services';
 import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { Button } from '@/components/ui/Button';
 import { Sheet } from '@/components/ui/Sheet';
 
 const WEEKDAY_OPTIONS = [
@@ -83,6 +84,30 @@ function defaultForm(): RuleFormState {
   };
 }
 
+/**
+ * Field-by-field so an unsaved edit is detected without depending on key order.
+ * `daysOfWeek` is always kept sorted by `toggleDay`, so index comparison holds.
+ */
+function isSameRuleForm(a: RuleFormState, b: RuleFormState) {
+  return (
+    a.id === b.id &&
+    a.scope === b.scope &&
+    a.targetId === b.targetId &&
+    a.timeOfDay === b.timeOfDay &&
+    a.conditionType === b.conditionType &&
+    a.conditionValue === b.conditionValue &&
+    a.enabled === b.enabled &&
+    a.quietHoursEnabled === b.quietHoursEnabled &&
+    a.quietStart === b.quietStart &&
+    a.quietEnd === b.quietEnd &&
+    a.push === b.push &&
+    a.inApp === b.inApp &&
+    a.timezone === b.timezone &&
+    a.daysOfWeek.length === b.daysOfWeek.length &&
+    a.daysOfWeek.every((day, index) => day === b.daysOfWeek[index])
+  );
+}
+
 function summarizeDays(days: number[]) {
   if (days.length === 7) return 'Daily';
   return WEEKDAY_OPTIONS.filter((option) => days.includes(option.value)).map((option) => option.label).join(', ');
@@ -119,6 +144,8 @@ export default function EmployeeReminderRecurringScreen() {
 
   const [showEditor, setShowEditor] = useState(false);
   const [form, setForm] = useState<RuleFormState>(defaultForm());
+  // The form the editor opened with. Anything else means unsaved edits.
+  const [formBaseline, setFormBaseline] = useState<RuleFormState>(defaultForm());
 
   const loadData = useCallback(async () => {
     try {
@@ -170,14 +197,23 @@ export default function EmployeeReminderRecurringScreen() {
   };
 
   const openNewRule = () => {
-    setForm(defaultForm());
+    const next = defaultForm();
+    setForm(next);
+    setFormBaseline(next);
     setShowEditor(true);
   };
 
   const openEditRule = (rule: RecurringReminderRule) => {
-    setForm(mapRuleToForm(rule));
+    const next = mapRuleToForm(rule);
+    setForm(next);
+    setFormBaseline(next);
     setShowEditor(true);
   };
+
+  const isEditorDirty = useMemo(
+    () => !isSameRuleForm(form, formBaseline),
+    [form, formBaseline]
+  );
 
   const handleSave = async () => {
     if (!user?.id) {
@@ -456,6 +492,10 @@ export default function EmployeeReminderRecurringScreen() {
           visible={showEditor}
           title={form.id ? 'Edit Rule' : 'New Rule'}
           onClose={() => setShowEditor(false)}
+          // Unsaved rule edits are lost on close, so the scrim and the drag stop
+          // dismissing the editor as soon as the form differs from what it
+          // opened with. Cancel below is the deliberate way out.
+          dismissible={!isEditorDirty}
         >
           <ScrollView
             style={{ maxHeight: windowHeight * 0.7 }}
@@ -665,6 +705,14 @@ export default function EmployeeReminderRecurringScreen() {
                 {isSaving ? 'Saving...' : 'Save Rule'}
               </Text>
             </TouchableOpacity>
+
+            <Button
+              label="Cancel"
+              variant="secondary"
+              onPress={() => setShowEditor(false)}
+              disabled={isSaving}
+              style={{ marginTop: ds.spacing(10) }}
+            />
           </ScrollView>
         </Sheet>
       </ManagerScaleContainer>
