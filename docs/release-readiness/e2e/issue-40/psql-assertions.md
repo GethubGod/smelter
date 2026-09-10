@@ -1248,3 +1248,98 @@ select name, active from public.inventory_items order by name;
  Fixture Wasabi  | t
 (6 rows)
 ```
+
+## pr75-85-invite-create
+
+Run at 2026-09-10T13:56:32Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: manager created a single use invite for "PR75 Invitee",
+-- location group Sushi, 7 day expiry, default module preset.
+select name, location_group, modules, expires_at > now() as unexpired,
+       used_at, used_by, created_by
+  from public.invites order by created_at desc limit 2;
+```
+
+```
+ERROR:  column "name" does not exist
+LINE 1: select name, location_group, modules, expires_at > now() as ...
+               ^
+```
+
+## pr75-85-invite-create
+
+Run at 2026-09-10T13:56:45Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: manager created a single use invite for "PR75 Invitee",
+-- location group Sushi, 7 day expiry, default module preset.
+select invited_name, role, location_group, module_preset,
+       round(extract(epoch from (expires_at - created_at)) / 86400) as expiry_days,
+       used_at, used_by, created_by
+  from public.invites order by created_at desc limit 2;
+```
+
+```
+ invited_name |   role   | location_group |                                       module_preset                                       | expiry_days | used_at | used_by |              created_by              
+--------------+----------+----------------+-------------------------------------------------------------------------------------------+-------------+---------+---------+--------------------------------------
+ PR75 Invitee | employee | sushi          | {"tips": false, "stock_check": true, "ordering_simple": true, "ordering_advanced": false} |           7 |         |         | 1c923ddb-3977-41a4-82b8-39cadef19690
+(1 row)
+```
+
+## pr75-86-reminder-send-and-scheduling
+
+Run at 2026-09-10T14:00:57Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: manager sent a reminder to E2E Employee from
+-- (manager)/employee-reminders, then saved a recurring rule from
+-- (manager)/employee-reminders-recurring (employee scope, Mon/Wed/Fri 15:00,
+-- condition "no order today", channels push + in-app).
+select count(*) as reminders from public.reminders;
+select status, channel, outcome from public.reminder_events order by created_at desc limit 3;
+select type, title from public.notifications order by created_at desc limit 3;
+select scope, days_of_week, time_of_day, timezone, condition_type, channels, enabled
+  from public.recurring_reminder_rules order by created_at desc limit 2;
+```
+
+```
+ reminders 
+-----------
+         1
+(1 row)
+
+ERROR:  column "status" does not exist
+LINE 1: select status, channel, outcome from public.reminder_events ...
+               ^
+ERROR:  column "type" does not exist
+LINE 1: select type, title from public.notifications order by create...
+               ^
+  scope   | days_of_week | time_of_day |      timezone       | condition_type |            channels            | enabled 
+----------+--------------+-------------+---------------------+----------------+--------------------------------+---------
+ employee | {1,3,5}      | 15:00:00    | America/Los_Angeles | no_order_today | {"push": true, "in_app": true} | t
+(1 row)
+```
+
+## pr75-87-reminder-send-rows
+
+Run at 2026-09-10T14:01:07Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: rows written by the reminder send (see pr75-86 for the rule).
+select event_type, channels_attempted, delivery_result, push_delivery_status
+  from public.reminder_events order by sent_at desc limit 3;
+select notification_type, title from public.notifications order by created_at desc limit 3;
+```
+
+```
+ event_type | channels_attempted |                                                                                                                                                         delivery_result                                                                                                                                                          | push_delivery_status 
+------------+--------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------
+ sent       | ["in_app", "push"] | {"push": {"status": "no_tokens", "attempted": true, "receiptIds": [], "tokenCount": 0, "errorDetail": null, "failureCount": 0, "successCount": 0, "deliveryOutcome": null, "tokenResolutionFailed": false}, "source": "manual", "notifications_enabled": true, "in_app_notification_id": "fc6499e9-b1f5-4d93-b81b-441545d86848"} | 
+(1 row)
+
+ notification_type |     title      
+-------------------+----------------
+ employee_reminder | Order reminder
+(1 row)
+```
