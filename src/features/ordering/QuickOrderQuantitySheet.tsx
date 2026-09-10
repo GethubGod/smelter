@@ -4,7 +4,6 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   KeyboardEvent,
-  Modal,
   PanResponder,
   Platform,
   Pressable,
@@ -14,6 +13,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { FullScreenSheet } from "@/components/ui/FullScreenSheet";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useScaledStyles } from "@/hooks/useScaledStyles";
@@ -89,11 +89,10 @@ type QuickOrderQuantitySheetProps = {
 export function QuickOrderQuantitySheet(props: QuickOrderQuantitySheetProps) {
   const current = props.queue[props.index] ?? null;
   return (
-    <Modal
+    <FullScreenSheet
       visible={props.visible && Boolean(current)}
-      transparent
-      animationType="slide"
-      onRequestClose={props.onClose}
+      presentation="overlay"
+      onClose={props.onClose}
     >
       {current ? (
         <SheetBody
@@ -102,7 +101,7 @@ export function QuickOrderQuantitySheet(props: QuickOrderQuantitySheetProps) {
           current={current}
         />
       ) : null}
-    </Modal>
+    </FullScreenSheet>
   );
 }
 

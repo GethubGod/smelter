@@ -25,6 +25,7 @@ import {
   glassHairlineWidth,
   glassRadii,
 } from '@/theme/design';
+import { color, typeScale } from '@/theme/tokens';
 import { segmentedControlColors } from '@/theme/segmentedControls';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { useOrderStore } from '@/store';
@@ -525,7 +526,7 @@ function BrowseItemRowInner({
               <Text
                 style={{
                   flexShrink: 1,
-                  fontSize: ds.fontSize(15),
+                  fontSize: ds.fontSize(typeScale.body),
                   fontWeight: '600',
                   color: glassColors.textPrimary,
                 }}
@@ -545,7 +546,7 @@ function BrowseItemRowInner({
             <Text
               style={{
                 marginTop: ds.spacing(3),
-                fontSize: ds.fontSize(12),
+                fontSize: ds.fontSize(typeScale.secondary),
                 color: glassColors.textSecondary,
               }}
               numberOfLines={1}
@@ -556,7 +557,7 @@ function BrowseItemRowInner({
               <Text
                 style={{
                   marginTop: ds.spacing(3),
-                  fontSize: ds.fontSize(11),
+                  fontSize: ds.fontSize(typeScale.caption),
                   color: glassColors.textMuted,
                 }}
               >
@@ -577,7 +578,7 @@ function BrowseItemRowInner({
                 alignItems: 'center',
               }}
               textStyle={{
-                fontSize: ds.fontSize(13),
+                fontSize: ds.fontSize(typeScale.secondary),
               }}
             />
           ) : isExpanded ? (
@@ -599,7 +600,7 @@ function BrowseItemRowInner({
                   accessibilityLabel="Remove item from cart"
                   tint={glassColors.dangerText}
                   backgroundColor={glassColors.dangerSoft}
-                  borderColor="rgba(239, 68, 68, 0.16)"
+                  borderColor={color.alertBg}
                 />
               </View>
             </View>
@@ -624,7 +625,7 @@ function BrowseItemRowInner({
                 <Text
                   numberOfLines={1}
                   style={{
-                    fontSize: ds.fontSize(14),
+                    fontSize: ds.fontSize(typeScale.body),
                     color: colors.textSecondary,
                   }}
                 >
@@ -678,7 +679,7 @@ function BrowseItemRowInner({
               >
                 <Text
                   style={{
-                    fontSize: ds.fontSize(13),
+                    fontSize: ds.fontSize(typeScale.secondary),
                     fontWeight: '600',
                     color:
                       inputMode === 'quantity'
@@ -706,7 +707,7 @@ function BrowseItemRowInner({
               >
                 <Text
                   style={{
-                    fontSize: ds.fontSize(13),
+                    fontSize: ds.fontSize(typeScale.secondary),
                     fontWeight: '600',
                     color:
                       inputMode === 'remaining'
@@ -737,8 +738,8 @@ function BrowseItemRowInner({
                   icon="remove"
                   onPress={handleDecrement}
                   accessibilityLabel={`Decrease ${item.name}`}
-                  backgroundColor="rgba(0, 0, 0, 0.06)"
-                  borderColor="rgba(0, 0, 0, 0.10)"
+                  backgroundColor={color.well}
+                  borderColor={color.hairlineStrong}
                 />
                 <TextInput
                   value={activeValueText}
@@ -762,7 +763,7 @@ function BrowseItemRowInner({
                     borderColor: glassColors.controlBorder,
                     backgroundColor: glassColors.mediumFill,
                     textAlign: 'center',
-                    fontSize: ds.fontSize(18),
+                    fontSize: ds.fontSize(typeScale.title),
                     fontWeight: '600',
                     color: glassColors.textPrimary,
                   }}
@@ -771,8 +772,8 @@ function BrowseItemRowInner({
                   icon="add"
                   onPress={handleIncrement}
                   accessibilityLabel={`Increase ${item.name}`}
-                  backgroundColor="rgba(0, 0, 0, 0.06)"
-                  borderColor="rgba(0, 0, 0, 0.10)"
+                  backgroundColor={color.well}
+                  borderColor={color.hairlineStrong}
                 />
               </View>
 
@@ -810,7 +811,7 @@ function BrowseItemRowInner({
                   <Text
                     numberOfLines={1}
                     style={{
-                      fontSize: ds.fontSize(12),
+                      fontSize: ds.fontSize(typeScale.secondary),
                       fontWeight: '600',
                       color:
                         unitType === 'pack'
@@ -845,7 +846,7 @@ function BrowseItemRowInner({
                   <Text
                     numberOfLines={1}
                     style={{
-                      fontSize: ds.fontSize(12),
+                      fontSize: ds.fontSize(typeScale.secondary),
                       fontWeight: '600',
                       color:
                         unitType === 'base'
@@ -866,7 +867,7 @@ function BrowseItemRowInner({
                 <Text
                   style={{
                     marginBottom: ds.spacing(6),
-                    fontSize: ds.fontSize(11),
+                    fontSize: ds.fontSize(typeScale.caption),
                     fontWeight: '600',
                     color: glassColors.textSecondary,
                     textTransform: 'uppercase',
@@ -888,7 +889,7 @@ function BrowseItemRowInner({
                     borderWidth: glassHairlineWidth,
                     borderColor: glassColors.controlBorder,
                     backgroundColor: glassColors.mediumFill,
-                    fontSize: ds.fontSize(14),
+                    fontSize: ds.fontSize(typeScale.body),
                     color: glassColors.textPrimary,
                   }}
                 />
@@ -899,7 +900,7 @@ function BrowseItemRowInner({
               <Text
                 style={{
                   marginTop: ds.spacing(10),
-                  fontSize: ds.fontSize(11),
+                  fontSize: ds.fontSize(typeScale.caption),
                   color: glassColors.textSecondary,
                 }}
               >

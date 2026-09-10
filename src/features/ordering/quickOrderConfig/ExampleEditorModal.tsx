@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -11,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { FullScreenSheet } from '@/components/ui/FullScreenSheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
@@ -214,11 +214,9 @@ export function ExampleEditorModal({
   const typeIsLocked = isEditing;
 
   return (
-    <Modal
+    <FullScreenSheet
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
+      onClose={onClose}
     >
       <SafeAreaView
         style={{ flex: 1, backgroundColor: glassColors.background }}
@@ -379,7 +377,7 @@ export function ExampleEditorModal({
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </Modal>
+    </FullScreenSheet>
   );
 }
 

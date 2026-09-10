@@ -34,6 +34,7 @@ import {
   glassRadii,
   glassSpacing,
 } from '@/theme/design';
+import { typeScale } from '@/theme/tokens';
 
 const CHANNEL_OPTIONS: { value: SupplierContactChannel; label: string }[] = [
   { value: 'sms', label: 'SMS' },
@@ -171,7 +172,7 @@ export function SupplierContactsScreen() {
     <View style={{ marginTop: ds.spacing(12) }}>
       <Text
         style={{
-          fontSize: ds.fontSize(11),
+          fontSize: ds.fontSize(typeScale.caption),
           fontWeight: '700',
           color: glassColors.textSecondary,
           textTransform: 'uppercase',
@@ -199,7 +200,7 @@ export function SupplierContactsScreen() {
           backgroundColor: glassColors.mediumFill,
           paddingHorizontal: ds.spacing(12),
           paddingVertical: options?.multiline ? ds.spacing(10) : ds.spacing(8),
-          fontSize: ds.fontSize(14),
+          fontSize: ds.fontSize(typeScale.body),
           color: glassColors.textPrimary,
         }}
       />
@@ -241,7 +242,7 @@ export function SupplierContactsScreen() {
               <Text
                 style={{
                   marginTop: ds.spacing(10),
-                  fontSize: ds.fontSize(14),
+                  fontSize: ds.fontSize(typeScale.body),
                   color: glassColors.textSecondary,
                   textAlign: 'center',
                 }}
@@ -263,7 +264,7 @@ export function SupplierContactsScreen() {
               >
                 <Text
                   style={{
-                    fontSize: ds.fontSize(14),
+                    fontSize: ds.fontSize(typeScale.body),
                     fontWeight: '700',
                     color: glassColors.textOnPrimary,
                   }}
@@ -293,7 +294,7 @@ export function SupplierContactsScreen() {
                   <View style={{ padding: ds.spacing(20), alignItems: 'center' }}>
                     <Text
                       style={{
-                        fontSize: ds.fontSize(13),
+                        fontSize: ds.fontSize(typeScale.secondary),
                         color: glassColors.textSecondary,
                         textAlign: 'center',
                       }}
@@ -333,7 +334,7 @@ export function SupplierContactsScreen() {
                           <View style={{ flex: 1 }}>
                             <Text
                               style={{
-                                fontSize: ds.fontSize(15),
+                                fontSize: ds.fontSize(typeScale.body),
                                 fontWeight: '600',
                                 color: glassColors.textPrimary,
                               }}
@@ -344,7 +345,7 @@ export function SupplierContactsScreen() {
                             <Text
                               style={{
                                 marginTop: ds.spacing(3),
-                                fontSize: ds.fontSize(12),
+                                fontSize: ds.fontSize(typeScale.secondary),
                                 color: glassColors.textSecondary,
                               }}
                               numberOfLines={1}
@@ -368,7 +369,7 @@ export function SupplierContactsScreen() {
                           >
                             <Text
                               style={{
-                                fontSize: ds.fontSize(11),
+                                fontSize: ds.fontSize(typeScale.caption),
                                 fontWeight: '700',
                                 color: glassColors.textSecondary,
                                 textTransform: 'uppercase',
@@ -443,7 +444,7 @@ export function SupplierContactsScreen() {
                               <Text
                                 style={{
                                   marginLeft: ds.spacing(8),
-                                  fontSize: ds.fontSize(14),
+                                  fontSize: ds.fontSize(typeScale.body),
                                   fontWeight: '700',
                                   color: glassColors.textOnPrimary,
                                 }}
@@ -471,8 +472,8 @@ export function SupplierContactsScreen() {
               >
                 <Text
                   style={{
-                    fontSize: ds.fontSize(13),
-                    lineHeight: ds.fontSize(19),
+                    fontSize: ds.fontSize(typeScale.secondary),
+                    lineHeight: ds.fontSize(typeScale.title),
                     color: glassColors.textSecondary,
                   }}
                 >

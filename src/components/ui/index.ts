@@ -10,6 +10,11 @@ export { Button, type ButtonProps, type ButtonVariant, type ButtonSize } from '.
 export { Card, type CardProps } from './Card';
 export { Chip, type ChipProps } from './Chip';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
+export {
+  FullScreenSheet,
+  type FullScreenSheetProps,
+  type FullScreenSheetPresentation,
+} from './FullScreenSheet';
 export { Input, type InputProps } from './Input';
 export { ListRow, type ListRowProps } from './ListRow';
 export { Loading, type LoadingProps } from './Loading';
