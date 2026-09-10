@@ -132,7 +132,7 @@ export default function RootLayout() {
         <StatusBar style={statusBarStyle} />
         <Text
           style={{
-            fontSize: typeScale.title,
+            fontSize: typeScale.display,
             fontWeight: "700",
             color: colors.textPrimary,
             marginBottom: 10,

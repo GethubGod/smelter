@@ -5,7 +5,7 @@ export type FullScreenSheetPresentation = 'page' | 'overlay';
 
 export interface FullScreenSheetProps {
   visible: boolean;
-  /** Hardware back on Android, and the swipe-down dismissal on iOS. */
+  /** Hardware back on Android, and whatever dismissal the caller wires up. */
   onClose: () => void;
   /**
    * `page` is the opaque iOS card: a full form with its own header and
