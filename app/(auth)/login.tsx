@@ -1,8 +1,17 @@
 // The legacy email and password sign-in. Under the UI contract it wears the
 // same black fields as name/PIN sign-in instead of a white floating card.
 
-import { useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+// React stays in scope for the classic JSX transform the jest tsconfig uses.
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Alert,
+  Keyboard,
+  Pressable,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Link, Redirect, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/store';
 import { AuthLoadingScreen, AuthLogoHeader } from '@/components';
@@ -10,7 +19,7 @@ import { Button, Input, SectionLabel } from '@/components/ui';
 import { useAuthScreenGuard } from '@/hooks';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { supabase } from '@/lib';
-import { auth, radius, space, tracking, typeScale, weight } from '@/theme/tokens';
+import { auth, radius, size, space, tracking, typeScale, weight } from '@/theme/tokens';
 import { AuthScreenShell } from '@/features/auth/components/AuthScreenShell';
 
 const SIGN_IN_PASSWORD_HELPER =
@@ -51,7 +60,7 @@ export default function LoginScreen() {
   }, [initialEmail]);
 
   if (guard.isChecking) {
-    return <AuthLoadingScreen />;
+    return <AuthLoadingScreen onDark />;
   }
 
   if (guard.authenticatedRedirectTo) {
@@ -59,6 +68,11 @@ export default function LoginScreen() {
   }
 
   const handleLogin = async () => {
+    // The keyboard's Go key reaches this handler while the Sign In button is
+    // disabled, so the gate lives here and covers both entry points.
+    if (isLoading) {
+      return;
+    }
     if (!email.trim()) {
       Alert.alert('Error', 'Please enter your email');
       return;
@@ -120,134 +134,146 @@ export default function LoginScreen() {
     fontWeight: weight.semibold,
     color: auth.text,
   };
+  /** Inline text actions still have to clear the 44pt target. */
+  const inlineActionStyle = {
+    minHeight: ds.spacing(size.touchMin),
+    justifyContent: 'center' as const,
+  };
 
   return (
     <AuthScreenShell dismissKeyboardOnPress={false}>
       <ScrollView
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: ds.spacing(space[6]) }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: ds.spacing(space[6]) }}
       >
-        <View style={{ alignItems: 'center', marginBottom: ds.spacing(space[6]) }}>
-          <AuthLogoHeader size={64} />
-        </View>
-
-        <Text
-          accessibilityRole="header"
-          style={{
-            fontSize: ds.fontSize(typeScale.display),
-            fontWeight: weight.bold,
-            letterSpacing: tracking.display,
-            color: auth.text,
-            marginBottom: ds.spacing(space[5]),
-          }}
-        >
-          Welcome Back
-        </Text>
-
-        <Input
-          label="Email"
-          onDark
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Enter your email"
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="email-address"
-          textContentType="emailAddress"
-          autoComplete="email"
-        />
-
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <SectionLabel onDark>Password</SectionLabel>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
-            onPress={() => setShowPassword(!showPassword)}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Text style={linkTextStyle}>{showPassword ? 'Hide' : 'Show'}</Text>
-          </TouchableOpacity>
-        </View>
-        <Input
-          onDark
-          accessibilityLabel="Password"
-          value={password}
-          onChangeText={(value) => {
-            setPassword(value);
-            if (signInHelper) setSignInHelper(null);
-          }}
-          placeholder="Enter your password"
-          secureTextEntry={!showPassword}
-          autoCapitalize="none"
-          autoCorrect={false}
-          textContentType="password"
-          autoComplete="password"
-          returnKeyType="go"
-          onSubmitEditing={handleLogin}
-        />
-
-        <View style={{ alignItems: 'flex-end', marginTop: ds.spacing(space[3]) }}>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityState={{ disabled: isResettingPassword, busy: isResettingPassword }}
-            onPress={handleForgotPassword}
-            disabled={isResettingPassword}
-            hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
-          >
-            <Text style={linkTextStyle}>
-              {isResettingPassword ? 'Sending reset link...' : 'Forgot password?'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {signInHelper ? (
-          <View style={noteStyle}>
-            <Text style={noteTextStyle}>{signInHelper}</Text>
+        {/* The shell hands scrolling to this screen, so the tap-to-dismiss
+            surface lives here instead of around the whole shell. */}
+        <Pressable accessible={false} style={{ flex: 1 }} onPress={Keyboard.dismiss}>
+          <View style={{ alignItems: 'center', marginBottom: ds.spacing(space[6]) }}>
+            <AuthLogoHeader size={64} />
           </View>
-        ) : null}
 
-        {noticeMessage ? (
-          <View style={noteStyle}>
-            <Text style={noteTextStyle}>{noticeMessage}</Text>
-          </View>
-        ) : null}
-
-        <Button
-          label="Sign In"
-          onPress={handleLogin}
-          loading={isLoading}
-          disabled={isLoading}
-          style={{ marginTop: ds.spacing(space[5]) }}
-        />
-
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: ds.spacing(space[1]),
-            marginTop: ds.spacing(space[6]),
-          }}
-        >
-          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: auth.dim }}>
-            Don{"'"}t have an account?
+          <Text
+            accessibilityRole="header"
+            style={{
+              fontSize: ds.fontSize(typeScale.display),
+              fontWeight: weight.bold,
+              letterSpacing: tracking.display,
+              color: auth.text,
+              marginBottom: ds.spacing(space[5]),
+            }}
+          >
+            Welcome Back
           </Text>
-          <Link href="/(auth)/signup" asChild>
+
+          <Input
+            label="Email"
+            onDark
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Enter your email"
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="email-address"
+            textContentType="emailAddress"
+            autoComplete="email"
+          />
+
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <SectionLabel onDark>Password</SectionLabel>
             <TouchableOpacity
-              accessibilityRole="link"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+              onPress={() => setShowPassword(!showPassword)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={inlineActionStyle}
             >
-              <Text style={linkTextStyle}>Sign Up</Text>
+              <Text style={linkTextStyle}>{showPassword ? 'Hide' : 'Show'}</Text>
             </TouchableOpacity>
-          </Link>
-        </View>
+          </View>
+          <Input
+            onDark
+            accessibilityLabel="Password"
+            value={password}
+            onChangeText={(value) => {
+              setPassword(value);
+              if (signInHelper) setSignInHelper(null);
+            }}
+            placeholder="Enter your password"
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            autoCorrect={false}
+            textContentType="password"
+            autoComplete="password"
+            returnKeyType="go"
+            onSubmitEditing={handleLogin}
+          />
+
+          <View style={{ alignItems: 'flex-end', marginTop: ds.spacing(space[3]) }}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityState={{ disabled: isResettingPassword, busy: isResettingPassword }}
+              onPress={handleForgotPassword}
+              disabled={isResettingPassword}
+              hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
+              style={inlineActionStyle}
+            >
+              <Text style={linkTextStyle}>
+                {isResettingPassword ? 'Sending reset link...' : 'Forgot password?'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {signInHelper ? (
+            <View style={noteStyle}>
+              <Text style={noteTextStyle}>{signInHelper}</Text>
+            </View>
+          ) : null}
+
+          {noticeMessage ? (
+            <View style={noteStyle}>
+              <Text style={noteTextStyle}>{noticeMessage}</Text>
+            </View>
+          ) : null}
+
+          <Button
+            label="Sign In"
+            onPress={handleLogin}
+            loading={isLoading}
+            disabled={isLoading}
+            style={{ marginTop: ds.spacing(space[5]) }}
+          />
+
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: ds.spacing(space[1]),
+              marginTop: ds.spacing(space[6]),
+            }}
+          >
+            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: auth.dim }}>
+              Don{"'"}t have an account?
+            </Text>
+            <Link href="/(auth)/signup" asChild>
+              <TouchableOpacity
+                accessibilityRole="link"
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={inlineActionStyle}
+              >
+                <Text style={linkTextStyle}>Sign Up</Text>
+              </TouchableOpacity>
+            </Link>
+          </View>
+        </Pressable>
       </ScrollView>
     </AuthScreenShell>
   );

@@ -11,7 +11,7 @@ import { Button, Input } from '@/components/ui';
 import { useAuthScreenGuard } from '@/hooks';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { getLoginFailureCode, signInWithName } from '@/services/loginCredentials';
-import { auth, space, tracking, typeScale, weight } from '@/theme/tokens';
+import { auth, size, space, tracking, typeScale, weight } from '@/theme/tokens';
 import { AuthScreenShell } from './components/AuthScreenShell';
 
 export default function NameSignInScreen() {
@@ -22,7 +22,7 @@ export default function NameSignInScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (guard.isChecking) return <AuthLoadingScreen />;
+  if (guard.isChecking) return <AuthLoadingScreen onDark />;
   if (guard.authenticatedRedirectTo) return <Redirect href={guard.authenticatedRedirectTo} />;
 
   const canSubmit = name.trim().length > 0 && secret.length > 0 && !submitting;
@@ -124,7 +124,8 @@ export default function NameSignInScreen() {
         <Link href="/(auth)/signup" asChild>
           <TouchableOpacity
             accessibilityRole="link"
-            hitSlop={{ top: 8, bottom: 8, left: 20, right: 20 }}
+            hitSlop={{ top: 10, bottom: 10, left: 20, right: 20 }}
+            style={{ justifyContent: 'center', minHeight: ds.spacing(size.touchMin) }}
           >
             <Text
               style={{
