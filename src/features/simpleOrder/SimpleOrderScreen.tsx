@@ -20,8 +20,7 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import { useShallow } from 'zustand/react/shallow';
-import { EmptyStateCard, LoadingIndicator } from '@/components';
-import { getFloatingPillClearance } from '@/components/navigation';
+import { Button, EmptyState, Loading, ScreenHeader, getTabBarClearance } from '@/components/ui';
 import { useResolvedActiveLocation } from '@/hooks/useResolvedActiveLocation';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import {
@@ -44,7 +43,7 @@ import { getMyOrderSendMode, type OrderSendMode } from '@/services/orderSendMode
 import type { SendAllQueueProgress } from '@/features/fulfillment/sendAll/sendAllQueue';
 import { useAuthStore, useInventoryStore, useSettingsStore } from '@/store';
 import { useSimpleOrderUiStore } from '@/store/simpleOrderUiStore';
-import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { color, radius, space, typeScale, weight } from '@/theme/tokens';
 import type { InventoryItem, Location } from '@/types';
 import { LocationSwitcherDropdown } from '@/features/stock-check/components/LocationSwitcherDropdown';
 import {
@@ -593,7 +592,7 @@ export function SimpleOrderScreen() {
     [density, ds, rareExpanded],
   );
 
-  const pillClearance = getFloatingPillClearance(insets.bottom);
+  const pillClearance = getTabBarClearance(insets.bottom);
   const orderBarRestingBottom = pillClearance + ds.spacing(2);
   // Pill toolbar + the pinned composer both float over the checklist, so the
   // last row has to scroll a full row gap clear of the composer's top edge.
@@ -644,49 +643,33 @@ export function SimpleOrderScreen() {
           {sentItemCount === 1 ? '1 item' : `${sentItemCount} items`} went to
           your manager for review.
         </Text>
-        <TouchableOpacity
+        <Button
+          label="Done"
           onPress={handleSuccessDone}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel="Back to checklist"
-          style={{
-            minHeight: 52,
-            paddingHorizontal: ds.spacing(28),
-            borderRadius: radius.pill,
-            backgroundColor: color.accent,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: '700', color: color.onAccent }}>
-            Done
-          </Text>
-        </TouchableOpacity>
+          fullWidth={false}
+          accessibilityHint="Returns to the checklist"
+        />
       </View>
     );
   } else if (isLoading) {
-    content = <LoadingIndicator />;
+    content = <Loading label="Loading your checklist" />;
   } else if (loadError) {
     content = (
-      <View style={{ paddingTop: ds.spacing(24) }}>
-        <EmptyStateCard
-          icon="alert-circle-outline"
-          title="Checklist unavailable"
-          message={loadError}
-          actionLabel="Try again"
-          onPressAction={() => void loadChecklist('load')}
-        />
-      </View>
+      <EmptyState
+        icon="alert-circle-outline"
+        tone="alert"
+        title="Checklist unavailable"
+        body={loadError}
+        action={{ label: 'Try again', onPress: () => void loadChecklist('load') }}
+      />
     );
   } else if (selection.lines.length === 0) {
     content = (
-      <View style={{ paddingTop: ds.spacing(24) }}>
-        <EmptyStateCard
-          icon="clipboard-outline"
-          title="No checklist yet"
-          message="Once you have order history here, your usual items appear automatically. Use the search bar below to add items."
-        />
-      </View>
+      <EmptyState
+        icon="clipboard-outline"
+        title="No checklist yet"
+        body="Once you have order history here, your usual items appear automatically. Use the search bar below to add items."
+      />
     );
   } else {
     content = (
@@ -725,60 +708,55 @@ export function SimpleOrderScreen() {
             paddingBottom: ds.spacing(6),
           }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: ds.spacing(8) }}>
-            <Text
-              style={{
-                flex: 1,
-                fontSize: ds.fontSize(typeScale.display),
-                fontWeight: '700',
-                color: color.ink,
-              }}
-            >
-              Checklist
-            </Text>
-            <TouchableOpacity
-              onPress={() => {
-                void triggerImpactHaptic(ImpactFeedbackStyle.Light);
-                setLocationDropdownOpen((prev) => !prev);
-              }}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityState={{ expanded: locationDropdownOpen }}
-              accessibilityLabel={`Location: ${locationLabel}. Change location`}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: ds.spacing(7),
-                backgroundColor: color.card,
-                borderWidth: 1,
-                borderColor: color.hairline,
-                borderRadius: radius.pill,
-                paddingHorizontal: ds.spacing(12),
-                paddingVertical: ds.spacing(7),
-              }}
-            >
-              <View
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: radius.pill,
-                  backgroundColor: color.accent,
+          <ScreenHeader
+            title="Checklist"
+            includeSafeArea={false}
+            style={{ paddingHorizontal: 0, paddingBottom: 0 }}
+            right={
+              <TouchableOpacity
+                onPress={() => {
+                  void triggerImpactHaptic(ImpactFeedbackStyle.Light);
+                  setLocationDropdownOpen((prev) => !prev);
                 }}
-              />
-              <Text
-                numberOfLines={1}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: locationDropdownOpen }}
+                accessibilityLabel={`Location: ${locationLabel}. Change location`}
                 style={{
-                  maxWidth: ds.spacing(120),
-                  fontSize: ds.fontSize(typeScale.secondary),
-                  fontWeight: weight.semibold,
-                  color: color.ink,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: ds.spacing(space[2] - 1),
+                  backgroundColor: color.card,
+                  borderWidth: 1,
+                  borderColor: color.hairline,
+                  borderRadius: radius.pill,
+                  paddingHorizontal: ds.spacing(space[3]),
+                  paddingVertical: ds.spacing(space[2] - 1),
                 }}
               >
-                {locationLabel}
-              </Text>
-              <Ionicons name="chevron-down" size={ds.icon(13)} color={color.ink2} />
-            </TouchableOpacity>
-          </View>
+                <View
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: radius.pill,
+                    backgroundColor: color.accent,
+                  }}
+                />
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    maxWidth: ds.spacing(120),
+                    fontSize: ds.fontSize(typeScale.secondary),
+                    fontWeight: weight.semibold,
+                    color: color.ink,
+                  }}
+                >
+                  {locationLabel}
+                </Text>
+                <Ionicons name="chevron-down" size={ds.icon(13)} color={color.ink2} />
+              </TouchableOpacity>
+            }
+          />
           {/* Absolute wrapper: the dropdown always occupies layout space (it
               animates opacity/scale), so anchoring it like Browse does keeps
               the header tight — no dead band above the list. */}

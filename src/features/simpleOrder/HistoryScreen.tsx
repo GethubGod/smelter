@@ -10,12 +10,16 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomSheetShell } from '@/components/BottomSheetShell';
-import { EmptyStateCard, LoadingIndicator } from '@/components';
-import { getFloatingPillClearance } from '@/components/navigation';
+import {
+  EmptyState,
+  Loading,
+  ScreenHeader,
+  Sheet,
+  getTabBarClearance,
+} from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { ImpactFeedbackStyle, triggerImpactHaptic } from '@/lib/haptics';
-import { color, radius, typeScale } from '@/theme/tokens';
+import { color, radius, space, typeScale } from '@/theme/tokens';
 import { useSimpleOrderUiStore } from '@/store/simpleOrderUiStore';
 import {
   formatHistoryDate,
@@ -78,7 +82,7 @@ export function HistoryScreen() {
     [setPendingReorder],
   );
 
-  const bottomPadding = getFloatingPillClearance(insets.bottom) + ds.spacing(12);
+  const bottomPadding = getTabBarClearance(insets.bottom) + ds.spacing(space[3]);
 
   const renderOrder = useCallback(
     ({ item }: { item: RecentOrder }) => {
@@ -159,28 +163,24 @@ export function HistoryScreen() {
 
   let content: React.ReactNode;
   if (orders === null && !loadError) {
-    content = <LoadingIndicator />;
+    content = <Loading label="Loading past orders" />;
   } else if (loadError) {
     content = (
-      <View style={{ paddingTop: ds.spacing(24) }}>
-        <EmptyStateCard
-          icon="alert-circle-outline"
-          title="History unavailable"
-          message={loadError}
-          actionLabel="Try again"
-          onPressAction={() => void load()}
-        />
-      </View>
+      <EmptyState
+        icon="alert-circle-outline"
+        tone="alert"
+        title="History unavailable"
+        body={loadError}
+        action={{ label: 'Try again', onPress: () => void load() }}
+      />
     );
   } else if ((orders ?? []).length === 0) {
     content = (
-      <View style={{ paddingTop: ds.spacing(24) }}>
-        <EmptyStateCard
-          icon="receipt-outline"
-          title="No sent orders yet"
-          message="Orders appear here after they are sent to suppliers. Orders waiting for manager review show up once they are processed."
-        />
-      </View>
+      <EmptyState
+        icon="receipt-outline"
+        title="No sent orders yet"
+        body="Orders appear here after they are sent to suppliers. Orders waiting for manager review show up once they are processed."
+      />
     );
   } else {
     content = (
@@ -204,34 +204,42 @@ export function HistoryScreen() {
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: color.page }}>
       <View style={{ flex: 1, paddingHorizontal: ds.spacing(18) }}>
-        <View style={{ paddingTop: ds.spacing(2), paddingBottom: ds.spacing(10) }}>
-          <Text style={{ fontSize: ds.fontSize(typeScale.display), fontWeight: '700', color: color.ink }}>
-            Past orders
-          </Text>
-        </View>
+        <ScreenHeader
+          title="Past orders"
+          includeSafeArea={false}
+          style={{ paddingHorizontal: 0 }}
+        />
         {content}
       </View>
 
-      <BottomSheetShell
+      <Sheet
         visible={detailOrder !== null}
+        title={detailOrder ? formatHistoryDate(detailOrder.createdAt) : 'Order'}
         onClose={() => setDetailOrder(null)}
-        bottomPadding={Math.max(insets.bottom, ds.spacing(12))}
+        primary={
+          detailOrder && detailOrder.reorderItems.length > 0
+            ? {
+                label: 'Reorder these items',
+                onPress: () => {
+                  const order = detailOrder;
+                  setDetailOrder(null);
+                  handleReorder(order);
+                },
+              }
+            : undefined
+        }
       >
         {detailOrder ? (
           <>
-            <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: '700', color: color.ink }}>
-              {formatHistoryDate(detailOrder.createdAt)}
-            </Text>
             <Text
               style={{
                 fontSize: ds.fontSize(typeScale.secondary),
                 color: color.ink2,
-                marginBottom: ds.spacing(12),
               }}
             >
               {detailOrder.supplierName}
               {formatSentTime(detailOrder.createdAt)
-                ? ` · sent ${formatSentTime(detailOrder.createdAt)}`
+                ? ` \u00b7 sent ${formatSentTime(detailOrder.createdAt)}`
                 : ''}
             </Text>
             <ScrollView style={{ maxHeight: ds.spacing(320) }} showsVerticalScrollIndicator={false}>
@@ -241,7 +249,7 @@ export function HistoryScreen() {
                   borderWidth: 1,
                   borderColor: color.hairline,
                   borderRadius: radius.card,
-                  padding: ds.spacing(14),
+                  padding: ds.spacing(space[3] + 2),
                 }}
               >
                 <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink, lineHeight: 19 }}>
@@ -249,33 +257,9 @@ export function HistoryScreen() {
                 </Text>
               </View>
             </ScrollView>
-            {detailOrder.reorderItems.length > 0 ? (
-              <TouchableOpacity
-                onPress={() => {
-                  const order = detailOrder;
-                  setDetailOrder(null);
-                  handleReorder(order);
-                }}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel="Reorder these items"
-                style={{
-                  marginTop: ds.spacing(14),
-                  minHeight: 50,
-                  borderRadius: radius.pill,
-                  backgroundColor: color.accent,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: '700', color: color.onAccent }}>
-                  Reorder these items
-                </Text>
-              </TouchableOpacity>
-            ) : null}
           </>
         ) : null}
-      </BottomSheetShell>
+      </Sheet>
     </SafeAreaView>
   );
 }
