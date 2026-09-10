@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import type { View as RNView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { GlassSurface } from '@/components';
+import { Card } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { useDisplayStore } from '@/store';
 import { color, radius, typeScale, weight } from '@/theme/tokens';
@@ -372,28 +372,29 @@ export function OrderSubmissionConfirmationOverlay({
           },
         ]}
       >
-        <GlassSurface
-          intensity="strong"
+        <Card
+          flush
           style={{
             width: '100%',
             maxWidth: ds.spacing(360),
             borderRadius: radius.sheet,
             overflow: 'hidden',
-            borderWidth: 1,
-            borderColor: color.hairline,
           }}
         >
+          {/* Auto-dismiss timer, not a status: the contract keeps `good` and
+              `alert` for StatusPill, so the bar runs on the well track and the
+              action accent. */}
           <View
             style={{
               height: 7,
-              backgroundColor: color.goodBg,
+              backgroundColor: color.well,
             }}
           >
             <Animated.View
               style={{
                 height: '100%',
                 width: progressWidth,
-                backgroundColor: color.good,
+                backgroundColor: color.accent,
               }}
             />
           </View>
@@ -617,7 +618,7 @@ export function OrderSubmissionConfirmationOverlay({
               </Animated.View>
             </View>
           </View>
-        </GlassSurface>
+        </Card>
       </Animated.View>
     </Animated.View>
   );

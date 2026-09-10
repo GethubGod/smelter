@@ -18,16 +18,14 @@ import { useShallow } from 'zustand/react/shallow';
 import { useOrderStore, useInventoryStore, useAuthStore } from '@/store';
 import type { CartItem } from '@/store';
 import type { CartContext } from '@/store/orderStore';
-import { colors } from '@/constants';
 import { Location, InventoryItem, UnitType } from '@/types';
 import {
   BrandLogo,
   ConfirmLocationBottomSheet,
-  GlassSurface,
   ItemActionSheet,
 } from '@/components';
 import type { ItemActionSheetSection } from '@/components';
-import { getTabBarClearance, Loading, Segment, Sheet } from '@/components/ui';
+import { Button, Card, getTabBarClearance, Loading, Segment, Sheet, type SegmentOption } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { completePendingRemindersForUser } from '@/services/notificationService';
 import type { OrderingMode } from '@/features/ordering/types';
@@ -908,6 +906,13 @@ export function CartScreenView({
     const packUnitLabel = inventoryItem ? getInventoryUnitLabel(inventoryItem, 'pack') : 'pack';
     const baseUnitLabel = inventoryItem ? getInventoryUnitLabel(inventoryItem, 'base') : 'unit';
     const unitLabel = resolvedUnitType === 'pack' ? packUnitLabel : baseUnitLabel;
+    // `Segment` carries the radiogroup role, the labels, the selected state and
+    // the 44pt target. Units the item does not stock were unpressable before,
+    // so they are simply left out of the options.
+    const unitOptions: SegmentOption<UnitType>[] = [
+      ...(packEnabled ? [{ value: 'pack' as UnitType, label: packUnitLabel }] : []),
+      ...(baseEnabled ? [{ value: 'base' as UnitType, label: baseUnitLabel }] : []),
+    ];
     const unitSummary = inventoryItem ? getInventoryUnitSummary(inventoryItem) : `${baseUnitLabel}/${packUnitLabel}`;
     const key = `${locationId}-${item.id}`;
     const isExpanded = expandedItems.has(key);
@@ -1106,76 +1111,23 @@ export function CartScreenView({
 
             {/* Unit toggle row */}
             <View className="flex-row items-center" style={{ marginBottom: ds.spacing(6) }}>
-              <View
-                className="flex-row"
-                style={{
-                  backgroundColor: color.well,
-                  borderRadius: radius.pill,
-                  overflow: 'hidden',
-                }}
-              >
-                <TouchableOpacity
-                  onPress={() => handleItemValueChange(locationId, item, value, 'pack')}
-                  style={{
-                    paddingHorizontal: ds.spacing(14),
-                    paddingVertical: ds.spacing(7),
-                    backgroundColor: resolvedUnitType === 'pack'
-                      ? color.accent
-                      : packEnabled
-                        ? 'transparent'
-                        : color.well,
-                    opacity: packEnabled ? 1 : 0.55,
-                  }}
-                  activeOpacity={0.75}
-                  disabled={!packEnabled}
-                >
-                  <Text
-                    style={{
-                      fontSize: ds.fontSize(typeScale.body),
-                      fontWeight: weight.semibold,
-                      color: resolvedUnitType === 'pack'
-                        ? color.onAccent
-                        : packEnabled
-                          ? color.ink2
-                          : color.ink3,
-                    }}
-                  >
-                    {packUnitLabel}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => handleItemValueChange(locationId, item, value, 'base')}
-                  style={{
-                    paddingHorizontal: ds.spacing(14),
-                    paddingVertical: ds.spacing(7),
-                    backgroundColor: resolvedUnitType === 'base'
-                      ? color.accent
-                      : baseEnabled
-                        ? 'transparent'
-                        : color.well,
-                    opacity: baseEnabled ? 1 : 0.55,
-                  }}
-                  activeOpacity={0.75}
-                  disabled={!baseEnabled}
-                >
-                  <Text
-                    style={{
-                      fontSize: ds.fontSize(typeScale.body),
-                      fontWeight: weight.semibold,
-                      color: resolvedUnitType === 'base'
-                        ? color.onAccent
-                        : baseEnabled
-                          ? color.ink2
-                          : color.ink3,
-                    }}
-                  >
-                    {baseUnitLabel}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              {unitOptions.length > 0 ? (
+                <Segment
+                  options={unitOptions}
+                  value={resolvedUnitType}
+                  onChange={(next) => handleItemValueChange(locationId, item, value, next)}
+                  accessibilityLabel={`Unit for ${itemName}`}
+                  style={{ flex: 1 }}
+                />
+              ) : null}
               {!isRemainingMode && (
                 <Text
-                  style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginLeft: ds.spacing(10) }}
+                  style={{
+                    fontSize: ds.fontSize(typeScale.secondary),
+                    color: color.ink2,
+                    marginLeft: ds.spacing(10),
+                    flexShrink: 1,
+                  }}
                   numberOfLines={1}
                 >
                   {unitSummary}
@@ -1216,12 +1168,7 @@ export function CartScreenView({
     const isSubmittingThisLocation = submittingLocation === location.id;
 
     return (
-      <GlassSurface
-        key={location.id}
-        intensity="subtle"
-        blurred={false}
-        style={{ marginBottom: ds.spacing(12), borderRadius: radius.card }}
-      >
+      <Card key={location.id} flush style={{ marginBottom: ds.spacing(12) }}>
         {/* Location Header */}
         <View style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}>
           <View className="flex-row items-center justify-between">
@@ -1257,7 +1204,7 @@ export function CartScreenView({
                   <Ionicons
                     name="chevron-down"
                     size={ds.icon(14)}
-                    color={colors.gray[500]}
+                    color={color.ink3}
                     style={{ marginLeft: ds.spacing(6) }}
                   />
                 </View>
@@ -1312,7 +1259,7 @@ export function CartScreenView({
             </>
           )}
         </TouchableOpacity>
-      </GlassSurface>
+      </Card>
     );
   }, [ds, getCartWithDetails, renderCartItem, handleClearLocationCart, submittingLocation, handleOpenCartLocationModal, handleRequestSubmitOrder]);
 
@@ -1370,7 +1317,7 @@ export function CartScreenView({
             </Text>
           </View>
           {pastOrdersRoute && (
-            <GlassSurface intensity="subtle" style={{ borderRadius: radius.pill }}>
+            <Card flush style={{ borderRadius: radius.pill, overflow: 'hidden' }}>
               <TouchableOpacity
                 onPress={() => router.push(pastOrdersRoute as any)}
                 className="flex-row items-center"
@@ -1385,7 +1332,7 @@ export function CartScreenView({
                   My Orders
                 </Text>
               </TouchableOpacity>
-            </GlassSurface>
+            </Card>
           )}
         </View>
 
@@ -1506,9 +1453,8 @@ export function CartScreenView({
         visible={showItemNoteModal}
         title={menuItem?.item.note ? 'Edit note' : 'Add note'}
         onClose={closeItemNoteSheet}
-        primary={{ label: 'Save note', onPress: handleSaveItemNote }}
       >
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginBottom: ds.spacing(space[3]) }}>
             {menuItem?.item.inventoryItem?.name || 'Item'}
           </Text>
@@ -1537,6 +1483,15 @@ export function CartScreenView({
           <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginTop: ds.spacing(space[2]) }}>
             {itemNoteDraft.length}/240
           </Text>
+
+          {/* The action stays inside the keyboard-avoiding region: `Sheet.primary`
+              renders outside it, so with the note keyboard open Save sat behind
+              the keyboard. */}
+          <Button
+            label="Save note"
+            onPress={handleSaveItemNote}
+            style={{ marginTop: ds.spacing(space[3]) }}
+          />
         </KeyboardAvoidingView>
       </Sheet>
 
@@ -1622,7 +1577,7 @@ export function CartScreenView({
               borderRadius: radius.control,
               paddingHorizontal: ds.spacing(16),
               paddingVertical: ds.spacing(12),
-              backgroundColor: statusToast.type === 'error' ? colors.error : color.ink,
+              backgroundColor: statusToast.type === 'error' ? color.alert : color.ink,
             }}
           >
             <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.card, textAlign: 'center', fontWeight: weight.semibold }}>

@@ -1,8 +1,7 @@
 import React, { useCallback } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomSheetShell } from '@/components/BottomSheetShell';
+import { Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerSelectionHaptic } from '@/lib/haptics';
 import { color, radius, typeScale, weight } from '@/theme/tokens';
@@ -49,7 +48,6 @@ export function ChecklistSettingsSheet({
   onClose,
 }: ChecklistSettingsSheetProps) {
   const ds = useScaledStyles();
-  const insets = useSafeAreaInsets();
 
   const handleSelect = useCallback(
     (value: SimpleOrderDensity) => {
@@ -65,14 +63,7 @@ export function ChecklistSettingsSheet({
   }, [onToggleCategories, showCategories]);
 
   return (
-    <BottomSheetShell
-      visible={visible}
-      onClose={onClose}
-      bottomPadding={Math.max(insets.bottom, ds.spacing(14))}
-    >
-      <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: '700', color: color.ink }}>
-        Checklist display
-      </Text>
+    <Sheet visible={visible} title="Checklist display" onClose={onClose}>
       <Text
         style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginBottom: ds.spacing(12) }}
       >
@@ -177,6 +168,6 @@ export function ChecklistSettingsSheet({
           />
         </View>
       </TouchableOpacity>
-    </BottomSheetShell>
+    </Sheet>
   );
 }
