@@ -1,16 +1,12 @@
 import React from 'react';
 import { Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassSurface } from '@/components';
+import { getTabBarClearance } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import {
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-  glassSpacing,
-  glassTabBarHeight,
-} from '@/theme/design';
+import { color, radius, space, typeScale } from '@/theme/tokens';
 import { colors } from '@/constants';
 
 interface EmptyCartReorderStateProps {
@@ -23,16 +19,17 @@ export function EmptyCartReorderState({
   browseRoute,
 }: EmptyCartReorderStateProps) {
   const ds = useScaledStyles();
+  const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const heroMinHeight = Math.min(
     Math.max(ds.spacing(286), Math.round(height * 0.38)),
     ds.spacing(356),
   );
   const actionButtonHeight = Math.max(52, Math.min(ds.buttonH + ds.spacing(6), 60));
-  const actionButtonRadius = glassRadii.pill;
+  const actionButtonRadius = radius.pill;
   const actionButtonHorizontalPadding = ds.spacing(16);
   const actionIconSize = ds.icon(16);
-  const actionTextSize = ds.fontSize(15);
+  const actionTextSize = ds.fontSize(typeScale.body);
   const supportTextMaxWidth = ds.spacing(280);
   const actionGroupMaxWidth = ds.spacing(332);
 
@@ -40,9 +37,9 @@ export function EmptyCartReorderState({
     <View
       style={{
         flex: 1,
-        paddingHorizontal: glassSpacing.screen,
+        paddingHorizontal: space[4],
         paddingTop: ds.spacing(8),
-        paddingBottom: glassTabBarHeight + ds.spacing(20),
+        paddingBottom: getTabBarClearance(insets.bottom) + ds.spacing(space[5]),
       }}
     >
       <View
@@ -59,27 +56,27 @@ export function EmptyCartReorderState({
           style={{
             width: ds.icon(64),
             height: ds.icon(64),
-            borderRadius: glassRadii.round,
+            borderRadius: radius.pill,
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: colors.white,
-            borderWidth: glassHairlineWidth,
-            borderColor: glassColors.cardBorder,
+            backgroundColor: color.card,
+            borderWidth: 1,
+            borderColor: color.hairline,
           }}
         >
           <Ionicons
             name="bag-outline"
             size={ds.icon(28)}
-            color={glassColors.textTertiary}
+            color={color.ink3}
           />
         </View>
 
         <Text
           style={{
             marginTop: ds.spacing(20),
-            fontSize: ds.fontSize(19),
+            fontSize: ds.fontSize(typeScale.title),
             fontWeight: '700',
-            color: glassColors.textPrimary,
+            color: color.ink,
             textAlign: 'center',
           }}
         >
@@ -90,9 +87,9 @@ export function EmptyCartReorderState({
           style={{
             marginTop: ds.spacing(8),
             maxWidth: supportTextMaxWidth,
-            fontSize: ds.fontSize(13),
-            lineHeight: ds.fontSize(18),
-            color: glassColors.textSecondary,
+            fontSize: ds.fontSize(typeScale.secondary),
+            lineHeight: ds.fontSize(typeScale.title),
+            color: color.ink2,
             textAlign: 'center',
           }}
         >
@@ -118,7 +115,7 @@ export function EmptyCartReorderState({
               alignItems: 'center',
               justifyContent: 'center',
               flexDirection: 'row',
-              backgroundColor: colors.primary[500],
+              backgroundColor: color.accent,
               paddingHorizontal: actionButtonHorizontalPadding,
             }}
             activeOpacity={0.85}
@@ -126,14 +123,14 @@ export function EmptyCartReorderState({
             <Ionicons
               name="grid-outline"
               size={actionIconSize}
-              color={glassColors.textOnPrimary}
+              color={color.onAccent}
             />
             <Text
               style={{
                 marginLeft: ds.spacing(6),
                 fontSize: actionTextSize,
                 fontWeight: '700',
-                color: glassColors.textOnPrimary,
+                color: color.onAccent,
               }}
             >
               Browse
@@ -162,14 +159,14 @@ export function EmptyCartReorderState({
               <Ionicons
                 name="flash-outline"
                 size={actionIconSize}
-                color={glassColors.textPrimary}
+                color={color.ink}
               />
               <Text
                 style={{
                   marginLeft: ds.spacing(6),
                   fontSize: actionTextSize,
                   fontWeight: '700',
-                  color: glassColors.textPrimary,
+                  color: color.ink,
                 }}
               >
                 Quick

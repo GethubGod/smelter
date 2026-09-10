@@ -13,7 +13,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useShallow } from 'zustand/react/shallow';
@@ -30,6 +30,7 @@ import {
   LoadingIndicator,
 } from '@/components';
 import type { ItemActionSheetSection } from '@/components';
+import { getTabBarClearance } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { completePendingRemindersForUser } from '@/services/notificationService';
 import type { OrderingMode } from '@/features/ordering/types';
@@ -44,13 +45,7 @@ import { resolveLocationSwitchTarget } from './locationSwitch';
 import { EmptyCartReorderState } from './EmptyCartReorderState';
 import { OrderSubmissionConfirmationOverlay } from './OrderSubmissionConfirmationOverlay';
 import { triggerConfirmationHaptic } from '@/lib/haptics';
-import {
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-  glassSpacing,
-  glassTabBarHeight,
-} from '@/theme/design';
+import { color, radius, space, typeScale, weight } from '@/theme/tokens';
 import { segmentedControlColors } from '@/theme/segmentedControls';
 import {
   getInventoryUnitLabel,
@@ -121,6 +116,7 @@ export function CartScreenView({
   mode,
 }: CartScreenViewProps) {
   const ds = useScaledStyles();
+  const insets = useSafeAreaInsets();
   const context: CartContext = mode.scope;
   const browseRoute = mode.browseRoute;
   const pastOrdersRoute = mode.pastOrdersRoute;
@@ -907,8 +903,8 @@ export function CartScreenView({
       <View
         key={`${locationId}-${item.id}`}
         style={{
-          borderBottomWidth: glassHairlineWidth,
-          borderBottomColor: glassColors.divider,
+          borderBottomWidth: 1,
+          borderBottomColor: color.hairline,
         }}
       >
         {/* Compact Row — matches reference: name/unit left, stepper right */}
@@ -925,9 +921,9 @@ export function CartScreenView({
             <View className="flex-row items-center">
               <Text
                 style={{
-                  fontSize: ds.fontSize(17),
-                  fontWeight: '600',
-                  color: glassColors.textPrimary,
+                  fontSize: ds.fontSize(typeScale.title),
+                  fontWeight: weight.semibold,
+                  color: color.ink,
                   flexShrink: 1,
                 }}
                 numberOfLines={1}
@@ -938,15 +934,15 @@ export function CartScreenView({
               <Ionicons
                 name={isExpanded ? "chevron-up" : "chevron-down"}
                 size={ds.icon(16)}
-                color={glassColors.textSecondary}
+                color={color.ink2}
                 style={{ marginLeft: ds.spacing(6) }}
               />
             </View>
             <View className="flex-row items-center mt-1">
               <Text
                 style={{
-                  fontSize: ds.fontSize(14),
-                  color: glassColors.textSecondary,
+                  fontSize: ds.fontSize(typeScale.body),
+                  color: color.ink2,
                 }}
               >
                 per {unitLabel}
@@ -955,17 +951,17 @@ export function CartScreenView({
                 <View
                   style={{
                     marginLeft: ds.spacing(8),
-                    borderRadius: glassRadii.tag,
-                    backgroundColor: glassColors.warningSoft,
+                    borderRadius: radius.control,
+                    backgroundColor: color.warningBg,
                     paddingHorizontal: ds.spacing(8),
                     paddingVertical: ds.spacing(2),
                   }}
                 >
                   <Text
                     style={{
-                      fontSize: ds.fontSize(11),
-                      fontWeight: '500',
-                      color: glassColors.warningText,
+                      fontSize: ds.fontSize(typeScale.caption),
+                      fontWeight: weight.semibold,
+                      color: color.warning,
                     }}
                   >
                     Remaining
@@ -976,17 +972,17 @@ export function CartScreenView({
                 <View
                   style={{
                     marginLeft: ds.spacing(6),
-                    borderRadius: glassRadii.tag,
-                    backgroundColor: glassColors.infoSoft,
+                    borderRadius: radius.control,
+                    backgroundColor: color.well,
                     paddingHorizontal: ds.spacing(8),
                     paddingVertical: ds.spacing(2),
                   }}
                 >
                   <Text
                     style={{
-                      fontSize: ds.fontSize(11),
-                      fontWeight: '500',
-                      color: glassColors.infoText,
+                      fontSize: ds.fontSize(typeScale.caption),
+                      fontWeight: weight.semibold,
+                      color: color.ink2,
                     }}
                   >
                     Note
@@ -1003,7 +999,7 @@ export function CartScreenView({
               style={{
                 width: 42,
                 height: 42,
-                borderRadius: 13,
+                borderRadius: radius.control,
                 alignItems: 'center',
                 justifyContent: 'center',
                 backgroundColor: '#E8E8E8',
@@ -1011,14 +1007,14 @@ export function CartScreenView({
               activeOpacity={0.7}
               hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
             >
-              <Ionicons name="remove" size={22} color={glassColors.textPrimary} />
+              <Ionicons name="remove" size={22} color={color.ink} />
             </TouchableOpacity>
 
             <Text
               style={{
-                fontSize: ds.fontSize(20),
-                fontWeight: '600',
-                color: glassColors.textPrimary,
+                fontSize: ds.fontSize(typeScale.title),
+                fontWeight: weight.semibold,
+                color: color.ink,
                 textAlign: 'center',
                 minWidth: 44,
                 marginHorizontal: ds.spacing(4),
@@ -1032,7 +1028,7 @@ export function CartScreenView({
               style={{
                 width: 42,
                 height: 42,
-                borderRadius: 13,
+                borderRadius: radius.control,
                 alignItems: 'center',
                 justifyContent: 'center',
                 backgroundColor: '#E8E8E8',
@@ -1040,7 +1036,7 @@ export function CartScreenView({
               activeOpacity={0.7}
               hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
             >
-              <Ionicons name="add" size={22} color={glassColors.textPrimary} />
+              <Ionicons name="add" size={22} color={color.ink} />
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -1054,7 +1050,7 @@ export function CartScreenView({
                 className="flex-row"
                 style={{
                   backgroundColor: segmentedControlColors.inactiveBackground,
-                  borderRadius: 12,
+                  borderRadius: radius.control,
                   overflow: 'hidden',
                 }}
               >
@@ -1071,8 +1067,8 @@ export function CartScreenView({
                 >
                   <Text
                     style={{
-                      fontSize: ds.fontSize(14),
-                      fontWeight: '600',
+                      fontSize: ds.fontSize(typeScale.body),
+                      fontWeight: weight.semibold,
                       color: !isRemainingMode
                         ? segmentedControlColors.activeText
                         : segmentedControlColors.inactiveText,
@@ -1094,8 +1090,8 @@ export function CartScreenView({
                 >
                   <Text
                     style={{
-                      fontSize: ds.fontSize(14),
-                      fontWeight: '600',
+                      fontSize: ds.fontSize(typeScale.body),
+                      fontWeight: weight.semibold,
                       color: isRemainingMode
                         ? segmentedControlColors.activeText
                         : segmentedControlColors.inactiveText,
@@ -1113,7 +1109,7 @@ export function CartScreenView({
                   style={{
                     width: 40,
                     height: 40,
-                    borderRadius: 12,
+                    borderRadius: radius.control,
                     justifyContent: 'center',
                     alignItems: 'center',
                     backgroundColor: '#EEEEEE',
@@ -1121,14 +1117,14 @@ export function CartScreenView({
                   }}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Ionicons name="ellipsis-horizontal" size={20} color={glassColors.textPrimary} />
+                  <Ionicons name="ellipsis-horizontal" size={20} color={color.ink} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => handleRemoveItem(locationId, item.inventoryItemId, itemName, item.id)}
                   style={{
                     width: 40,
                     height: 40,
-                    borderRadius: 12,
+                    borderRadius: radius.control,
                     justifyContent: 'center',
                     alignItems: 'center',
                     backgroundColor: 'rgba(239, 68, 68, 0.08)',
@@ -1146,7 +1142,7 @@ export function CartScreenView({
                 className="flex-row"
                 style={{
                   backgroundColor: segmentedControlColors.inactiveBackground,
-                  borderRadius: 12,
+                  borderRadius: radius.control,
                   overflow: 'hidden',
                 }}
               >
@@ -1159,7 +1155,7 @@ export function CartScreenView({
                       ? segmentedControlColors.activeBackground
                       : packEnabled
                         ? 'transparent'
-                        : glassColors.mediumFill,
+                        : color.well,
                     opacity: packEnabled ? 1 : 0.55,
                   }}
                   activeOpacity={0.75}
@@ -1167,13 +1163,13 @@ export function CartScreenView({
                 >
                   <Text
                     style={{
-                      fontSize: ds.fontSize(14),
-                      fontWeight: '600',
+                      fontSize: ds.fontSize(typeScale.body),
+                      fontWeight: weight.semibold,
                       color: resolvedUnitType === 'pack'
                         ? segmentedControlColors.activeText
                         : packEnabled
                           ? segmentedControlColors.inactiveText
-                          : glassColors.textMuted,
+                          : color.ink3,
                     }}
                   >
                     {packUnitLabel}
@@ -1188,7 +1184,7 @@ export function CartScreenView({
                       ? segmentedControlColors.activeBackground
                       : baseEnabled
                         ? 'transparent'
-                        : glassColors.mediumFill,
+                        : color.well,
                     opacity: baseEnabled ? 1 : 0.55,
                   }}
                   activeOpacity={0.75}
@@ -1196,13 +1192,13 @@ export function CartScreenView({
                 >
                   <Text
                     style={{
-                      fontSize: ds.fontSize(14),
-                      fontWeight: '600',
+                      fontSize: ds.fontSize(typeScale.body),
+                      fontWeight: weight.semibold,
                       color: resolvedUnitType === 'base'
                         ? segmentedControlColors.activeText
                         : baseEnabled
                           ? segmentedControlColors.inactiveText
-                          : glassColors.textMuted,
+                          : color.ink3,
                     }}
                   >
                     {baseUnitLabel}
@@ -1211,7 +1207,7 @@ export function CartScreenView({
               </View>
               {!isRemainingMode && (
                 <Text
-                  style={{ fontSize: ds.fontSize(13), color: glassColors.textSecondary, marginLeft: ds.spacing(10) }}
+                  style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginLeft: ds.spacing(10) }}
                   numberOfLines={1}
                 >
                   {unitSummary}
@@ -1221,12 +1217,12 @@ export function CartScreenView({
 
             {/* Notes */}
             {item.note && (
-              <Text style={{ fontSize: ds.fontSize(13), color: glassColors.infoText, marginTop: ds.spacing(4) }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginTop: ds.spacing(4) }}>
                 Note: {item.note}
               </Text>
             )}
             {isRemainingMode && (
-              <Text style={{ fontSize: ds.fontSize(12), color: glassColors.textSecondary, marginTop: ds.spacing(4) }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginTop: ds.spacing(4) }}>
                 Confirm quantity before submitting
               </Text>
             )}
@@ -1256,7 +1252,7 @@ export function CartScreenView({
         key={location.id}
         intensity="subtle"
         blurred={false}
-        style={{ marginBottom: ds.spacing(12), borderRadius: glassRadii.surface }}
+        style={{ marginBottom: ds.spacing(12), borderRadius: radius.card }}
       >
         {/* Location Header */}
         <View style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}>
@@ -1271,11 +1267,11 @@ export function CartScreenView({
                 style={{
                   width: ds.icon(40),
                   height: ds.icon(40),
-                  borderRadius: glassRadii.round,
+                  borderRadius: radius.pill,
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginRight: ds.spacing(12),
-                  backgroundColor: glassColors.mediumFill,
+                  backgroundColor: color.well,
                 }}
               >
                 <BrandLogo variant="inline" size={20} />
@@ -1283,7 +1279,7 @@ export function CartScreenView({
               <View className="flex-1">
                 <View className="flex-row items-center">
                   <Text
-                    style={{ fontSize: ds.fontSize(17), fontWeight: '700', color: glassColors.textPrimary }}
+                    style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: '700', color: color.ink }}
                     className="flex-shrink"
                     numberOfLines={1}
                     ellipsizeMode="tail"
@@ -1297,7 +1293,7 @@ export function CartScreenView({
                     style={{ marginLeft: ds.spacing(6) }}
                   />
                 </View>
-                <Text style={{ fontSize: ds.fontSize(13), color: glassColors.textSecondary }}>
+                <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
                   {itemCount} item{itemCount !== 1 ? 's' : ''} in cart
                 </Text>
               </View>
@@ -1307,7 +1303,7 @@ export function CartScreenView({
               style={{ paddingVertical: ds.spacing(6), paddingHorizontal: ds.spacing(8) }}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Text style={{ fontSize: ds.fontSize(14), color: glassColors.textSecondary, fontWeight: '500' }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2, fontWeight: weight.semibold }}>
                 Clear all
               </Text>
             </TouchableOpacity>
@@ -1328,21 +1324,21 @@ export function CartScreenView({
             height: Math.max(56, ds.buttonH + 8),
             marginHorizontal: ds.spacing(16),
             marginBottom: ds.spacing(16),
-            borderRadius: glassRadii.submitButton,
-            backgroundColor: !canSubmit ? glassColors.accentSoft : glassColors.accent,
+            borderRadius: radius.card,
+            backgroundColor: !canSubmit ? color.tint : color.accent,
           }}
         >
           {isSubmittingThisLocation ? (
             <>
               <LoadingIndicator size="small" />
-              <Text style={{ fontSize: ds.fontSize(17), color: colors.white, fontWeight: '700', marginLeft: ds.spacing(8) }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.title), color: color.card, fontWeight: '700', marginLeft: ds.spacing(8) }}>
                 Submitting...
               </Text>
             </>
           ) : (
             <>
-              <Ionicons name="send" size={ds.icon(20)} color={colors.white} />
-              <Text style={{ fontSize: ds.fontSize(17), color: colors.white, fontWeight: '700', marginLeft: ds.spacing(8) }}>
+              <Ionicons name="send" size={ds.icon(20)} color={color.card} />
+              <Text style={{ fontSize: ds.fontSize(typeScale.title), color: color.card, fontWeight: '700', marginLeft: ds.spacing(8) }}>
                 Submit Order
               </Text>
             </>
@@ -1354,7 +1350,7 @@ export function CartScreenView({
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: glassColors.background }}
+      style={{ flex: 1, backgroundColor: color.page }}
       edges={['top', 'left', 'right']}
     >
       <View
@@ -1365,7 +1361,7 @@ export function CartScreenView({
         {/* Header */}
         <View
           style={{
-            paddingHorizontal: glassSpacing.screen,
+            paddingHorizontal: space[4],
             paddingTop: ds.spacing(12),
             paddingBottom: ds.spacing(12),
             flexDirection: 'row',
@@ -1384,8 +1380,8 @@ export function CartScreenView({
               style={{
                 width: Math.max(40, ds.icon(40)),
                 height: Math.max(40, ds.icon(40)),
-                borderRadius: glassRadii.round,
-                backgroundColor: glassColors.subtleFill,
+                borderRadius: radius.pill,
+                backgroundColor: color.well,
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginRight: ds.spacing(16),
@@ -1394,19 +1390,19 @@ export function CartScreenView({
               accessibilityRole="button"
               accessibilityLabel="Go back"
             >
-              <Ionicons name="arrow-back" size={ds.icon(22)} color={glassColors.textPrimary} />
+              <Ionicons name="arrow-back" size={ds.icon(22)} color={color.ink} />
             </TouchableOpacity>
           )}
           <View style={{ flex: 1, paddingRight: ds.spacing(12) }}>
-            <Text style={{ fontSize: ds.fontSize(30), fontWeight: '800', color: glassColors.textPrimary, letterSpacing: -0.6 }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.display), fontWeight: weight.bold, color: color.ink, letterSpacing: -0.6 }}>
               Cart
             </Text>
-            <Text style={{ marginTop: ds.spacing(4), fontSize: ds.fontSize(13), color: glassColors.textSecondary, fontWeight: '500' }}>
+            <Text style={{ marginTop: ds.spacing(4), fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, fontWeight: weight.semibold }}>
               {totalCartCountLabel}
             </Text>
           </View>
           {pastOrdersRoute && (
-            <GlassSurface intensity="subtle" style={{ borderRadius: glassRadii.pill }}>
+            <GlassSurface intensity="subtle" style={{ borderRadius: radius.pill }}>
               <TouchableOpacity
                 onPress={() => router.push(pastOrdersRoute as any)}
                 className="flex-row items-center"
@@ -1416,8 +1412,8 @@ export function CartScreenView({
                 }}
                 activeOpacity={0.7}
               >
-                <Ionicons name="time-outline" size={ds.icon(18)} color={glassColors.textSecondary} />
-                <Text style={{ fontSize: ds.fontSize(15), marginLeft: ds.spacing(8), color: glassColors.textPrimary, fontWeight: '700' }}>
+                <Ionicons name="time-outline" size={ds.icon(18)} color={color.ink2} />
+                <Text style={{ fontSize: ds.fontSize(typeScale.body), marginLeft: ds.spacing(8), color: color.ink, fontWeight: '700' }}>
                   My Orders
                 </Text>
               </TouchableOpacity>
@@ -1432,8 +1428,8 @@ export function CartScreenView({
             renderItem={({ item }) => renderLocationSection(item)}
             className="flex-1"
             contentContainerStyle={{
-              paddingHorizontal: glassSpacing.screen,
-              paddingBottom: glassTabBarHeight + ds.spacing(20),
+              paddingHorizontal: space[4],
+              paddingBottom: getTabBarClearance(insets.bottom) + ds.spacing(space[5]),
             }}
             keyboardShouldPersistTaps="handled"
             ListHeaderComponent={null}
@@ -1466,23 +1462,23 @@ export function CartScreenView({
         >
           <Pressable
             style={{
-              backgroundColor: glassColors.background,
-              borderTopLeftRadius: 28,
-              borderTopRightRadius: 28,
-              borderWidth: glassHairlineWidth,
-              borderColor: glassColors.cardBorder,
+              backgroundColor: color.page,
+              borderTopLeftRadius: radius.sheet,
+              borderTopRightRadius: radius.sheet,
+              borderWidth: 1,
+              borderColor: color.hairline,
             }}
             onPress={(e) => e.stopPropagation()}
           >
             <View className="items-center pt-3 pb-2">
-              <View style={{ width: 40, height: 4, backgroundColor: glassColors.mediumFill, borderRadius: glassRadii.round }} />
+              <View style={{ width: 40, height: 4, backgroundColor: color.well, borderRadius: radius.pill }} />
             </View>
 
             <View style={{ paddingHorizontal: ds.spacing(24) }} className="pb-8">
-              <Text style={{ fontSize: ds.fontSize(20), fontWeight: '700', color: glassColors.textPrimary, marginBottom: ds.spacing(8) }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: '700', color: color.ink, marginBottom: ds.spacing(8) }}>
                 Change Cart Location
               </Text>
-              <Text style={{ fontSize: ds.fontSize(14), color: glassColors.textSecondary, marginBottom: ds.spacing(16) }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2, marginBottom: ds.spacing(16) }}>
                 Move all items from {cartLocationToMove?.name || 'this cart'}
               </Text>
 
@@ -1499,13 +1495,13 @@ export function CartScreenView({
                       key={loc.id}
                       style={{
                         padding: ds.spacing(16),
-                        borderRadius: glassRadii.surface,
+                        borderRadius: radius.card,
                         flexDirection: 'row',
                         alignItems: 'center',
                         marginBottom: ds.spacing(12),
-                        borderWidth: glassHairlineWidth,
-                        borderColor: isSelected ? glassColors.accent : glassColors.cardBorder,
-                        backgroundColor: isSelected ? glassColors.accentSoft : glassColors.subtleFill,
+                        borderWidth: 1,
+                        borderColor: isSelected ? color.accent : color.hairline,
+                        backgroundColor: isSelected ? color.tint : color.well,
                       }}
                       onPress={() => handleMoveCartLocation(loc.id, loc.name)}
                       activeOpacity={0.7}
@@ -1515,7 +1511,7 @@ export function CartScreenView({
                           width: ds.icon(44),
                           height: ds.icon(44),
                           borderRadius: ds.icon(22),
-                          backgroundColor: glassColors.mediumFill,
+                          backgroundColor: color.well,
                           alignItems: 'center',
                           justifyContent: 'center',
                         }}
@@ -1523,15 +1519,15 @@ export function CartScreenView({
                         <BrandLogo variant="inline" size={18} />
                       </View>
                       <View className="flex-1 ml-4">
-                        <Text style={{ fontSize: ds.fontSize(16), fontWeight: '600', color: glassColors.textPrimary }}>
+                        <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink }}>
                           {loc.name}
                         </Text>
                         {isSelected && (
-                          <Text style={{ fontSize: ds.fontSize(13), color: glassColors.accent }}>Current location</Text>
+                          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.accent }}>Current location</Text>
                         )}
                       </View>
                       {isSelected && (
-                        <Ionicons name="checkmark-circle" size={ds.icon(20)} color={glassColors.accent[500]} />
+                        <Ionicons name="checkmark-circle" size={ds.icon(20)} color={color.accent} />
                       )}
                     </TouchableOpacity>
                   );
@@ -1545,7 +1541,7 @@ export function CartScreenView({
                 }}
                 className="py-4 mt-2"
               >
-                <Text style={{ fontSize: ds.fontSize(14), color: glassColors.textSecondary, fontWeight: '500', textAlign: 'center' }}>
+                <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2, fontWeight: weight.semibold, textAlign: 'center' }}>
                   Cancel
                 </Text>
               </TouchableOpacity>
@@ -1615,20 +1611,20 @@ export function CartScreenView({
                 intensity="subtle"
                 blurred={false}
                 style={{
-                  borderTopLeftRadius: 28,
-                  borderTopRightRadius: 28,
+                  borderTopLeftRadius: radius.sheet,
+                  borderTopRightRadius: radius.sheet,
                   paddingHorizontal: ds.spacing(24),
                   paddingTop: ds.spacing(16),
                   paddingBottom: ds.spacing(24),
                 }}
               >
                 <View className="items-center pb-3">
-                  <View style={{ width: 40, height: 4, backgroundColor: glassColors.mediumFill, borderRadius: glassRadii.round }} />
+                  <View style={{ width: 40, height: 4, backgroundColor: color.well, borderRadius: radius.pill }} />
                 </View>
-                <Text style={{ fontSize: ds.fontSize(18), fontWeight: '700', color: glassColors.textPrimary, marginBottom: ds.spacing(4) }}>
+                <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: '700', color: color.ink, marginBottom: ds.spacing(4) }}>
                   {menuItem?.item.note ? 'Edit Note' : 'Add Note'}
                 </Text>
-                <Text style={{ fontSize: ds.fontSize(13), color: glassColors.textSecondary, marginBottom: ds.spacing(16) }}>
+                <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginBottom: ds.spacing(16) }}>
                   {menuItem?.item.inventoryItem?.name || 'Item'}
                 </Text>
 
@@ -1641,18 +1637,18 @@ export function CartScreenView({
                   maxLength={240}
                   textAlignVertical="top"
                   style={{
-                    fontSize: ds.fontSize(14),
-                    borderRadius: glassRadii.surface,
+                    fontSize: ds.fontSize(typeScale.body),
+                    borderRadius: radius.card,
                     paddingHorizontal: ds.spacing(16),
                     minHeight: 110,
                     paddingVertical: ds.spacing(12),
-                    color: glassColors.textPrimary,
-                    backgroundColor: glassColors.mediumFill,
-                    borderWidth: glassHairlineWidth,
-                    borderColor: glassColors.cardBorder,
+                    color: color.ink,
+                    backgroundColor: color.well,
+                    borderWidth: 1,
+                    borderColor: color.hairline,
                   }}
                 />
-                <Text style={{ fontSize: ds.fontSize(12), color: glassColors.textSecondary, marginTop: ds.spacing(8) }}>
+                <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginTop: ds.spacing(8) }}>
                   {itemNoteDraft.length}/240
                 </Text>
 
@@ -1665,31 +1661,31 @@ export function CartScreenView({
                     }}
                     style={{
                       height: ds.buttonH,
-                      borderRadius: glassRadii.button,
+                      borderRadius: radius.card,
                       flex: 1,
                       marginRight: ds.spacing(8),
                       alignItems: 'center',
                       justifyContent: 'center',
-                      backgroundColor: glassColors.mediumFill,
-                      borderWidth: glassHairlineWidth,
-                      borderColor: glassColors.cardBorder,
+                      backgroundColor: color.well,
+                      borderWidth: 1,
+                      borderColor: color.hairline,
                     }}
                   >
-                    <Text style={{ fontSize: ds.buttonFont, color: glassColors.textPrimary, fontWeight: '600' }}>Cancel</Text>
+                    <Text style={{ fontSize: ds.buttonFont, color: color.ink, fontWeight: weight.semibold }}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={handleSaveItemNote}
                     style={{
                       height: ds.buttonH,
-                      borderRadius: glassRadii.button,
+                      borderRadius: radius.card,
                       flex: 1,
                       marginLeft: ds.spacing(8),
                       alignItems: 'center',
                       justifyContent: 'center',
-                      backgroundColor: glassColors.accent[500],
+                      backgroundColor: color.accent,
                     }}
                   >
-                    <Text style={{ fontSize: ds.buttonFont, color: glassColors.textOnPrimary, fontWeight: '600' }}>Save Note</Text>
+                    <Text style={{ fontSize: ds.buttonFont, color: color.onAccent, fontWeight: weight.semibold }}>Save Note</Text>
                   </TouchableOpacity>
                 </View>
               </GlassSurface>
@@ -1720,23 +1716,23 @@ export function CartScreenView({
         >
           <Pressable
             style={{
-              backgroundColor: glassColors.background,
-              borderTopLeftRadius: 28,
-              borderTopRightRadius: 28,
-              borderWidth: glassHairlineWidth,
-              borderColor: glassColors.cardBorder,
+              backgroundColor: color.page,
+              borderTopLeftRadius: radius.sheet,
+              borderTopRightRadius: radius.sheet,
+              borderWidth: 1,
+              borderColor: color.hairline,
             }}
             onPress={(e) => e.stopPropagation()}
           >
             <View className="items-center pt-3 pb-2">
-              <View style={{ width: 40, height: 4, backgroundColor: glassColors.mediumFill, borderRadius: glassRadii.round }} />
+              <View style={{ width: 40, height: 4, backgroundColor: color.well, borderRadius: radius.pill }} />
             </View>
 
             <View style={{ paddingHorizontal: ds.spacing(24) }} className="pb-8">
-              <Text style={{ fontSize: ds.fontSize(20), fontWeight: '700', color: glassColors.textPrimary, marginBottom: ds.spacing(8) }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: '700', color: color.ink, marginBottom: ds.spacing(8) }}>
                 {itemLocationAction === 'add' ? 'Add to Cart' : 'Move to Cart'}
               </Text>
-              <Text style={{ fontSize: ds.fontSize(14), color: glassColors.textSecondary, marginBottom: ds.spacing(16) }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2, marginBottom: ds.spacing(16) }}>
                 {menuItem?.item.inventoryItem?.name || 'Item'}
               </Text>
 
@@ -1753,13 +1749,13 @@ export function CartScreenView({
                         key={loc.id}
                         style={{
                           padding: ds.spacing(16),
-                          borderRadius: glassRadii.surface,
+                          borderRadius: radius.card,
                           flexDirection: 'row',
                           alignItems: 'center',
                           marginBottom: ds.spacing(12),
-                          borderWidth: glassHairlineWidth,
-                          borderColor: glassColors.cardBorder,
-                          backgroundColor: glassColors.subtleFill,
+                          borderWidth: 1,
+                          borderColor: color.hairline,
+                          backgroundColor: color.well,
                         }}
                         onPress={() => handleApplyItemLocation(loc.id)}
                         activeOpacity={0.7}
@@ -1769,26 +1765,26 @@ export function CartScreenView({
                             width: ds.icon(44),
                             height: ds.icon(44),
                             borderRadius: ds.icon(22),
-                            backgroundColor: glassColors.accentSoft,
+                            backgroundColor: color.tint,
                             alignItems: 'center',
                             justifyContent: 'center',
                           }}
                         >
-                          <Text style={{ fontSize: ds.fontSize(13), color: glassColors.accent, fontWeight: '700' }}>
+                          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.accent, fontWeight: '700' }}>
                             {loc.short_code}
                           </Text>
                         </View>
                         <View className="flex-1 ml-4">
-                          <Text style={{ fontSize: ds.fontSize(16), fontWeight: '600', color: glassColors.textPrimary }}>
+                          <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink }}>
                             {loc.name}
                           </Text>
                           {cartCount > 0 && (
-                            <Text style={{ fontSize: ds.fontSize(13), color: glassColors.textSecondary }}>
+                            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
                               {cartCount} item{cartCount !== 1 ? 's' : ''} in cart
                             </Text>
                           )}
                         </View>
-                        <Ionicons name="arrow-forward" size={ds.icon(20)} color={glassColors.accent[500]} />
+                        <Ionicons name="arrow-forward" size={ds.icon(20)} color={color.accent} />
                       </TouchableOpacity>
                     );
                   })}
@@ -1802,7 +1798,7 @@ export function CartScreenView({
                 }}
                 className="py-4 mt-2"
               >
-                <Text style={{ fontSize: ds.fontSize(14), color: glassColors.textSecondary, fontWeight: '500', textAlign: 'center' }}>
+                <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2, fontWeight: weight.semibold, textAlign: 'center' }}>
                   Cancel
                 </Text>
               </TouchableOpacity>
@@ -1824,13 +1820,13 @@ export function CartScreenView({
         >
           <View
             style={{
-              borderRadius: ds.radius(12),
+              borderRadius: radius.control,
               paddingHorizontal: ds.spacing(16),
               paddingVertical: ds.spacing(12),
-              backgroundColor: statusToast.type === 'error' ? colors.error : glassColors.textPrimary,
+              backgroundColor: statusToast.type === 'error' ? colors.error : color.ink,
             }}
           >
-            <Text style={{ fontSize: ds.fontSize(13), color: colors.white, textAlign: 'center', fontWeight: '500' }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.card, textAlign: 'center', fontWeight: weight.semibold }}>
               {statusToast.message}
             </Text>
           </View>
