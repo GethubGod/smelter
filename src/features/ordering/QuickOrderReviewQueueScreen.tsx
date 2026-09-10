@@ -29,7 +29,7 @@ import {
   glassTabBarHeight,
 } from '@/theme/design';
 import { color, radius, typeScale, weight } from '@/theme/tokens';
-import { Loading } from '@/components/ui';
+import { Loading } from '@/components/ui/Loading';
 
 type ReviewStatus = 'pending' | 'approved' | 'rejected' | 'changes_requested' | 'not_required';
 type UnitType = 'base' | 'pack';

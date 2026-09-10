@@ -12,7 +12,7 @@ import { BrandLogo } from './BrandLogo';
 import { BottomSheetShell } from './BottomSheetShell';
 import { resolveLocationSwitchTarget } from '@/features/cart/locationSwitch';
 import { color, typeScale, weight } from '@/theme/tokens';
-import { Loading } from '@/components/ui';
+import { Loading } from '@/components/ui/Loading';
 
 export interface ConfirmLocationOption {
   id: string;

@@ -13,7 +13,7 @@ import { colors, hairline, radii } from '@/theme/design';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { BottomSheetShell } from '@/components/BottomSheetShell';
 import { typeScale, weight } from '@/theme/tokens';
-import { Loading } from '@/components/ui';
+import { Loading } from '@/components/ui/Loading';
 
 type SchedulePreset = 'later_today' | 'tomorrow' | 'pick_datetime';
 type PickerMode = 'later_today_time' | 'tomorrow_time' | 'custom_date' | 'custom_time' | null;

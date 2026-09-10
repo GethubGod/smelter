@@ -16,7 +16,7 @@ import {
   glassRadii,
 } from '@/theme/design';
 import { typeScale, weight } from '@/theme/tokens';
-import { Loading } from '@/components/ui';
+import { Loading } from '@/components/ui/Loading';
 
 export interface SupplierPickerOption {
   id: string;

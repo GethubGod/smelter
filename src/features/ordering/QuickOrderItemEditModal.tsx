@@ -26,7 +26,7 @@ import {
   type QuickOrderInventoryItem,
 } from './quickOrderItems';
 import { radius, typeScale, weight } from '@/theme/tokens';
-import { Loading } from '@/components/ui';
+import { Loading } from '@/components/ui/Loading';
 
 export type QuickOrderItemEditResult = {
   itemId: string | null;

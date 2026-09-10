@@ -33,7 +33,7 @@ import {
   mapInventoryRow,
 } from './quickOrderConfig/types';
 import { typeScale, weight } from '@/theme/tokens';
-import { Loading } from '@/components/ui';
+import { Loading } from '@/components/ui/Loading';
 
 const TAB_LABELS: Record<ConfigTab, string> = {
   aliases: 'Aliases',

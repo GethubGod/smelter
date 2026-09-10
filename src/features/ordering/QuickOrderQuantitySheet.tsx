@@ -43,7 +43,7 @@ import { PreviousQuantitySuggestionCard } from "./PreviousQuantitySuggestionCard
 import { QuantityStepper } from "./QuantityStepper";
 import { UnitSegmentedControl } from "./UnitSegmentedControl";
 import { color, radius, typeScale, weight } from '@/theme/tokens';
-import { Loading } from '@/components/ui';
+import { Loading } from '@/components/ui/Loading';
 
 /** One entry in the quantity-fix walk-through. */
 export type QuickOrderQuantitySheetItem = {

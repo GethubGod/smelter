@@ -39,7 +39,7 @@ import {
   type ParsedQuickOrderItem,
 } from "./quickOrderItems";
 import { color, radius, typeScale, weight } from '@/theme/tokens';
-import { Loading } from '@/components/ui';
+import { Loading } from '@/components/ui/Loading';
 
 const CARD_PADDING = 13;
 const CARD_SECTION_GAP = 7;

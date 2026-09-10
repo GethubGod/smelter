@@ -14,7 +14,7 @@ import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { colors, glassColors, glassHairlineWidth, glassRadii } from '@/theme/design';
 import type { QuickOrderConfigItem } from './types';
 import { radius, typeScale, weight } from '@/theme/tokens';
-import { Loading } from '@/components/ui';
+import { Loading } from '@/components/ui/Loading';
 
 type EmployeeOption = { id: string; name: string; role?: string | null };
 type DateStatus = 'idle' | 'valid' | 'needs_review' | 'invalid';

@@ -11,7 +11,7 @@ import { colors, hairline, radii } from '@/theme/design';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { BottomSheetShell } from '@/components/BottomSheetShell';
 import { typeScale, weight } from '@/theme/tokens';
-import { Loading } from '@/components/ui';
+import { Loading } from '@/components/ui/Loading';
 
 export interface OrderLaterSupplierOption {
   id: string;

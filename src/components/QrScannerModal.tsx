@@ -12,7 +12,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { colors } from '@/constants';
 import { useStockStore } from '@/store';
 import { radius, typeScale, weight } from '@/theme/tokens';
-import { Loading } from '@/components/ui';
+import { Loading } from '@/components/ui/Loading';
 
 interface QrScannerModalProps {
   visible: boolean;

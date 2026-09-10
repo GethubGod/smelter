@@ -177,7 +177,7 @@ import {
   type QuickOrderOperationResult,
 } from "./quickOrderItems";
 import { color, radius, typeScale, weight } from '@/theme/tokens';
-import { Loading } from '@/components/ui';
+import { Loading } from '@/components/ui/Loading';
 
 type QuickOrderFlag = {
   type: string;
