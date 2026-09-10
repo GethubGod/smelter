@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
-  Modal,
   RefreshControl,
   ScrollView,
   Text,
@@ -27,6 +26,7 @@ import {
   sendReminder,
 } from '@/services';
 import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { Sheet } from '@/components/ui/Sheet';
 
 type SortMode = 'overdue' | 'name' | 'location' | 'active_first';
 
@@ -554,117 +554,95 @@ export default function EmployeeRemindersScreen() {
           )}
         </ScrollView>
 
-        <Modal transparent animationType="fade" visible={showLocationMenu} onRequestClose={() => setShowLocationMenu(false)}>
+        <Sheet
+          visible={showLocationMenu}
+          title="Filter by Location"
+          onClose={() => setShowLocationMenu(false)}
+        >
           <TouchableOpacity
-            activeOpacity={1}
-            onPress={() => setShowLocationMenu(false)}
-            style={{ flex: 1, backgroundColor: colors.scrim, justifyContent: 'flex-end' }}
+            style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
+            onPress={() => {
+              setSelectedLocationId(null);
+              setShowLocationMenu(false);
+            }}
           >
-            <View style={{ backgroundColor: color.card, borderTopLeftRadius: radius.card, borderTopRightRadius: radius.card, paddingBottom: ds.spacing(20) }}>
-              <Text className="font-semibold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body), padding: ds.spacing(16) }}>
-                Filter by Location
-              </Text>
-              <TouchableOpacity
-                style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
-                onPress={() => {
-                  setSelectedLocationId(null);
-                  setShowLocationMenu(false);
-                }}
-              >
-                <Text style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>All Locations</Text>
-              </TouchableOpacity>
-              {locations.map((entry) => (
-                <TouchableOpacity
-                  key={entry.id}
-                  style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
-                  onPress={() => {
-                    setSelectedLocationId(entry.id);
-                    setShowLocationMenu(false);
-                  }}
-                >
-                  <Text style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>{entry.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <Text style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>All Locations</Text>
           </TouchableOpacity>
-        </Modal>
+          {locations.map((entry) => (
+            <TouchableOpacity
+              key={entry.id}
+              style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
+              onPress={() => {
+                setSelectedLocationId(entry.id);
+                setShowLocationMenu(false);
+              }}
+            >
+              <Text style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>{entry.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </Sheet>
 
-        <Modal transparent animationType="fade" visible={showSortMenu} onRequestClose={() => setShowSortMenu(false)}>
+        <Sheet
+          visible={showSortMenu}
+          title="Sort Employees"
+          onClose={() => setShowSortMenu(false)}
+        >
+          {SORT_OPTIONS.map((option) => (
+            <TouchableOpacity
+              key={option.value}
+              style={{
+                paddingHorizontal: ds.spacing(16),
+                paddingVertical: ds.spacing(12),
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+              onPress={() => {
+                setSortMode(option.value);
+                setShowSortMenu(false);
+              }}
+            >
+              <Text style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>{option.label}</Text>
+              {sortMode === option.value && <Ionicons name="checkmark" size={ds.icon(18)} color={colors.primary[500]} />}
+            </TouchableOpacity>
+          ))}
+        </Sheet>
+
+        <Sheet
+          visible={showMoreMenu}
+          title="More"
+          onClose={() => setShowMoreMenu(false)}
+        >
           <TouchableOpacity
-            activeOpacity={1}
-            onPress={() => setShowSortMenu(false)}
-            style={{ flex: 1, backgroundColor: colors.scrim, justifyContent: 'flex-end' }}
+            style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
+            onPress={() => {
+              setShowMoreMenu(false);
+              router.push('/(manager)/employee-reminders-recurring');
+            }}
           >
-            <View style={{ backgroundColor: color.card, borderTopLeftRadius: radius.card, borderTopRightRadius: radius.card, paddingBottom: ds.spacing(20) }}>
-              <Text className="font-semibold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body), padding: ds.spacing(16) }}>
-                Sort Employees
-              </Text>
-              {SORT_OPTIONS.map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={{
-                    paddingHorizontal: ds.spacing(16),
-                    paddingVertical: ds.spacing(12),
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                  onPress={() => {
-                    setSortMode(option.value);
-                    setShowSortMenu(false);
-                  }}
-                >
-                  <Text style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>{option.label}</Text>
-                  {sortMode === option.value && <Ionicons name="checkmark" size={ds.icon(18)} color={colors.primary[500]} />}
-                </TouchableOpacity>
-              ))}
-            </View>
+            <Text style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>Recurring Reminders</Text>
           </TouchableOpacity>
-        </Modal>
 
-        <Modal transparent animationType="fade" visible={showMoreMenu} onRequestClose={() => setShowMoreMenu(false)}>
           <TouchableOpacity
-            activeOpacity={1}
-            onPress={() => setShowMoreMenu(false)}
-            style={{ flex: 1, backgroundColor: colors.scrim, justifyContent: 'flex-end' }}
+            style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
+            onPress={() => {
+              setShowMoreMenu(false);
+              router.push('/(manager)/employee-reminders-settings');
+            }}
           >
-            <View style={{ backgroundColor: color.card, borderTopLeftRadius: radius.card, borderTopRightRadius: radius.card, paddingBottom: ds.spacing(20) }}>
-              <Text className="font-semibold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body), padding: ds.spacing(16) }}>
-                More
-              </Text>
-
-              <TouchableOpacity
-                style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
-                onPress={() => {
-                  setShowMoreMenu(false);
-                  router.push('/(manager)/employee-reminders-recurring');
-                }}
-              >
-                <Text style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>Recurring Reminders</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
-                onPress={() => {
-                  setShowMoreMenu(false);
-                  router.push('/(manager)/employee-reminders-settings');
-                }}
-              >
-                <Text style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>Reminder Settings</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
-                onPress={() => {
-                  setShowMoreMenu(false);
-                  router.push('/(manager)/employee-reminders-delivery');
-                }}
-              >
-                <Text style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>Notification Delivery Status</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>Reminder Settings</Text>
           </TouchableOpacity>
-        </Modal>
+
+          <TouchableOpacity
+            style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
+            onPress={() => {
+              setShowMoreMenu(false);
+              router.push('/(manager)/employee-reminders-delivery');
+            }}
+          >
+            <Text style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>Notification Delivery Status</Text>
+          </TouchableOpacity>
+        </Sheet>
       </ManagerScaleContainer>
     </SafeAreaView>
   );

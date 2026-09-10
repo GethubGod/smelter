@@ -2,9 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
   LayoutAnimation,
-  Modal,
   Platform,
-  Pressable,
   RefreshControl,
   ScrollView,
   Text,
