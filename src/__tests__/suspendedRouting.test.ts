@@ -103,12 +103,30 @@ jest.mock('react-native', () => ({
     currentState: 'active',
     addEventListener: jest.fn(() => ({ remove: jest.fn() })),
   },
+  // The @/components/ui barrel reaches design.ts through Sheet.
+  StyleSheet: {
+    hairlineWidth: 1,
+    create: <T,>(styles: T) => styles,
+    flatten: <T,>(styles: T) => styles,
+  },
 }));
 jest.mock('react-native-safe-area-context', () => ({ SafeAreaView: 'SafeAreaView' }));
 jest.mock('@expo/vector-icons', () => ({ Ionicons: 'Ionicons' }));
 jest.mock('@/constants', () => ({
   colors: { background: '#fff', errorBg: '#fee', error: '#c00', text: '#111' },
 }));
+// The screen now composes the contract primitives (EmptyState, Button). They
+// read the display store through useScaledStyles and pull in the single
+// ActivityIndicator host, neither of which this stubbed react-native supports.
+jest.mock('@/hooks/useScaledStyles', () => ({
+  useScaledStyles: () => ({
+    spacing: (value: number) => value,
+    fontSize: (value: number) => value,
+    radius: (value: number) => value,
+    icon: (value: number) => value,
+  }),
+}));
+jest.mock('@/components/LoadingIndicator', () => ({ LoadingIndicator: 'LoadingIndicator' }));
 
 // eslint-disable-next-line import/first -- the mocked stores above must be initialized before the real screens load
 import Index from '../../app/index';

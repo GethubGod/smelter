@@ -1,16 +1,20 @@
-// Screen 04 — Secure your app. Two option cards: restaurant PIN (primary)
+// Screen 04 — Secure your app. Two option rows: restaurant PIN (primary)
 // and create-a-password (secondary). Both ship (confirmed decision).
+//
+// The contract's Card and ListRow are light-surface only, so these rows are
+// composed from the auth tokens here. See the PR body for the gap note.
 
 import { Text, TouchableOpacity, View } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { PinDigitsIcon } from '@/components/icons/PinDigitsIcon';
-import { authTheme } from '@/theme/design';
+import { useScaledStyles } from '@/hooks/useScaledStyles';
+import { auth, color, radius, size, space, tracking, typeScale, weight } from '@/theme/tokens';
 import { AuthScreenShell } from './components/AuthScreenShell';
 import { StepProgress } from './components/StepProgress';
 import { useOnboardingStore } from './onboardingStore';
 
-interface OptionCardProps {
+interface OptionRowProps {
   title: string;
   subtitle: string;
   icon: React.ReactNode;
@@ -18,46 +22,69 @@ interface OptionCardProps {
   onPress: () => void;
 }
 
-function OptionCard({ title, subtitle, icon, highlighted = false, onPress }: OptionCardProps) {
+function OptionRow({ title, subtitle, icon, highlighted = false, onPress }: OptionRowProps) {
+  const ds = useScaledStyles();
+  const tile = Math.max(size.headerCircle, ds.icon(size.headerCircle));
+
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.82}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityHint={subtitle}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
-        backgroundColor: authTheme.well,
+        gap: ds.spacing(space[3]),
+        backgroundColor: auth.well,
         borderWidth: 1,
-        borderColor: highlighted ? authTheme.accent : authTheme.wellBorder,
-        borderRadius: 17,
-        padding: 15,
-        marginBottom: 10,
+        borderColor: highlighted ? color.accent : auth.wellBorder,
+        borderRadius: radius.card,
+        padding: ds.spacing(space[4]),
+        marginBottom: ds.spacing(space[3] - 2),
       }}
     >
       <View
         style={{
-          width: 40,
-          height: 40,
-          borderRadius: 12,
+          width: tile,
+          height: tile,
+          borderRadius: radius.control,
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: highlighted ? authTheme.accentSoft : authTheme.wellIcon,
+          backgroundColor: highlighted ? color.tint : auth.well,
         }}
       >
         {icon}
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 15, fontWeight: '700', color: authTheme.text }}>{title}</Text>
-        <Text style={{ fontSize: 12, color: authTheme.textDim, marginTop: 2 }}>{subtitle}</Text>
+        <Text
+          style={{
+            fontSize: ds.fontSize(typeScale.body),
+            fontWeight: weight.semibold,
+            color: auth.text,
+          }}
+        >
+          {title}
+        </Text>
+        <Text
+          style={{
+            fontSize: ds.fontSize(typeScale.secondary),
+            color: auth.dim,
+            marginTop: ds.spacing(space[1] / 2),
+          }}
+        >
+          {subtitle}
+        </Text>
       </View>
-      <Ionicons name="chevron-forward" size={18} color="rgba(255, 255, 255, 0.4)" />
+      <Ionicons name="chevron-forward" size={ds.icon(size.icon)} color={auth.dim} />
     </TouchableOpacity>
   );
 }
 
 export default function SecureAppScreen() {
   const router = useRouter();
+  const ds = useScaledStyles();
   const token = useOnboardingStore((state) => state.token);
 
   // Deep-linking straight here without an invite makes no sense — restart.
@@ -68,27 +95,40 @@ export default function SecureAppScreen() {
   return (
     <AuthScreenShell>
       <StepProgress step={2} />
-      <Text style={{ fontSize: 21, fontWeight: '700', color: authTheme.text, marginBottom: 3 }}>
+      <Text
+        accessibilityRole="header"
+        style={{
+          fontSize: ds.fontSize(typeScale.title),
+          fontWeight: weight.bold,
+          letterSpacing: tracking.title,
+          color: auth.text,
+        }}
+      >
         Secure your app
       </Text>
-      <Text style={{ fontSize: 13, color: authTheme.textDim, marginBottom: 18 }}>
+      <Text
+        style={{
+          fontSize: ds.fontSize(typeScale.secondary),
+          color: auth.dim,
+          marginTop: ds.spacing(space[1] / 2),
+          marginBottom: ds.spacing(space[5]),
+        }}
+      >
         Pick one. You can change it later.
       </Text>
 
-      <OptionCard
+      <OptionRow
         title="Use your restaurant PIN"
         subtitle="The same 4-digit code you use at the register"
-        icon={<PinDigitsIcon size={24} color={authTheme.accent} />}
+        icon={<PinDigitsIcon size={ds.icon(size.icon)} color={color.accent} />}
         highlighted
         onPress={() => router.push('/(auth)/secure-pin' as Parameters<typeof router.push>[0])}
       />
-      <OptionCard
+      <OptionRow
         title="Create a password"
         subtitle="Saves to iPhone autofill so you never retype it"
-        icon={<Ionicons name="lock-closed-outline" size={20} color={authTheme.text} />}
-        onPress={() =>
-          router.push('/(auth)/secure-password' as Parameters<typeof router.push>[0])
-        }
+        icon={<Ionicons name="lock-closed-outline" size={ds.icon(size.icon)} color={auth.text} />}
+        onPress={() => router.push('/(auth)/secure-password' as Parameters<typeof router.push>[0])}
       />
       <View style={{ flex: 1 }} />
     </AuthScreenShell>

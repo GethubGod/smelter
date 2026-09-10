@@ -4,20 +4,19 @@
 // the AASA file goes live with the next web deploy).
 
 import { useState } from 'react';
-import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
+import { Button, Input } from '@/components/ui';
+import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerNotificationHaptic, NotificationFeedbackType } from '@/lib/haptics';
-import {
-  MAX_PASSWORD_LENGTH,
-  MIN_PASSWORD_LENGTH,
-} from '@/services/loginCredentials';
-import { authTheme } from '@/theme/design';
-import { AuthPrimaryButton } from './components/AuthPrimaryButton';
+import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from '@/services/loginCredentials';
+import { auth, space, tracking, typeScale, weight } from '@/theme/tokens';
 import { AuthScreenShell } from './components/AuthScreenShell';
 import { useOnboardingStore } from './onboardingStore';
 
 export default function SecurePasswordScreen() {
   const router = useRouter();
+  const ds = useScaledStyles();
   const token = useOnboardingStore((state) => state.token);
   const invitedName = useOnboardingStore((state) => state.invitedName);
   const completeOnboarding = useOnboardingStore((state) => state.completeOnboarding);
@@ -30,16 +29,9 @@ export default function SecurePasswordScreen() {
     return <Redirect href={'/(auth)/welcome' as never} />;
   }
 
-  const tooShort = password.length > 0 && password.length < MIN_PASSWORD_LENGTH;
-
   const handleSave = async () => {
-    if (
-      password.length < MIN_PASSWORD_LENGTH ||
-      password.length > MAX_PASSWORD_LENGTH
-    ) {
-      setError(
-        `Use between ${MIN_PASSWORD_LENGTH} and ${MAX_PASSWORD_LENGTH} characters`,
-      );
+    if (password.length < MIN_PASSWORD_LENGTH || password.length > MAX_PASSWORD_LENGTH) {
+      setError(`Use between ${MIN_PASSWORD_LENGTH} and ${MAX_PASSWORD_LENGTH} characters`);
       return;
     }
     setSubmitting(true);
@@ -60,26 +52,30 @@ export default function SecurePasswordScreen() {
 
   return (
     <AuthScreenShell>
-      <View style={{ flex: 1, paddingTop: 24 }}>
-        <Text style={{ fontSize: 21, fontWeight: '700', color: authTheme.text, marginBottom: 3 }}>
+      <View style={{ flex: 1, paddingTop: ds.spacing(space[6]) }}>
+        <Text
+          accessibilityRole="header"
+          style={{
+            fontSize: ds.fontSize(typeScale.title),
+            fontWeight: weight.bold,
+            letterSpacing: tracking.title,
+            color: auth.text,
+          }}
+        >
           Create a password
         </Text>
-        <Text style={{ fontSize: 13, color: authTheme.textDim, marginBottom: 18 }}>
+        <Text
+          style={{
+            fontSize: ds.fontSize(typeScale.secondary),
+            color: auth.dim,
+            marginTop: ds.spacing(space[1] / 2),
+            marginBottom: ds.spacing(space[5]),
+          }}
+        >
           Your iPhone will offer to save it.
         </Text>
 
-        <Text
-          style={{
-            fontSize: 11,
-            fontWeight: '600',
-            letterSpacing: 0.5,
-            color: 'rgba(255, 255, 255, 0.5)',
-            marginBottom: 6,
-          }}
-        >
-          PASSWORD
-        </Text>
-        {/* Invisible username field so iOS saves name + password together. */}
+        {/* Invisible username field so iOS saves name and password together. */}
         <TextInput
           value={invitedName ?? ''}
           editable={false}
@@ -89,7 +85,10 @@ export default function SecurePasswordScreen() {
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
         />
-        <TextInput
+
+        <Input
+          label="Password"
+          onDark
           value={password}
           onChangeText={(value) => {
             setPassword(value);
@@ -105,43 +104,34 @@ export default function SecurePasswordScreen() {
           returnKeyType="done"
           onSubmitEditing={handleSave}
           editable={!submitting}
-          style={{
-            backgroundColor: authTheme.well,
-            borderWidth: 1,
-            borderColor: authTheme.accent,
-            borderRadius: 13,
-            paddingHorizontal: 13,
-            height: 48,
-            fontSize: 16,
-            letterSpacing: 2,
-            color: authTheme.text,
-            marginBottom: 8,
-          }}
+          error={error ?? undefined}
         />
+
         <Text
           style={{
-            fontSize: 12,
-            color: error ? authTheme.accent : tooShort ? authTheme.textDim : 'transparent',
-            marginBottom: 12,
+            fontSize: ds.fontSize(typeScale.secondary),
+            color: auth.dim,
+            marginTop: ds.spacing(space[2] - 2),
+            marginBottom: ds.spacing(space[4]),
           }}
         >
-          {error ?? `Use at least ${MIN_PASSWORD_LENGTH} characters`}
+          {`Use at least ${MIN_PASSWORD_LENGTH} characters`}
         </Text>
 
-        <AuthPrimaryButton
+        <Button
           label="Save and continue"
           onPress={handleSave}
           loading={submitting}
           disabled={password.length < MIN_PASSWORD_LENGTH}
         />
         {!submitting ? (
-          <TouchableOpacity
+          <Button
+            label="Back"
+            variant="secondary"
+            onDark
             onPress={() => router.back()}
-            style={{ alignItems: 'center', marginTop: 16 }}
-            hitSlop={{ top: 8, bottom: 8, left: 20, right: 20 }}
-          >
-            <Text style={{ fontSize: 13, fontWeight: '600', color: authTheme.textDim }}>Back</Text>
-          </TouchableOpacity>
+            style={{ marginTop: ds.spacing(space[3]) }}
+          />
         ) : null}
       </View>
     </AuthScreenShell>
