@@ -1079,3 +1079,172 @@ INSERT 0 2
  Fixture Wasabi  | wasabi  | tube       | t
 (6 rows)
 ```
+
+## pr75-80-stock-count-baseline
+
+Run at 2026-09-10T13:45:03Z against `supabase_db_smelter-performance`.
+
+```sql
+-- Baseline before the PR #75 stock count save attempt.
+select count(*) as stock_updates from public.stock_updates;
+select count(*) as stock_check_sessions from public.stock_check_sessions;
+select name, current_quantity from public.area_items ai
+  join public.inventory_items ii on ii.id = ai.inventory_item_id order by name;
+select name, last_checked_at from public.storage_areas order by name;
+```
+
+```
+ stock_updates 
+---------------
+             0
+(1 row)
+
+ stock_check_sessions 
+----------------------
+                    1
+(1 row)
+
+      name       | current_quantity 
+-----------------+------------------
+ Fixture Avocado |                8
+ Fixture Nori    |               20
+ Fixture Rice    |               10
+ Fixture Salmon  |                3
+(4 rows)
+
+         name         | last_checked_at 
+----------------------+-----------------
+ Fixture Dry Storage  | 
+ Fixture Freezer      | 
+ Fixture Poki Storage | 
+(3 rows)
+```
+
+## pr75-81-stock-count-save
+
+Run at 2026-09-10T13:49:59Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: after saving a stock count for Fixture Salmon (Fixture Freezer,
+-- Fixture Sushi) the UI reported "1 of 2 checked" and "current stock 0 case".
+select count(*) as stock_updates from public.stock_updates;
+select count(*) as stock_check_sessions from public.stock_check_sessions;
+select ii.name, ai.current_quantity, ai.updated_at from public.area_items ai
+  join public.inventory_items ii on ii.id = ai.inventory_item_id order by ii.name;
+select name, last_checked_at from public.storage_areas order by name;
+```
+
+```
+ stock_updates 
+---------------
+             1
+(1 row)
+
+ stock_check_sessions 
+----------------------
+                    1
+(1 row)
+
+      name       | current_quantity |          updated_at           
+-----------------+------------------+-------------------------------
+ Fixture Avocado |                8 | 2026-09-10 02:15:16.940831+00
+ Fixture Nori    |               20 | 2026-09-10 02:15:16.940831+00
+ Fixture Rice    |               10 | 2026-09-10 02:15:16.940831+00
+ Fixture Salmon  |                0 | 2026-09-10 13:49:42.160303+00
+(4 rows)
+
+         name         |        last_checked_at        
+----------------------+-------------------------------
+ Fixture Dry Storage  | 
+ Fixture Freezer      | 2026-09-10 13:49:42.160303+00
+ Fixture Poki Storage | 
+(3 rows)
+```
+
+## pr75-82-stock-count-offline-pending
+
+Run at 2026-09-10T13:50:37Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: Fixture Rice counted while supabase_kong_smelter-performance was
+-- stopped. The UI accepted the count ("2 of 2 checked", "current stock 0 pallet").
+-- The database must still show the pre-offline value until the gateway returns.
+select count(*) as stock_updates from public.stock_updates;
+select ii.name, ai.current_quantity from public.area_items ai
+  join public.inventory_items ii on ii.id = ai.inventory_item_id order by ii.name;
+```
+
+```
+ stock_updates 
+---------------
+             1
+(1 row)
+
+      name       | current_quantity 
+-----------------+------------------
+ Fixture Avocado |                8
+ Fixture Nori    |               20
+ Fixture Rice    |               10
+ Fixture Salmon  |                0
+(4 rows)
+```
+
+## pr75-83-stock-count-offline-sync
+
+Run at 2026-09-10T13:52:27Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: Fixture Rice was counted while the gateway was stopped, then the
+-- gateway was restarted and the app was force quit and relaunched twice.
+-- Stock check now reports "2 checked, 1 unchecked" for Fixture Sushi.
+select count(*) as stock_updates from public.stock_updates;
+select ii.name, ai.current_quantity, ai.updated_at from public.area_items ai
+  join public.inventory_items ii on ii.id = ai.inventory_item_id order by ii.name;
+select name, last_checked_at from public.storage_areas order by name;
+```
+
+```
+ stock_updates 
+---------------
+             2
+(1 row)
+
+      name       | current_quantity |          updated_at           
+-----------------+------------------+-------------------------------
+ Fixture Avocado |                8 | 2026-09-10 02:15:16.940831+00
+ Fixture Nori    |               20 | 2026-09-10 02:15:16.940831+00
+ Fixture Rice    |                0 | 2026-09-10 13:52:13.959767+00
+ Fixture Salmon  |                0 | 2026-09-10 13:49:42.160303+00
+(4 rows)
+
+         name         |        last_checked_at        
+----------------------+-------------------------------
+ Fixture Dry Storage  | 
+ Fixture Freezer      | 2026-09-10 13:52:13.959767+00
+ Fixture Poki Storage | 
+(3 rows)
+```
+
+## pr75-84-cached-inventory-newest
+
+Run at 2026-09-10T13:54:05Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 manual check: cached inventory after going offline, force quitting and
+-- relaunching. The app container's inventory-storage held all six catalog items
+-- including Fixture Tofu and Fixture Wasabi, the two most recently added rows,
+-- so the persisted cache is the newest state.
+select name, active from public.inventory_items order by name;
+```
+
+```
+      name       | active 
+-----------------+--------
+ Fixture Avocado | t
+ Fixture Nori    | t
+ Fixture Rice    | t
+ Fixture Salmon  | t
+ Fixture Tofu    | t
+ Fixture Wasabi  | t
+(6 rows)
+```
