@@ -2,9 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
   FlatList,
-  Modal,
   Platform,
-  Pressable,
   Share,
   Text,
   TextInput,
@@ -55,6 +53,8 @@ import {
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { useModuleAccessGuard } from '@/hooks';
 import { color, typeScale, weight } from '@/theme/tokens';
+import { Button } from '@/components/ui/Button';
+import { Sheet } from '@/components/ui/Sheet';
 
 const AVATAR_PALETTE = [
   { background: color.well, text: color.ink2 },
@@ -3573,105 +3573,40 @@ function FulfillmentConfirmationScreen() {
           onClose={() => setOverflowTarget(null)}
         />
 
-        <Modal
+        <Sheet
           visible={Boolean(noteRegularItem || noteRemainingItem)}
-          transparent
-          animationType="fade"
-          onRequestClose={closeNoteEditor}
+          title={(noteRegularItem?.notes.length || noteRemainingItem?.note) ? 'Edit Note' : 'Add Note'}
+          onClose={closeNoteEditor}
+          primary={{ label: 'Save Note', onPress: handleSaveNote, loading: isSavingNote }}
         >
-          <Pressable
-            style={{ flex: 1, backgroundColor: color.scrim, justifyContent: 'flex-end' }}
-            onPress={closeNoteEditor}
-          >
-            <Pressable
-              style={{
-                backgroundColor: color.card,
-                borderTopLeftRadius: glassRadii.surface,
-                borderTopRightRadius: glassRadii.surface,
-                paddingHorizontal: ds.spacing(20),
-                paddingTop: ds.spacing(20),
-                paddingBottom: ds.spacing(24),
-              }}
-              onPress={(event) => event.stopPropagation()}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: ds.spacing(14) }}>
-                <View style={{ flex: 1, paddingRight: ds.spacing(8) }}>
-                  <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.bold, color: glassColors.textPrimary }}>
-                    {(noteRegularItem?.notes.length || noteRemainingItem?.note) ? 'Edit Note' : 'Add Note'}
-                  </Text>
-                  <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: glassColors.textSecondary, marginTop: ds.spacing(4) }}>
-                    {noteRegularItem?.name || noteRemainingItem?.name || ''}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  onPress={closeNoteEditor}
-                  style={{
-                    padding: ds.spacing(8),
-                    borderRadius: glassRadii.round,
-                    backgroundColor: glassColors.mediumFill,
-                  }}
-                >
-                  <Ionicons name="close" size={ds.icon(20)} color={glassColors.textPrimary} />
-                </TouchableOpacity>
-              </View>
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
+            {noteRegularItem?.name || noteRemainingItem?.name || ''}
+          </Text>
 
-              <TextInput
-                value={noteDraft}
-                onChangeText={setNoteDraft}
-                placeholder="Add supplier note..."
-                placeholderTextColor={glassColors.textMuted}
-                multiline
-                maxLength={240}
-                textAlignVertical="top"
-                style={{
-                  minHeight: ds.spacing(120),
-                  borderRadius: glassRadii.button,
-                  borderWidth: glassHairlineWidth,
-                  borderColor: glassColors.divider,
-                  backgroundColor: glassColors.mediumFill,
-                  paddingHorizontal: ds.spacing(14),
-                  paddingVertical: ds.spacing(14),
-                  fontSize: ds.fontSize(typeScale.body),
-                  color: glassColors.textPrimary,
-                }}
-              />
-              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: glassColors.textMuted, marginTop: ds.spacing(8) }}>{noteDraft.length}/240</Text>
+          <TextInput
+            value={noteDraft}
+            onChangeText={setNoteDraft}
+            placeholder="Add supplier note..."
+            placeholderTextColor={glassColors.textMuted}
+            multiline
+            maxLength={240}
+            textAlignVertical="top"
+            style={{
+              minHeight: ds.spacing(120),
+              borderRadius: glassRadii.button,
+              borderWidth: glassHairlineWidth,
+              borderColor: glassColors.divider,
+              backgroundColor: glassColors.mediumFill,
+              paddingHorizontal: ds.spacing(14),
+              paddingVertical: ds.spacing(14),
+              fontSize: ds.fontSize(typeScale.body),
+              color: glassColors.textPrimary,
+            }}
+          />
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: glassColors.textMuted, marginTop: ds.spacing(8) }}>{noteDraft.length}/240</Text>
 
-              <View style={{ flexDirection: 'row', marginTop: ds.spacing(16) }}>
-                <TouchableOpacity
-                  onPress={closeNoteEditor}
-                  style={{
-                    flex: 1,
-                    paddingVertical: ds.spacing(14),
-                    borderRadius: glassRadii.button,
-                    backgroundColor: glassColors.mediumFill,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: ds.spacing(10),
-                  }}
-                >
-                  <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: glassColors.textPrimary }}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleSaveNote}
-                  disabled={isSavingNote}
-                  style={{
-                    flex: 1,
-                    paddingVertical: ds.spacing(14),
-                    borderRadius: glassRadii.button,
-                    backgroundColor: isSavingNote ? color.disabled : glassColors.accent,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.bold, color: color.card }}>
-                    {isSavingNote ? 'Saving...' : 'Save Note'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </Pressable>
-          </Pressable>
-        </Modal>
+          <Button variant="secondary" label="Cancel" onPress={closeNoteEditor} />
+        </Sheet>
 
         <View
           style={{
