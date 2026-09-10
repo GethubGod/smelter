@@ -357,7 +357,7 @@ export function OrderSubmissionConfirmationOverlay({
         <View
           style={[
             StyleSheet.absoluteFillObject,
-            { backgroundColor: 'rgba(0, 0, 0, 0.35)' },
+            { backgroundColor: color.scrim },
           ]}
         />
       </View>

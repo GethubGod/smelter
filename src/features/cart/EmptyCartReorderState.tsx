@@ -7,7 +7,6 @@ import { GlassSurface } from '@/components';
 import { getTabBarClearance } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { color, radius, space, typeScale } from '@/theme/tokens';
-import { colors } from '@/constants';
 
 interface EmptyCartReorderStateProps {
   quickOrderRoute: string;
