@@ -54,6 +54,8 @@ import {
   glassTabBarHeight,
 } from '@/theme/design';
 import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { Button } from '@/components/ui/Button';
+import { Sheet } from '@/components/ui/Sheet';
 
 interface AggregatedLocationBreakdown {
   locationId: string;
@@ -2858,142 +2860,81 @@ function FulfillmentScreen() {
           onClose={() => setOverflowItem(null)}
         />
 
-        <Modal
+        <Sheet
           visible={Boolean(breakdownItem)}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setBreakdownItem(null)}
+          title="Employee Breakdown"
+          onClose={() => setBreakdownItem(null)}
         >
-          <Pressable className="flex-1 justify-end" style={{ backgroundColor: color.scrim }} onPress={() => setBreakdownItem(null)}>
-            <Pressable
-              className="px-4 pt-4 pb-5" style={{ backgroundColor: color.card, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet }}
-              onPress={(event) => event.stopPropagation()}
-            >
-              <View className="flex-row items-center justify-between mb-3">
-                <View className="flex-1 pr-2">
-                  <Text className="font-bold" style={{ fontSize: ds.fontSize(typeScale.title), color: color.ink }}>Employee Breakdown</Text>
-                  <Text className="mt-0.5" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
-                    {breakdownItem?.inventoryItem.name || ''}
-                  </Text>
-                </View>
-                <TouchableOpacity onPress={() => setBreakdownItem(null)} className="p-2">
-                  <Ionicons name="close" size={20} color={colors.gray[500]} />
-                </TouchableOpacity>
-              </View>
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
+            {breakdownItem?.inventoryItem.name || ''}
+          </Text>
 
-              <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
-                {breakdownRows.length === 0 ? (
-                  <View className="border px-4 py-5 items-center" style={{ borderRadius: radius.control, borderColor: color.hairlineStrong, backgroundColor: color.page }}>
-                    <Text className="text-center" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>
-                      No per-employee details are available for this line.
+          <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
+            {breakdownRows.length === 0 ? (
+              <View className="border px-4 py-5 items-center" style={{ borderRadius: radius.control, borderColor: color.hairlineStrong, backgroundColor: color.page }}>
+                <Text className="text-center" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>
+                  No per-employee details are available for this line.
+                </Text>
+              </View>
+            ) : (
+              breakdownRows.map((row, index) => (
+                <View
+                  key={`${row.name}-${index}`}
+                  className={`py-3 ${index < breakdownRows.length - 1 ? 'border-b' : ''}`} style={{ borderColor: index < breakdownRows.length - 1 ? color.hairline : undefined }}
+                >
+                  <View className="flex-row items-center justify-between">
+                    <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>{row.name}</Text>
+                    <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>
+                      {row.quantity} {breakdownItem?.unitType === 'pack'
+                        ? breakdownItem?.inventoryItem.pack_unit
+                        : breakdownItem?.inventoryItem.base_unit}
                     </Text>
                   </View>
-                ) : (
-                  breakdownRows.map((row, index) => (
-                    <View
-                      key={`${row.name}-${index}`}
-                      className={`py-3 ${index < breakdownRows.length - 1 ? 'border-b' : ''}`} style={{ borderColor: index < breakdownRows.length - 1 ? color.hairline : undefined }}
-                    >
-                      <View className="flex-row items-center justify-between">
-                        <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>{row.name}</Text>
-                        <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>
-                          {row.quantity} {breakdownItem?.unitType === 'pack'
-                            ? breakdownItem?.inventoryItem.pack_unit
-                            : breakdownItem?.inventoryItem.base_unit}
-                        </Text>
-                      </View>
-                      {row.locations.length > 0 && (
-                        <Text className="mt-1" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
-                          {row.locations.join(' • ')}
-                        </Text>
-                      )}
-                    </View>
-                  ))
-                )}
-              </ScrollView>
+                  {row.locations.length > 0 && (
+                    <Text className="mt-1" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
+                      {row.locations.join(' • ')}
+                    </Text>
+                  )}
+                </View>
+              ))
+            )}
+          </ScrollView>
+        </Sheet>
 
-              <TouchableOpacity
-                onPress={() => setBreakdownItem(null)}
-                className="mt-3 py-3 items-center" style={{ borderRadius: radius.control, backgroundColor: color.well }}
-              >
-                <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>Close</Text>
-              </TouchableOpacity>
-            </Pressable>
-          </Pressable>
-        </Modal>
-
-        <Modal
+        <Sheet
           visible={Boolean(noteEditorItem)}
-          transparent
-          animationType="fade"
-          onRequestClose={() => {
+          title={noteEditorItem?.notes.length ? 'Edit Note' : 'Add Note'}
+          onClose={() => {
             setNoteEditorItem(null);
             setNoteDraft('');
           }}
+          primary={{ label: 'Save Note', onPress: handleSaveItemNote, loading: isSavingNote }}
         >
-          <Pressable
-            className="flex-1 justify-end" style={{ backgroundColor: color.scrim }}
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
+            {noteEditorItem?.inventoryItem.name || ''}
+          </Text>
+
+          <TextInput
+            value={noteDraft}
+            onChangeText={setNoteDraft}
+            placeholder="Add supplier note..."
+            placeholderTextColor={colors.gray[400]}
+            multiline
+            maxLength={240}
+            textAlignVertical="top"
+            className="min-h-[110px] border px-3 py-3" style={{ borderRadius: radius.control, borderColor: color.hairlineStrong, backgroundColor: color.page, fontSize: ds.fontSize(typeScale.body), color: color.ink }}
+          />
+          <Text className="mt-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}>{noteDraft.length}/240</Text>
+
+          <Button
+            variant="secondary"
+            label="Cancel"
             onPress={() => {
               setNoteEditorItem(null);
               setNoteDraft('');
             }}
-          >
-            <Pressable className="px-4 pt-4 pb-5" style={{ backgroundColor: color.card, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet }} onPress={(event) => event.stopPropagation()}>
-              <View className="flex-row items-center justify-between mb-3">
-                <View className="flex-1 pr-2">
-                  <Text className="font-bold" style={{ fontSize: ds.fontSize(typeScale.title), color: color.ink }}>
-                    {noteEditorItem?.notes.length ? 'Edit Note' : 'Add Note'}
-                  </Text>
-                  <Text className="mt-0.5" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
-                    {noteEditorItem?.inventoryItem.name || ''}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => {
-                    setNoteEditorItem(null);
-                    setNoteDraft('');
-                  }}
-                  className="p-2"
-                >
-                  <Ionicons name="close" size={20} color={colors.gray[500]} />
-                </TouchableOpacity>
-              </View>
-
-              <TextInput
-                value={noteDraft}
-                onChangeText={setNoteDraft}
-                placeholder="Add supplier note..."
-                placeholderTextColor={colors.gray[400]}
-                multiline
-                maxLength={240}
-                textAlignVertical="top"
-                className="min-h-[110px] border px-3 py-3" style={{ borderRadius: radius.control, borderColor: color.hairlineStrong, backgroundColor: color.page, fontSize: ds.fontSize(typeScale.body), color: color.ink }}
-              />
-              <Text className="mt-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}>{noteDraft.length}/240</Text>
-
-              <View className="flex-row mt-4">
-                <TouchableOpacity
-                  onPress={() => {
-                    setNoteEditorItem(null);
-                    setNoteDraft('');
-                  }}
-                  className="flex-1 py-3 items-center justify-center mr-2" style={{ borderRadius: radius.control, backgroundColor: color.well }}
-                >
-                  <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleSaveItemNote}
-                  disabled={isSavingNote}
-                  className={`flex-1 py-3 items-center justify-center ${isSavingNote ? 'bg-primary-300' : ''}`} style={{ borderRadius: radius.control, backgroundColor: isSavingNote ? undefined : color.accent }}
-                >
-                  <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.onAccent }}>
-                    {isSavingNote ? 'Saving...' : 'Save Note'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </Pressable>
-          </Pressable>
-        </Modal>
+          />
+        </Sheet>
 
         <SupplierPickerBottomSheet
           visible={Boolean(supplierPickerItem)}

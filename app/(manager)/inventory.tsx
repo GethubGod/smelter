@@ -38,6 +38,7 @@ import {
 } from '@/features/inventory/ManagerInventoryRow';
 import { selectManagerInventoryOrderState } from '@/features/inventory/managerInventorySelectors';
 import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { Sheet } from '@/components/ui/Sheet';
 
 
 const categories = [...KNOWN_ITEM_CATEGORIES];
@@ -2210,166 +2211,137 @@ export default function ManagerInventoryScreen() {
       </Modal>
 
       {/* Count Unit Picker */}
-      <Modal
+      <Sheet
         visible={showCountUnitPicker}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowCountUnitPicker(false)}
+        title="Select Counting Unit"
+        onClose={() => setShowCountUnitPicker(false)}
       >
-        <View className="flex-1 justify-end" style={{ backgroundColor: color.scrim }}>
-          <View className="p-4" style={{ backgroundColor: color.card, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet }}>
-            <Text className="font-semibold mb-2" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>Select Counting Unit</Text>
-            {COUNT_UNITS.map((unit) => (
-              <TouchableOpacity
-                key={unit}
-                className="py-3"
-                onPress={() => handleChangeUnitType(unit)}
-              >
-                <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>{unit}</Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity className="py-3 items-center" onPress={() => setShowCountUnitPicker(false)}>
-              <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        {COUNT_UNITS.map((unit) => (
+          <TouchableOpacity
+            key={unit}
+            className="py-3"
+            onPress={() => handleChangeUnitType(unit)}
+          >
+            <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>{unit}</Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity className="py-3 items-center" onPress={() => setShowCountUnitPicker(false)}>
+          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>Cancel</Text>
+        </TouchableOpacity>
+      </Sheet>
 
       {/* Order Unit Picker */}
-      <Modal
+      <Sheet
         visible={showOrderUnitPicker}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowOrderUnitPicker(false)}
+        title="Select Order Unit"
+        onClose={() => setShowOrderUnitPicker(false)}
       >
-        <View className="flex-1 justify-end" style={{ backgroundColor: color.scrim }}>
-          <View className="p-4" style={{ backgroundColor: color.card, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet }}>
-            <Text className="font-semibold mb-2" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>Select Order Unit</Text>
-            {ORDER_UNITS.map((unit) => (
-              <TouchableOpacity
-                key={unit}
-                className="py-3"
-                onPress={() => {
-                  setEditForm((prev) => ({ ...prev, order_unit: unit }));
-                  setShowOrderUnitPicker(false);
-                }}
-              >
-                <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>{unit}</Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity className="py-3 items-center" onPress={() => setShowOrderUnitPicker(false)}>
-              <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        {ORDER_UNITS.map((unit) => (
+          <TouchableOpacity
+            key={unit}
+            className="py-3"
+            onPress={() => {
+              setEditForm((prev) => ({ ...prev, order_unit: unit }));
+              setShowOrderUnitPicker(false);
+            }}
+          >
+            <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>{unit}</Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity className="py-3 items-center" onPress={() => setShowOrderUnitPicker(false)}>
+          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>Cancel</Text>
+        </TouchableOpacity>
+      </Sheet>
 
       {/* Move Unit Picker */}
-      <Modal
+      <Sheet
         visible={showMoveUnitPicker}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowMoveUnitPicker(false)}
+        title="Select Count Unit"
+        onClose={() => setShowMoveUnitPicker(false)}
       >
-        <View className="flex-1 justify-end" style={{ backgroundColor: color.scrim }}>
-          <View className="p-4" style={{ backgroundColor: color.card, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet }}>
-            <Text className="font-semibold mb-2" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>Select Count Unit</Text>
-            {COUNT_UNITS.map((unit) => (
-              <TouchableOpacity
-                key={unit}
-                className="py-3"
-                onPress={() => {
-                  setMoveForm((prev) => ({ ...prev, unit_type: unit }));
-                  setShowMoveUnitPicker(false);
-                }}
-              >
-                <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>{unit}</Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity className="py-3 items-center" onPress={() => setShowMoveUnitPicker(false)}>
-              <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        {COUNT_UNITS.map((unit) => (
+          <TouchableOpacity
+            key={unit}
+            className="py-3"
+            onPress={() => {
+              setMoveForm((prev) => ({ ...prev, unit_type: unit }));
+              setShowMoveUnitPicker(false);
+            }}
+          >
+            <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>{unit}</Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity className="py-3 items-center" onPress={() => setShowMoveUnitPicker(false)}>
+          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>Cancel</Text>
+        </TouchableOpacity>
+      </Sheet>
 
       {/* Location Modal */}
-      <Modal
+      <Sheet
         visible={showLocationModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowLocationModal(false)}
+        title="Select Location"
+        onClose={() => setShowLocationModal(false)}
       >
-        <View className="flex-1 justify-center px-6" style={{ backgroundColor: color.scrim }}>
-          <View className="p-4" style={{ backgroundColor: color.card, borderRadius: radius.card }}>
-            <Text className="font-semibold mb-3" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>Select Location</Text>
-            <TouchableOpacity
-              className="py-3"
-              onPress={() => {
-                setLocationFilter('all');
-                setShowLocationModal(false);
-              }}
-            >
-              <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>All Locations</Text>
-            </TouchableOpacity>
-            {locations.map((loc) => (
-              <TouchableOpacity
-                key={loc.id}
-                className="py-3"
-                onPress={() => {
-                  setLocationFilter(loc.id);
-                  setShowLocationModal(false);
-                }}
-              >
-                <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>{loc.name}</Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity
-              className="mt-2 py-3 items-center"
-              onPress={() => setShowLocationModal(false)}
-            >
-              <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        <TouchableOpacity
+          className="py-3"
+          onPress={() => {
+            setLocationFilter('all');
+            setShowLocationModal(false);
+          }}
+        >
+          <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>All Locations</Text>
+        </TouchableOpacity>
+        {locations.map((loc) => (
+          <TouchableOpacity
+            key={loc.id}
+            className="py-3"
+            onPress={() => {
+              setLocationFilter(loc.id);
+              setShowLocationModal(false);
+            }}
+          >
+            <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>{loc.name}</Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity
+          className="mt-2 py-3 items-center"
+          onPress={() => setShowLocationModal(false)}
+        >
+          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>Cancel</Text>
+        </TouchableOpacity>
+      </Sheet>
 
       {/* Action Menu */}
-      <Modal
+      <Sheet
         visible={showActionMenu}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowActionMenu(false)}
+        title="Inventory actions"
+        onClose={() => setShowActionMenu(false)}
       >
-        <View className="flex-1 justify-end" style={{ backgroundColor: color.scrim }}>
-          <View className="p-4" style={{ backgroundColor: color.card, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet }}>
-            <TouchableOpacity
-              className="py-3"
-              onPress={() => {
-                setShowActionMenu(false);
-                openAddFlow();
-              }}
-            >
-              <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>Add Item</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="py-3"
-              onPress={() => {
-                setShowActionMenu(false);
-                enterBulkMode();
-              }}
-            >
-              <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>Select</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="py-3 items-center"
-              onPress={() => setShowActionMenu(false)}
-            >
-              <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        <TouchableOpacity
+          className="py-3"
+          onPress={() => {
+            setShowActionMenu(false);
+            openAddFlow();
+          }}
+        >
+          <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>Add Item</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          className="py-3"
+          onPress={() => {
+            setShowActionMenu(false);
+            enterBulkMode();
+          }}
+        >
+          <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>Select</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          className="py-3 items-center"
+          onPress={() => setShowActionMenu(false)}
+        >
+          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>Cancel</Text>
+        </TouchableOpacity>
+      </Sheet>
 
       {/* Add Item Modal */}
       <Modal
@@ -2700,56 +2672,48 @@ export default function ManagerInventoryScreen() {
       </Modal>
 
       {/* Add Item Unit Picker */}
-      <Modal
+      <Sheet
         visible={showAddUnitPicker}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowAddUnitPicker(false)}
+        title={addUnitPickerTarget?.field === 'order' ? 'Select Order Unit' : 'Select Count Unit'}
+        onClose={() => setShowAddUnitPicker(false)}
       >
-        <View className="flex-1 justify-end" style={{ backgroundColor: color.scrim }}>
-          <View className="p-4" style={{ backgroundColor: color.card, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet }}>
-            <Text className="font-semibold mb-2" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>
-              Select {addUnitPickerTarget?.field === 'order' ? 'Order Unit' : 'Count Unit'}
-            </Text>
-            {(addUnitPickerTarget?.field === 'order' ? ORDER_UNITS : COUNT_UNITS).map((unit) => (
-              <TouchableOpacity
-                key={unit}
-                className="py-3"
-                onPress={() => {
-                  if (!addUnitPickerTarget) return;
-                  if (addUnitPickerTarget.areaId === 'bulk') {
-                    setBulkMoveSettings((prev) => ({
-                      ...prev,
-                      unit_type: unit,
-                    }));
-                  } else {
-                    setAddAreaSelections((prev) => ({
-                      ...prev,
-                      [addUnitPickerTarget.areaId]: {
-                        ...(prev[addUnitPickerTarget.areaId] || {
-                          selected: true,
-                          unit_type: 'each',
-                          min: '',
-                          max: '',
-                          order_unit: 'case',
-                          conversion: '',
-                        }),
-                        [addUnitPickerTarget.field === 'order' ? 'order_unit' : 'unit_type']: unit,
-                      },
-                    }));
-                  }
-                  setShowAddUnitPicker(false);
-                }}
-              >
-                <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>{unit}</Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity className="py-3 items-center" onPress={() => setShowAddUnitPicker(false)}>
-              <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        {(addUnitPickerTarget?.field === 'order' ? ORDER_UNITS : COUNT_UNITS).map((unit) => (
+          <TouchableOpacity
+            key={unit}
+            className="py-3"
+            onPress={() => {
+              if (!addUnitPickerTarget) return;
+              if (addUnitPickerTarget.areaId === 'bulk') {
+                setBulkMoveSettings((prev) => ({
+                  ...prev,
+                  unit_type: unit,
+                }));
+              } else {
+                setAddAreaSelections((prev) => ({
+                  ...prev,
+                  [addUnitPickerTarget.areaId]: {
+                    ...(prev[addUnitPickerTarget.areaId] || {
+                      selected: true,
+                      unit_type: 'each',
+                      min: '',
+                      max: '',
+                      order_unit: 'case',
+                      conversion: '',
+                    }),
+                    [addUnitPickerTarget.field === 'order' ? 'order_unit' : 'unit_type']: unit,
+                  },
+                }));
+              }
+              setShowAddUnitPicker(false);
+            }}
+          >
+            <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>{unit}</Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity className="py-3 items-center" onPress={() => setShowAddUnitPicker(false)}>
+          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>Cancel</Text>
+        </TouchableOpacity>
+      </Sheet>
 
       {/* Bulk Add Modal */}
       <Modal
