@@ -258,7 +258,7 @@ function ManagerInventoryRowInner({
                 className="font-semibold"
                 style={{ color: added ? color.good : color.warning, fontSize: ds.fontSize(typeScale.secondary) }}
               >
-                {added ? '✓ Added' : `Reorder ${reorderQty}`}
+                {added ? 'Added' : `Reorder ${reorderQty}`}
               </Text>
             </TouchableOpacity>
           ) : null}

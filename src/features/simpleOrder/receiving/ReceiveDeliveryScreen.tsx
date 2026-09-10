@@ -452,7 +452,7 @@ export function ReceiveDeliveryScreen() {
                 ? 'Saving…'
                 : flaggedCount > 0
                   ? `Save (${flaggedCount} flagged)`
-                  : 'Save — all arrived'}
+                  : 'Save, all arrived'}
             </Text>
           </TouchableOpacity>
         </View>

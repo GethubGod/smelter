@@ -10,12 +10,12 @@
 
 /** Known error codes returned by the parse-order edge function. */
 export const QUICK_ORDER_ERROR_MESSAGES: Record<string, string> = {
-  feature_disabled: 'Quick Order is temporarily off — please use Browse.',
+  feature_disabled: 'Quick Order is temporarily off. Please use Browse.',
   rate_limit_user_daily: 'Daily limit reached. Switch to Browse or try tomorrow.',
   rate_limit_org_monthly: 'Monthly AI budget reached. Contact your manager.',
   quick_order_busy: 'Quick Order is busy right now. Wait a moment and try again.',
   ai_unavailable: 'Sorry, having trouble connecting. Please try again.',
-  invalid_json: "I couldn't read that order. Try typing it again — one item per line.",
+  invalid_json: "I couldn't read that order. Try typing it again, one item per line.",
   parser_error: 'I had trouble processing that. Please try again.',
   catalog_empty: 'I had trouble loading the item catalog for this location. Please try again.',
   catalog_query_failed: 'I had trouble loading the item catalog. Please try again.',
@@ -31,7 +31,7 @@ export const GENERIC_QUICK_ORDER_ERROR = 'Something went wrong. Please try again
 
 /** Friendly copy for a parse failure where the text itself looked technical. */
 const UNREADABLE_ORDER_MESSAGE =
-  "I couldn't read that order. Try typing it again — one item per line.";
+  "I couldn't read that order. Try typing it again, one item per line.";
 
 /**
  * Patterns that indicate a string is internal/technical and must not be shown.

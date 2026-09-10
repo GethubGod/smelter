@@ -1,10 +1,10 @@
 /** Stable id so the welcome bubble is never duplicated or persisted as chat history. */
 export const QUICK_ORDER_WELCOME_MESSAGE_ID = "quick-order-welcome-v1";
 
-export const QUICK_ORDER_WELCOME_TITLE = "Welcome to Quick Order 👋";
+export const QUICK_ORDER_WELCOME_TITLE = "Welcome to Quick Order";
 
 export const QUICK_ORDER_WELCOME_BODY_PARAGRAPHS = [
-  "Type your order the way you normally would — no special format needed.",
+  "Type your order the way you normally would. No special format needed.",
   "If anything is unclear, I'll ask a quick follow-up. As you use Quick Order more, I'll learn your usual ordering patterns and suggest common items to help you order faster.",
 ] as const;
 

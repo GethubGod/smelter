@@ -147,7 +147,7 @@ async function rawFetch<T>(
     if (err?.name === 'AbortError') {
       return { data: null, error: 'Request timed out. Please try again.' };
     }
-    return { data: null, error: 'Network error — please check your connection.' };
+    return { data: null, error: 'Network error. Please check your connection.' };
   } finally {
     clearTimeout(timer);
   }
