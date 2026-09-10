@@ -12,7 +12,6 @@ import {
   InteractionManager,
   Keyboard,
   LayoutChangeEvent,
-  Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Platform,
@@ -177,6 +176,7 @@ import {
   type QuickOrderOperationResult,
 } from "./quickOrderItems";
 import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { Sheet } from '@/components/ui/Sheet';
 import { Loading } from '@/components/ui/Loading';
 
 type QuickOrderFlag = {
@@ -6477,115 +6477,102 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
           onRetryVoice={handleRetryVoice}
         />
 
-        <Modal
+        <Sheet
           visible={missingReviewVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={handleCancelMissingReview}
+          title="Missing usual items"
+          onClose={handleCancelMissingReview}
         >
-          <View style={styles.missingReviewBackdrop}>
-            <View
-              style={[
-                styles.missingReviewCard,
+          <Text style={[styles.missingReviewBody, { fontSize: ds.fontSize(typeScale.body) }]}>
+            Before you confirm, you may be missing {highConfidenceMissingSuggestions.length} usual {highConfidenceMissingSuggestions.length === 1 ? "item" : "items"}.
+          </Text>
+          <View style={{ marginTop: ds.spacing(10), gap: ds.spacing(8) }}>
+            {highConfidenceMissingSuggestions.map((suggestion) => {
+              const selected = Boolean(selectedMissingItemIds[suggestion.itemId]);
+              return (
+                <Pressable
+                  key={suggestion.itemId}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: selected }}
+                  onPress={() => handleToggleMissingSelection(suggestion.itemId)}
+                  style={[
+                    styles.missingReviewRow,
+                    {
+                      borderRadius: radius.control,
+                      padding: ds.spacing(10),
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={selected ? "checkbox" : "square-outline"}
+                    size={ds.icon(22)}
+                    color={selected ? quickOrderAccent : colors.textMuted}
+                  />
+                  <View style={styles.missingReviewRowText}>
+                    <Text style={[styles.missingReviewItem, { fontSize: ds.fontSize(typeScale.body) }]}>
+                      {suggestion.itemName} - {suggestion.suggestedQuantity}{suggestion.unit ? ` ${suggestion.unit}` : ""}
+                    </Text>
+                    <Text style={[styles.missingReviewReason, { fontSize: ds.fontSize(typeScale.secondary) }]}>
+                      {suggestion.reason}
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+          <View style={[styles.missingReviewActions, { marginTop: ds.spacing(14), gap: ds.spacing(8) }]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Add selected missing items"
+              onPress={handleAddSelectedMissing}
+              style={({ pressed }) => [
+                styles.missingReviewPrimaryButton,
                 {
-                  borderRadius: radius.card,
-                  padding: ds.spacing(16),
+                  borderRadius: radius.control,
+                  paddingVertical: ds.spacing(10),
+                  opacity: pressed ? 0.75 : 1,
                 },
               ]}
             >
-              <Text style={[styles.missingReviewTitle, { fontSize: ds.fontSize(typeScale.title) }]}>
-                Before you confirm, you may be missing {highConfidenceMissingSuggestions.length} usual {highConfidenceMissingSuggestions.length === 1 ? "item" : "items"}.
+              <Text style={[styles.missingReviewPrimaryText, { fontSize: ds.fontSize(typeScale.body) }]}>
+                Add selected
               </Text>
-              <View style={{ marginTop: ds.spacing(10), gap: ds.spacing(8) }}>
-                {highConfidenceMissingSuggestions.map((suggestion) => {
-                  const selected = Boolean(selectedMissingItemIds[suggestion.itemId]);
-                  return (
-                    <Pressable
-                      key={suggestion.itemId}
-                      accessibilityRole="checkbox"
-                      accessibilityState={{ checked: selected }}
-                      onPress={() => handleToggleMissingSelection(suggestion.itemId)}
-                      style={[
-                        styles.missingReviewRow,
-                        {
-                          borderRadius: radius.control,
-                          padding: ds.spacing(10),
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name={selected ? "checkbox" : "square-outline"}
-                        size={ds.icon(22)}
-                        color={selected ? quickOrderAccent : colors.textMuted}
-                      />
-                      <View style={styles.missingReviewRowText}>
-                        <Text style={[styles.missingReviewItem, { fontSize: ds.fontSize(typeScale.body) }]}>
-                          {suggestion.itemName} - {suggestion.suggestedQuantity}{suggestion.unit ? ` ${suggestion.unit}` : ""}
-                        </Text>
-                        <Text style={[styles.missingReviewReason, { fontSize: ds.fontSize(typeScale.secondary) }]}>
-                          {suggestion.reason}
-                        </Text>
-                      </View>
-                    </Pressable>
-                  );
-                })}
-              </View>
-              <View style={[styles.missingReviewActions, { marginTop: ds.spacing(14), gap: ds.spacing(8) }]}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Add selected missing items"
-                  onPress={handleAddSelectedMissing}
-                  style={({ pressed }) => [
-                    styles.missingReviewPrimaryButton,
-                    {
-                      borderRadius: radius.control,
-                      paddingVertical: ds.spacing(10),
-                      opacity: pressed ? 0.75 : 1,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.missingReviewPrimaryText, { fontSize: ds.fontSize(typeScale.body) }]}>
-                    Add selected
-                  </Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Skip missing items and confirm order"
-                  onPress={handleSkipMissingAndConfirm}
-                  style={({ pressed }) => [
-                    styles.missingReviewSecondaryButton,
-                    {
-                      borderRadius: radius.control,
-                      paddingVertical: ds.spacing(10),
-                      opacity: pressed ? 0.75 : 1,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.missingReviewSecondaryText, { fontSize: ds.fontSize(typeScale.body) }]}>
-                    Skip and confirm
-                  </Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Cancel missing item review"
-                  onPress={handleCancelMissingReview}
-                  style={({ pressed }) => [
-                    styles.missingReviewCancelButton,
-                    {
-                      borderRadius: radius.control,
-                      paddingVertical: ds.spacing(10),
-                      opacity: pressed ? 0.75 : 1,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.missingReviewCancelText, { fontSize: ds.fontSize(typeScale.body) }]}>
-                    Cancel
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Skip missing items and confirm order"
+              onPress={handleSkipMissingAndConfirm}
+              style={({ pressed }) => [
+                styles.missingReviewSecondaryButton,
+                {
+                  borderRadius: radius.control,
+                  paddingVertical: ds.spacing(10),
+                  opacity: pressed ? 0.75 : 1,
+                },
+              ]}
+            >
+              <Text style={[styles.missingReviewSecondaryText, { fontSize: ds.fontSize(typeScale.body) }]}>
+                Skip and confirm
+              </Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Cancel missing item review"
+              onPress={handleCancelMissingReview}
+              style={({ pressed }) => [
+                styles.missingReviewCancelButton,
+                {
+                  borderRadius: radius.control,
+                  paddingVertical: ds.spacing(10),
+                  opacity: pressed ? 0.75 : 1,
+                },
+              ]}
+            >
+              <Text style={[styles.missingReviewCancelText, { fontSize: ds.fontSize(typeScale.body) }]}>
+                Cancel
+              </Text>
+            </Pressable>
           </View>
-        </Modal>
+        </Sheet>
 
         <QuickOrderItemEditModal
           visible={Boolean(editingState)}
@@ -7104,9 +7091,8 @@ const styles = StyleSheet.create({
     borderWidth: glassHairlineWidth,
     borderColor: glassColors.cardBorder,
   },
-  missingReviewTitle: {
-    color: colors.textPrimary,
-    fontWeight: weight.bold,
+  missingReviewBody: {
+    color: color.ink2,
     letterSpacing: 0,
   },
   missingReviewRow: {

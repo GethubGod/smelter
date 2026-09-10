@@ -29,6 +29,7 @@ import {
   glassTabBarHeight,
 } from '@/theme/design';
 import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { Sheet } from '@/components/ui/Sheet';
 import { Loading } from '@/components/ui/Loading';
 
 type ReviewStatus = 'pending' | 'approved' | 'rejected' | 'changes_requested' | 'not_required';
@@ -844,68 +845,52 @@ export function QuickOrderReviewQueueScreen() {
   );
 
   const renderRejectModal = () => (
-    <Modal
+    <Sheet
       visible={Boolean(rejectOrder)}
-      animationType="fade"
-      transparent
-      onRequestClose={closeRejectModal}
+      title="Reject with note"
+      onClose={closeRejectModal}
     >
-      <View style={styles.rejectOverlay}>
-        <GlassSurface
-          intensity="strong"
-          blurred={false}
-          style={{
-            borderRadius: glassRadii.surface,
-            padding: ds.spacing(16),
-            marginHorizontal: ds.spacing(20),
-          }}
+      <Text style={[styles.metaText, { fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(6) }]}>
+        This cancels the order and notifies the employee.
+      </Text>
+      <TextInput
+        value={rejectNote}
+        onChangeText={setRejectNote}
+        multiline
+        placeholder="What needs to be fixed?"
+        placeholderTextColor={glassColors.textMuted}
+        style={[
+          styles.textInput,
+          {
+            minHeight: ds.spacing(110),
+            textAlignVertical: 'top',
+            marginTop: ds.spacing(14),
+            fontSize: ds.fontSize(typeScale.body),
+          },
+        ]}
+      />
+      <View style={[styles.actionsRow, { gap: ds.spacing(8), marginTop: ds.spacing(14) }]}>
+        <TouchableOpacity
+          onPress={closeRejectModal}
+          activeOpacity={0.82}
+          style={[styles.footerButton, styles.footerSecondaryButton]}
         >
-          <Text style={[styles.modalTitle, { fontSize: ds.fontSize(typeScale.title) }]}>
-            Reject with note
-          </Text>
-          <Text style={[styles.metaText, { fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(6) }]}>
-            This cancels the order and notifies the employee.
-          </Text>
-          <TextInput
-            value={rejectNote}
-            onChangeText={setRejectNote}
-            multiline
-            placeholder="What needs to be fixed?"
-            placeholderTextColor={glassColors.textMuted}
-            style={[
-              styles.textInput,
-              {
-                minHeight: ds.spacing(110),
-                textAlignVertical: 'top',
-                marginTop: ds.spacing(14),
-                fontSize: ds.fontSize(typeScale.body),
-              },
-            ]}
-          />
-          <View style={[styles.actionsRow, { gap: ds.spacing(8), marginTop: ds.spacing(14) }]}>
-            <TouchableOpacity
-              onPress={closeRejectModal}
-              activeOpacity={0.82}
-              style={[styles.footerButton, styles.footerSecondaryButton]}
-            >
-              <Text style={styles.secondaryActionText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => void rejectWithNote()}
-              disabled={actionOrderId === rejectOrder?.id}
-              activeOpacity={0.82}
-              style={[
-                styles.footerButton,
-                styles.rejectSolidButton,
-                { opacity: actionOrderId === rejectOrder?.id ? 0.6 : 1 },
-              ]}
-            >
-              <Text style={styles.primaryActionText}>Reject</Text>
-            </TouchableOpacity>
-          </View>
-        </GlassSurface>
+          <Text style={styles.secondaryActionText}>Cancel</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => void rejectWithNote()}
+          disabled={actionOrderId === rejectOrder?.id}
+          activeOpacity={0.82}
+          style={[
+            styles.footerButton,
+            styles.rejectSolidButton,
+            { opacity: actionOrderId === rejectOrder?.id ? 0.6 : 1 },
+          ]}
+        >
+          <Text style={styles.primaryActionText}>Reject</Text>
+        </TouchableOpacity>
       </View>
-    </Modal>
+    </Sheet>
   );
 
   if (manager?.role !== 'manager') {
