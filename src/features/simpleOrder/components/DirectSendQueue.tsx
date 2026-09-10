@@ -33,12 +33,7 @@ import {
   type SendAllQueueProgress,
   type SendAllQueueState,
 } from '@/features/fulfillment/sendAll/sendAllQueue';
-import {
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-  glassSpacing,
-} from '@/theme/design';
+import { color, radius, space, typeScale, weight } from '@/theme/tokens';
 import { channelForGroup, directSendGroupKey, orderGroupsForQueue } from '../directSendFlow';
 
 /**
@@ -332,23 +327,23 @@ export function DirectSendQueue({ groups, onDone }: DirectSendQueueProps) {
       style={{
         flex: 1,
         minHeight: Math.max(44, ds.buttonH - 6),
-        borderRadius: glassRadii.button,
-        borderWidth: glassHairlineWidth,
-        borderColor: glassColors.controlBorder,
-        backgroundColor: glassColors.mediumFill,
+        borderRadius: radius.card,
+        borderWidth: 1,
+        borderColor: color.hairline,
+        backgroundColor: color.well,
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'row',
         opacity: disabled ? 0.5 : 1,
       }}
     >
-      <Ionicons name={icon} size={ds.icon(15)} color={glassColors.textPrimary} />
+      <Ionicons name={icon} size={ds.icon(15)} color={color.ink} />
       <Text
         style={{
           marginLeft: ds.spacing(6),
-          fontSize: ds.fontSize(13),
-          fontWeight: '600',
-          color: glassColors.textPrimary,
+          fontSize: ds.fontSize(typeScale.secondary),
+          fontWeight: weight.semibold,
+          color: color.ink,
         }}
       >
         {label}
@@ -358,14 +353,14 @@ export function DirectSendQueue({ groups, onDone }: DirectSendQueueProps) {
 
   if (!activeGroup || progress.isComplete) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: glassSpacing.screen }}>
-        <Ionicons name="checkmark-circle" size={ds.icon(40)} color={glassColors.successText} />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space[4] }}>
+        <Ionicons name="checkmark-circle" size={ds.icon(40)} color={color.good} />
         <Text
           style={{
             marginTop: ds.spacing(12),
-            fontSize: ds.fontSize(18),
+            fontSize: ds.fontSize(typeScale.title),
             fontWeight: '700',
-            color: glassColors.textPrimary,
+            color: color.ink,
             textAlign: 'center',
           }}
         >
@@ -374,8 +369,8 @@ export function DirectSendQueue({ groups, onDone }: DirectSendQueueProps) {
         <Text
           style={{
             marginTop: ds.spacing(6),
-            fontSize: ds.fontSize(13),
-            color: glassColors.textSecondary,
+            fontSize: ds.fontSize(typeScale.secondary),
+            color: color.ink2,
             textAlign: 'center',
           }}
         >
@@ -390,18 +385,18 @@ export function DirectSendQueue({ groups, onDone }: DirectSendQueueProps) {
           style={{
             marginTop: ds.spacing(20),
             minHeight: Math.max(48, ds.buttonH),
-            borderRadius: glassRadii.button,
+            borderRadius: radius.card,
             alignItems: 'center',
             justifyContent: 'center',
             paddingHorizontal: ds.spacing(28),
-            backgroundColor: glassColors.accent,
+            backgroundColor: color.accent,
           }}
         >
           <Text
             style={{
-              fontSize: ds.fontSize(15),
+              fontSize: ds.fontSize(typeScale.body),
               fontWeight: '700',
-              color: glassColors.textOnPrimary,
+              color: color.onAccent,
             }}
           >
             Done
@@ -419,8 +414,8 @@ export function DirectSendQueue({ groups, onDone }: DirectSendQueueProps) {
     >
       <Text
         style={{
-          fontSize: ds.fontSize(13),
-          color: glassColors.textSecondary,
+          fontSize: ds.fontSize(typeScale.secondary),
+          color: color.ink2,
           marginBottom: ds.spacing(10),
         }}
       >
@@ -431,7 +426,7 @@ export function DirectSendQueue({ groups, onDone }: DirectSendQueueProps) {
         intensity="subtle"
         blurred={false}
         style={{
-          borderRadius: glassRadii.surface,
+          borderRadius: radius.card,
           padding: ds.spacing(16),
         }}
       >
@@ -439,9 +434,9 @@ export function DirectSendQueue({ groups, onDone }: DirectSendQueueProps) {
           <Text
             style={{
               flex: 1,
-              fontSize: ds.fontSize(18),
+              fontSize: ds.fontSize(typeScale.title),
               fontWeight: '700',
-              color: glassColors.textPrimary,
+              color: color.ink,
               letterSpacing: -0.3,
             }}
             numberOfLines={1}
@@ -454,23 +449,23 @@ export function DirectSendQueue({ groups, onDone }: DirectSendQueueProps) {
               alignItems: 'center',
               paddingHorizontal: ds.spacing(10),
               paddingVertical: ds.spacing(5),
-              borderRadius: glassRadii.pill,
-              backgroundColor: glassColors.accentSoft,
-              borderWidth: glassHairlineWidth,
-              borderColor: glassColors.accentBorder,
+              borderRadius: radius.pill,
+              backgroundColor: color.tint,
+              borderWidth: 1,
+              borderColor: color.hairlineStrong,
             }}
           >
             <Ionicons
               name={CHANNEL_ICONS[activeChannel]}
               size={ds.icon(12)}
-              color={glassColors.accent}
+              color={color.accent}
             />
             <Text
               style={{
                 marginLeft: ds.spacing(5),
-                fontSize: ds.fontSize(11),
+                fontSize: ds.fontSize(typeScale.caption),
                 fontWeight: '700',
-                color: glassColors.accent,
+                color: color.accent,
               }}
             >
               {CHANNEL_LABELS[activeChannel]}
@@ -482,8 +477,8 @@ export function DirectSendQueue({ groups, onDone }: DirectSendQueueProps) {
           <Text
             style={{
               marginTop: ds.spacing(4),
-              fontSize: ds.fontSize(12),
-              color: glassColors.textSecondary,
+              fontSize: ds.fontSize(typeScale.secondary),
+              color: color.ink2,
             }}
           >
             {[activeContact.contactName, activeContact.contactPhone]
@@ -495,10 +490,10 @@ export function DirectSendQueue({ groups, onDone }: DirectSendQueueProps) {
         <View
           style={{
             marginTop: ds.spacing(14),
-            borderRadius: glassRadii.button,
-            borderWidth: glassHairlineWidth,
-            borderColor: glassColors.cardBorder,
-            backgroundColor: glassColors.subtleFill,
+            borderRadius: radius.card,
+            borderWidth: 1,
+            borderColor: color.hairline,
+            backgroundColor: color.well,
             paddingHorizontal: ds.spacing(14),
             paddingVertical: ds.spacing(12),
             maxHeight: 320,
@@ -507,9 +502,9 @@ export function DirectSendQueue({ groups, onDone }: DirectSendQueueProps) {
           <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false}>
             <Text
               style={{
-                fontSize: ds.fontSize(13),
-                lineHeight: ds.fontSize(19),
-                color: glassColors.textPrimary,
+                fontSize: ds.fontSize(typeScale.secondary),
+                lineHeight: ds.fontSize(typeScale.title),
+                color: color.ink,
               }}
             >
               {activeGroup.messageText}
@@ -526,21 +521,21 @@ export function DirectSendQueue({ groups, onDone }: DirectSendQueueProps) {
           style={{
             marginTop: ds.spacing(14),
             minHeight: Math.max(48, ds.buttonH),
-            borderRadius: glassRadii.button,
+            borderRadius: radius.card,
             alignItems: 'center',
             justifyContent: 'center',
             flexDirection: 'row',
-            backgroundColor: glassColors.accent,
+            backgroundColor: color.accent,
             opacity: isSendingActive ? 0.6 : 1,
           }}
         >
-          <Ionicons name="paper-plane-outline" size={ds.icon(18)} color={glassColors.textOnPrimary} />
+          <Ionicons name="paper-plane-outline" size={ds.icon(18)} color={color.onAccent} />
           <Text
             style={{
               marginLeft: ds.spacing(8),
-              fontSize: ds.fontSize(15),
+              fontSize: ds.fontSize(typeScale.body),
               fontWeight: '700',
-              color: glassColors.textOnPrimary,
+              color: color.onAccent,
             }}
             numberOfLines={1}
           >
@@ -598,20 +593,20 @@ export function DirectSendQueue({ groups, onDone }: DirectSendQueueProps) {
                 size={ds.icon(16)}
                 color={
                   status === 'sent'
-                    ? glassColors.successText
+                    ? color.good
                     : status === 'skipped'
-                      ? glassColors.textMuted
+                      ? color.ink3
                       : isActive
-                        ? glassColors.accent
-                        : glassColors.textMuted
+                        ? color.accent
+                        : color.ink3
                 }
               />
               <Text
                 style={{
                   marginLeft: ds.spacing(10),
-                  fontSize: ds.fontSize(13),
+                  fontSize: ds.fontSize(typeScale.secondary),
                   fontWeight: isActive ? '700' : '500',
-                  color: isActive ? glassColors.textPrimary : glassColors.textSecondary,
+                  color: isActive ? color.ink : color.ink2,
                 }}
                 numberOfLines={1}
               >
@@ -621,8 +616,8 @@ export function DirectSendQueue({ groups, onDone }: DirectSendQueueProps) {
                 <Text
                   style={{
                     marginLeft: ds.spacing(8),
-                    fontSize: ds.fontSize(11),
-                    color: glassColors.textMuted,
+                    fontSize: ds.fontSize(typeScale.caption),
+                    color: color.ink3,
                   }}
                 >
                   Skipped

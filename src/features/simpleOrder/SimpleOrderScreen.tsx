@@ -44,7 +44,7 @@ import { getMyOrderSendMode, type OrderSendMode } from '@/services/orderSendMode
 import type { SendAllQueueProgress } from '@/features/fulfillment/sendAll/sendAllQueue';
 import { useAuthStore, useInventoryStore, useSettingsStore } from '@/store';
 import { useSimpleOrderUiStore } from '@/store/simpleOrderUiStore';
-import { glassHairlineWidth, radii, tipsTheme } from '@/theme/design';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 import type { InventoryItem, Location } from '@/types';
 import { LocationSwitcherDropdown } from '@/features/stock-check/components/LocationSwitcherDropdown';
 import {
@@ -540,17 +540,17 @@ export function SimpleOrderScreen() {
               alignItems: 'center',
               minHeight: 42,
               marginTop: ds.spacing(10),
-              backgroundColor: tipsTheme.page,
+              backgroundColor: color.page,
             }}
           >
             <Text
               style={{
                 flex: 1,
-                fontSize: ds.fontSize(12),
+                fontSize: ds.fontSize(typeScale.secondary),
                 fontWeight: '700',
                 letterSpacing: 0.6,
                 textTransform: 'uppercase',
-                color: tipsTheme.ink2,
+                color: color.ink2,
               }}
             >
               {section.title}
@@ -558,7 +558,7 @@ export function SimpleOrderScreen() {
             <Ionicons
               name={rareExpanded ? 'chevron-up' : 'chevron-down'}
               size={ds.icon(16)}
-              color={tipsTheme.ink2}
+              color={color.ink2}
             />
           </TouchableOpacity>
         );
@@ -573,7 +573,7 @@ export function SimpleOrderScreen() {
             justifyContent: 'flex-end',
             paddingBottom: ds.spacing(2),
             marginTop: ds.spacing(density === 'dense' ? 8 : 12),
-            backgroundColor: tipsTheme.page,
+            backgroundColor: color.page,
           }}
         >
           <Text
@@ -582,7 +582,7 @@ export function SimpleOrderScreen() {
               fontWeight: '700',
               letterSpacing: 0.6,
               textTransform: 'uppercase',
-              color: tipsTheme.ink2,
+              color: color.ink2,
             }}
           >
             {section.title}
@@ -619,14 +619,14 @@ export function SimpleOrderScreen() {
         <Ionicons
           name="checkmark-circle"
           size={ds.icon(72)}
-          color="#22883E"
+          color={color.good}
           style={{ marginBottom: ds.spacing(12) }}
         />
         <Text
           style={{
-            fontSize: ds.fontSize(22),
+            fontSize: ds.fontSize(typeScale.title),
             fontWeight: '700',
-            color: tipsTheme.ink,
+            color: color.ink,
             marginBottom: ds.spacing(4),
           }}
         >
@@ -634,8 +634,8 @@ export function SimpleOrderScreen() {
         </Text>
         <Text
           style={{
-            fontSize: ds.fontSize(15),
-            color: tipsTheme.ink2,
+            fontSize: ds.fontSize(typeScale.body),
+            color: color.ink2,
             textAlign: 'center',
             paddingHorizontal: ds.spacing(32),
             marginBottom: ds.spacing(20),
@@ -652,13 +652,13 @@ export function SimpleOrderScreen() {
           style={{
             minHeight: 52,
             paddingHorizontal: ds.spacing(28),
-            borderRadius: radii.pill,
-            backgroundColor: tipsTheme.accent,
+            borderRadius: radius.pill,
+            backgroundColor: color.accent,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Text style={{ fontSize: ds.fontSize(16), fontWeight: '700', color: '#FFFFFF' }}>
+          <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: '700', color: color.onAccent }}>
             Done
           </Text>
         </TouchableOpacity>
@@ -703,7 +703,7 @@ export function SimpleOrderScreen() {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={() => void handleRefresh()}
-            tintColor={tipsTheme.accent}
+            tintColor={color.accent}
           />
         }
       />
@@ -713,7 +713,7 @@ export function SimpleOrderScreen() {
   return (
     <SafeAreaView
       edges={['top']}
-      style={{ flex: 1, backgroundColor: tipsTheme.page }}
+      style={{ flex: 1, backgroundColor: color.page }}
     >
       <View style={{ flex: 1, paddingHorizontal: ds.spacing(18) }}>
         {/* Tight top: status bar → header → list, no dead band. */}
@@ -729,9 +729,9 @@ export function SimpleOrderScreen() {
             <Text
               style={{
                 flex: 1,
-                fontSize: ds.fontSize(24),
+                fontSize: ds.fontSize(typeScale.display),
                 fontWeight: '700',
-                color: tipsTheme.ink,
+                color: color.ink,
               }}
             >
               Checklist
@@ -749,10 +749,10 @@ export function SimpleOrderScreen() {
                 flexDirection: 'row',
                 alignItems: 'center',
                 gap: ds.spacing(7),
-                backgroundColor: tipsTheme.card,
-                borderWidth: glassHairlineWidth,
-                borderColor: 'rgba(0, 0, 0, 0.07)',
-                borderRadius: radii.pill,
+                backgroundColor: color.card,
+                borderWidth: 1,
+                borderColor: color.hairline,
+                borderRadius: radius.pill,
                 paddingHorizontal: ds.spacing(12),
                 paddingVertical: ds.spacing(7),
               }}
@@ -761,22 +761,22 @@ export function SimpleOrderScreen() {
                 style={{
                   width: 7,
                   height: 7,
-                  borderRadius: radii.circle,
-                  backgroundColor: tipsTheme.accent,
+                  borderRadius: radius.pill,
+                  backgroundColor: color.accent,
                 }}
               />
               <Text
                 numberOfLines={1}
                 style={{
                   maxWidth: ds.spacing(120),
-                  fontSize: ds.fontSize(13),
-                  fontWeight: '600',
-                  color: tipsTheme.ink,
+                  fontSize: ds.fontSize(typeScale.secondary),
+                  fontWeight: weight.semibold,
+                  color: color.ink,
                 }}
               >
                 {locationLabel}
               </Text>
-              <Ionicons name="chevron-down" size={ds.icon(13)} color={tipsTheme.ink2} />
+              <Ionicons name="chevron-down" size={ds.icon(13)} color={color.ink2} />
             </TouchableOpacity>
           </View>
           {/* Absolute wrapper: the dropdown always occupies layout space (it

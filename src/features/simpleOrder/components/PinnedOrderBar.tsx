@@ -18,7 +18,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerImpactHaptic, triggerSelectionHaptic } from '@/lib/haptics';
-import { glassHairlineWidth, radii, tipsTheme } from '@/theme/design';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 import type { InventoryItem } from '@/types';
 import { unitForInventoryItem } from '../checklistSelection';
 
@@ -153,29 +153,29 @@ export function PinnedOrderBar({
             alignItems: 'center',
             minHeight: 48,
             paddingHorizontal: ds.spacing(14),
-            borderBottomWidth: index === results.length - 1 ? 0 : glassHairlineWidth,
-            borderBottomColor: 'rgba(0, 0, 0, 0.05)',
+            borderBottomWidth: index === results.length - 1 ? 0 : 1,
+            borderBottomColor: color.hairline,
           }}
         >
           <View style={{ flex: 1, paddingRight: ds.spacing(8) }}>
             <Text
               numberOfLines={1}
               style={{
-                fontSize: ds.fontSize(14),
-                fontWeight: '600',
-                color: alreadySelected ? tipsTheme.ink3 : tipsTheme.ink,
+                fontSize: ds.fontSize(typeScale.body),
+                fontWeight: weight.semibold,
+                color: alreadySelected ? color.ink3 : color.ink,
               }}
             >
               {item.name}
             </Text>
-            <Text style={{ fontSize: ds.fontSize(11), color: tipsTheme.ink3 }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.caption), color: color.ink3 }}>
               {unitForInventoryItem(item)}
             </Text>
           </View>
           <Ionicons
             name={alreadySelected ? 'checkmark' : 'add'}
             size={ds.icon(20)}
-            color={alreadySelected ? '#22883E' : tipsTheme.accent}
+            color={alreadySelected ? color.good : color.accent}
           />
         </TouchableOpacity>
       );
@@ -207,17 +207,17 @@ export function PinnedOrderBar({
             flexDirection: 'row',
             alignItems: 'center',
             gap: ds.spacing(7),
-            backgroundColor: tipsTheme.card,
-            borderWidth: glassHairlineWidth,
-            borderColor: 'rgba(0, 0, 0, 0.08)',
-            borderRadius: radii.pill,
+            backgroundColor: color.card,
+            borderWidth: 1,
+            borderColor: color.hairlineStrong,
+            borderRadius: radius.pill,
             paddingHorizontal: ds.spacing(13),
             paddingVertical: ds.spacing(7),
             marginBottom: ds.spacing(10),
           }}
         >
-          <Ionicons name="create-outline" size={ds.icon(14)} color={tipsTheme.accent} />
-          <Text style={{ fontSize: ds.fontSize(12), fontWeight: '600', color: tipsTheme.ink }}>
+          <Ionicons name="create-outline" size={ds.icon(14)} color={color.accent} />
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: color.ink }}>
             Note added · edit
           </Text>
         </TouchableOpacity>
@@ -228,10 +228,10 @@ export function PinnedOrderBar({
           style={{
             maxHeight: MAX_RESULTS_HEIGHT,
             marginBottom: ds.spacing(10),
-            backgroundColor: tipsTheme.card,
-            borderRadius: 18,
-            borderWidth: glassHairlineWidth,
-            borderColor: 'rgba(0, 0, 0, 0.08)',
+            backgroundColor: color.card,
+            borderRadius: radius.card,
+            borderWidth: 1,
+            borderColor: color.hairlineStrong,
             overflow: 'hidden',
           }}
         >
@@ -253,8 +253,8 @@ export function PinnedOrderBar({
             >
               <Text
                 style={{
-                  fontSize: ds.fontSize(13),
-                  color: tipsTheme.ink2,
+                  fontSize: ds.fontSize(typeScale.secondary),
+                  color: color.ink2,
                   textAlign: 'center',
                 }}
               >
@@ -270,12 +270,12 @@ export function PinnedOrderBar({
           flexDirection: 'row',
           alignItems: 'center',
           gap: ds.spacing(8),
-          backgroundColor: tipsTheme.card,
-          borderWidth: glassHairlineWidth,
-          borderColor: 'rgba(0, 0, 0, 0.07)',
-          borderRadius: 24,
+          backgroundColor: color.card,
+          borderWidth: 1,
+          borderColor: color.hairline,
+          borderRadius: radius.sheet,
           padding: ds.spacing(8),
-          shadowColor: '#14120E',
+          shadowColor: color.ink,
           shadowOffset: { width: 0, height: 8 },
           shadowOpacity: 0.1,
           shadowRadius: 24,
@@ -288,8 +288,8 @@ export function PinnedOrderBar({
             flexDirection: 'row',
             alignItems: 'center',
             minHeight: SEND_SIZE,
-            backgroundColor: tipsTheme.page,
-            borderRadius: radii.pill,
+            backgroundColor: color.page,
+            borderRadius: radius.pill,
             paddingLeft: ds.spacing(15),
             paddingRight: ds.spacing(6),
           }}
@@ -297,7 +297,7 @@ export function PinnedOrderBar({
           <Ionicons
             name="search-outline"
             size={ds.icon(17)}
-            color={tipsTheme.ink3}
+            color={color.ink3}
             style={{ marginRight: ds.spacing(8) }}
           />
           <TextInput
@@ -305,14 +305,14 @@ export function PinnedOrderBar({
             value={query}
             onChangeText={onQueryChange}
             placeholder="Add item"
-            placeholderTextColor={tipsTheme.ink3}
+            placeholderTextColor={color.ink3}
             autoCorrect={false}
             returnKeyType="search"
             accessibilityLabel="Search inventory to add items"
             style={{
               flex: 1,
-              fontSize: ds.fontSize(14),
-              color: tipsTheme.ink,
+              fontSize: ds.fontSize(typeScale.body),
+              color: color.ink,
               paddingVertical: 0,
             }}
           />
@@ -324,7 +324,7 @@ export function PinnedOrderBar({
               hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
               style={{ padding: ds.spacing(6) }}
             >
-              <Ionicons name="close-circle" size={ds.icon(18)} color={tipsTheme.ink3} />
+              <Ionicons name="close-circle" size={ds.icon(18)} color={color.ink3} />
             </TouchableOpacity>
           ) : null}
           {voiceAvailable ? (
@@ -336,12 +336,12 @@ export function PinnedOrderBar({
               style={{
                 width: 36,
                 height: 36,
-                borderRadius: radii.circle,
+                borderRadius: radius.pill,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Ionicons name="mic-outline" size={ds.icon(20)} color={tipsTheme.accent} />
+              <Ionicons name="mic-outline" size={ds.icon(20)} color={color.accent} />
             </TouchableOpacity>
           ) : null}
         </View>
@@ -360,13 +360,13 @@ export function PinnedOrderBar({
           style={{
             width: SEND_SIZE,
             height: SEND_SIZE,
-            borderRadius: radii.circle,
-            backgroundColor: sendDisabled ? tipsTheme.disabled : tipsTheme.accent,
+            borderRadius: radius.pill,
+            backgroundColor: sendDisabled ? color.disabled : color.accent,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Ionicons name="arrow-up" size={ds.icon(20)} color="#FFFFFF" />
+          <Ionicons name="arrow-up" size={ds.icon(20)} color={color.onAccent} />
           {checkedCount > 0 ? (
             <View
               style={{
@@ -376,14 +376,14 @@ export function PinnedOrderBar({
                 minWidth: 20,
                 height: 18,
                 paddingHorizontal: 6,
-                borderRadius: radii.pill,
-                backgroundColor: tipsTheme.ink,
+                borderRadius: radius.pill,
+                backgroundColor: color.ink,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
               <Text
-                style={{ fontSize: ds.fontSize(10.5), fontWeight: '700', color: '#FFFFFF' }}
+                style={{ fontSize: ds.fontSize(typeScale.caption), fontWeight: '700', color: color.onAccent }}
                 numberOfLines={1}
               >
                 {checkedCount}

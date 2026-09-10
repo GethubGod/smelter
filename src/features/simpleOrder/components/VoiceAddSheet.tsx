@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
   AudioModule,
@@ -11,6 +11,7 @@ import {
 } from 'expo-audio';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetShell } from '@/components/BottomSheetShell';
+import { Loading } from '@/components/ui';
 import { useAmplitudeBuffer } from '@/hooks/useAmplitudeBuffer';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { RollingSpectrogram } from '@/features/ordering/RollingSpectrogram';
@@ -23,12 +24,7 @@ import {
   triggerConfirmationHaptic,
   triggerImpactHaptic,
 } from '@/lib/haptics';
-import {
-  colors,
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-} from '@/theme/design';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 import type { InventoryItem } from '@/types';
 import {
   mapVoiceActionsToAdditions,
@@ -230,8 +226,8 @@ export function VoiceAddSheet({
       <View style={{ alignItems: 'center' }}>
         <Text
           style={{
-            fontSize: ds.fontSize(15),
-            color: glassColors.textSecondary,
+            fontSize: ds.fontSize(typeScale.body),
+            color: color.ink2,
             marginBottom: ds.spacing(14),
             textAlign: 'center',
           }}
@@ -244,19 +240,19 @@ export function VoiceAddSheet({
             alignItems: 'center',
             paddingVertical: ds.spacing(10),
             marginBottom: ds.spacing(14),
-            backgroundColor: colors.glassCircle,
-            borderRadius: glassRadii.button,
-            borderWidth: glassHairlineWidth,
-            borderColor: glassColors.controlBorder,
+            backgroundColor: color.well,
+            borderRadius: radius.card,
+            borderWidth: 1,
+            borderColor: color.hairline,
           }}
         >
           <RollingSpectrogram amplitudes={amplitudes} height={28} />
           <Text
             style={{
               marginTop: ds.spacing(6),
-              fontSize: ds.fontSize(12),
+              fontSize: ds.fontSize(typeScale.secondary),
               fontVariant: ['tabular-nums'],
-              color: glassColors.textMuted,
+              color: color.ink3,
             }}
           >
             0:{String(seconds).padStart(2, '0')}
@@ -270,19 +266,19 @@ export function VoiceAddSheet({
           style={{
             width: 72,
             height: 72,
-            borderRadius: 36,
-            backgroundColor: colors.primary,
+            borderRadius: radius.pill,
+            backgroundColor: color.accent,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Ionicons name="stop" size={ds.icon(28)} color={colors.white} />
+          <Ionicons name="stop" size={ds.icon(28)} color={color.card} />
         </TouchableOpacity>
         <Text
           style={{
             marginTop: ds.spacing(8),
-            fontSize: ds.fontSize(12),
-            color: glassColors.textMuted,
+            fontSize: ds.fontSize(typeScale.secondary),
+            color: color.ink3,
           }}
         >
           Tap when you’re done
@@ -292,12 +288,12 @@ export function VoiceAddSheet({
   } else if (phase === 'transcribing') {
     body = (
       <View style={{ alignItems: 'center', paddingVertical: ds.spacing(28) }}>
-        <ActivityIndicator color={glassColors.accent} size="large" />
+        <Loading size="inline" label="Matching items" />
         <Text
           style={{
             marginTop: ds.spacing(12),
-            fontSize: ds.fontSize(14),
-            color: glassColors.textSecondary,
+            fontSize: ds.fontSize(typeScale.body),
+            color: color.ink2,
           }}
         >
           Matching items…
@@ -310,14 +306,14 @@ export function VoiceAddSheet({
         <View
           style={{
             alignSelf: 'stretch',
-            backgroundColor: glassColors.dangerSoft,
-            borderRadius: glassRadii.tag,
+            backgroundColor: color.alertBg,
+            borderRadius: radius.control,
             paddingHorizontal: ds.spacing(12),
             paddingVertical: ds.spacing(10),
             marginBottom: ds.spacing(14),
           }}
         >
-          <Text style={{ fontSize: ds.fontSize(13), color: glassColors.dangerText }}>
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.alert }}>
             {errorMessage ?? 'Something went wrong.'}
           </Text>
         </View>
@@ -329,13 +325,13 @@ export function VoiceAddSheet({
           style={{
             minHeight: 48,
             paddingHorizontal: ds.spacing(24),
-            borderRadius: glassRadii.pill,
-            backgroundColor: colors.primary,
+            borderRadius: radius.pill,
+            backgroundColor: color.accent,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Text style={{ fontSize: ds.fontSize(15), fontWeight: '700', color: colors.white }}>
+          <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: '700', color: color.card }}>
             Try again
           </Text>
         </TouchableOpacity>
@@ -348,8 +344,8 @@ export function VoiceAddSheet({
           <Text
             numberOfLines={2}
             style={{
-              fontSize: ds.fontSize(12),
-              color: glassColors.textMuted,
+              fontSize: ds.fontSize(typeScale.secondary),
+              color: color.ink3,
               fontStyle: 'italic',
               marginBottom: ds.spacing(10),
             }}
@@ -367,38 +363,38 @@ export function VoiceAddSheet({
               minHeight: 44,
               paddingVertical: ds.spacing(4),
               borderBottomWidth:
-                index === additions.length - 1 ? 0 : glassHairlineWidth,
-              borderBottomColor: glassColors.divider,
+                index === additions.length - 1 ? 0 : 1,
+              borderBottomColor: color.hairline,
             }}
           >
             <Ionicons
               name="checkmark-circle"
               size={ds.icon(22)}
-              color={glassColors.accent}
+              color={color.accent}
               style={{ marginRight: ds.spacing(10) }}
             />
             <View style={{ flex: 1 }}>
               <Text
                 numberOfLines={1}
                 style={{
-                  fontSize: ds.fontSize(15),
-                  fontWeight: '600',
-                  color: glassColors.textPrimary,
+                  fontSize: ds.fontSize(typeScale.body),
+                  fontWeight: weight.semibold,
+                  color: color.ink,
                 }}
               >
                 {addition.item.name}
               </Text>
               {addition.spokenUnit ? (
-                <Text style={{ fontSize: ds.fontSize(11), color: glassColors.warningText }}>
+                <Text style={{ fontSize: ds.fontSize(typeScale.caption), color: color.warning }}>
                   Heard “{addition.spokenUnit}” — this item orders in {addition.unit}
                 </Text>
               ) : null}
             </View>
             <Text
               style={{
-                fontSize: ds.fontSize(14),
+                fontSize: ds.fontSize(typeScale.body),
                 fontWeight: '700',
-                color: glassColors.textPrimary,
+                color: color.ink,
               }}
             >
               {addition.quantity !== null ? formatQuantity(addition.quantity) : '1'}{' '}
@@ -411,8 +407,8 @@ export function VoiceAddSheet({
           <Text
             style={{
               paddingVertical: ds.spacing(12),
-              fontSize: ds.fontSize(14),
-              color: glassColors.textSecondary,
+              fontSize: ds.fontSize(typeScale.body),
+              color: color.ink2,
               textAlign: 'center',
             }}
           >
@@ -423,14 +419,14 @@ export function VoiceAddSheet({
         {unmatched.length > 0 ? (
           <View
             style={{
-              backgroundColor: glassColors.warningSoft,
-              borderRadius: glassRadii.tag,
+              backgroundColor: color.warningBg,
+              borderRadius: radius.control,
               paddingHorizontal: ds.spacing(10),
               paddingVertical: ds.spacing(8),
               marginTop: ds.spacing(10),
             }}
           >
-            <Text style={{ fontSize: ds.fontSize(12), color: glassColors.warningText }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.warning }}>
               Not matched to inventory: {unmatched.join(', ')}. Use search to add
               these by hand.
             </Text>
@@ -446,16 +442,16 @@ export function VoiceAddSheet({
             style={{
               minHeight: 48,
               paddingHorizontal: ds.spacing(16),
-              borderRadius: glassRadii.pill,
-              backgroundColor: colors.glassCircle,
-              borderWidth: glassHairlineWidth,
-              borderColor: glassColors.controlBorder,
+              borderRadius: radius.pill,
+              backgroundColor: color.well,
+              borderWidth: 1,
+              borderColor: color.hairline,
               alignItems: 'center',
               justifyContent: 'center',
               marginRight: ds.spacing(8),
             }}
           >
-            <Ionicons name="mic-outline" size={ds.icon(20)} color={glassColors.textPrimary} />
+            <Ionicons name="mic-outline" size={ds.icon(20)} color={color.ink} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handleApply}
@@ -466,14 +462,14 @@ export function VoiceAddSheet({
             style={{
               flex: 1,
               minHeight: 48,
-              borderRadius: glassRadii.pill,
+              borderRadius: radius.pill,
               backgroundColor:
-                additions.length === 0 ? glassColors.textMuted : colors.primary,
+                additions.length === 0 ? color.ink3 : color.accent,
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Text style={{ fontSize: ds.fontSize(16), fontWeight: '700', color: colors.white }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: '700', color: color.card }}>
               {additions.length === 1
                 ? 'Add 1 item'
                 : `Add ${additions.length} items`}
@@ -500,9 +496,9 @@ export function VoiceAddSheet({
         <Text
           style={{
             flex: 1,
-            fontSize: ds.fontSize(20),
+            fontSize: ds.fontSize(typeScale.title),
             fontWeight: '700',
-            color: glassColors.textPrimary,
+            color: color.ink,
           }}
         >
           {phase === 'review' ? 'Heard you' : 'Add by voice'}
@@ -515,13 +511,13 @@ export function VoiceAddSheet({
           style={{
             width: 32,
             height: 32,
-            borderRadius: 16,
-            backgroundColor: colors.glassCircle,
+            borderRadius: radius.card,
+            backgroundColor: color.well,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Ionicons name="close" size={ds.icon(16)} color={glassColors.textPrimary} />
+          <Ionicons name="close" size={ds.icon(16)} color={color.ink} />
         </TouchableOpacity>
       </View>
       {body}

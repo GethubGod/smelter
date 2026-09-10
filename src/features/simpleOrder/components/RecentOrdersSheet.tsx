@@ -6,11 +6,7 @@ import { BottomSheetShell } from '@/components/BottomSheetShell';
 import { LoadingIndicator } from '@/components';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerSelectionHaptic } from '@/lib/haptics';
-import {
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-} from '@/theme/design';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 import {
   formatRecentOrderDate,
   listMyRecentOrders,
@@ -77,8 +73,8 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
       <Text
         style={{
           paddingVertical: ds.spacing(20),
-          fontSize: ds.fontSize(14),
-          color: glassColors.dangerText,
+          fontSize: ds.fontSize(typeScale.body),
+          color: color.alert,
           textAlign: 'center',
         }}
       >
@@ -88,7 +84,7 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
   } else if (orders === null) {
     body = (
       <View style={{ paddingVertical: ds.spacing(24), alignItems: 'center' }}>
-        <LoadingIndicator size="small" color={glassColors.accent} />
+        <LoadingIndicator size="small" color={color.accent} />
       </View>
     );
   } else if (detailOrder) {
@@ -99,19 +95,19 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
       >
         <View
           style={{
-            borderRadius: glassRadii.button,
-            borderWidth: glassHairlineWidth,
-            borderColor: glassColors.cardBorder,
-            backgroundColor: glassColors.subtleFill,
+            borderRadius: radius.card,
+            borderWidth: 1,
+            borderColor: color.hairline,
+            backgroundColor: color.well,
             paddingHorizontal: ds.spacing(14),
             paddingVertical: ds.spacing(12),
           }}
         >
           <Text
             style={{
-              fontSize: ds.fontSize(13),
-              lineHeight: ds.fontSize(19),
-              color: glassColors.textPrimary,
+              fontSize: ds.fontSize(typeScale.secondary),
+              lineHeight: ds.fontSize(typeScale.title),
+              color: color.ink,
             }}
           >
             {detailOrder.messageText || 'No message text was saved for this order.'}
@@ -124,8 +120,8 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
       <Text
         style={{
           paddingVertical: ds.spacing(20),
-          fontSize: ds.fontSize(14),
-          color: glassColors.textSecondary,
+          fontSize: ds.fontSize(typeScale.body),
+          color: color.ink2,
           textAlign: 'center',
         }}
       >
@@ -151,23 +147,23 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
               minHeight: 52,
               paddingVertical: ds.spacing(8),
               borderBottomWidth:
-                index === orders.length - 1 ? 0 : glassHairlineWidth,
-              borderBottomColor: glassColors.divider,
+                index === orders.length - 1 ? 0 : 1,
+              borderBottomColor: color.hairline,
             }}
           >
             <View style={{ flex: 1, paddingRight: ds.spacing(8) }}>
               <Text
                 numberOfLines={1}
                 style={{
-                  fontSize: ds.fontSize(15),
-                  fontWeight: '600',
-                  color: glassColors.textPrimary,
+                  fontSize: ds.fontSize(typeScale.body),
+                  fontWeight: weight.semibold,
+                  color: color.ink,
                 }}
               >
                 {order.supplierName}
               </Text>
               <Text
-                style={{ fontSize: ds.fontSize(12), color: glassColors.textMuted }}
+                style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}
               >
                 {formatRecentOrderDate(order.createdAt)}
                 {order.itemCount !== null
@@ -178,7 +174,7 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
             <Ionicons
               name="chevron-forward"
               size={ds.icon(16)}
-              color={glassColors.textMuted}
+              color={color.ink3}
             />
           </TouchableOpacity>
         ))}
@@ -201,22 +197,22 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={{ marginRight: ds.spacing(8) }}
           >
-            <Ionicons name="chevron-back" size={ds.icon(20)} color={glassColors.textPrimary} />
+            <Ionicons name="chevron-back" size={ds.icon(20)} color={color.ink} />
           </TouchableOpacity>
         ) : null}
         <View style={{ flex: 1 }}>
           <Text
             style={{
-              fontSize: ds.fontSize(20),
+              fontSize: ds.fontSize(typeScale.title),
               fontWeight: '700',
-              color: glassColors.textPrimary,
+              color: color.ink,
             }}
             numberOfLines={1}
           >
             {detailOrder ? detailOrder.supplierName : 'Recent orders'}
           </Text>
           {detailOrder ? (
-            <Text style={{ fontSize: ds.fontSize(12), color: glassColors.textMuted }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}>
               {formatRecentOrderDate(detailOrder.createdAt)}
               {detailOrder.itemCount !== null
                 ? ` • ${detailOrder.itemCount} item${detailOrder.itemCount === 1 ? '' : 's'}`

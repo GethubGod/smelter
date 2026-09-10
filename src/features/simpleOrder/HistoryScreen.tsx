@@ -15,7 +15,7 @@ import { EmptyStateCard, LoadingIndicator } from '@/components';
 import { getFloatingPillClearance } from '@/components/navigation';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { ImpactFeedbackStyle, triggerImpactHaptic } from '@/lib/haptics';
-import { glassHairlineWidth, radii, tipsTheme } from '@/theme/design';
+import { color, radius, typeScale } from '@/theme/tokens';
 import { useSimpleOrderUiStore } from '@/store/simpleOrderUiStore';
 import {
   formatHistoryDate,
@@ -97,10 +97,10 @@ export function HistoryScreen() {
             flexDirection: 'row',
             alignItems: 'center',
             gap: ds.spacing(12),
-            backgroundColor: tipsTheme.card,
-            borderWidth: glassHairlineWidth,
-            borderColor: tipsTheme.hairline,
-            borderRadius: 18,
+            backgroundColor: color.card,
+            borderWidth: 1,
+            borderColor: color.hairline,
+            borderRadius: radius.card,
             paddingHorizontal: ds.spacing(16),
             paddingVertical: ds.spacing(14),
             marginBottom: ds.spacing(10),
@@ -110,22 +110,22 @@ export function HistoryScreen() {
             style={{
               width: 38,
               height: 38,
-              borderRadius: radii.circle,
-              backgroundColor: tipsTheme.well,
+              borderRadius: radius.pill,
+              backgroundColor: color.well,
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Ionicons name="receipt-outline" size={ds.icon(18)} color={tipsTheme.ink} />
+            <Ionicons name="receipt-outline" size={ds.icon(18)} color={color.ink} />
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text
               numberOfLines={1}
-              style={{ fontSize: ds.fontSize(14.5), fontWeight: '700', color: tipsTheme.ink }}
+              style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: '700', color: color.ink }}
             >
               {formatHistoryDate(item.createdAt)}
             </Text>
-            <Text style={{ fontSize: ds.fontSize(12), color: tipsTheme.ink2, marginTop: 1 }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginTop: 1 }}>
               {countBit}
               {timeBit ? ` · sent ${timeBit}` : ''}
             </Text>
@@ -138,14 +138,14 @@ export function HistoryScreen() {
               accessibilityLabel={`Reorder ${countBit}`}
               hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
               style={{
-                backgroundColor: tipsTheme.tint,
-                borderRadius: radii.pill,
+                backgroundColor: color.tint,
+                borderRadius: radius.pill,
                 paddingHorizontal: ds.spacing(13),
                 paddingVertical: ds.spacing(7),
               }}
             >
               <Text
-                style={{ fontSize: ds.fontSize(12), fontWeight: '700', color: tipsTheme.accent }}
+                style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: '700', color: color.accent }}
               >
                 Reorder
               </Text>
@@ -194,7 +194,7 @@ export function HistoryScreen() {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={() => void handleRefresh()}
-            tintColor={tipsTheme.accent}
+            tintColor={color.accent}
           />
         }
       />
@@ -202,10 +202,10 @@ export function HistoryScreen() {
   }
 
   return (
-    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: tipsTheme.page }}>
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: color.page }}>
       <View style={{ flex: 1, paddingHorizontal: ds.spacing(18) }}>
         <View style={{ paddingTop: ds.spacing(2), paddingBottom: ds.spacing(10) }}>
-          <Text style={{ fontSize: ds.fontSize(24), fontWeight: '700', color: tipsTheme.ink }}>
+          <Text style={{ fontSize: ds.fontSize(typeScale.display), fontWeight: '700', color: color.ink }}>
             Past orders
           </Text>
         </View>
@@ -219,13 +219,13 @@ export function HistoryScreen() {
       >
         {detailOrder ? (
           <>
-            <Text style={{ fontSize: ds.fontSize(20), fontWeight: '700', color: tipsTheme.ink }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: '700', color: color.ink }}>
               {formatHistoryDate(detailOrder.createdAt)}
             </Text>
             <Text
               style={{
-                fontSize: ds.fontSize(13),
-                color: tipsTheme.ink2,
+                fontSize: ds.fontSize(typeScale.secondary),
+                color: color.ink2,
                 marginBottom: ds.spacing(12),
               }}
             >
@@ -237,14 +237,14 @@ export function HistoryScreen() {
             <ScrollView style={{ maxHeight: ds.spacing(320) }} showsVerticalScrollIndicator={false}>
               <View
                 style={{
-                  backgroundColor: tipsTheme.card,
-                  borderWidth: glassHairlineWidth,
-                  borderColor: tipsTheme.hairline,
-                  borderRadius: 16,
+                  backgroundColor: color.card,
+                  borderWidth: 1,
+                  borderColor: color.hairline,
+                  borderRadius: radius.card,
                   padding: ds.spacing(14),
                 }}
               >
-                <Text style={{ fontSize: ds.fontSize(13), color: tipsTheme.ink, lineHeight: 19 }}>
+                <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink, lineHeight: 19 }}>
                   {detailOrder.messageText || 'No message text was archived for this order.'}
                 </Text>
               </View>
@@ -262,13 +262,13 @@ export function HistoryScreen() {
                 style={{
                   marginTop: ds.spacing(14),
                   minHeight: 50,
-                  borderRadius: radii.pill,
-                  backgroundColor: tipsTheme.accent,
+                  borderRadius: radius.pill,
+                  backgroundColor: color.accent,
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <Text style={{ fontSize: ds.fontSize(15), fontWeight: '700', color: '#FFFFFF' }}>
+                <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: '700', color: color.onAccent }}>
                   Reorder these items
                 </Text>
               </TouchableOpacity>

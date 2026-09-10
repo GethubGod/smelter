@@ -19,12 +19,7 @@ import {
   upsertMyChecklistOrderDayReminderRule,
   type RecurringReminderRule,
 } from '@/services/employeeReminders';
-import {
-  colors,
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-} from '@/theme/design';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 import {
   buildOrderDayReminderInput,
   defaultOrderDayReminderForm,
@@ -162,7 +157,7 @@ export function OrderDayReminderSheet({
   if (isLoading) {
     body = (
       <View style={{ paddingVertical: ds.spacing(24), alignItems: 'center' }}>
-        <LoadingIndicator size="small" color={glassColors.accent} />
+        <LoadingIndicator size="small" color={color.accent} />
       </View>
     );
   } else if (loadError) {
@@ -170,8 +165,8 @@ export function OrderDayReminderSheet({
       <Text
         style={{
           paddingVertical: ds.spacing(20),
-          fontSize: ds.fontSize(14),
-          color: glassColors.dangerText,
+          fontSize: ds.fontSize(typeScale.body),
+          color: color.alert,
           textAlign: 'center',
         }}
       >
@@ -184,8 +179,8 @@ export function OrderDayReminderSheet({
         {existingRule ? (
           <Text
             style={{
-              fontSize: ds.fontSize(13),
-              color: glassColors.textSecondary,
+              fontSize: ds.fontSize(typeScale.secondary),
+              color: color.ink2,
               marginBottom: ds.spacing(12),
             }}
           >
@@ -195,8 +190,8 @@ export function OrderDayReminderSheet({
         ) : (
           <Text
             style={{
-              fontSize: ds.fontSize(13),
-              color: glassColors.textSecondary,
+              fontSize: ds.fontSize(typeScale.secondary),
+              color: color.ink2,
               marginBottom: ds.spacing(12),
             }}
           >
@@ -206,11 +201,11 @@ export function OrderDayReminderSheet({
 
         <Text
           style={{
-            fontSize: ds.fontSize(12),
+            fontSize: ds.fontSize(typeScale.secondary),
             fontWeight: '700',
             letterSpacing: 0.6,
             textTransform: 'uppercase',
-            color: glassColors.textSecondary,
+            color: color.ink2,
             marginBottom: ds.spacing(8),
           }}
         >
@@ -236,21 +231,21 @@ export function OrderDayReminderSheet({
                 style={{
                   width: ds.spacing(42),
                   minHeight: ds.spacing(42),
-                  borderRadius: glassRadii.button,
-                  borderWidth: glassHairlineWidth,
+                  borderRadius: radius.card,
+                  borderWidth: 1,
                   borderColor: selected
-                    ? glassColors.accentBorder
-                    : glassColors.controlBorder,
-                  backgroundColor: selected ? colors.primaryPale : colors.glassCircle,
+                    ? color.hairlineStrong
+                    : color.hairline,
+                  backgroundColor: selected ? color.tint : color.well,
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
                 <Text
                   style={{
-                    fontSize: ds.fontSize(13),
+                    fontSize: ds.fontSize(typeScale.secondary),
                     fontWeight: '700',
-                    color: selected ? glassColors.accent : glassColors.textSecondary,
+                    color: selected ? color.accent : color.ink2,
                   }}
                 >
                   {label}
@@ -262,11 +257,11 @@ export function OrderDayReminderSheet({
 
         <Text
           style={{
-            fontSize: ds.fontSize(12),
+            fontSize: ds.fontSize(typeScale.secondary),
             fontWeight: '700',
             letterSpacing: 0.6,
             textTransform: 'uppercase',
-            color: glassColors.textSecondary,
+            color: color.ink2,
             marginBottom: ds.spacing(8),
           }}
         >
@@ -278,10 +273,10 @@ export function OrderDayReminderSheet({
             alignItems: 'center',
             justifyContent: 'space-between',
             minHeight: 52,
-            borderRadius: glassRadii.button,
-            borderWidth: glassHairlineWidth,
-            borderColor: glassColors.controlBorder,
-            backgroundColor: colors.glassCircle,
+            borderRadius: radius.card,
+            borderWidth: 1,
+            borderColor: color.hairline,
+            backgroundColor: color.well,
             paddingHorizontal: ds.spacing(8),
             marginBottom: ds.spacing(16),
           }}
@@ -302,14 +297,14 @@ export function OrderDayReminderSheet({
             <Ionicons
               name="remove-circle-outline"
               size={ds.icon(22)}
-              color={glassColors.accent}
+              color={color.accent}
             />
           </TouchableOpacity>
           <Text
             style={{
-              fontSize: ds.fontSize(17),
+              fontSize: ds.fontSize(typeScale.title),
               fontWeight: '700',
-              color: glassColors.textPrimary,
+              color: color.ink,
             }}
           >
             {formatTimeLabel(form.timeOfDay)}
@@ -330,7 +325,7 @@ export function OrderDayReminderSheet({
             <Ionicons
               name="add-circle-outline"
               size={ds.icon(22)}
-              color={glassColors.accent}
+              color={color.accent}
             />
           </TouchableOpacity>
         </View>
@@ -338,8 +333,8 @@ export function OrderDayReminderSheet({
         {saveError ? (
           <Text
             style={{
-              fontSize: ds.fontSize(13),
-              color: glassColors.dangerText,
+              fontSize: ds.fontSize(typeScale.secondary),
+              color: color.alert,
               marginBottom: ds.spacing(10),
             }}
           >
@@ -355,8 +350,8 @@ export function OrderDayReminderSheet({
           accessibilityLabel={existingRule ? 'Update reminder' : 'Set reminder'}
           style={{
             minHeight: 52,
-            borderRadius: glassRadii.submitButton,
-            backgroundColor: colors.primary,
+            borderRadius: radius.card,
+            backgroundColor: color.accent,
             alignItems: 'center',
             justifyContent: 'center',
             opacity: isSaving || isRemoving ? 0.6 : 1,
@@ -364,9 +359,9 @@ export function OrderDayReminderSheet({
         >
           <Text
             style={{
-              fontSize: ds.fontSize(16),
+              fontSize: ds.fontSize(typeScale.body),
               fontWeight: '700',
-              color: colors.white,
+              color: color.card,
             }}
           >
             {isSaving
@@ -394,9 +389,9 @@ export function OrderDayReminderSheet({
           >
             <Text
               style={{
-                fontSize: ds.fontSize(15),
-                fontWeight: '600',
-                color: glassColors.dangerText,
+                fontSize: ds.fontSize(typeScale.body),
+                fontWeight: weight.semibold,
+                color: color.alert,
               }}
             >
               {isRemoving ? 'Removing…' : 'Remove reminder'}
@@ -423,14 +418,14 @@ export function OrderDayReminderSheet({
         <Ionicons
           name="notifications-outline"
           size={ds.icon(20)}
-          color={glassColors.textPrimary}
+          color={color.ink}
           style={{ marginRight: ds.spacing(8) }}
         />
         <Text
           style={{
-            fontSize: ds.fontSize(20),
+            fontSize: ds.fontSize(typeScale.title),
             fontWeight: '700',
-            color: glassColors.textPrimary,
+            color: color.ink,
           }}
         >
           Order-day reminder
