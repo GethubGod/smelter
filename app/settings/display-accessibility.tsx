@@ -63,7 +63,15 @@ function PreviewCard() {
               Preview · 10 lb/case
             </Text>
           </View>
-          <Button size="small" label="Add" onPress={() => undefined} />
+          {/* An illustration of the current scale, not a control: it takes no
+              touches and VoiceOver never offers it as a button. */}
+          <View
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            <Button size="small" label="Add" onPress={() => undefined} />
+          </View>
         </View>
       </Card>
     </View>
@@ -177,7 +185,14 @@ function DisplaySection() {
             onValueChange={setButtonSize}
           />
 
-          <View style={{ marginTop: ds.spacing(space[4]), alignItems: 'center' }}>
+          {/* Same rule as the live preview above: shows the chosen button size,
+              never fires. */}
+          <View
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={{ marginTop: ds.spacing(space[4]), alignItems: 'center' }}
+          >
             <Button label="Sample button" fullWidth={false} onPress={() => undefined} />
           </View>
         </View>

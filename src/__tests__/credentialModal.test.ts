@@ -11,7 +11,7 @@ jest.mock('react-native', () => ({
   View: 'View', Text: 'Text', Modal: 'Modal', Pressable: 'Pressable', TextInput: 'TextInput',
   TouchableOpacity: 'TouchableOpacity', ActivityIndicator: 'ActivityIndicator',
   KeyboardAvoidingView: 'KeyboardAvoidingView', ScrollView: 'ScrollView',
-  Alert: { alert }, Platform: { OS: 'ios' },
+  Alert: { alert }, Platform: { OS: 'ios' }, useWindowDimensions: () => ({ width: 390, height: 844 }),
   Animated: { Value: class { setValue() {} }, View: 'AnimatedView', timing: () => ({ start: (done: () => void) => done() }), spring: () => ({ start: () => {} }) },
   PanResponder: { create: () => ({ panHandlers: {} }) },
 }));

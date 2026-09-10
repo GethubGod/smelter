@@ -22,6 +22,7 @@ import {
   ScreenHeader,
   SectionLabel,
   Sheet,
+  StatusPill,
 } from '@/components/ui';
 import { ChangePasswordModal } from '@/components/settings';
 import { useAuthStore, useSettingsStore } from '@/store';
@@ -328,14 +329,9 @@ export default function ManagerProfileSettingsScreen() {
                     subtitle={location.short_code}
                     last={index === locations.length - 1}
                     right={
-                      <View
-                        accessibilityLabel={location.active ? 'Active' : 'Inactive'}
-                        style={{
-                          width: ds.spacing(space[3] - 2),
-                          height: ds.spacing(space[3] - 2),
-                          borderRadius: radius.pill,
-                          backgroundColor: location.active ? color.good : color.disabled,
-                        }}
+                      <StatusPill
+                        status={location.active ? 'fulfilled' : 'draft'}
+                        label={location.active ? 'Active' : 'Inactive'}
                       />
                     }
                   />

@@ -1,22 +1,15 @@
 import React, { useState } from 'react';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
-import { Button, Card, ListRow, ScreenHeader } from '@/components/ui';
+import { Button, Card, Input, ListRow, ScreenHeader } from '@/components/ui';
 import { SettingsSectionLabel } from '@/components/settings';
 import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
 import { useSettingsStore } from '@/store';
 import { DEFAULT_EXPORT_FORMAT_SETTINGS } from '@/types/settings';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { color, radius, space, typeScale, weight } from '@/theme/tokens';
+import { color, space, typeScale, weight } from '@/theme/tokens';
 
 const PLACEHOLDERS: { token: string; meaning: string }[] = [
   { token: '{{supplier}}', meaning: 'Supplier name' },
@@ -87,25 +80,16 @@ export default function ExportFormatSettingsScreen() {
                 >
                   Supplier message
                 </Text>
-                <TextInput
+                <Input
                   value={template}
                   onChangeText={setTemplate}
                   multiline
                   numberOfLines={12}
                   textAlignVertical="top"
                   placeholder="Write the export template"
-                  placeholderTextColor={color.ink3}
                   accessibilityLabel="Supplier message template"
-                  style={{
-                    marginTop: ds.spacing(space[3]),
-                    minHeight: 240,
-                    borderRadius: radius.control,
-                    backgroundColor: color.well,
-                    paddingHorizontal: ds.spacing(space[3] + 2),
-                    paddingVertical: ds.spacing(space[3] + 2),
-                    fontSize: ds.fontSize(typeScale.body),
-                    color: color.ink,
-                  }}
+                  minHeight={240}
+                  containerStyle={{ marginTop: ds.spacing(space[3]) }}
                 />
               </Card>
             </View>

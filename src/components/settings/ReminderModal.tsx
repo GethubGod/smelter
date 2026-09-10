@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Alert, ScrollView, useWindowDimensions } from 'react-native';
+import {
+  View,
+  Text,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  useWindowDimensions,
+} from 'react-native';
 import { Button, Card, Chip, Input, SectionLabel, Segment, Sheet } from '@/components/ui';
 import { Reminder, RepeatType } from '@/types/settings';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
@@ -107,83 +115,87 @@ export function ReminderModal({
       title={isEditing ? 'Edit reminder' : 'New reminder'}
       onClose={handleClose}
     >
-      <ScrollView
-        style={{ maxHeight: windowHeight * 0.55 }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <View>
-          <SectionLabel>Reminder name</SectionLabel>
-          <Input
-            value={name}
-            onChangeText={setName}
-            placeholder="e.g., Daily Order Reminder"
-            accessibilityLabel="Reminder name"
-          />
-        </View>
-
-        <View>
-          <SectionLabel>Message</SectionLabel>
-          <Input
-            value={message}
-            onChangeText={setMessage}
-            placeholder="e.g., Time to submit your inventory order!"
-            accessibilityLabel="Reminder message"
-            multiline
-          />
-        </View>
-
-        <View>
-          <SectionLabel>Repeat</SectionLabel>
-          <Segment
-            options={REPEAT_OPTIONS}
-            value={repeatType}
-            onChange={handleRepeatTypeChange}
-            accessibilityLabel="Repeat"
-          />
-        </View>
-
-        {repeatType !== 'daily' ? (
+      {/* The name and message fields sit under the keyboard on a small
+          phone unless the sheet lifts with it. */}
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          style={{ maxHeight: windowHeight * 0.55 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <View>
-            <SectionLabel>Days</SectionLabel>
-            <View
-              style={{
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                gap: ds.spacing(space[2]),
-              }}
-            >
-              {DAY_FULL_LABELS.map((label, index) => (
-                <Chip
-                  key={label}
-                  label={label}
-                  selected={selectedDays.includes(index)}
-                  onPress={() => toggleDay(index)}
-                />
-              ))}
-            </View>
-            <Text
-              style={{
-                marginTop: ds.spacing(space[2]),
-                fontSize: ds.fontSize(typeScale.secondary),
-                color: color.ink3,
-              }}
-            >
-              Selected: {[...selectedDays]
-                .sort((a, b) => a - b)
-                .map((d) => DAY_FULL_LABELS[d])
-                .join(', ')}
-            </Text>
+            <SectionLabel>Reminder name</SectionLabel>
+            <Input
+              value={name}
+              onChangeText={setName}
+              placeholder="e.g., Daily Order Reminder"
+              accessibilityLabel="Reminder name"
+            />
           </View>
-        ) : null}
 
-        <View>
-          <SectionLabel>Time</SectionLabel>
-          <Card>
-            <TimePickerRow title="Reminder time" value={time} onTimeChange={setTime} />
-          </Card>
-        </View>
-      </ScrollView>
+          <View>
+            <SectionLabel>Message</SectionLabel>
+            <Input
+              value={message}
+              onChangeText={setMessage}
+              placeholder="e.g., Time to submit your inventory order!"
+              accessibilityLabel="Reminder message"
+              multiline
+            />
+          </View>
+
+          <View>
+            <SectionLabel>Repeat</SectionLabel>
+            <Segment
+              options={REPEAT_OPTIONS}
+              value={repeatType}
+              onChange={handleRepeatTypeChange}
+              accessibilityLabel="Repeat"
+            />
+          </View>
+
+          {repeatType !== 'daily' ? (
+            <View>
+              <SectionLabel>Days</SectionLabel>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  gap: ds.spacing(space[2]),
+                }}
+              >
+                {DAY_FULL_LABELS.map((label, index) => (
+                  <Chip
+                    key={label}
+                    label={label}
+                    selected={selectedDays.includes(index)}
+                    onPress={() => toggleDay(index)}
+                  />
+                ))}
+              </View>
+              <Text
+                style={{
+                  marginTop: ds.spacing(space[2]),
+                  fontSize: ds.fontSize(typeScale.secondary),
+                  color: color.ink3,
+                }}
+              >
+                Selected: {[...selectedDays]
+                  .sort((a, b) => a - b)
+                  .map((d) => DAY_FULL_LABELS[d])
+                  .join(', ')}
+              </Text>
+            </View>
+          ) : null}
+
+          <View>
+            <SectionLabel>Time</SectionLabel>
+            <Card>
+              <TimePickerRow title="Reminder time" value={time} onTimeChange={setTime} />
+            </Card>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <Button
         variant="primary"

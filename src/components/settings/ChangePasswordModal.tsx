@@ -1,5 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  useWindowDimensions,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetShell } from '@/components/BottomSheetShell';
@@ -23,11 +32,21 @@ interface ChangePasswordModalProps {
 /**
  * The sign-in editor. One `BottomSheetShell` hosts the native modal for every
  * branch, so the host is never remounted while the credential lookup resolves;
- * only the content inside it changes.
+ * only the content inside it changes. That is why this one screen keeps the
+ * shell rather than `Sheet`: each branch carries its own header, and `Sheet`
+ * would add a second one.
+ *
+ * The shell owns the scrim and the drag-to-dismiss gesture, so the save-time
+ * guard has to live here: whichever form is showing reports whether it is
+ * mid-save, and the sheet refuses to dismiss until it finishes.
  */
 export function ChangePasswordModal({ visible, onClose }: ChangePasswordModalProps) {
   const ds = useScaledStyles();
   const insets = useSafeAreaInsets();
+  const [isBusy, setIsBusy] = useState(false);
+  const closeSheet = useCallback(() => {
+    if (!isBusy) onClose();
+  }, [isBusy, onClose]);
   const userId = useAuthStore((state) => state.session?.user.id ?? null);
   const [identity, setIdentity] = useState<{ userId: string; kind: CredentialKind | null } | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -48,7 +67,7 @@ export function ChangePasswordModal({ visible, onClose }: ChangePasswordModalPro
   return (
     <BottomSheetShell
       visible={visible}
-      onClose={onClose}
+      onClose={closeSheet}
       bottomPadding={Math.max(insets.bottom, ds.spacing(space[3] + 2))}
     >
       {!visible ? null : isResolving ? (
@@ -77,9 +96,10 @@ export function ChangePasswordModal({ visible, onClose }: ChangePasswordModalPro
           presentation="content"
           onClose={onClose}
           initialKind={identity.kind}
+          onBusyChange={setIsBusy}
         />
       ) : (
-        <EmailPasswordContent onClose={onClose} />
+        <EmailPasswordContent onClose={onClose} onBusyChange={setIsBusy} />
       )}
     </BottomSheetShell>
   );
@@ -156,8 +176,14 @@ function PasswordField({
   );
 }
 
-function EmailPasswordContent({ onClose }: Pick<ChangePasswordModalProps, 'onClose'>) {
+interface EmailPasswordContentProps extends Pick<ChangePasswordModalProps, 'onClose'> {
+  /** Lets the sheet refuse to dismiss while the password is being written. */
+  onBusyChange?: (busy: boolean) => void;
+}
+
+function EmailPasswordContent({ onClose, onBusyChange }: EmailPasswordContentProps) {
   const ds = useScaledStyles();
+  const { height: windowHeight } = useWindowDimensions();
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -168,6 +194,9 @@ function EmailPasswordContent({ onClose }: Pick<ChangePasswordModalProps, 'onClo
   const [isLoading, setIsLoading] = useState(false);
   const operation = useRef<AbortController | null>(null);
   useEffect(() => () => operation.current?.abort(), []);
+  useEffect(() => {
+    onBusyChange?.(isLoading);
+  }, [isLoading, onBusyChange]);
 
   const resetForm = () => {
     setCurrentPassword('');
@@ -221,60 +250,69 @@ function EmailPasswordContent({ onClose }: Pick<ChangePasswordModalProps, 'onClo
   };
 
   return (
-    <View style={{ gap: ds.spacing(space[3]) }}>
-      <Text
-        accessibilityRole="header"
-        style={{
-          fontSize: ds.fontSize(typeScale.title),
-          fontWeight: weight.bold,
-          letterSpacing: tracking.title,
-          color: color.ink,
-        }}
-      >
-        Change password
-      </Text>
-
+    // The three fields sit above the keyboard on a small phone only while the
+    // sheet lifts with it, and only scroll while the sheet is capped.
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={{ gap: ds.spacing(space[3]) }}>
-        <PasswordField
-          label="Current password"
-          value={currentPassword}
-          onChangeText={setCurrentPassword}
-          placeholder="Enter current password"
-          revealed={showCurrentPassword}
-          onToggleReveal={() => setShowCurrentPassword(!showCurrentPassword)}
+        <Text
+          accessibilityRole="header"
+          style={{
+            fontSize: ds.fontSize(typeScale.title),
+            fontWeight: weight.bold,
+            letterSpacing: tracking.title,
+            color: color.ink,
+          }}
+        >
+          Change password
+        </Text>
+
+        <ScrollView
+          style={{ maxHeight: windowHeight * 0.5 }}
+          contentContainerStyle={{ gap: ds.spacing(space[3]) }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <PasswordField
+            label="Current password"
+            value={currentPassword}
+            onChangeText={setCurrentPassword}
+            placeholder="Enter current password"
+            revealed={showCurrentPassword}
+            onToggleReveal={() => setShowCurrentPassword(!showCurrentPassword)}
+          />
+          <PasswordField
+            label="New password"
+            value={newPassword}
+            onChangeText={setNewPassword}
+            placeholder="Enter new password"
+            revealed={showNewPassword}
+            onToggleReveal={() => setShowNewPassword(!showNewPassword)}
+            helper="Must be at least 8 characters"
+          />
+          <PasswordField
+            label="Confirm new password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            placeholder="Confirm new password"
+            revealed={showConfirmPassword}
+            onToggleReveal={() => setShowConfirmPassword(!showConfirmPassword)}
+          />
+        </ScrollView>
+
+        <Button
+          variant="primary"
+          label="Update Password"
+          loading={isLoading}
+          onPress={() => void handleSubmit()}
         />
-        <PasswordField
-          label="New password"
-          value={newPassword}
-          onChangeText={setNewPassword}
-          placeholder="Enter new password"
-          revealed={showNewPassword}
-          onToggleReveal={() => setShowNewPassword(!showNewPassword)}
-          helper="Must be at least 8 characters"
-        />
-        <PasswordField
-          label="Confirm new password"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          placeholder="Confirm new password"
-          revealed={showConfirmPassword}
-          onToggleReveal={() => setShowConfirmPassword(!showConfirmPassword)}
+        <Button
+          variant="secondary"
+          label="Cancel"
+          disabled={isLoading}
+          accessibilityHint="Stops changing your password"
+          onPress={handleClose}
         />
       </View>
-
-      <Button
-        variant="primary"
-        label="Update Password"
-        loading={isLoading}
-        onPress={() => void handleSubmit()}
-      />
-      <Button
-        variant="secondary"
-        label="Cancel"
-        disabled={isLoading}
-        accessibilityHint="Stops changing your password"
-        onPress={handleClose}
-      />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
