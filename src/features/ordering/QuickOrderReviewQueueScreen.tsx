@@ -29,6 +29,7 @@ import {
   glassSpacing,
   glassTabBarHeight,
 } from '@/theme/design';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 type ReviewStatus = 'pending' | 'approved' | 'rejected' | 'changes_requested' | 'not_required';
 type UnitType = 'base' | 'pack';
@@ -545,12 +546,12 @@ export function QuickOrderReviewQueueScreen() {
 
   const renderOrderItem = (item: ReviewOrderItem) => (
     <View key={item.id} style={[styles.itemRow, { paddingVertical: ds.spacing(8) }]}>
-      <Ionicons name="checkmark-circle-outline" size={20} color="#18A957" />
+      <Ionicons name="checkmark-circle-outline" size={20} color=color.good />
       <View style={{ flex: 1, marginLeft: ds.spacing(10) }}>
-        <Text style={[styles.itemName, { fontSize: ds.fontSize(15) }]}>
+        <Text style={[styles.itemName, { fontSize: ds.fontSize(typeScale.body) }]}>
           {item.inventory_item?.name || 'Unknown item'}
         </Text>
-        <Text style={[styles.itemMeta, { fontSize: ds.fontSize(12) }]}>
+        <Text style={[styles.itemMeta, { fontSize: ds.fontSize(typeScale.secondary) }]}>
           {toNumber(item.quantity)} {getUnitLabel(item)}
           {item.note ? ` · ${item.note}` : ''}
         </Text>
@@ -565,7 +566,7 @@ export function QuickOrderReviewQueueScreen() {
 
     if (messages.length === 0) {
       return (
-        <Text style={[styles.emptyText, { fontSize: ds.fontSize(13) }]}>
+        <Text style={[styles.emptyText, { fontSize: ds.fontSize(typeScale.secondary) }]}>
           No chat transcript was saved for this order.
         </Text>
       );
@@ -582,7 +583,7 @@ export function QuickOrderReviewQueueScreen() {
             {
               alignSelf: isUser ? 'flex-end' : 'flex-start',
               backgroundColor: isUser ? colors.primary : colors.white,
-              borderRadius: ds.radius(14),
+              borderRadius: radius.card,
               padding: ds.spacing(10),
               maxWidth: '88%',
             },
@@ -591,8 +592,8 @@ export function QuickOrderReviewQueueScreen() {
           <Text
             style={{
               color: isUser ? colors.textOnPrimary : colors.textPrimary,
-              fontSize: ds.fontSize(13),
-              fontWeight: '700',
+              fontSize: ds.fontSize(typeScale.secondary),
+              fontWeight: weight.bold,
             }}
           >
             {getMessageText(message)}
@@ -619,37 +620,37 @@ export function QuickOrderReviewQueueScreen() {
       >
         <View style={styles.cardHeader}>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.orderTitle, { fontSize: ds.fontSize(20) }]}>
+            <Text style={[styles.orderTitle, { fontSize: ds.fontSize(typeScale.title) }]}>
               Order #{order.order_number ?? order.id.slice(0, 8)}
             </Text>
-            <Text style={[styles.metaText, { fontSize: ds.fontSize(13), marginTop: 4 }]}>
+            <Text style={[styles.metaText, { fontSize: ds.fontSize(typeScale.secondary), marginTop: 4 }]}>
               {getUserName(order)} · {getLocationName(order)}
             </Text>
-            <Text style={[styles.metaText, { fontSize: ds.fontSize(13), marginTop: 2 }]}>
+            <Text style={[styles.metaText, { fontSize: ds.fontSize(typeScale.secondary), marginTop: 2 }]}>
               {formatDate(order.created_at)}
             </Text>
           </View>
           <View style={styles.pendingPill}>
-            <Text style={[styles.pendingPillText, { fontSize: ds.fontSize(11) }]}>
+            <Text style={[styles.pendingPillText, { fontSize: ds.fontSize(typeScale.caption) }]}>
               Pending
             </Text>
           </View>
         </View>
 
-        <Text style={[styles.sectionTitle, { fontSize: ds.fontSize(15), marginTop: ds.spacing(16) }]}>
+        <Text style={[styles.sectionTitle, { fontSize: ds.fontSize(typeScale.body), marginTop: ds.spacing(16) }]}>
           Parsed Order
         </Text>
         <View style={{ marginTop: ds.spacing(6) }}>
           {orderItems.length > 0 ? (
             orderItems.map(renderOrderItem)
           ) : (
-            <Text style={[styles.emptyText, { fontSize: ds.fontSize(13) }]}>
+            <Text style={[styles.emptyText, { fontSize: ds.fontSize(typeScale.secondary) }]}>
               No order items found.
             </Text>
           )}
         </View>
 
-        <Text style={[styles.sectionTitle, { fontSize: ds.fontSize(15), marginTop: ds.spacing(16) }]}>
+        <Text style={[styles.sectionTitle, { fontSize: ds.fontSize(typeScale.body), marginTop: ds.spacing(16) }]}>
           Chat Context
         </Text>
         <View style={{ marginTop: ds.spacing(8), gap: ds.spacing(8) }}>
@@ -700,7 +701,7 @@ export function QuickOrderReviewQueueScreen() {
     >
       <SafeAreaView style={{ flex: 1, backgroundColor: glassColors.background }}>
         <View style={[styles.modalHeader, { padding: ds.spacing(16) }]}>
-          <Text style={[styles.modalTitle, { fontSize: ds.fontSize(22) }]}>Edit & Approve</Text>
+          <Text style={[styles.modalTitle, { fontSize: ds.fontSize(typeScale.title) }]}>Edit & Approve</Text>
           <TouchableOpacity onPress={closeEditModal} style={styles.modalCloseButton}>
             <Ionicons name="close" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
@@ -726,7 +727,7 @@ export function QuickOrderReviewQueueScreen() {
                   marginBottom: ds.spacing(12),
                 }}
               >
-                <Text style={[styles.inputLabel, { fontSize: ds.fontSize(12) }]}>Item</Text>
+                <Text style={[styles.inputLabel, { fontSize: ds.fontSize(typeScale.secondary) }]}>Item</Text>
                 <TextInput
                   value={line.search}
                   onFocus={() => setActiveEditLineId(line.id)}
@@ -740,7 +741,7 @@ export function QuickOrderReviewQueueScreen() {
                   }}
                   placeholder="Search item"
                   placeholderTextColor={glassColors.textMuted}
-                  style={[styles.textInput, { fontSize: ds.fontSize(15), minHeight: ds.spacing(46) }]}
+                  style={[styles.textInput, { fontSize: ds.fontSize(typeScale.body), minHeight: ds.spacing(46) }]}
                 />
 
                 {matches.length > 0 ? (
@@ -761,7 +762,7 @@ export function QuickOrderReviewQueueScreen() {
                           { backgroundColor: pressed ? colors.primaryPale : colors.white },
                         ]}
                       >
-                        <Text style={{ color: colors.textPrimary, fontWeight: '700' }}>
+                        <Text style={{ color: colors.textPrimary, fontWeight: weight.bold }}>
                           {item.name}
                         </Text>
                       </Pressable>
@@ -769,13 +770,13 @@ export function QuickOrderReviewQueueScreen() {
                   </View>
                 ) : null}
 
-                <Text style={[styles.selectedHint, { fontSize: ds.fontSize(12) }]}>
+                <Text style={[styles.selectedHint, { fontSize: ds.fontSize(typeScale.secondary) }]}>
                   Selected: {selectedInventory?.name || 'None'}
                 </Text>
 
                 <View style={{ flexDirection: 'row', gap: ds.spacing(8), marginTop: ds.spacing(10) }}>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.inputLabel, { fontSize: ds.fontSize(12) }]}>Quantity</Text>
+                    <Text style={[styles.inputLabel, { fontSize: ds.fontSize(typeScale.secondary) }]}>Quantity</Text>
                     <TextInput
                       value={line.quantity}
                       onChangeText={(value) =>
@@ -784,11 +785,11 @@ export function QuickOrderReviewQueueScreen() {
                       keyboardType="decimal-pad"
                       placeholder="Qty"
                       placeholderTextColor={glassColors.textMuted}
-                      style={[styles.textInput, { fontSize: ds.fontSize(15), minHeight: ds.spacing(46) }]}
+                      style={[styles.textInput, { fontSize: ds.fontSize(typeScale.body), minHeight: ds.spacing(46) }]}
                     />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.inputLabel, { fontSize: ds.fontSize(12) }]}>Unit</Text>
+                    <Text style={[styles.inputLabel, { fontSize: ds.fontSize(typeScale.secondary) }]}>Unit</Text>
                     <View style={styles.unitSwitch}>
                       {(['base', 'pack'] as UnitType[]).map((unitType) => (
                         <Pressable
@@ -859,10 +860,10 @@ export function QuickOrderReviewQueueScreen() {
             marginHorizontal: ds.spacing(20),
           }}
         >
-          <Text style={[styles.modalTitle, { fontSize: ds.fontSize(20) }]}>
+          <Text style={[styles.modalTitle, { fontSize: ds.fontSize(typeScale.title) }]}>
             Reject with note
           </Text>
-          <Text style={[styles.metaText, { fontSize: ds.fontSize(13), marginTop: ds.spacing(6) }]}>
+          <Text style={[styles.metaText, { fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(6) }]}>
             This cancels the order and notifies the employee.
           </Text>
           <TextInput
@@ -877,7 +878,7 @@ export function QuickOrderReviewQueueScreen() {
                 minHeight: ds.spacing(110),
                 textAlignVertical: 'top',
                 marginTop: ds.spacing(14),
-                fontSize: ds.fontSize(15),
+                fontSize: ds.fontSize(typeScale.body),
               },
             ]}
           />
@@ -955,7 +956,7 @@ export function QuickOrderReviewQueueScreen() {
                   backgroundColor: colors.statusRedBg,
                 }}
               >
-                <Text style={{ color: colors.statusRed, fontWeight: '700' }}>
+                <Text style={{ color: colors.statusRed, fontWeight: weight.bold }}>
                   {errorMessage}
                 </Text>
               </GlassSurface>
@@ -966,10 +967,10 @@ export function QuickOrderReviewQueueScreen() {
             ) : (
               <View style={styles.emptyState}>
                 <Ionicons name="checkmark-circle-outline" size={48} color={colors.statusGreen} />
-                <Text style={[styles.emptyTitle, { fontSize: ds.fontSize(18) }]}>
+                <Text style={[styles.emptyTitle, { fontSize: ds.fontSize(typeScale.title) }]}>
                   No pending reviews
                 </Text>
-                <Text style={[styles.emptyText, { fontSize: ds.fontSize(13), marginTop: ds.spacing(6) }]}>
+                <Text style={[styles.emptyText, { fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(6) }]}>
                   Quick Order drafts that need manager approval will appear here.
                 </Text>
               </View>
@@ -996,28 +997,28 @@ const styles = StyleSheet.create({
   },
   orderTitle: {
     color: colors.textPrimary,
-    fontWeight: '800',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   metaText: {
     color: colors.textSecondary,
-    fontWeight: '600',
+    fontWeight: weight.semibold,
     letterSpacing: 0,
   },
   pendingPill: {
-    borderRadius: 999,
+    borderRadius: radius.pill,
     backgroundColor: colors.tagAmberBg,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   pendingPillText: {
     color: colors.tagAmber,
-    fontWeight: '800',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   sectionTitle: {
     color: colors.textPrimary,
-    fontWeight: '800',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   itemRow: {
@@ -1028,12 +1029,12 @@ const styles = StyleSheet.create({
   },
   itemName: {
     color: colors.textPrimary,
-    fontWeight: '800',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   itemMeta: {
     color: colors.textSecondary,
-    fontWeight: '600',
+    fontWeight: weight.semibold,
     letterSpacing: 0,
     marginTop: 2,
   },
@@ -1047,7 +1048,7 @@ const styles = StyleSheet.create({
   actionButton: {
     flex: 1,
     minHeight: 44,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -1067,19 +1068,19 @@ const styles = StyleSheet.create({
   },
   primaryActionText: {
     color: colors.textOnPrimary,
-    fontWeight: '800',
+    fontWeight: weight.bold,
     marginLeft: 6,
     letterSpacing: 0,
   },
   secondaryActionText: {
     color: colors.textPrimary,
-    fontWeight: '800',
+    fontWeight: weight.bold,
     marginLeft: 6,
     letterSpacing: 0,
   },
   rejectActionText: {
     color: colors.statusRed,
-    fontWeight: '800',
+    fontWeight: weight.bold,
     marginLeft: 6,
     letterSpacing: 0,
   },
@@ -1090,13 +1091,13 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     color: colors.textPrimary,
-    fontWeight: '800',
+    fontWeight: weight.bold,
     marginTop: 12,
     letterSpacing: 0,
   },
   emptyText: {
     color: colors.textSecondary,
-    fontWeight: '600',
+    fontWeight: weight.semibold,
     textAlign: 'center',
     letterSpacing: 0,
   },
@@ -1109,7 +1110,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     flex: 1,
     color: colors.textPrimary,
-    fontWeight: '800',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   modalCloseButton: {
@@ -1120,7 +1121,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     color: colors.textSecondary,
-    fontWeight: '800',
+    fontWeight: weight.bold,
     textTransform: 'uppercase',
     marginBottom: 6,
     letterSpacing: 0.4,
@@ -1133,19 +1134,19 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontWeight: '700',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   selectedHint: {
     color: colors.textSecondary,
     marginTop: 8,
-    fontWeight: '600',
+    fontWeight: weight.semibold,
     letterSpacing: 0,
   },
   matchRow: {
     minHeight: 40,
     justifyContent: 'center',
-    borderRadius: 8,
+    borderRadius: radius.control,
     paddingHorizontal: 10,
     borderWidth: glassHairlineWidth,
     borderColor: glassColors.cardBorder,
@@ -1168,7 +1169,7 @@ const styles = StyleSheet.create({
   },
   unitButtonText: {
     color: colors.textPrimary,
-    fontWeight: '800',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   unitButtonTextActive: {

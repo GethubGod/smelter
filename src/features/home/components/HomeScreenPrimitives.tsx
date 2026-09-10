@@ -23,6 +23,7 @@ import {
   glassRadii,
   glassSpacing,
 } from '@/theme/design';
+import { typeScale, weight } from '@/theme/tokens';
 
 interface HomeScreenScrollProps {
   children: ReactNode;
@@ -118,7 +119,7 @@ export const HomeSearchCard = memo(function HomeSearchCard({
           <Text
             style={{
               marginLeft: ds.spacing(12),
-              fontSize: ds.fontSize(16),
+              fontSize: ds.fontSize(typeScale.body),
               color: glassColors.textMuted,
             }}
             numberOfLines={1}
@@ -154,8 +155,8 @@ export const HomeModuleCard = memo(function HomeModuleCard({
         <View className="flex-row items-center justify-between">
           <Text
             style={{
-              fontSize: ds.fontSize(15),
-              fontWeight: '700',
+              fontSize: ds.fontSize(typeScale.body),
+              fontWeight: weight.bold,
               color: glassColors.textPrimary,
             }}
           >
@@ -165,8 +166,8 @@ export const HomeModuleCard = memo(function HomeModuleCard({
             <TouchableOpacity onPress={onPressAction} hitSlop={8}>
               <Text
                 style={{
-                  fontSize: ds.fontSize(13),
-                  fontWeight: '700',
+                  fontSize: ds.fontSize(typeScale.secondary),
+                  fontWeight: weight.bold,
                   color: glassColors.accent,
                 }}
               >
@@ -219,8 +220,8 @@ export const HomeModuleState = memo(function HomeModuleState({
       <Text
         style={{
           marginTop: ds.spacing(12),
-          fontSize: ds.fontSize(15),
-          fontWeight: '600',
+          fontSize: ds.fontSize(typeScale.body),
+          fontWeight: weight.semibold,
           color: glassColors.textPrimary,
         }}
       >
@@ -229,9 +230,9 @@ export const HomeModuleState = memo(function HomeModuleState({
       <Text
         style={{
           marginTop: ds.spacing(6),
-          fontSize: ds.fontSize(12),
+          fontSize: ds.fontSize(typeScale.secondary),
           color: glassColors.textSecondary,
-          lineHeight: ds.fontSize(18),
+          lineHeight: ds.fontSize(typeScale.title),
         }}
       >
         {message}
@@ -253,8 +254,8 @@ export const HomeModuleState = memo(function HomeModuleState({
         >
           <Text
             style={{
-              fontSize: ds.fontSize(13),
-              fontWeight: '700',
+              fontSize: ds.fontSize(typeScale.secondary),
+              fontWeight: weight.bold,
               color: glassColors.textOnPrimary,
             }}
           >

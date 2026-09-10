@@ -1,5 +1,6 @@
 import React from 'react';
 import Svg, { Rect } from 'react-native-svg';
+import { color } from '@/theme/tokens';
 
 export const BAR_COUNT = 65;
 const BAR_WIDTH = 2;
@@ -24,7 +25,7 @@ function RollingSpectrogramImpl({
   amplitudes,
   width = INTRINSIC_WIDTH,
   height = 22,
-  barColor = '#1A1A1A',
+  barColor = color.ink,
 }: Props) {
   return (
     <Svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>

@@ -6,6 +6,7 @@ import {
   glassTypography,
 } from '@/theme/design';
 import { HeaderCartButton } from './HeaderCartButton';
+import { typeScale, weight } from '@/theme/tokens';
 
 interface IdentityHeaderProps {
   identity?: string;
@@ -37,8 +38,8 @@ export function IdentityHeader({
           {identity ? (
             <Text
               style={{
-                fontSize: ds.fontSize(13),
-                fontWeight: '700',
+                fontSize: ds.fontSize(typeScale.secondary),
+                fontWeight: weight.bold,
                 color: glassColors.accent,
                 letterSpacing: 0.4,
               }}
@@ -51,7 +52,7 @@ export function IdentityHeader({
             style={{
               marginTop: identity ? ds.spacing(4) : 0,
               fontSize: ds.fontSize(glassTypography.screenTitle - 2),
-              fontWeight: '800',
+              fontWeight: weight.bold,
               color: glassColors.textPrimary,
               letterSpacing: -0.5,
             }}
@@ -63,7 +64,7 @@ export function IdentityHeader({
             <Text
               style={{
                 marginTop: ds.spacing(6),
-                fontSize: ds.fontSize(14),
+                fontSize: ds.fontSize(typeScale.body),
                 color: glassColors.textSecondary,
               }}
               numberOfLines={2}

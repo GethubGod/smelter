@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { GlassSurface } from '@/components';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { glassColors, glassRadii } from '@/theme/design';
+import { typeScale, weight } from '@/theme/tokens';
 
 interface FulfillmentHeaderProps {
   title?: string;
@@ -23,8 +24,8 @@ export function FulfillmentHeader({
       <View style={{ flex: 1, paddingRight: ds.spacing(12) }}>
         <Text
           style={{
-            fontSize: ds.fontSize(31),
-            fontWeight: '800',
+            fontSize: ds.fontSize(typeScale.display),
+            fontWeight: weight.bold,
             color: glassColors.textPrimary,
             letterSpacing: -0.8,
           }}
@@ -48,8 +49,8 @@ export function FulfillmentHeader({
           <Text
             style={{
               marginLeft: ds.spacing(8),
-              fontSize: ds.fontSize(17),
-              fontWeight: '700',
+              fontSize: ds.fontSize(typeScale.title),
+              fontWeight: weight.bold,
               color: glassColors.textPrimary,
             }}
           >

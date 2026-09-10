@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { glassHairlineWidth } from '@/theme/design';
+import { radius, typeScale } from '@/theme/tokens';
 
 export interface TabButtonProps {
   name: keyof typeof Ionicons.glyphMap;
@@ -21,7 +22,7 @@ export function TabButton({ name, label, color, size, focused }: TabButtonProps)
       style={{
         width: 76,
         height: 50,
-        borderRadius: 22,
+        borderRadius: radius.sheet,
         paddingTop: 4,
         alignItems: 'center',
         justifyContent: 'center',
@@ -33,7 +34,7 @@ export function TabButton({ name, label, color, size, focused }: TabButtonProps)
       <Ionicons name={name} size={size} color={color} />
       <Text
         style={{
-          fontSize: 10,
+          fontSize: typeScale.caption,
           fontWeight: focused ? '600' : '500',
           color,
           marginTop: 3,

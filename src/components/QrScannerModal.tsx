@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { colors } from '@/constants';
 import { useStockStore } from '@/store';
+import { radius, typeScale, weight } from '@/theme/tokens';
 
 interface QrScannerModalProps {
   visible: boolean;
@@ -153,7 +154,7 @@ const styles = StyleSheet.create({
   },
   container: {
     backgroundColor: colors.background,
-    borderRadius: 24,
+    borderRadius: radius.sheet,
     overflow: 'hidden',
   },
   header: {
@@ -166,8 +167,8 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.gray[100],
   },
   title: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: typeScale.title,
+    fontWeight: weight.bold,
     color: colors.text,
   },
   cameraContainer: {
@@ -179,7 +180,7 @@ const styles = StyleSheet.create({
   frame: {
     width: 220,
     height: 220,
-    borderRadius: 16,
+    borderRadius: radius.card,
     borderWidth: 2,
     borderColor: colors.overlay,
   },
@@ -187,14 +188,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 8,
-    fontSize: 14,
+    fontSize: typeScale.body,
     textAlign: 'center',
     color: colors.gray[700],
   },
   errorText: {
     paddingBottom: 16,
     paddingHorizontal: 20,
-    fontSize: 13,
+    fontSize: typeScale.secondary,
     textAlign: 'center',
     color: colors.error,
   },
@@ -212,10 +213,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary[500],
     paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: 999,
+    borderRadius: radius.pill,
   },
   permissionButtonText: {
     color: colors.white,
-    fontWeight: '600',
+    fontWeight: weight.semibold,
   },
 });

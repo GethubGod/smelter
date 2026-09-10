@@ -1,5 +1,6 @@
 import { Platform, ViewStyle, TextStyle } from 'react-native';
 import { colors, hairline, spacing } from '@/theme/design';
+import { radius, typeScale, weight } from '@/theme/tokens';
 
 /**
  * Returns the shared tab bar screen options used by both employee and manager layouts.
@@ -21,12 +22,12 @@ export function getTabBarScreenOptions(tabBarBottomInset: number) {
       height: tabBarHeight,
       elevation: 0,
     } satisfies ViewStyle,
-    // Android rejects fontSize: 0 when measuring letterSpacing; labels live in TabButton.
+    // Android rejects fontSize: typeScale.caption when measuring letterSpacing; labels live in TabButton.
     ...(Platform.OS === 'android'
       ? { tabBarShowLabel: false as const }
       : {
           tabBarLabelStyle: {
-            fontSize: 0, // hide default label — rendered inside TabButton
+            fontSize: typeScale.caption, // hide default label — rendered inside TabButton
             height: 0,
             margin: 0,
           } satisfies TextStyle,
@@ -51,12 +52,12 @@ export function getTabBarBottomInset(insetsBottom: number): number {
 export const tabBarBadgeStyle = {
   backgroundColor: colors.primary,
   color: colors.textOnPrimary,
-  fontSize: 10,
-  fontWeight: '700' as const,
+  fontSize: typeScale.caption,
+  fontWeight: weight.bold as const,
   minWidth: 18,
   height: 18,
   lineHeight: 16,
-  borderRadius: 9,
+  borderRadius: radius.control,
   top: -4,
   right: -6,
 };

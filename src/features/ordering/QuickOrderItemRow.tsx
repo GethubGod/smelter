@@ -14,6 +14,7 @@ import {
   hasParsedItemName,
   type ParsedQuickOrderItem,
 } from './quickOrderItems';
+import { typeScale, weight } from '@/theme/tokens';
 
 /** Compact row slot used by the bounded Order List FlatList. */
 export const QUICK_ORDER_ROW_MIN_HEIGHT = 39;
@@ -127,7 +128,7 @@ export const QuickOrderItemRow = React.memo(function QuickOrderItemRow({
       >
         <View style={styles.deleteAction}>
           <Ionicons name="trash-outline" size={ds.icon(20)} color={colors.white} />
-          <Text style={[styles.deleteActionText, { fontSize: ds.fontSize(12) }]}>
+          <Text style={[styles.deleteActionText, { fontSize: ds.fontSize(typeScale.secondary) }]}>
             Delete
           </Text>
         </View>
@@ -171,7 +172,7 @@ export const QuickOrderItemRow = React.memo(function QuickOrderItemRow({
             style={[
               styles.name,
               {
-                fontSize: ds.fontSize(15),
+                fontSize: ds.fontSize(typeScale.body),
                 color: nameIsPlaceholder ? colors.textSecondary : colors.textPrimary,
               },
             ]}
@@ -182,7 +183,7 @@ export const QuickOrderItemRow = React.memo(function QuickOrderItemRow({
             <Text
               numberOfLines={1}
               ellipsizeMode="tail"
-              style={[styles.reviewQuantityText, { fontSize: ds.fontSize(12), color: colors.textSecondary }]}
+              style={[styles.reviewQuantityText, { fontSize: ds.fontSize(typeScale.secondary), color: colors.textSecondary }]}
             >
               {reviewQuantityLabel}
             </Text>
@@ -191,7 +192,7 @@ export const QuickOrderItemRow = React.memo(function QuickOrderItemRow({
             <Text
               numberOfLines={1}
               ellipsizeMode="tail"
-              style={[styles.suggestedText, { fontSize: ds.fontSize(11), marginTop: ds.spacing(2) }]}
+              style={[styles.suggestedText, { fontSize: ds.fontSize(typeScale.caption), marginTop: ds.spacing(2) }]}
             >
               {voiceSuggested ? 'Suggested from voice' : 'Suggested'}
             </Text>
@@ -215,7 +216,7 @@ export const QuickOrderItemRow = React.memo(function QuickOrderItemRow({
             <Text
               numberOfLines={1}
               ellipsizeMode="tail"
-              style={[styles.trailingActionText, { fontSize: ds.fontSize(14), color: colors.statusAmber }]}
+              style={[styles.trailingActionText, { fontSize: ds.fontSize(typeScale.body), color: colors.statusAmber }]}
             >
               {trailingLabel}
             </Text>
@@ -251,7 +252,7 @@ export const QuickOrderItemRow = React.memo(function QuickOrderItemRow({
                 style={[
                   styles.trailingText,
                   {
-                    fontSize: ds.fontSize(14),
+                    fontSize: ds.fontSize(typeScale.body),
                     color: colors.textSecondary,
                   },
                 ]}
@@ -299,17 +300,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   name: {
-    fontWeight: '700',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   reviewQuantityText: {
     marginTop: 2,
-    fontWeight: '700',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   suggestedText: {
     color: colors.textSecondary,
-    fontWeight: '500',
+    fontWeight: weight.semibold,
     fontStyle: 'italic',
     letterSpacing: 0,
   },
@@ -317,7 +318,7 @@ const styles = StyleSheet.create({
     minWidth: 76,
     maxWidth: 116,
     textAlign: 'right',
-    fontWeight: '800',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   trailingStack: {
@@ -334,7 +335,7 @@ const styles = StyleSheet.create({
   },
   trailingActionText: {
     flexShrink: 1,
-    fontWeight: '800',
+    fontWeight: weight.bold,
     letterSpacing: 0,
     textDecorationLine: 'underline',
   },
@@ -347,7 +348,7 @@ const styles = StyleSheet.create({
   },
   deleteActionText: {
     color: colors.white,
-    fontWeight: '800',
+    fontWeight: weight.bold,
     letterSpacing: 0,
     marginTop: 2,
   },

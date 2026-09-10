@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ImpactFeedbackStyle, triggerImpactHaptic } from '@/lib/haptics';
 import { glassHairlineWidth, radii, tipsTheme } from '@/theme/design';
 import { useSimpleOrderUiStore } from '@/store/simpleOrderUiStore';
+import { color, typeScale, weight } from '@/theme/tokens';
 
 /**
  * Floating pill toolbar — the employee app's navigation. White pill with a
@@ -45,7 +46,7 @@ export interface FloatingPillTabBarProps extends BottomTabBarProps {
   cartCount?: number;
 }
 
-const INACTIVE_COLOR = '#8A8781';
+const INACTIVE_COLOR = color.tabInactive;
 
 export function FloatingPillTabBar({
   state,
@@ -106,7 +107,7 @@ export function FloatingPillTabBar({
           backgroundColor: tipsTheme.card,
           borderWidth: glassHairlineWidth,
           borderColor: tipsTheme.hairline,
-          shadowColor: '#14120E',
+          shadowColor: color.ink,
           shadowOffset: { width: 0, height: 10 },
           shadowOpacity: 0.14,
           shadowRadius: 28,
@@ -117,7 +118,7 @@ export function FloatingPillTabBar({
           const meta = PILL_TAB_META[routeName];
           if (!meta) return null;
           const active = routeName === activePillRoute;
-          const color = active ? tipsTheme.accent : INACTIVE_COLOR;
+          const glyphColor = active ? tipsTheme.accent : INACTIVE_COLOR;
           const showBadge = routeName === 'cart' && cartCount > 0;
           return (
             <TouchableOpacity
@@ -138,7 +139,7 @@ export function FloatingPillTabBar({
               }}
             >
               <View>
-                <Ionicons name={meta.icon} size={20} color={color} />
+                <Ionicons name={meta.icon} size={20} color={glyphColor} />
                 {showBadge ? (
                   <View
                     style={{
@@ -155,7 +156,7 @@ export function FloatingPillTabBar({
                     }}
                   >
                     <Text
-                      style={{ fontSize: 9, fontWeight: '700', color: '#FFFFFF' }}
+                      style={{ fontSize: typeScale.caption, fontWeight: weight.bold, color: color.card }}
                       numberOfLines={1}
                     >
                       {cartCount > 99 ? '99+' : cartCount}
@@ -166,8 +167,8 @@ export function FloatingPillTabBar({
               {active ? (
                 <Text
                   style={{
-                    fontSize: 12.5,
-                    fontWeight: '600',
+                    fontSize: typeScale.secondary,
+                    fontWeight: weight.semibold,
                     color: tipsTheme.accent,
                   }}
                 >

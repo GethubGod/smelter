@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, hairline, radii } from '@/theme/design';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { BottomSheetShell } from '@/components/BottomSheetShell';
+import { typeScale, weight } from '@/theme/tokens';
 
 export interface OrderLaterSupplierOption {
   id: string;
@@ -63,11 +64,11 @@ export function OrderLaterAddToSheet({
       bottomPadding={Math.max(ds.spacing(10), insets.bottom + ds.spacing(8))}
     >
       <View style={{ paddingHorizontal: ds.spacing(6), paddingBottom: ds.spacing(10) }}>
-        <Text style={{ fontSize: ds.fontSize(18), fontWeight: '700', color: colors.textPrimary }}>
+        <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.bold, color: colors.textPrimary }}>
           Add to Supplier
         </Text>
         {itemName ? (
-          <Text style={{ fontSize: ds.fontSize(13), marginTop: ds.spacing(4), color: colors.textSecondary }}>
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(4), color: colors.textSecondary }}>
             {itemName}
           </Text>
         ) : null}
@@ -80,10 +81,10 @@ export function OrderLaterAddToSheet({
       >
         <Text
           style={{
-            fontSize: ds.fontSize(12),
+            fontSize: ds.fontSize(typeScale.secondary),
             marginBottom: ds.spacing(6),
             marginLeft: ds.spacing(6),
-            fontWeight: '600',
+            fontWeight: weight.semibold,
             letterSpacing: 0.6,
             textTransform: 'uppercase',
             color: colors.textSecondary,
@@ -103,11 +104,11 @@ export function OrderLaterAddToSheet({
             }}
           >
             <View style={{ flex: 1, paddingRight: ds.spacing(12) }}>
-              <Text style={{ fontSize: ds.fontSize(16), fontWeight: '500', color: colors.textPrimary }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: colors.textPrimary }}>
                 {selectedSupplier?.name || 'Select supplier'}
               </Text>
               {!selectedSupplier && (
-                <Text style={{ fontSize: ds.fontSize(12), marginTop: ds.spacing(2), color: colors.textSecondary }}>
+                <Text style={{ fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(2), color: colors.textSecondary }}>
                   A supplier is required to add this item.
                 </Text>
               )}
@@ -124,7 +125,7 @@ export function OrderLaterAddToSheet({
               }}
               activeOpacity={0.8}
             >
-              <Text style={{ fontSize: ds.fontSize(13), fontWeight: '600', color: colors.textPrimary }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: colors.textPrimary }}>
                 {showSupplierPicker ? 'Done' : 'Change'}
               </Text>
             </TouchableOpacity>
@@ -134,7 +135,7 @@ export function OrderLaterAddToSheet({
             <View style={{ borderTopWidth: hairline, borderTopColor: colors.divider }}>
               {suppliers.length === 0 ? (
                 <View style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(16) }}>
-                  <Text style={{ fontSize: ds.fontSize(13), color: colors.textSecondary }}>
+                  <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: colors.textSecondary }}>
                     No suppliers are available.
                   </Text>
                 </View>
@@ -162,7 +163,7 @@ export function OrderLaterAddToSheet({
                     >
                       <Text
                         style={{
-                          fontSize: ds.fontSize(15),
+                          fontSize: ds.fontSize(typeScale.body),
                           fontWeight: selected ? '600' : '500',
                           color: selected ? colors.primary : colors.textPrimary,
                         }}
@@ -181,7 +182,7 @@ export function OrderLaterAddToSheet({
         </View>
 
         {supplierError ? (
-          <Text style={{ fontSize: ds.fontSize(12), marginTop: ds.spacing(8), color: colors.primary, fontWeight: '500' }}>
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(8), color: colors.primary, fontWeight: weight.semibold }}>
             {supplierError}
           </Text>
         ) : null}
@@ -205,7 +206,7 @@ export function OrderLaterAddToSheet({
             }}
             activeOpacity={0.8}
           >
-            <Text style={{ fontSize: ds.fontSize(17), fontWeight: '600', color: colors.textPrimary }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.semibold, color: colors.textPrimary }}>
               Cancel
             </Text>
           </TouchableOpacity>
@@ -225,12 +226,12 @@ export function OrderLaterAddToSheet({
             {isSubmitting ? (
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <ActivityIndicator color={colors.white} size="small" />
-                <Text style={{ fontSize: ds.fontSize(17), marginLeft: ds.spacing(8), fontWeight: '600', color: colors.white }}>
+                <Text style={{ fontSize: ds.fontSize(typeScale.title), marginLeft: ds.spacing(8), fontWeight: weight.semibold, color: colors.white }}>
                   Adding...
                 </Text>
               </View>
             ) : (
-              <Text style={{ fontSize: ds.fontSize(17), fontWeight: '600', color: colors.white }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.semibold, color: colors.white }}>
                 Add
               </Text>
             )}

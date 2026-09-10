@@ -21,6 +21,7 @@ import {
   normalizeAlias,
   normalizeAliasKey,
 } from './types';
+import { typeScale, weight } from '@/theme/tokens';
 
 interface AliasesTabProps {
   items: QuickOrderConfigItem[];
@@ -122,8 +123,8 @@ export function AliasesTab({ items, setItems }: AliasesTabProps) {
     <View>
       <Text
         style={{
-          fontSize: ds.fontSize(22),
-          fontWeight: '800',
+          fontSize: ds.fontSize(typeScale.title),
+          fontWeight: weight.bold,
           color: glassColors.textPrimary,
           marginBottom: ds.spacing(12),
         }}
@@ -156,7 +157,7 @@ export function AliasesTab({ items, setItems }: AliasesTabProps) {
             flex: 1,
             marginLeft: ds.spacing(8),
             color: glassColors.textPrimary,
-            fontSize: ds.fontSize(15),
+            fontSize: ds.fontSize(typeScale.body),
           }}
         />
       </View>
@@ -186,7 +187,7 @@ export function AliasesTab({ items, setItems }: AliasesTabProps) {
           <Text
             style={{
               color: glassColors.textSecondary,
-              fontSize: ds.fontSize(14),
+              fontSize: ds.fontSize(typeScale.body),
               textAlign: 'center',
               paddingVertical: ds.spacing(40),
             }}
@@ -238,8 +239,8 @@ function AliasItemCard({
     >
       <Text
         style={{
-          fontSize: ds.fontSize(17),
-          fontWeight: '700',
+          fontSize: ds.fontSize(typeScale.title),
+          fontWeight: weight.bold,
           color: glassColors.textPrimary,
           marginBottom: ds.spacing(10),
         }}
@@ -253,7 +254,7 @@ function AliasItemCard({
             style={{
               color: glassColors.textSecondary,
               fontStyle: 'italic',
-              fontSize: ds.fontSize(14),
+              fontSize: ds.fontSize(typeScale.body),
             }}
           >
             No aliases yet
@@ -276,8 +277,8 @@ function AliasItemCard({
               <Text
                 style={{
                   color: glassColors.textPrimary,
-                  fontSize: ds.fontSize(13),
-                  fontWeight: '600',
+                  fontSize: ds.fontSize(typeScale.secondary),
+                  fontWeight: weight.semibold,
                 }}
               >
                 {alias}
@@ -312,8 +313,8 @@ function AliasItemCard({
             <Text
               style={{
                 color: colors.primary,
-                fontSize: ds.fontSize(13),
-                fontWeight: '700',
+                fontSize: ds.fontSize(typeScale.secondary),
+                fontWeight: weight.bold,
               }}
             >
               Add
@@ -347,7 +348,7 @@ function AliasItemCard({
               onSubmitEditing={onSubmit}
               style={{
                 color: glassColors.textPrimary,
-                fontSize: ds.fontSize(15),
+                fontSize: ds.fontSize(typeScale.body),
                 padding: 0,
               }}
             />
@@ -371,8 +372,8 @@ function AliasItemCard({
               <Text
                 style={{
                   color: glassColors.textPrimary,
-                  fontWeight: '700',
-                  fontSize: ds.fontSize(14),
+                  fontWeight: weight.bold,
+                  fontSize: ds.fontSize(typeScale.body),
                 }}
               >
                 Cancel
@@ -394,8 +395,8 @@ function AliasItemCard({
               <Text
                 style={{
                   color: colors.textOnPrimary,
-                  fontWeight: '700',
-                  fontSize: ds.fontSize(14),
+                  fontWeight: weight.bold,
+                  fontSize: ds.fontSize(typeScale.body),
                 }}
               >
                 {saving ? 'Saving…' : 'Save alias'}

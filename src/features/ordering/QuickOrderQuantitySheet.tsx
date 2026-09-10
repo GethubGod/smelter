@@ -43,6 +43,7 @@ import {
 import { PreviousQuantitySuggestionCard } from "./PreviousQuantitySuggestionCard";
 import { QuantityStepper } from "./QuantityStepper";
 import { UnitSegmentedControl } from "./UnitSegmentedControl";
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 /** One entry in the quantity-fix walk-through. */
 export type QuickOrderQuantitySheetItem = {
@@ -326,8 +327,8 @@ function SheetBody({
           styles.sheet,
           {
             maxHeight: sheetMaxHeight,
-            borderTopLeftRadius: 34,
-            borderTopRightRadius: 34,
+            borderTopLeftRadius: radius.sheet,
+            borderTopRightRadius: radius.sheet,
             paddingHorizontal: sheetHorizontalPadding,
             paddingTop: 10,
             paddingBottom: safeBottom,
@@ -349,19 +350,19 @@ function SheetBody({
             ]}
           >
             <Text
-              style={[styles.progressLabel, { fontSize: 14 }]}
+              style={[styles.progressLabel, { fontSize: typeScale.body }]}
               numberOfLines={1}
               allowFontScaling={false}
             >
               {`Item ${index + 1} of ${queue.length}`}
             </Text>
             <View
-              style={[styles.progressTrack, { borderRadius: ds.radius(999) }]}
+              style={[styles.progressTrack, { borderRadius: radius.pill }]}
             >
               <View
                 style={[
                   styles.progressFill,
-                  { flex: progressRatio, borderRadius: ds.radius(999) },
+                  { flex: progressRatio, borderRadius: radius.pill },
                 ]}
               />
               <View style={{ flex: 1 - progressRatio }} />
@@ -376,7 +377,7 @@ function SheetBody({
                 {
                   width: ds.spacing(36),
                   height: ds.spacing(36),
-                  borderRadius: ds.radius(18),
+                  borderRadius: radius.card,
                 },
               ]}
             >
@@ -459,7 +460,7 @@ function SheetBody({
                 {
                   width: 42,
                   height: 42,
-                  borderRadius: 21,
+                  borderRadius: radius.sheet,
                 },
               ]}
             >
@@ -531,7 +532,7 @@ function SheetBody({
               style={[
                 styles.secondaryButton,
                 {
-                  borderRadius: ds.radius(999),
+                  borderRadius: radius.pill,
                   minHeight: ds.spacing(56),
                   paddingHorizontal: ds.spacing(20),
                   opacity: isSaving ? 0.6 : 1,
@@ -539,7 +540,7 @@ function SheetBody({
               ]}
             >
               <Text
-                style={[styles.secondaryText, { fontSize: ds.fontSize(16) }]}
+                style={[styles.secondaryText, { fontSize: ds.fontSize(typeScale.body) }]}
                 allowFontScaling={false}
               >
                 Skip
@@ -556,7 +557,7 @@ function SheetBody({
               styles.primaryButton,
               isMulti ? styles.primaryButtonMulti : styles.primaryButtonSingle,
               {
-                borderRadius: 999,
+                borderRadius: radius.pill,
                 minHeight: 58,
                 paddingHorizontal: 20,
                 backgroundColor: quickOrderAccent,
@@ -628,8 +629,8 @@ const styles = StyleSheet.create({
   grabber: {
     width: 44,
     height: 5,
-    borderRadius: 2.5,
-    backgroundColor: "#C9C6C0",
+    borderRadius: radius.pill,
+    backgroundColor: color.disabled,
   },
   progressRow: {
     flexDirection: "row",
@@ -645,7 +646,7 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     color: colors.textSecondary,
-    fontWeight: "800",
+    fontWeight: weight.bold,
     letterSpacing: 0,
     flexShrink: 0,
   },
@@ -667,7 +668,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     backgroundColor: colors.white,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.glassBorder,
@@ -679,8 +680,8 @@ const styles = StyleSheet.create({
   },
   removeButtonText: {
     color: colors.statusRed,
-    fontSize: 14,
-    fontWeight: "800",
+    fontSize: typeScale.body,
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   closeButton: {
@@ -696,8 +697,8 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.textPrimary,
-    fontWeight: "800",
-    fontSize: 28,
+    fontWeight: weight.bold,
+    fontSize: typeScale.display,
     lineHeight: 34,
     letterSpacing: 0,
     flexShrink: 1,
@@ -710,19 +711,19 @@ const styles = StyleSheet.create({
   issueDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: radius.pill,
     backgroundColor: quickOrderAccent,
   },
   issueText: {
     color: quickOrderAccent,
-    fontSize: 17,
-    fontWeight: "800",
+    fontSize: typeScale.title,
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   errorText: {
     color: colors.statusRed,
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: typeScale.secondary,
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   footer: {
@@ -740,7 +741,7 @@ const styles = StyleSheet.create({
   },
   secondaryText: {
     color: colors.textPrimary,
-    fontWeight: "800",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   primaryButton: {
@@ -761,8 +762,8 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   primaryText: {
-    fontSize: 18,
-    fontWeight: "800",
+    fontSize: typeScale.title,
+    fontWeight: weight.bold,
     letterSpacing: 0,
     flexShrink: 1,
   },

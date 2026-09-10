@@ -15,6 +15,7 @@ import { colors, radii ,
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { BottomSheetShell } from './BottomSheetShell';
 import { GlassSurface } from './ui/GlassSurface';
+import { typeScale, weight } from '@/theme/tokens';
 
 export interface ItemActionSheetItem {
   id: string;
@@ -72,8 +73,8 @@ export function ItemActionSheet({
           <View style={{ flex: 1, paddingRight: ds.spacing(12) }}>
             <Text
               style={{
-                fontSize: ds.fontSize(20),
-                fontWeight: '700',
+                fontSize: ds.fontSize(typeScale.title),
+                fontWeight: weight.bold,
                 color: glassColors.textPrimary,
                 letterSpacing: -0.3,
               }}
@@ -111,8 +112,8 @@ export function ItemActionSheet({
                   <View style={{ flex: 1, marginLeft: ds.spacing(12) }}>
                     <Text
                       style={{
-                        fontSize: ds.fontSize(11),
-                        fontWeight: '700',
+                        fontSize: ds.fontSize(typeScale.caption),
+                        fontWeight: weight.bold,
                         letterSpacing: 0.7,
                         textTransform: 'uppercase',
                         color: glassColors.textSecondary,
@@ -123,9 +124,9 @@ export function ItemActionSheet({
                     <Text
                       style={{
                         marginTop: ds.spacing(4),
-                        fontSize: ds.fontSize(14),
+                        fontSize: ds.fontSize(typeScale.body),
                         color: glassColors.textPrimary,
-                        lineHeight: ds.fontSize(19),
+                        lineHeight: ds.fontSize(typeScale.title),
                       }}
                     >
                       {subtitle}
@@ -172,10 +173,10 @@ export function ItemActionSheet({
                 {section.title ? (
                   <Text
                     style={{
-                      fontSize: ds.fontSize(11),
+                      fontSize: ds.fontSize(typeScale.caption),
                       marginBottom: ds.spacing(8),
                       marginLeft: ds.spacing(6),
-                      fontWeight: '700',
+                      fontWeight: weight.bold,
                       letterSpacing: 0.8,
                       textTransform: 'uppercase',
                       color: glassColors.textSecondary,
@@ -247,8 +248,8 @@ export function ItemActionSheet({
                           <View style={{ flex: 1, marginLeft: ds.spacing(12), paddingTop: ds.spacing(2) }}>
                             <Text
                               style={{
-                                fontSize: ds.fontSize(15),
-                                fontWeight: '600',
+                                fontSize: ds.fontSize(typeScale.body),
+                                fontWeight: weight.semibold,
                                 color: labelColor,
                               }}
                             >
@@ -257,10 +258,10 @@ export function ItemActionSheet({
                             {item.detail ? (
                               <Text
                                 style={{
-                                  fontSize: ds.fontSize(13),
+                                  fontSize: ds.fontSize(typeScale.secondary),
                                   marginTop: ds.spacing(4),
                                   color: glassColors.textSecondary,
-                                  lineHeight: ds.fontSize(18),
+                                  lineHeight: ds.fontSize(typeScale.title),
                                 }}
                               >
                                 {item.detail}
@@ -295,7 +296,7 @@ export function ItemActionSheet({
           >
             <Text
               style={{
-                fontSize: ds.fontSize(14),
+                fontSize: ds.fontSize(typeScale.body),
                 color: colors.textSecondary,
                 textAlign: 'center',
               }}
@@ -325,8 +326,8 @@ export function ItemActionSheet({
             >
               <Text
                 style={{
-                  fontSize: ds.fontSize(15),
-                  fontWeight: '600',
+                  fontSize: ds.fontSize(typeScale.body),
+                  fontWeight: weight.semibold,
                   color: colors.textPrimary,
                   textAlign: 'center',
                 }}

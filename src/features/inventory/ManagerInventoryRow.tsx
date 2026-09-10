@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/constants';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import type { InventoryWithStock } from '@/lib/api/stock';
+import { color, radius, typeScale } from '@/theme/tokens';
 
 export type ManagerInventoryStatus = 'critical' | 'low' | 'good';
 
@@ -99,8 +100,8 @@ function ManagerInventoryRowInner({
     return (
       <TouchableOpacity
         activeOpacity={0.9}
-        className="bg-white border border-gray-100 rounded-2xl overflow-hidden"
-        style={{ marginBottom: ds.spacing(8) }}
+        className="border overflow-hidden"
+        style={{ backgroundColor: color.card, borderColor: color.hairline, borderRadius: radius.card, marginBottom: ds.spacing(8) }}
         onPress={handlePress}
         onLongPress={handleLongPress}
       >
@@ -119,30 +120,28 @@ function ManagerInventoryRowInner({
               style={{ marginRight: ds.spacing(8) }}
             />
           ) : null}
-          <Text style={{ fontSize: ds.fontSize(18), marginRight: ds.spacing(8) }}>
+          <Text style={{ fontSize: ds.fontSize(typeScale.title), marginRight: ds.spacing(8) }}>
             {CATEGORY_EMOJI[item.inventory_item.category] ?? '📦'}
           </Text>
           <View className="flex-1">
             <Text
-              className="font-semibold text-gray-900"
-              style={{ fontSize: ds.fontSize(14) }}
+              className="font-semibold"
+              style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}
               numberOfLines={1}
             >
               {item.inventory_item.name}
             </Text>
-            <Text className="text-gray-500" style={{ fontSize: ds.fontSize(12) }}>
+            <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>
               {item.current_quantity} / {item.max_quantity} {item.unit_type}
             </Text>
           </View>
           <View className="flex-row items-center">
             <View
-              className="rounded-full"
-              style={{
-                width: ds.spacing(10),
+
+              style={{ borderRadius: radius.pill, width: ds.spacing(10),
                 height: ds.spacing(10),
                 backgroundColor: statusColor,
-                marginRight: ds.spacing(8),
-              }}
+                marginRight: ds.spacing(8) }}
             />
             {item.status === 'critical' && reorderQty > 0 && !isBulkMode ? (
               <TouchableOpacity
@@ -175,16 +174,14 @@ function ManagerInventoryRowInner({
       onLongPress={handleLongPress}
     >
       <View
-        className="bg-white rounded-2xl border border-gray-100"
-        style={{
-          paddingHorizontal: ds.spacing(16),
+        className="border"
+        style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline, paddingHorizontal: ds.spacing(16),
           paddingVertical: ds.spacing(14),
           shadowColor: colors.background,
           shadowOffset: { width: 0, height: 1 },
           shadowOpacity: 0.05,
           shadowRadius: 2,
-          elevation: 1,
-        }}
+          elevation: 1 }}
       >
         <View className="flex-row items-start justify-between">
           <View className="flex-row items-center flex-1" style={{ paddingRight: ds.spacing(8) }}>
@@ -196,50 +193,48 @@ function ManagerInventoryRowInner({
                 style={{ marginRight: ds.spacing(8) }}
               />
             ) : null}
-            <Text style={{ fontSize: ds.fontSize(18), marginRight: ds.spacing(8) }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.title), marginRight: ds.spacing(8) }}>
               {CATEGORY_EMOJI[item.inventory_item.category] ?? '📦'}
             </Text>
             <Text
-              className="font-semibold text-gray-900"
-              style={{ fontSize: ds.fontSize(15) }}
+              className="font-semibold"
+              style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}
               numberOfLines={1}
             >
               {item.inventory_item.name}
             </Text>
           </View>
           <View
-            className="rounded-full"
-            style={{
-              width: ds.spacing(10),
+
+            style={{ borderRadius: radius.pill, width: ds.spacing(10),
               height: ds.spacing(10),
               backgroundColor: statusColor,
-              marginTop: ds.spacing(4),
-            }}
+              marginTop: ds.spacing(4) }}
           />
         </View>
 
         <Text
-          className="text-gray-500"
-          style={{ fontSize: ds.fontSize(12), marginTop: ds.spacing(4) }}
+
+          style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(4) }}
         >
           {item.areaLabel} • {item.location.name}
         </Text>
 
         <View style={{ marginTop: ds.spacing(12) }}>
           <View
-            className="rounded-full bg-gray-200 overflow-hidden"
-            style={{ height: ds.spacing(6) }}
+            className="overflow-hidden"
+            style={{ borderRadius: radius.pill, backgroundColor: color.well, height: ds.spacing(6) }}
           >
             <View
-              className="h-full rounded-full"
-              style={{ width: `${Math.round(item.fillPercent)}%`, backgroundColor: statusColor }}
+              className="h-full"
+              style={{ borderRadius: radius.pill, width: `${Math.round(item.fillPercent)}%`, backgroundColor: statusColor }}
             />
           </View>
           <View className="flex-row justify-between" style={{ marginTop: ds.spacing(6) }}>
-            <Text className="text-gray-600" style={{ fontSize: ds.fontSize(12) }}>
+            <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>
               {item.current_quantity} {item.unit_type}
             </Text>
-            <Text className="text-gray-500" style={{ fontSize: ds.fontSize(12) }}>
+            <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>
               Min {item.min_quantity} • Max {item.max_quantity}
             </Text>
           </View>
@@ -249,7 +244,7 @@ function ManagerInventoryRowInner({
           className="flex-row items-center justify-between"
           style={{ marginTop: ds.spacing(10) }}
         >
-          <Text className="text-gray-400" style={{ fontSize: ds.fontSize(11) }}>
+          <Text style={{ color: color.ink3, fontSize: ds.fontSize(typeScale.caption) }}>
             {relativeTime === 'Never updated' ? relativeTime : `Updated ${relativeTime}`}
           </Text>
           {item.status === 'critical' && reorderQty > 0 && !isBulkMode ? (
@@ -265,7 +260,7 @@ function ManagerInventoryRowInner({
             >
               <Text
                 className={`font-semibold ${added ? 'text-green-600' : 'text-orange-600'}`}
-                style={{ fontSize: ds.fontSize(12) }}
+                style={{ fontSize: ds.fontSize(typeScale.secondary) }}
               >
                 {added ? '✓ Added' : `Reorder ${reorderQty}`}
               </Text>

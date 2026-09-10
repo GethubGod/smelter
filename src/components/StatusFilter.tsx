@@ -2,6 +2,7 @@ import { ScrollView, TouchableOpacity, Text } from 'react-native';
 import { OrderStatus } from '@/types';
 import { statusColors, ORDER_STATUS_LABELS } from '@/constants';
 import { glassColors, glassHairlineWidth, glassRadii } from '@/theme/design';
+import { weight } from '@/theme/tokens';
 
 interface StatusFilterProps {
   statuses: (OrderStatus | null)[];
@@ -44,7 +45,7 @@ export function StatusFilter({
             >
               <Text
                 style={{
-                  fontWeight: '500',
+                  fontWeight: weight.semibold,
                   color: isSelected ? glassColors.textOnPrimary : glassColors.textPrimary,
                 }}
               >
@@ -69,7 +70,7 @@ export function StatusFilter({
             <Text
               style={{
                 color: isSelected ? glassColors.textOnPrimary : colors?.text,
-                fontWeight: '500',
+                fontWeight: weight.semibold,
               }}
             >
               {ORDER_STATUS_LABELS[status]}

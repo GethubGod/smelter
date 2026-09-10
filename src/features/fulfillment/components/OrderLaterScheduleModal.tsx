@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, hairline, radii } from '@/theme/design';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { BottomSheetShell } from '@/components/BottomSheetShell';
+import { typeScale, weight } from '@/theme/tokens';
 
 type SchedulePreset = 'later_today' | 'tomorrow' | 'pick_datetime';
 type PickerMode = 'later_today_time' | 'tomorrow_time' | 'custom_date' | 'custom_time' | null;
@@ -224,11 +225,11 @@ export function OrderLaterScheduleModal({
             borderBottomColor: colors.divider,
           }}
         >
-          <Text style={{ fontSize: ds.fontSize(14), fontWeight: '600', color: colors.textPrimary }}>
+          <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: colors.textPrimary }}>
             {mode === 'date' ? 'Select date' : 'Select time'}
           </Text>
           <TouchableOpacity onPress={() => setPickerMode(null)}>
-            <Text style={{ fontSize: ds.fontSize(13), fontWeight: '600', color: colors.primary }}>Done</Text>
+            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: colors.primary }}>Done</Text>
           </TouchableOpacity>
         </View>
         <DateTimePicker
@@ -274,8 +275,8 @@ export function OrderLaterScheduleModal({
           <View style={{ flex: 1, marginLeft: ds.spacing(10) }}>
             <Text
               style={{
-                fontSize: ds.fontSize(16),
-                fontWeight: '600',
+                fontSize: ds.fontSize(typeScale.body),
+                fontWeight: weight.semibold,
                 color: selected ? colors.primary : colors.textPrimary,
               }}
             >
@@ -283,7 +284,7 @@ export function OrderLaterScheduleModal({
             </Text>
             <Text
               style={{
-                fontSize: ds.fontSize(13),
+                fontSize: ds.fontSize(typeScale.secondary),
                 marginTop: ds.spacing(2),
                 color: selected ? colors.primary : colors.textSecondary,
               }}
@@ -304,10 +305,10 @@ export function OrderLaterScheduleModal({
       bottomPadding={Math.max(ds.spacing(10), insets.bottom + ds.spacing(8))}
     >
       <View style={{ paddingHorizontal: ds.spacing(6), paddingBottom: ds.spacing(10) }}>
-        <Text style={{ fontSize: ds.fontSize(18), fontWeight: '700', color: colors.textPrimary }}>
+        <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.bold, color: colors.textPrimary }}>
           {title}
         </Text>
-        <Text style={{ fontSize: ds.fontSize(13), marginTop: ds.spacing(4), color: colors.textSecondary }}>
+        <Text style={{ fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(4), color: colors.textSecondary }}>
           {subtitle}
         </Text>
       </View>
@@ -319,10 +320,10 @@ export function OrderLaterScheduleModal({
       >
         <Text
           style={{
-            fontSize: ds.fontSize(12),
+            fontSize: ds.fontSize(typeScale.secondary),
             marginBottom: ds.spacing(6),
             marginLeft: ds.spacing(6),
-            fontWeight: '600',
+            fontWeight: weight.semibold,
             letterSpacing: 0.6,
             textTransform: 'uppercase',
             color: colors.textSecondary,
@@ -349,7 +350,7 @@ export function OrderLaterScheduleModal({
                 backgroundColor: colors.white,
               }}
             >
-              <Text style={{ fontSize: ds.fontSize(13), fontWeight: '600', color: colors.textPrimary }}>Choose time</Text>
+              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: colors.textPrimary }}>Choose time</Text>
             </TouchableOpacity>
           ) : null
         )}
@@ -372,7 +373,7 @@ export function OrderLaterScheduleModal({
                 backgroundColor: colors.white,
               }}
             >
-              <Text style={{ fontSize: ds.fontSize(13), fontWeight: '600', color: colors.textPrimary }}>Choose time</Text>
+              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: colors.textPrimary }}>Choose time</Text>
             </TouchableOpacity>
           ) : null
         )}
@@ -395,7 +396,7 @@ export function OrderLaterScheduleModal({
                   backgroundColor: colors.white,
                 }}
               >
-                <Text style={{ fontSize: ds.fontSize(13), fontWeight: '600', color: colors.textPrimary }}>Pick date</Text>
+                <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: colors.textPrimary }}>Pick date</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setPickerMode('custom_time')}
@@ -408,7 +409,7 @@ export function OrderLaterScheduleModal({
                   backgroundColor: colors.white,
                 }}
               >
-                <Text style={{ fontSize: ds.fontSize(13), fontWeight: '600', color: colors.textPrimary }}>Pick time</Text>
+                <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: colors.textPrimary }}>Pick time</Text>
               </TouchableOpacity>
             </View>
           ) : null
@@ -435,7 +436,7 @@ export function OrderLaterScheduleModal({
             }}
             activeOpacity={0.8}
           >
-            <Text style={{ fontSize: ds.fontSize(17), fontWeight: '600', color: colors.textPrimary }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.semibold, color: colors.textPrimary }}>
               Cancel
             </Text>
           </TouchableOpacity>
@@ -455,12 +456,12 @@ export function OrderLaterScheduleModal({
             {submitting ? (
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <ActivityIndicator color={colors.white} size="small" />
-                <Text style={{ fontSize: ds.fontSize(17), marginLeft: ds.spacing(8), fontWeight: '600', color: colors.white }}>
+                <Text style={{ fontSize: ds.fontSize(typeScale.title), marginLeft: ds.spacing(8), fontWeight: weight.semibold, color: colors.white }}>
                   Saving...
                 </Text>
               </View>
             ) : (
-              <Text style={{ fontSize: ds.fontSize(17), fontWeight: '600', color: colors.white }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.semibold, color: colors.white }}>
                 {confirmLabel}
               </Text>
             )}

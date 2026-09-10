@@ -9,12 +9,13 @@ import {
   glassRadii,
 } from '@/theme/design';
 import { FulfillmentExpandedSupplierItems } from './FulfillmentExpandedSupplierItems';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 const AVATAR_PALETTE = [
-  { background: '#F7E1D7', text: '#B05534' },
-  { background: '#E6EEF6', text: '#446A86' },
-  { background: '#EEE3F5', text: '#795096' },
-  { background: '#E6F1E6', text: '#4A7A58' },
+  { background: color.well, text: color.ink2 },
+  { background: color.well, text: color.ink2 },
+  { background: color.well, text: color.ink2 },
+  { background: color.well, text: color.ink2 },
 ] as const;
 
 export interface FulfillmentSupplierEmployee {
@@ -66,17 +67,17 @@ function AvatarStack({ employees }: { employees: FulfillmentSupplierEmployee[] }
             style={{
               width: 20,
               height: 20,
-              borderRadius: 10,
+              borderRadius: radius.control,
               backgroundColor: palette.background,
               borderWidth: 1.5,
-              borderColor: '#FFFFFF',
+              borderColor: color.card,
               alignItems: 'center',
               justifyContent: 'center',
               marginLeft: index === 0 ? 0 : -5,
               zIndex: visibleEmployees.length - index,
             }}
           >
-            <Text style={{ color: palette.text, fontSize: ds.fontSize(8), fontWeight: '700' }}>
+            <Text style={{ color: palette.text, fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold }}>
               {employee.initials}
             </Text>
           </View>
@@ -88,16 +89,16 @@ function AvatarStack({ employees }: { employees: FulfillmentSupplierEmployee[] }
           style={{
             width: 20,
             height: 20,
-            borderRadius: 10,
-            backgroundColor: '#F2ECE4',
+            borderRadius: radius.control,
+            backgroundColor: color.well,
             borderWidth: 1.5,
-            borderColor: '#FFFFFF',
+            borderColor: color.card,
             alignItems: 'center',
             justifyContent: 'center',
             marginLeft: -5,
           }}
         >
-          <Text style={{ color: '#7B6B5D', fontSize: ds.fontSize(8), fontWeight: '700' }}>
+          <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold }}>
             +{employees.length - 3}
           </Text>
         </View>
@@ -213,8 +214,8 @@ export function FulfillmentSupplierCard({
                 numberOfLines={1}
                 style={{
                   color: glassColors.textPrimary,
-                  fontSize: ds.fontSize(17),
-                  fontWeight: '700',
+                  fontSize: ds.fontSize(typeScale.title),
+                  fontWeight: weight.bold,
                   flexShrink: 1,
                 }}
               >
@@ -226,7 +227,7 @@ export function FulfillmentSupplierCard({
                     marginLeft: ds.spacing(8),
                     paddingHorizontal: ds.spacing(8),
                     paddingVertical: 3,
-                    borderRadius: 999,
+                    borderRadius: radius.pill,
                     backgroundColor: glassColors.warningSoft,
                     borderWidth: glassHairlineWidth,
                     borderColor: glassColors.accentBorder,
@@ -235,8 +236,8 @@ export function FulfillmentSupplierCard({
                   <Text
                     style={{
                       color: glassColors.warningText,
-                      fontSize: ds.fontSize(10),
-                      fontWeight: '700',
+                      fontSize: ds.fontSize(typeScale.caption),
+                      fontWeight: weight.bold,
                     }}
                   >
                     {statusLabel}
@@ -258,8 +259,8 @@ export function FulfillmentSupplierCard({
                 numberOfLines={1}
                 style={{
                   color: glassColors.textSecondary,
-                  fontSize: ds.fontSize(12),
-                  fontWeight: '500',
+                  fontSize: ds.fontSize(typeScale.secondary),
+                  fontWeight: weight.semibold,
                   flex: 1,
                 }}
               >
@@ -270,8 +271,8 @@ export function FulfillmentSupplierCard({
             <Text
               style={{
                 color: glassColors.textSecondary,
-                fontSize: ds.fontSize(12),
-                fontWeight: '600',
+                fontSize: ds.fontSize(typeScale.secondary),
+                fontWeight: weight.semibold,
                 marginTop: ds.spacing(12),
                 marginLeft: 22,
               }}
@@ -306,8 +307,8 @@ export function FulfillmentSupplierCard({
               <Text
                 style={{
                   color: glassColors.textOnPrimary,
-                  fontSize: ds.fontSize(14),
-                  fontWeight: '700',
+                  fontSize: ds.fontSize(typeScale.body),
+                  fontWeight: weight.bold,
                 }}
               >
                 Order

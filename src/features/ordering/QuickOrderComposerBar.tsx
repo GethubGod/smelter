@@ -26,6 +26,7 @@ import { colors, grayScale, quickOrderAccent } from '@/theme/design';
 import { isMessageSubmittable, type ComposerMode } from './quickOrderComposer';
 import { ComposerSuggestionPills } from './ComposerSuggestionPills';
 import { BAR_COUNT, RollingSpectrogram } from './RollingSpectrogram';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 type QuickOrderComposerBarProps = {
   onSubmit: (text: string) => void;
@@ -374,7 +375,7 @@ function QuickOrderComposerBarImpl({
         // The TextInput auto-grows naturally up to this wrapper cap. Once the
         // content is taller than 20 lines, native multiline scrolling takes over.
         inputWrapper: {
-          borderRadius: ds.radius(28),
+          borderRadius: radius.sheet,
           paddingHorizontal: ds.spacing(14),
           paddingTop: ds.spacing(INPUT_WRAPPER_TOP_PADDING),
           paddingBottom: ds.spacing(CONTROL_EDGE_INSET),
@@ -386,7 +387,7 @@ function QuickOrderComposerBarImpl({
           maxHeight: MAX_INPUT_HEIGHT,
         },
         input: {
-          fontSize: 18,
+          fontSize: typeScale.title,
           minHeight: MIN_TEXT_INPUT_HEIGHT,
           maxHeight: MAX_TEXT_INPUT_HEIGHT,
           paddingLeft: ds.spacing(4),
@@ -512,7 +513,7 @@ function QuickOrderComposerBarImpl({
               style={[
                 styles.modeSelector,
                 {
-                  borderRadius: ds.radius(999),
+                  borderRadius: radius.pill,
                   width: ds.spacing(MODE_SELECTOR_WIDTH),
                   height: ds.spacing(MODE_SELECTOR_HEIGHT),
                   padding: ds.spacing(MODE_SELECTOR_PADDING),
@@ -537,7 +538,7 @@ function QuickOrderComposerBarImpl({
                         width: ds.spacing(
                           modeOption === 'order' ? MODE_THUMB_WIDTH : MODE_INVENTORY_WIDTH,
                         ),
-                        borderRadius: ds.radius(999),
+                        borderRadius: radius.pill,
                         backgroundColor: selected ? quickOrderAccent : 'transparent',
                         opacity: isSending ? 0.55 : 1,
                       },
@@ -582,7 +583,7 @@ function QuickOrderComposerBarImpl({
                     styles.voiceButton,
                     dynamicStyles.toolButton,
                     {
-                      backgroundColor: isRecording ? '#F5F1E8' : grayScale[100],
+                      backgroundColor: isRecording ? color.well : grayScale[100],
                       opacity: isSending ? 0.5 : pressed ? 0.85 : 1,
                     },
                   ]}
@@ -654,12 +655,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 7,
     minHeight: 42,
-    borderRadius: 18,
+    borderRadius: radius.card,
     backgroundColor: 'rgba(255,255,255,0.92)',
   },
   voicePreviewFailed: {
     borderWidth: 1,
-    borderColor: '#FED7AA',
+    borderColor: color.warning,
   },
   voicePreviewLabel: {
     minWidth: 132,
@@ -669,15 +670,15 @@ const styles = StyleSheet.create({
   },
   voicePreviewText: {
     color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: typeScale.secondary,
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   voiceRetryButton: {
     minWidth: 56,
     height: 30,
     paddingHorizontal: 10,
-    borderRadius: 15,
+    borderRadius: radius.card,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -686,14 +687,14 @@ const styles = StyleSheet.create({
   },
   voiceRetryText: {
     color: quickOrderAccent,
-    fontSize: 12,
-    fontWeight: '800',
+    fontSize: typeScale.secondary,
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   voiceMiniButton: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: radius.card,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: grayScale[100],
@@ -718,7 +719,7 @@ const styles = StyleSheet.create({
     lineHeight: LINE_HEIGHT,
     padding: 0,
     margin: 0,
-    fontWeight: '500',
+    fontWeight: weight.semibold,
     zIndex: 0,
   },
   sendButtonPressable: {
@@ -742,8 +743,8 @@ const styles = StyleSheet.create({
   voiceStopSquare: {
     width: 11,
     height: 11,
-    borderRadius: 2,
-    backgroundColor: '#1A1A1A',
+    borderRadius: radius.pill,
+    backgroundColor: color.ink,
   },
   voiceCapture: {
     width: '100%',
@@ -754,8 +755,8 @@ const styles = StyleSheet.create({
     right: 4,
     bottom: INPUT_BOTTOM_RESERVE - 4,
     color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: '800',
+    fontSize: typeScale.secondary,
+    fontWeight: weight.bold,
     letterSpacing: 0,
     textAlign: 'center',
   },
@@ -769,7 +770,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flexShrink: 0,
-    backgroundColor: '#F1EDE6',
+    backgroundColor: color.well,
     overflow: 'hidden',
     ...(Platform.OS === 'android' ? { elevation: 0, shadowOpacity: 0 } : null),
   },
@@ -778,8 +779,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modeSegmentText: {
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: typeScale.body,
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   actionCluster: {

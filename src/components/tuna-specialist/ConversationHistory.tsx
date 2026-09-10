@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { ConversationMessage } from '@/store/tunaSpecialistStore';
 import { colors } from '@/constants';
+import { radius, typeScale, weight } from '@/theme/tokens';
 
 interface ConversationHistoryProps {
   visible: boolean;
@@ -61,7 +62,7 @@ export function ConversationHistory({
             borderBottomColor: colors.divider,
           }}
         >
-          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>
+          <Text style={{ fontSize: typeScale.title, fontWeight: weight.bold, color: colors.text }}>
             Conversation
           </Text>
           <TouchableOpacity
@@ -70,7 +71,7 @@ export function ConversationHistory({
             style={{
               width: 32,
               height: 32,
-              borderRadius: 16,
+              borderRadius: radius.card,
               backgroundColor: colors.gray[100],
               alignItems: 'center',
               justifyContent: 'center',
@@ -92,10 +93,10 @@ export function ConversationHistory({
           {conversation.length === 0 && (
             <View style={{ alignItems: 'center', paddingTop: 60 }}>
               <Ionicons name="chatbubbles-outline" size={48} color={colors.gray[600]} />
-              <Text style={{ color: colors.gray[500], marginTop: 12, fontSize: 15 }}>
+              <Text style={{ color: colors.gray[500], marginTop: 12, fontSize: typeScale.body }}>
                 No conversation yet
               </Text>
-              <Text style={{ color: colors.gray[600], marginTop: 4, fontSize: 13 }}>
+              <Text style={{ color: colors.gray[600], marginTop: 4, fontSize: typeScale.secondary }}>
                 Tap the mic to start ordering
               </Text>
             </View>
@@ -117,7 +118,7 @@ export function ConversationHistory({
                     backgroundColor: isHuman
                       ? colors.successBg
                       : colors.card,
-                    borderRadius: 16,
+                    borderRadius: radius.card,
                     borderTopRightRadius: isHuman ? 4 : 16,
                     borderTopLeftRadius: isHuman ? 16 : 4,
                     paddingHorizontal: 14,
@@ -126,7 +127,7 @@ export function ConversationHistory({
                 >
                   <Text
                     style={{
-                      fontSize: 14,
+                      fontSize: typeScale.body,
                       color: isHuman ? colors.success : colors.text,
                       lineHeight: 20,
                     }}
@@ -151,17 +152,17 @@ export function ConversationHistory({
                             flexDirection: 'row',
                             alignItems: 'center',
                             backgroundColor: colors.primary[50],
-                            borderRadius: 10,
+                            borderRadius: radius.control,
                             paddingHorizontal: 8,
                             paddingVertical: 4,
                           }}
                         >
-                          <Text style={{ fontSize: 12 }}>{item.emoji}</Text>
+                          <Text style={{ fontSize: typeScale.secondary }}>{item.emoji}</Text>
                           <Text
                             style={{
-                              fontSize: 11,
+                              fontSize: typeScale.caption,
                               color: colors.primary[700],
-                              fontWeight: '600',
+                              fontWeight: weight.semibold,
                               marginLeft: 4,
                             }}
                           >
@@ -176,7 +177,7 @@ export function ConversationHistory({
                 {/* Timestamp */}
                 <Text
                   style={{
-                    fontSize: 10,
+                    fontSize: typeScale.caption,
                     color: colors.gray[600],
                     marginTop: 3,
                     marginHorizontal: 4,

@@ -53,6 +53,7 @@ import {
   glassSpacing,
 } from "@/theme/design";
 import type { OrderingMode } from "./types";
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 // Enable LayoutAnimation on Android
 if (
@@ -469,16 +470,16 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
           </Text>
           <View className="flex-1">
             <Text
-              style={{ fontSize: ds.fontSize(15) }}
-              className="font-semibold text-gray-900"
+              style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}
+              className="font-semibold"
               numberOfLines={1}
               ellipsizeMode="tail"
             >
               {item.name}
             </Text>
             <Text
-              style={{ fontSize: ds.fontSize(12) }}
-              className="text-gray-500"
+              style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}
+
             >
               {categoryLabel} • {getInventoryUnitSummary(item)}
             </Text>
@@ -486,11 +487,9 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
           {isFirst && (
             <View className="flex-row items-center">
               <Text
-                style={{
-                  fontSize: ds.fontSize(12),
-                  marginRight: ds.spacing(4),
-                }}
-                className="text-gray-400"
+                style={{ color: color.ink3, fontSize: ds.fontSize(typeScale.secondary),
+                  marginRight: ds.spacing(4) }}
+
               >
                 Enter
               </Text>
@@ -546,7 +545,7 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                   fontSize: ds.buttonFont,
                   marginLeft: ds.spacing(8),
                   color: glassColors.textOnPrimary,
-                  fontWeight: "700",
+                  fontWeight: weight.bold,
                 }}
               >
                 {addButtonText}
@@ -579,10 +578,10 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                 />
                 <Text
                   style={{
-                    fontSize: ds.fontSize(13),
+                    fontSize: ds.fontSize(typeScale.secondary),
                     marginLeft: ds.spacing(8),
                     color: glassColors.textPrimary,
-                    fontWeight: "500",
+                    fontWeight: weight.semibold,
                   }}
                 >
                   {totalCartCount} in cart
@@ -591,10 +590,10 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
               <View className="flex-row items-center">
                 <Text
                   style={{
-                    fontSize: ds.fontSize(14),
+                    fontSize: ds.fontSize(typeScale.body),
                     marginRight: ds.spacing(4),
                     color: glassColors.accent,
-                    fontWeight: "500",
+                    fontWeight: weight.semibold,
                   }}
                 >
                   View
@@ -694,8 +693,8 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                 />
                 <Text
                   style={{
-                    fontSize: ds.fontSize(14),
-                    fontWeight: "600",
+                    fontSize: ds.fontSize(typeScale.body),
+                    fontWeight: weight.semibold,
                     color: glassColors.textPrimary,
                     marginRight: ds.spacing(6),
                     maxWidth: ds.spacing(170),
@@ -748,15 +747,15 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                     justifyContent: "center",
                     backgroundColor: glassColors.accent,
                     borderWidth: 2,
-                    borderColor: '#FFFFFF',
+                    borderColor: color.card,
                     zIndex: 10,
                   }}
                 >
                   <Text
                     style={{
                       color: glassColors.textOnPrimary,
-                      fontSize: ds.fontSize(10),
-                      fontWeight: "700",
+                      fontSize: ds.fontSize(typeScale.caption),
+                      fontWeight: weight.bold,
                     }}
                   >
                     {totalCartCount > 99 ? "99+" : totalCartCount}
@@ -813,7 +812,7 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                     </View>
                     <Text
                       style={{
-                        fontSize: ds.fontSize(13),
+                        fontSize: ds.fontSize(typeScale.secondary),
                         color: isSelected ? glassColors.accent : glassColors.textPrimary,
                         fontWeight: isSelected ? "500" : "400",
                       }}
@@ -825,7 +824,7 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                     {cartCount > 0 && (
                       <Text
                         style={{
-                          fontSize: ds.fontSize(11),
+                          fontSize: ds.fontSize(typeScale.caption),
                           marginRight: ds.spacing(8),
                           color: glassColors.textSecondary,
                         }}
@@ -886,14 +885,14 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                         className="absolute inset-0 flex-row items-center"
                       >
                         <Text
-                          style={{ fontSize: ds.fontSize(14) }}
+                          style={{ fontSize: ds.fontSize(typeScale.body) }}
                           className="text-transparent"
                         >
                           {searchQuery}
                         </Text>
                         <Text
-                          style={{ fontSize: ds.fontSize(14) }}
-                          className="text-gray-300"
+                          style={{ color: color.ink3, fontSize: ds.fontSize(typeScale.body) }}
+
                         >
                           {ghostText}
                         </Text>
@@ -908,7 +907,7 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                       placeholderTextColor={glassColors.textSecondary}
                       style={{
                         height: ds.buttonH,
-                        fontSize: ds.fontSize(14),
+                        fontSize: ds.fontSize(typeScale.body),
                         color: glassColors.textPrimary,
                       }}
                       autoCapitalize="none"
@@ -973,7 +972,7 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                     position: "absolute",
                     left: 0,
                     right: 0,
-                    borderRadius: ds.radius(12),
+                    borderRadius: radius.control,
                   }}
                 >
                   <FlashList
@@ -982,7 +981,7 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                     renderItem={renderSuggestionItem}
                     keyboardShouldPersistTaps="always"
                     ItemSeparatorComponent={() => (
-                      <View className="h-px bg-gray-100" />
+                      <View className="h-px" style={{ backgroundColor: color.well }} />
                     )}
                   />
                 </GlassSurface>
@@ -1002,17 +1001,17 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                 />
                 <Text
                   style={{
-                    fontSize: ds.fontSize(16),
+                    fontSize: ds.fontSize(typeScale.body),
                     marginTop: ds.spacing(12),
                     color: glassColors.textPrimary,
-                    fontWeight: "500",
+                    fontWeight: weight.semibold,
                   }}
                 >
                   Start typing to search
                 </Text>
                 <Text
                   style={{
-                    fontSize: ds.fontSize(14),
+                    fontSize: ds.fontSize(typeScale.body),
                     marginTop: ds.spacing(4),
                     color: glassColors.textSecondary,
                   }}
@@ -1036,37 +1035,31 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                     color={colors.gray[300]}
                   />
                   <Text
-                    style={{
-                      fontSize: ds.fontSize(16),
-                      marginTop: ds.spacing(12),
-                    }}
-                    className="font-medium text-gray-500"
+                    style={{ fontWeight: weight.semibold, color: color.ink2, fontSize: ds.fontSize(typeScale.body),
+                      marginTop: ds.spacing(12) }}
+
                   >
                     No items found
                   </Text>
                   <Text
-                    style={{
-                      fontSize: ds.fontSize(14),
-                      marginTop: ds.spacing(4),
-                    }}
-                    className="text-gray-400"
+                    style={{ color: color.ink3, fontSize: ds.fontSize(typeScale.body),
+                      marginTop: ds.spacing(4) }}
+
                   >
                     Try a different search term
                   </Text>
                   <TouchableOpacity
                     onPress={handleOpenQuickCreate}
-                    className="bg-primary-500 rounded-full"
-                    style={{
-                      minHeight: ds.buttonH,
+
+                    style={{ backgroundColor: color.accent, borderRadius: radius.pill, minHeight: ds.buttonH,
                       paddingHorizontal: ds.buttonPadH,
                       justifyContent: "center",
-                      marginTop: ds.spacing(16),
-                    }}
+                      marginTop: ds.spacing(16) }}
                     activeOpacity={0.8}
                   >
                     <Text
-                      style={{ fontSize: ds.buttonFont }}
-                      className="text-white font-semibold"
+                      style={{ color: color.onAccent, fontSize: ds.buttonFont }}
+                      className="font-semibold"
                     >
                       Add {searchQuery.trim()} to Inventory?
                     </Text>
@@ -1089,8 +1082,8 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                 color={colors.gray[600]}
               />
               <Text
-                style={{ fontSize: ds.fontSize(14), marginLeft: ds.spacing(4) }}
-                className="text-gray-600"
+                style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.body), marginLeft: ds.spacing(4) }}
+
               >
                 Back
               </Text>
@@ -1099,8 +1092,8 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
             {/* Compact Item Card */}
             {selectedItem && (
               <View
-                className="bg-white shadow-sm border border-gray-100"
-                style={{ borderRadius: ds.radius(12), padding: ds.cardPad }}
+                className="shadow-sm border"
+                style={{ backgroundColor: color.card, borderColor: color.hairline, borderRadius: radius.control, padding: ds.cardPad }}
               >
                 {/* Item Info - Compact */}
                 <View
@@ -1117,16 +1110,16 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                   </Text>
                   <View className="flex-1">
                     <Text
-                      style={{ fontSize: ds.fontSize(18) }}
-                      className="font-semibold text-gray-900"
+                      style={{ color: color.ink, fontSize: ds.fontSize(typeScale.title) }}
+                      className="font-semibold"
                       numberOfLines={1}
                       ellipsizeMode="tail"
                     >
                       {selectedItem.name}
                     </Text>
                   <Text
-                    style={{ fontSize: ds.fontSize(12) }}
-                    className="text-gray-500"
+                    style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}
+
                   >
                       {getInventoryUnitSummary(selectedItem)}
                   </Text>
@@ -1149,7 +1142,7 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                     }}
                   >
                     <Text
-                      style={{ fontSize: ds.fontSize(12) }}
+                      style={{ fontSize: ds.fontSize(typeScale.secondary) }}
                       className={`font-semibold ${
                         inputMode === "quantity"
                           ? "text-white"
@@ -1171,7 +1164,7 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                     }}
                   >
                     <Text
-                      style={{ fontSize: ds.fontSize(12) }}
+                      style={{ fontSize: ds.fontSize(typeScale.secondary) }}
                       className={`font-semibold ${
                         inputMode === "remaining"
                           ? "text-white"
@@ -1204,11 +1197,9 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                         }
                         quantityInputRef.current?.focus();
                       }}
-                      className="bg-gray-100 rounded-lg items-center justify-center"
-                      style={{
-                        width: Math.max(44, ds.icon(44)),
-                        height: Math.max(44, ds.icon(44)),
-                      }}
+                      className="items-center justify-center"
+                      style={{ backgroundColor: color.well, borderRadius: radius.control, width: Math.max(44, ds.icon(44)),
+                        height: Math.max(44, ds.icon(44)) }}
                     >
                       <Ionicons
                         name="remove"
@@ -1228,13 +1219,11 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                           : handleRemainingInputChange
                       }
                       keyboardType="number-pad"
-                      className="text-center font-bold text-gray-900"
-                      style={{
-                        width: ds.spacing(72),
+                      className="text-center font-bold"
+                      style={{ color: color.ink, width: ds.spacing(72),
                         height: Math.max(44, ds.buttonH),
-                        fontSize: ds.fontSize(24),
-                        marginHorizontal: ds.spacing(8),
-                      }}
+                        fontSize: ds.fontSize(typeScale.display),
+                        marginHorizontal: ds.spacing(8) }}
                       selectTextOnFocus
                       inputAccessoryViewID={
                         Platform.OS === "ios"
@@ -1254,11 +1243,9 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                         }
                         quantityInputRef.current?.focus();
                       }}
-                      className="bg-gray-100 rounded-lg items-center justify-center"
-                      style={{
-                        width: Math.max(44, ds.icon(44)),
-                        height: Math.max(44, ds.icon(44)),
-                      }}
+                      className="items-center justify-center"
+                      style={{ backgroundColor: color.well, borderRadius: radius.control, width: Math.max(44, ds.icon(44)),
+                        height: Math.max(44, ds.icon(44)) }}
                     >
                       <Ionicons
                         name="add"
@@ -1294,7 +1281,7 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                       disabled={!hasInventoryUnit(selectedItem, "pack")}
                     >
                       <Text
-                        style={{ fontSize: ds.fontSize(14) }}
+                        style={{ fontSize: ds.fontSize(typeScale.body) }}
                         className={`font-medium ${
                           selectedUnit === "pack"
                             ? "text-white"
@@ -1327,7 +1314,7 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                       disabled={!hasInventoryUnit(selectedItem, "base")}
                     >
                       <Text
-                        style={{ fontSize: ds.fontSize(14) }}
+                        style={{ fontSize: ds.fontSize(typeScale.body) }}
                         className={`font-medium ${
                           selectedUnit === "base"
                             ? "text-white"
@@ -1344,11 +1331,9 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
 
                 {inputMode === "remaining" && (
                   <Text
-                    style={{
-                      fontSize: ds.fontSize(12),
-                      marginTop: ds.spacing(12),
-                    }}
-                    className="text-gray-500"
+                    style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary),
+                      marginTop: ds.spacing(12) }}
+
                   >
                     Enter how many are left. A manager will decide how many to
                     order.
@@ -1367,29 +1352,27 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowQuickCreate(false)}
       >
-        <SafeAreaView className="flex-1 bg-gray-50">
+        <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }}>
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             className="flex-1"
           >
             <View
-              className="bg-white border-b border-gray-200 flex-row items-center justify-between"
-              style={{
-                paddingHorizontal: ds.spacing(16),
-                paddingVertical: ds.spacing(14),
-              }}
+              className="border-b flex-row items-center justify-between"
+              style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, paddingHorizontal: ds.spacing(16),
+                paddingVertical: ds.spacing(14) }}
             >
               <TouchableOpacity onPress={() => setShowQuickCreate(false)}>
                 <Text
-                  style={{ fontSize: ds.fontSize(14) }}
-                  className="text-primary-500 font-medium"
+                  style={{ color: color.accent, fontWeight: weight.semibold, fontSize: ds.fontSize(typeScale.body) }}
+
                 >
                   Cancel
                 </Text>
               </TouchableOpacity>
               <Text
-                style={{ fontSize: ds.fontSize(18) }}
-                className="font-bold text-gray-900"
+                style={{ color: color.ink, fontSize: ds.fontSize(typeScale.title) }}
+                className="font-bold"
               >
                 Add Item
               </Text>
@@ -1402,22 +1385,18 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
             >
               <View style={{ marginBottom: ds.spacing(16) }}>
                 <Text
-                  style={{
-                    fontSize: ds.fontSize(14),
-                    marginBottom: ds.spacing(8),
-                  }}
-                  className="font-medium text-gray-700"
+                  style={{ fontWeight: weight.semibold, color: color.ink2, fontSize: ds.fontSize(typeScale.body),
+                    marginBottom: ds.spacing(8) }}
+
                 >
                   Item Name *
                 </Text>
                 <TextInput
-                  className="bg-white border border-gray-200 text-gray-900"
-                  style={{
-                    borderRadius: ds.radius(12),
+                  className="border"
+                  style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, color: color.ink, borderRadius: radius.control,
                     paddingHorizontal: ds.spacing(16),
                     minHeight: ds.buttonH,
-                    fontSize: ds.fontSize(15),
-                  }}
+                    fontSize: ds.fontSize(typeScale.body) }}
                   value={newItemName}
                   onChangeText={setNewItemName}
                   placeholder="e.g., Salmon (Sushi Grade)"
@@ -1428,11 +1407,9 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
 
               <View style={{ marginBottom: ds.spacing(16) }}>
                 <Text
-                  style={{
-                    fontSize: ds.fontSize(14),
-                    marginBottom: ds.spacing(8),
-                  }}
-                  className="font-medium text-gray-700"
+                  style={{ fontWeight: weight.semibold, color: color.ink2, fontSize: ds.fontSize(typeScale.body),
+                    marginBottom: ds.spacing(8) }}
+
                 >
                   Category *
                 </Text>
@@ -1456,7 +1433,7 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                         onPress={() => setNewItemCategory(cat)}
                       >
                         <Text
-                          style={{ fontSize: ds.fontSize(14) }}
+                          style={{ fontSize: ds.fontSize(typeScale.body) }}
                           className={`font-medium ${
                             isSelected ? "text-white" : "text-gray-700"
                           }`}
@@ -1471,11 +1448,9 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
 
               <View style={{ marginBottom: ds.spacing(16) }}>
                 <Text
-                  style={{
-                    fontSize: ds.fontSize(14),
-                    marginBottom: ds.spacing(8),
-                  }}
-                  className="font-medium text-gray-700"
+                  style={{ fontWeight: weight.semibold, color: color.ink2, fontSize: ds.fontSize(typeScale.body),
+                    marginBottom: ds.spacing(8) }}
+
                 >
                   Supplier *
                 </Text>
@@ -1499,7 +1474,7 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                         onPress={() => setNewItemSupplier(sup)}
                       >
                         <Text
-                          style={{ fontSize: ds.fontSize(14) }}
+                          style={{ fontSize: ds.fontSize(typeScale.body) }}
                           className={`font-medium ${
                             isSelected ? "text-white" : "text-gray-700"
                           }`}
@@ -1525,22 +1500,18 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
               >
                 <View className="flex-1">
                   <Text
-                    style={{
-                      fontSize: ds.fontSize(14),
-                      marginBottom: ds.spacing(8),
-                    }}
-                    className="font-medium text-gray-700"
+                    style={{ fontWeight: weight.semibold, color: color.ink2, fontSize: ds.fontSize(typeScale.body),
+                      marginBottom: ds.spacing(8) }}
+
                   >
                     Base Unit
                   </Text>
                   <TextInput
-                    className="bg-white border border-gray-200 text-gray-900"
-                    style={{
-                      borderRadius: ds.radius(12),
+                    className="border"
+                    style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, color: color.ink, borderRadius: radius.control,
                       paddingHorizontal: ds.spacing(16),
                       minHeight: ds.buttonH,
-                      fontSize: ds.fontSize(15),
-                    }}
+                      fontSize: ds.fontSize(typeScale.body) }}
                     value={newItemBaseUnit}
                     onChangeText={setNewItemBaseUnit}
                     placeholder="e.g., lb"
@@ -1550,22 +1521,18 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                 </View>
                 <View className="flex-1">
                   <Text
-                    style={{
-                      fontSize: ds.fontSize(14),
-                      marginBottom: ds.spacing(8),
-                    }}
-                    className="font-medium text-gray-700"
+                    style={{ fontWeight: weight.semibold, color: color.ink2, fontSize: ds.fontSize(typeScale.body),
+                      marginBottom: ds.spacing(8) }}
+
                   >
                     Pack Unit
                   </Text>
                   <TextInput
-                    className="bg-white border border-gray-200 text-gray-900"
-                    style={{
-                      borderRadius: ds.radius(12),
+                    className="border"
+                    style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, color: color.ink, borderRadius: radius.control,
                       paddingHorizontal: ds.spacing(16),
                       minHeight: ds.buttonH,
-                      fontSize: ds.fontSize(15),
-                    }}
+                      fontSize: ds.fontSize(typeScale.body) }}
                     value={newItemPackUnit}
                     onChangeText={setNewItemPackUnit}
                     placeholder="e.g., case"
@@ -1577,24 +1544,20 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
 
               <View style={{ marginBottom: ds.spacing(24) }}>
                   <Text
-                    style={{
-                      fontSize: ds.fontSize(14),
-                      marginBottom: ds.spacing(8),
-                    }}
-                    className="font-medium text-gray-700"
+                    style={{ fontWeight: weight.semibold, color: color.ink2, fontSize: ds.fontSize(typeScale.body),
+                      marginBottom: ds.spacing(8) }}
+
                   >
                   Pack Size
                   </Text>
                 <View className="flex-row items-center">
                   <TextInput
-                    className="bg-white border border-gray-200 text-gray-900"
-                    style={{
-                      width: ds.spacing(96),
-                      borderRadius: ds.radius(12),
+                    className="border"
+                    style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, color: color.ink, width: ds.spacing(96),
+                      borderRadius: radius.control,
                       paddingHorizontal: ds.spacing(16),
                       minHeight: ds.buttonH,
-                      fontSize: ds.fontSize(15),
-                    }}
+                      fontSize: ds.fontSize(typeScale.body) }}
                     value={newItemPackSize}
                     onChangeText={setNewItemPackSize}
                     placeholder="1"
@@ -1602,21 +1565,17 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                     keyboardType="decimal-pad"
                   />
                   <Text
-                    style={{
-                      fontSize: ds.fontSize(14),
-                      marginLeft: ds.spacing(12),
-                    }}
-                    className="text-gray-500"
+                    style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.body),
+                      marginLeft: ds.spacing(12) }}
+
                   >
                     Defaults to 1 when blank
                   </Text>
                 </View>
                 <Text
-                  style={{
-                    fontSize: ds.fontSize(12),
-                    marginTop: ds.spacing(8),
-                  }}
-                  className="text-gray-400"
+                  style={{ color: color.ink3, fontSize: ds.fontSize(typeScale.secondary),
+                    marginTop: ds.spacing(8) }}
+
                 >
                   Enter one unit or both. Missing pack-size values sync as 1.
                 </Text>
@@ -1624,11 +1583,9 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
             </ScrollView>
 
             <View
-              className="bg-white border-t border-gray-200"
-              style={{
-                paddingHorizontal: ds.spacing(16),
-                paddingVertical: ds.spacing(14),
-              }}
+              className="border-t"
+              style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, paddingHorizontal: ds.spacing(16),
+                paddingVertical: ds.spacing(14) }}
             >
               <TouchableOpacity
                 className={`rounded-xl items-center flex-row justify-center ${
@@ -1640,8 +1597,8 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
               >
                 <Ionicons name="add-circle" size={ds.icon(20)} color="white" />
                 <Text
-                  style={{ fontSize: ds.buttonFont, marginLeft: ds.spacing(8) }}
-                  className="text-white font-bold"
+                  style={{ color: color.onAccent, fontSize: ds.buttonFont, marginLeft: ds.spacing(8) }}
+                  className="font-bold"
                 >
                   {isCreatingItem ? "Adding..." : "Add Item"}
                 </Text>
@@ -1688,7 +1645,7 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                     fontSize: ds.buttonFont,
                     marginLeft: ds.spacing(8),
                     color: glassColors.textOnPrimary,
-                    fontWeight: "700",
+                    fontWeight: weight.bold,
                   }}
                 >
                   {addButtonText}

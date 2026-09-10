@@ -27,6 +27,7 @@ import {
   listRecurringReminderRules,
   upsertRecurringReminderRule,
 } from '@/services';
+import { color, radius, typeScale } from '@/theme/tokens';
 
 const WEEKDAY_OPTIONS = [
   { value: 0, label: 'Sun' },
@@ -313,11 +314,11 @@ export default function EmployeeReminderRecurringScreen() {
       : locationById.get(form.targetId) || 'Select location';
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top', 'left', 'right']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }} edges={['top', 'left', 'right']}>
       <ManagerScaleContainer>
         <View
-          className="bg-white border-b border-gray-100 flex-row items-center justify-between"
-          style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
+          className="border-b flex-row items-center justify-between"
+          style={{ backgroundColor: color.card, borderColor: color.hairline, paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
         >
           <View className="flex-row items-center flex-1">
             <TouchableOpacity
@@ -327,18 +328,18 @@ export default function EmployeeReminderRecurringScreen() {
               <Ionicons name="arrow-back" size={ds.icon(20)} color={colors.gray[700]} />
             </TouchableOpacity>
             <View className="flex-1">
-              <Text className="font-bold text-gray-900" style={{ fontSize: ds.fontSize(20) }}>
+              <Text className="font-bold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.title) }}>
                 Recurring Reminders
               </Text>
-              <Text className="text-gray-500" style={{ fontSize: ds.fontSize(12), marginTop: ds.spacing(2) }}>
+              <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(2) }}>
                 Schedule reminders that run automatically
               </Text>
             </View>
           </View>
 
           <TouchableOpacity
-            className="bg-gray-100 rounded-full items-center justify-center"
-            style={{ width: 42, height: 42 }}
+            className="items-center justify-center"
+            style={{ backgroundColor: color.well, borderRadius: radius.pill, width: 42, height: 42 }}
             onPress={runRulesNow}
           >
             <Ionicons name="play" size={ds.icon(18)} color={colors.gray[700]} />
@@ -351,29 +352,29 @@ export default function EmployeeReminderRecurringScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary[500]} />}
         >
           <TouchableOpacity
-            className="bg-primary-500 rounded-xl flex-row items-center justify-center"
-            style={{ minHeight: Math.max(48, ds.buttonH), marginBottom: ds.spacing(14) }}
+            className="flex-row items-center justify-center"
+            style={{ backgroundColor: color.accent, borderRadius: radius.control, minHeight: Math.max(48, ds.buttonH), marginBottom: ds.spacing(14) }}
             onPress={openNewRule}
           >
             <Ionicons name="add-circle-outline" size={ds.icon(18)} color={colors.white} />
-            <Text className="text-white font-semibold" style={{ fontSize: ds.fontSize(15), marginLeft: ds.spacing(6) }}>
+            <Text className="font-semibold" style={{ color: color.onAccent, fontSize: ds.fontSize(typeScale.body), marginLeft: ds.spacing(6) }}>
               New Recurring Rule
             </Text>
           </TouchableOpacity>
 
           {isLoading ? (
             <View className="items-center" style={{ paddingVertical: ds.spacing(40) }}>
-              <Text className="text-gray-500" style={{ fontSize: ds.fontSize(14) }}>
+              <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.body) }}>
                 Loading rules...
               </Text>
             </View>
           ) : rules.length === 0 ? (
-            <View className="bg-white rounded-2xl border border-gray-100 items-center" style={{ paddingVertical: ds.spacing(36), paddingHorizontal: ds.spacing(16) }}>
+            <View className="border items-center" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline, paddingVertical: ds.spacing(36), paddingHorizontal: ds.spacing(16) }}>
               <Ionicons name="repeat" size={ds.icon(34)} color={colors.gray[300]} />
-              <Text className="text-gray-700 font-semibold" style={{ fontSize: ds.fontSize(16), marginTop: ds.spacing(8) }}>
+              <Text className="font-semibold" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.body), marginTop: ds.spacing(8) }}>
                 No recurring reminders yet
               </Text>
-              <Text className="text-gray-500 text-center" style={{ fontSize: ds.fontSize(13), marginTop: ds.spacing(4) }}>
+              <Text className="text-center" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(4) }}>
                 Create a rule to remind employees automatically when no order is placed.
               </Text>
             </View>
@@ -392,29 +393,27 @@ export default function EmployeeReminderRecurringScreen() {
               return (
                 <View
                   key={rule.id}
-                  className="bg-white border border-gray-100"
-                  style={{
-                    borderRadius: ds.radius(16),
+                  className="border"
+                  style={{ backgroundColor: color.card, borderColor: color.hairline, borderRadius: radius.card,
                     paddingHorizontal: ds.spacing(14),
                     paddingVertical: ds.spacing(12),
-                    marginBottom: ds.spacing(10),
-                  }}
+                    marginBottom: ds.spacing(10) }}
                 >
                   <View className="flex-row items-start justify-between">
                     <View className="flex-1 pr-3">
-                      <Text className="font-semibold text-gray-900" style={{ fontSize: ds.fontSize(16) }}>
+                      <Text className="font-semibold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>
                         {rule.scope === 'employee' ? 'Employee Rule' : 'Location Rule'}
                       </Text>
-                      <Text className="text-gray-600" style={{ fontSize: ds.fontSize(13), marginTop: ds.spacing(2) }}>
+                      <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(2) }}>
                         Target: {targetLabel}
                       </Text>
-                      <Text className="text-gray-600" style={{ fontSize: ds.fontSize(13), marginTop: ds.spacing(2) }}>
+                      <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(2) }}>
                         {summarizeDays(rule.days_of_week)} at {String(rule.time_of_day).slice(0, 5)}
                       </Text>
-                      <Text className="text-gray-600" style={{ fontSize: ds.fontSize(13), marginTop: ds.spacing(2) }}>
+                      <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(2) }}>
                         {conditionLabel}
                       </Text>
-                      <Text className="text-gray-500" style={{ fontSize: ds.fontSize(12), marginTop: ds.spacing(2) }}>
+                      <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(2) }}>
                         Channels: {rule.channels?.push !== false ? 'Push' : ''}{rule.channels?.push !== false && rule.channels?.in_app !== false ? ' + ' : ''}{rule.channels?.in_app !== false ? 'In-app' : ''}
                       </Text>
                     </View>
@@ -431,18 +430,18 @@ export default function EmployeeReminderRecurringScreen() {
 
                   <View className="flex-row" style={{ columnGap: ds.spacing(8), marginTop: ds.spacing(10) }}>
                     <TouchableOpacity
-                      className="flex-1 rounded-xl bg-gray-100 items-center justify-center"
-                      style={{ minHeight: Math.max(40, ds.buttonH - ds.spacing(10)) }}
+                      className="flex-1 items-center justify-center"
+                      style={{ borderRadius: radius.control, backgroundColor: color.well, minHeight: Math.max(40, ds.buttonH - ds.spacing(10)) }}
                       onPress={() => openEditRule(rule)}
                     >
-                      <Text className="font-semibold text-gray-700" style={{ fontSize: ds.fontSize(13) }}>Edit</Text>
+                      <Text className="font-semibold" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>Edit</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      className="flex-1 rounded-xl bg-red-50 items-center justify-center"
-                      style={{ minHeight: Math.max(40, ds.buttonH - ds.spacing(10)) }}
+                      className="flex-1 items-center justify-center"
+                      style={{ borderRadius: radius.control, backgroundColor: color.alertBg, minHeight: Math.max(40, ds.buttonH - ds.spacing(10)) }}
                       onPress={() => handleDelete(rule)}
                     >
-                      <Text className="font-semibold text-red-700" style={{ fontSize: ds.fontSize(13) }}>Delete</Text>
+                      <Text className="font-semibold" style={{ color: color.alert, fontSize: ds.fontSize(typeScale.secondary) }}>Delete</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -459,14 +458,14 @@ export default function EmployeeReminderRecurringScreen() {
         >
           <View style={{ flex: 1, backgroundColor: colors.scrimStrong, justifyContent: 'flex-end' }}>
             <View
-              className="bg-white"
-              style={{ borderTopLeftRadius: ds.radius(22), borderTopRightRadius: ds.radius(22), maxHeight: '92%' }}
+
+              style={{ backgroundColor: color.card, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet, maxHeight: '92%' }}
             >
               <View
-                className="flex-row items-center justify-between border-b border-gray-100"
-                style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
+                className="flex-row items-center justify-between border-b"
+                style={{ borderColor: color.hairline, paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
               >
-                <Text className="font-semibold text-gray-900" style={{ fontSize: ds.fontSize(17) }}>
+                <Text className="font-semibold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.title) }}>
                   {form.id ? 'Edit Rule' : 'New Rule'}
                 </Text>
                 <TouchableOpacity onPress={() => setShowEditor(false)}>
@@ -475,7 +474,7 @@ export default function EmployeeReminderRecurringScreen() {
               </View>
 
               <ScrollView contentContainerStyle={{ padding: ds.spacing(16), paddingBottom: ds.spacing(28) }}>
-                <Text className="text-gray-500 uppercase" style={{ fontSize: ds.fontSize(11), marginBottom: ds.spacing(6) }}>
+                <Text className="uppercase" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.caption), marginBottom: ds.spacing(6) }}>
                   Scope
                 </Text>
                 <View className="flex-row" style={{ columnGap: ds.spacing(8), marginBottom: ds.spacing(12) }}>
@@ -484,7 +483,7 @@ export default function EmployeeReminderRecurringScreen() {
                     style={{ minHeight: Math.max(42, ds.buttonH - ds.spacing(8)) }}
                     onPress={() => setForm((prev) => ({ ...prev, scope: 'employee', targetId: '' }))}
                   >
-                    <Text className={form.scope === 'employee' ? 'text-white font-semibold' : 'text-gray-700 font-semibold'} style={{ fontSize: ds.fontSize(13) }}>
+                    <Text className={form.scope === 'employee' ? 'text-white font-semibold' : 'text-gray-700 font-semibold'} style={{ fontSize: ds.fontSize(typeScale.secondary) }}>
                       Employee
                     </Text>
                   </TouchableOpacity>
@@ -493,13 +492,13 @@ export default function EmployeeReminderRecurringScreen() {
                     style={{ minHeight: Math.max(42, ds.buttonH - ds.spacing(8)) }}
                     onPress={() => setForm((prev) => ({ ...prev, scope: 'location', targetId: '' }))}
                   >
-                    <Text className={form.scope === 'location' ? 'text-white font-semibold' : 'text-gray-700 font-semibold'} style={{ fontSize: ds.fontSize(13) }}>
+                    <Text className={form.scope === 'location' ? 'text-white font-semibold' : 'text-gray-700 font-semibold'} style={{ fontSize: ds.fontSize(typeScale.secondary) }}>
                       Location
                     </Text>
                   </TouchableOpacity>
                 </View>
 
-                <Text className="text-gray-500 uppercase" style={{ fontSize: ds.fontSize(11), marginBottom: ds.spacing(6) }}>
+                <Text className="uppercase" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.caption), marginBottom: ds.spacing(6) }}>
                   Target
                 </Text>
                 <ScrollView
@@ -514,14 +513,14 @@ export default function EmployeeReminderRecurringScreen() {
                       style={{ paddingHorizontal: ds.spacing(12), minHeight: Math.max(38, ds.buttonH - ds.spacing(12)), justifyContent: 'center' }}
                       onPress={() => setForm((prev) => ({ ...prev, targetId: option.id }))}
                     >
-                      <Text className={form.targetId === option.id ? 'text-white font-semibold' : 'text-gray-700 font-medium'} style={{ fontSize: ds.fontSize(13) }}>
+                      <Text className={form.targetId === option.id ? 'text-white font-semibold' : 'text-gray-700 font-medium'} style={{ fontSize: ds.fontSize(typeScale.secondary) }}>
                         {option.label}
                       </Text>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
 
-                <Text className="text-gray-500 uppercase" style={{ fontSize: ds.fontSize(11), marginBottom: ds.spacing(6) }}>
+                <Text className="uppercase" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.caption), marginBottom: ds.spacing(6) }}>
                   Days of Week
                 </Text>
                 <View className="flex-row flex-wrap" style={{ gap: ds.spacing(8), marginBottom: ds.spacing(12) }}>
@@ -540,7 +539,7 @@ export default function EmployeeReminderRecurringScreen() {
                         }}
                         onPress={() => toggleDay(day.value)}
                       >
-                        <Text className={selected ? 'text-white font-semibold' : 'text-gray-700 font-medium'} style={{ fontSize: ds.fontSize(12) }}>
+                        <Text className={selected ? 'text-white font-semibold' : 'text-gray-700 font-medium'} style={{ fontSize: ds.fontSize(typeScale.secondary) }}>
                           {day.label}
                         </Text>
                       </TouchableOpacity>
@@ -548,22 +547,20 @@ export default function EmployeeReminderRecurringScreen() {
                   })}
                 </View>
 
-                <Text className="text-gray-500 uppercase" style={{ fontSize: ds.fontSize(11), marginBottom: ds.spacing(6) }}>
+                <Text className="uppercase" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.caption), marginBottom: ds.spacing(6) }}>
                   Time (HH:MM)
                 </Text>
                 <TextInput
                   value={form.timeOfDay}
                   onChangeText={(value) => setForm((prev) => ({ ...prev, timeOfDay: value }))}
-                  className="bg-gray-50 border border-gray-200 rounded-xl text-gray-900"
-                  style={{
-                    minHeight: Math.max(44, ds.buttonH - ds.spacing(6)),
+                  className="border"
+                  style={{ backgroundColor: color.page, borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink, minHeight: Math.max(44, ds.buttonH - ds.spacing(6)),
                     paddingHorizontal: ds.spacing(12),
-                    fontSize: ds.fontSize(15),
-                    marginBottom: ds.spacing(12),
-                  }}
+                    fontSize: ds.fontSize(typeScale.body),
+                    marginBottom: ds.spacing(12) }}
                 />
 
-                <Text className="text-gray-500 uppercase" style={{ fontSize: ds.fontSize(11), marginBottom: ds.spacing(6) }}>
+                <Text className="uppercase" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.caption), marginBottom: ds.spacing(6) }}>
                   Condition
                 </Text>
                 <View className="flex-row" style={{ columnGap: ds.spacing(8), marginBottom: ds.spacing(8) }}>
@@ -572,7 +569,7 @@ export default function EmployeeReminderRecurringScreen() {
                     style={{ minHeight: Math.max(40, ds.buttonH - ds.spacing(10)) }}
                     onPress={() => setForm((prev) => ({ ...prev, conditionType: 'no_order_today' }))}
                   >
-                    <Text className={form.conditionType === 'no_order_today' ? 'text-white font-semibold' : 'text-gray-700 font-semibold'} style={{ fontSize: ds.fontSize(12) }}>
+                    <Text className={form.conditionType === 'no_order_today' ? 'text-white font-semibold' : 'text-gray-700 font-semibold'} style={{ fontSize: ds.fontSize(typeScale.secondary) }}>
                       No order today
                     </Text>
                   </TouchableOpacity>
@@ -581,7 +578,7 @@ export default function EmployeeReminderRecurringScreen() {
                     style={{ minHeight: Math.max(40, ds.buttonH - ds.spacing(10)) }}
                     onPress={() => setForm((prev) => ({ ...prev, conditionType: 'days_since_last_order_gte' }))}
                   >
-                    <Text className={form.conditionType === 'days_since_last_order_gte' ? 'text-white font-semibold' : 'text-gray-700 font-semibold'} style={{ fontSize: ds.fontSize(12) }}>
+                    <Text className={form.conditionType === 'days_since_last_order_gte' ? 'text-white font-semibold' : 'text-gray-700 font-semibold'} style={{ fontSize: ds.fontSize(typeScale.secondary) }}>
                       Days since order
                     </Text>
                   </TouchableOpacity>
@@ -592,19 +589,17 @@ export default function EmployeeReminderRecurringScreen() {
                     value={form.conditionValue}
                     onChangeText={(value) => setForm((prev) => ({ ...prev, conditionValue: value.replace(/[^0-9]/g, '') }))}
                     keyboardType="number-pad"
-                    className="bg-gray-50 border border-gray-200 rounded-xl text-gray-900"
-                    style={{
-                      minHeight: Math.max(44, ds.buttonH - ds.spacing(6)),
+                    className="border"
+                    style={{ backgroundColor: color.page, borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink, minHeight: Math.max(44, ds.buttonH - ds.spacing(6)),
                       paddingHorizontal: ds.spacing(12),
-                      fontSize: ds.fontSize(15),
-                      marginBottom: ds.spacing(12),
-                    }}
+                      fontSize: ds.fontSize(typeScale.body),
+                      marginBottom: ds.spacing(12) }}
                     placeholder="Days threshold"
                   />
                 )}
 
                 <View className="flex-row items-center justify-between" style={{ marginBottom: ds.spacing(10) }}>
-                  <Text className="font-semibold text-gray-900" style={{ fontSize: ds.fontSize(15) }}>Quiet Hours</Text>
+                  <Text className="font-semibold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>Quiet Hours</Text>
                   <Switch
                     value={form.quietHoursEnabled}
                     onValueChange={(value) => setForm((prev) => ({ ...prev, quietHoursEnabled: value }))}
@@ -619,20 +614,20 @@ export default function EmployeeReminderRecurringScreen() {
                       value={form.quietStart}
                       onChangeText={(value) => setForm((prev) => ({ ...prev, quietStart: value }))}
                       placeholder="Start 22:00"
-                      className="flex-1 bg-gray-50 border border-gray-200 rounded-xl text-gray-900"
-                      style={{ minHeight: Math.max(44, ds.buttonH - ds.spacing(6)), paddingHorizontal: ds.spacing(12), fontSize: ds.fontSize(14) }}
+                      className="flex-1 border"
+                      style={{ backgroundColor: color.page, borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink, minHeight: Math.max(44, ds.buttonH - ds.spacing(6)), paddingHorizontal: ds.spacing(12), fontSize: ds.fontSize(typeScale.body) }}
                     />
                     <TextInput
                       value={form.quietEnd}
                       onChangeText={(value) => setForm((prev) => ({ ...prev, quietEnd: value }))}
                       placeholder="End 07:00"
-                      className="flex-1 bg-gray-50 border border-gray-200 rounded-xl text-gray-900"
-                      style={{ minHeight: Math.max(44, ds.buttonH - ds.spacing(6)), paddingHorizontal: ds.spacing(12), fontSize: ds.fontSize(14) }}
+                      className="flex-1 border"
+                      style={{ backgroundColor: color.page, borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink, minHeight: Math.max(44, ds.buttonH - ds.spacing(6)), paddingHorizontal: ds.spacing(12), fontSize: ds.fontSize(typeScale.body) }}
                     />
                   </View>
                 )}
 
-                <Text className="text-gray-500 uppercase" style={{ fontSize: ds.fontSize(11), marginBottom: ds.spacing(6) }}>
+                <Text className="uppercase" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.caption), marginBottom: ds.spacing(6) }}>
                   Channels
                 </Text>
                 <View className="flex-row" style={{ columnGap: ds.spacing(8), marginBottom: ds.spacing(12) }}>
@@ -641,7 +636,7 @@ export default function EmployeeReminderRecurringScreen() {
                     style={{ minHeight: Math.max(40, ds.buttonH - ds.spacing(10)) }}
                     onPress={() => setForm((prev) => ({ ...prev, push: !prev.push }))}
                   >
-                    <Text className={form.push ? 'text-white font-semibold' : 'text-gray-700 font-semibold'} style={{ fontSize: ds.fontSize(12) }}>
+                    <Text className={form.push ? 'text-white font-semibold' : 'text-gray-700 font-semibold'} style={{ fontSize: ds.fontSize(typeScale.secondary) }}>
                       Push
                     </Text>
                   </TouchableOpacity>
@@ -650,14 +645,14 @@ export default function EmployeeReminderRecurringScreen() {
                     style={{ minHeight: Math.max(40, ds.buttonH - ds.spacing(10)) }}
                     onPress={() => setForm((prev) => ({ ...prev, inApp: !prev.inApp }))}
                   >
-                    <Text className={form.inApp ? 'text-white font-semibold' : 'text-gray-700 font-semibold'} style={{ fontSize: ds.fontSize(12) }}>
+                    <Text className={form.inApp ? 'text-white font-semibold' : 'text-gray-700 font-semibold'} style={{ fontSize: ds.fontSize(typeScale.secondary) }}>
                       In-app
                     </Text>
                   </TouchableOpacity>
                 </View>
 
                 <View className="flex-row items-center justify-between" style={{ marginBottom: ds.spacing(12) }}>
-                  <Text className="font-semibold text-gray-900" style={{ fontSize: ds.fontSize(15) }}>Rule Enabled</Text>
+                  <Text className="font-semibold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>Rule Enabled</Text>
                   <Switch
                     value={form.enabled}
                     onValueChange={(value) => setForm((prev) => ({ ...prev, enabled: value }))}
@@ -666,11 +661,11 @@ export default function EmployeeReminderRecurringScreen() {
                   />
                 </View>
 
-                <View className="bg-gray-100 rounded-xl" style={{ padding: ds.spacing(10), marginBottom: ds.spacing(12) }}>
-                  <Text className="text-gray-600" style={{ fontSize: ds.fontSize(12) }}>
+                <View style={{ backgroundColor: color.well, borderRadius: radius.control, padding: ds.spacing(10), marginBottom: ds.spacing(12) }}>
+                  <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>
                     Target: {selectedTargetLabel || 'Not selected'}
                   </Text>
-                  <Text className="text-gray-600" style={{ fontSize: ds.fontSize(12), marginTop: ds.spacing(2) }}>
+                  <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(2) }}>
                     Schedule: {summarizeDays(form.daysOfWeek)} at {form.timeOfDay}
                   </Text>
                 </View>
@@ -681,7 +676,7 @@ export default function EmployeeReminderRecurringScreen() {
                   onPress={handleSave}
                   disabled={isSaving}
                 >
-                  <Text className="text-white font-semibold" style={{ fontSize: ds.fontSize(15) }}>
+                  <Text className="font-semibold" style={{ color: color.onAccent, fontSize: ds.fontSize(typeScale.body) }}>
                     {isSaving ? 'Saving...' : 'Save Rule'}
                   </Text>
                 </TouchableOpacity>

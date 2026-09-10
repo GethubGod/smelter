@@ -54,12 +54,13 @@ import {
 } from '@/theme/design';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { useModuleAccessGuard } from '@/hooks';
+import { color, typeScale, weight } from '@/theme/tokens';
 
 const AVATAR_PALETTE = [
-  { background: '#F7E1D7', text: '#B05534' },
-  { background: '#E6EEF6', text: '#446A86' },
-  { background: '#EEE3F5', text: '#795096' },
-  { background: '#E6F1E6', text: '#4A7A58' },
+  { background: color.well, text: color.ink2 },
+  { background: color.well, text: color.ink2 },
+  { background: color.well, text: color.ink2 },
+  { background: color.well, text: color.ink2 },
 ] as const;
 
 function getInitials(name: string): string {
@@ -126,8 +127,8 @@ function LocationSectionLabel({
         />
         <Text
           style={{
-            fontSize: ds.fontSize(16),
-            fontWeight: '700',
+            fontSize: ds.fontSize(typeScale.body),
+            fontWeight: weight.bold,
             color: glassColors.textSecondary,
             letterSpacing: -0.2,
             marginLeft: ds.spacing(6),
@@ -406,15 +407,15 @@ const RemainingItemRow = React.memo(function RemainingItemRow({
           justifyContent: 'center',
         }}
       >
-        <Text style={{ color: AVATAR_PALETTE[0].text, fontSize: ds.fontSize(10), fontWeight: '700' }}>
+        <Text style={{ color: AVATAR_PALETTE[0].text, fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold }}>
           {getInitials(item.orderedBy)}
         </Text>
       </View>
       <View style={{ flex: 1, marginLeft: ds.spacing(8) }}>
         <Text
           style={{
-            fontSize: ds.fontSize(13),
-            fontWeight: '600',
+            fontSize: ds.fontSize(typeScale.secondary),
+            fontWeight: weight.semibold,
             color: glassColors.textSecondary,
           }}
           numberOfLines={1}
@@ -426,8 +427,8 @@ const RemainingItemRow = React.memo(function RemainingItemRow({
           <Text
             style={{
               marginLeft: ds.spacing(4),
-              fontSize: ds.fontSize(12),
-              fontWeight: '500',
+              fontSize: ds.fontSize(typeScale.secondary),
+              fontWeight: weight.semibold,
               color: glassColors.textSecondary,
             }}
             numberOfLines={1}
@@ -443,17 +444,17 @@ const RemainingItemRow = React.memo(function RemainingItemRow({
     <View
       style={{
         borderRadius: glassRadii.button,
-        backgroundColor: '#EFF6FF',
+        backgroundColor: color.tint,
         borderWidth: glassHairlineWidth,
-        borderColor: '#BFDBFE',
+        borderColor: color.hairline,
         paddingHorizontal: ds.spacing(12),
         paddingVertical: ds.spacing(8),
       }}
     >
-      <Text style={{ fontSize: ds.fontSize(12), fontWeight: '600', color: '#1D4ED8' }}>
+      <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: color.accent }}>
         {item.orderedBy} · {item.locationName} ({item.shortCode})
       </Text>
-      <Text style={{ fontSize: ds.fontSize(13), color: '#1E3A5F', marginTop: ds.spacing(3) }}>
+      <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink, marginTop: ds.spacing(3) }}>
         {item.note}
       </Text>
     </View>
@@ -506,7 +507,7 @@ const RemainingItemRow = React.memo(function RemainingItemRow({
               borderColor: glassColors.accentBorder,
             }}
           >
-            <Text style={{ fontSize: ds.fontSize(12), fontWeight: '700', color: glassColors.accent }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.bold, color: glassColors.accent }}>
               Suggested: {formatQuantity(suggested)}
             </Text>
           </TouchableOpacity>
@@ -554,8 +555,8 @@ const RemainingItemRow = React.memo(function RemainingItemRow({
           }}
         >
           <View style={{ marginBottom: (hasContributorBreakdown || item.note) ? ds.spacing(12) : 0 }}>
-            <Text style={{ fontSize: ds.fontSize(11), fontWeight: '700', color: glassColors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Ordered By</Text>
-            <Text style={{ fontSize: ds.fontSize(14), color: glassColors.textPrimary, marginTop: ds.spacing(4) }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold, color: glassColors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Ordered By</Text>
+            <Text style={{ fontSize: ds.fontSize(typeScale.body), color: glassColors.textPrimary, marginTop: ds.spacing(4) }}>
               {hasContributorBreakdown ? `${contributorBreakdown.length} people` : item.orderedBy}
             </Text>
           </View>
@@ -586,13 +587,13 @@ const RemainingItemRow = React.memo(function RemainingItemRow({
                         marginRight: ds.spacing(8),
                       }}
                     >
-                      <Text style={{ color: AVATAR_PALETTE[index % AVATAR_PALETTE.length].text, fontSize: ds.fontSize(9), fontWeight: '700' }}>
+                      <Text style={{ color: AVATAR_PALETTE[index % AVATAR_PALETTE.length].text, fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold }}>
                         {getInitials(entry.name)}
                       </Text>
                     </View>
-                    <Text style={{ fontSize: ds.fontSize(14), color: glassColors.textPrimary }}>{entry.name}</Text>
+                    <Text style={{ fontSize: ds.fontSize(typeScale.body), color: glassColors.textPrimary }}>{entry.name}</Text>
                   </View>
-                  <Text style={{ fontSize: ds.fontSize(12), fontWeight: '600', color: glassColors.textSecondary }}>
+                  <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: glassColors.textSecondary }}>
                     {formatQuantity(entry.reportedTotal)} {item.unitLabel}
                     {entry.rowCount > 1 ? ` · ${entry.rowCount} entries` : ''}
                   </Text>
@@ -602,24 +603,24 @@ const RemainingItemRow = React.memo(function RemainingItemRow({
           )}
 
           <View style={{ marginBottom: item.note ? ds.spacing(12) : 0 }}>
-            <Text style={{ fontSize: ds.fontSize(11), fontWeight: '700', color: glassColors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Location</Text>
-            <Text style={{ fontSize: ds.fontSize(14), color: glassColors.textPrimary, marginTop: ds.spacing(4) }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold, color: glassColors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Location</Text>
+            <Text style={{ fontSize: ds.fontSize(typeScale.body), color: glassColors.textPrimary, marginTop: ds.spacing(4) }}>
               {item.locationName} ({item.shortCode})
             </Text>
-            <Text style={{ fontSize: ds.fontSize(12), color: glassColors.textSecondary, marginTop: ds.spacing(4) }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: glassColors.textSecondary, marginTop: ds.spacing(4) }}>
               Reported amount: {formatQuantity(item.reportedRemaining)} {item.unitLabel}
             </Text>
           </View>
 
           {item.note ? (
             <View>
-              <Text style={{ fontSize: ds.fontSize(11), fontWeight: '700', color: glassColors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Notes</Text>
-              <Text style={{ fontSize: ds.fontSize(14), color: '#1D4ED8', marginTop: ds.spacing(4) }}>{item.note}</Text>
+              <Text style={{ fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold, color: glassColors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Notes</Text>
+              <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent, marginTop: ds.spacing(4) }}>{item.note}</Text>
             </View>
           ) : null}
         </View>
       )}
-      footer={isSaving ? <Text style={{ fontSize: ds.fontSize(12), color: glassColors.textSecondary }}>Saving...</Text> : undefined}
+      footer={isSaving ? <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: glassColors.textSecondary }}>Saving...</Text> : undefined}
       disableControls={isSaving}
     />
   );
@@ -2917,8 +2918,8 @@ function FulfillmentConfirmationScreen() {
             <View>
               <Text
                 style={{
-                  fontSize: ds.fontSize(31),
-                  fontWeight: '800',
+                  fontSize: ds.fontSize(typeScale.display),
+                  fontWeight: weight.bold,
                   color: glassColors.textPrimary,
                   letterSpacing: -0.8,
                 }}
@@ -2927,8 +2928,8 @@ function FulfillmentConfirmationScreen() {
               </Text>
               <Text
                 style={{
-                  fontSize: ds.fontSize(15),
-                  fontWeight: '600',
+                  fontSize: ds.fontSize(typeScale.body),
+                  fontWeight: weight.semibold,
                   color: glassColors.textSecondary,
                   marginTop: -2,
                 }}
@@ -2964,8 +2965,8 @@ function FulfillmentConfirmationScreen() {
                     <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: ds.spacing(8) }}>
                       <Text
                         style={{
-                          fontSize: ds.fontSize(20),
-                          fontWeight: '800',
+                          fontSize: ds.fontSize(typeScale.title),
+                          fontWeight: weight.bold,
                           color: glassColors.textPrimary,
                           letterSpacing: -0.4,
                         }}
@@ -2997,8 +2998,8 @@ function FulfillmentConfirmationScreen() {
                     >
                       <Text
                         style={{
-                          fontSize: ds.fontSize(13),
-                          fontWeight: '700',
+                          fontSize: ds.fontSize(typeScale.secondary),
+                          fontWeight: weight.bold,
                           color:
                             suggestionCount === 0 || loadingLastOrdered || savingRemainingIds.size > 0
                               ? glassColors.accent
@@ -3022,7 +3023,7 @@ function FulfillmentConfirmationScreen() {
                         paddingVertical: ds.spacing(8),
                       }}
                     >
-                      <Text style={{ fontSize: ds.fontSize(13), fontWeight: '500', color: glassColors.dangerText }}>
+                      <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: glassColors.dangerText }}>
                         {unresolvedRemainingItemIds.length} remaining item
                         {unresolvedRemainingItemIds.length === 1 ? '' : 's'} still need a final quantity.
                       </Text>
@@ -3096,8 +3097,8 @@ function FulfillmentConfirmationScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: ds.spacing(14) }}>
                   <Text
                     style={{
-                      fontSize: ds.fontSize(15),
-                      fontWeight: '700',
+                      fontSize: ds.fontSize(typeScale.body),
+                      fontWeight: weight.bold,
                       color: glassColors.textPrimary,
                     }}
                   >
@@ -3117,9 +3118,9 @@ function FulfillmentConfirmationScreen() {
                     <Ionicons name="create" size={ds.icon(13)} color={glassColors.accent} />
                     <Text
                       style={{
-                        fontSize: ds.fontSize(12),
+                        fontSize: ds.fontSize(typeScale.secondary),
                         color: glassColors.accent,
-                        fontWeight: '700',
+                        fontWeight: weight.bold,
                         marginLeft: ds.spacing(6),
                       }}
                     >
@@ -3136,10 +3137,10 @@ function FulfillmentConfirmationScreen() {
                 >
                   <Text
                     style={{
-                      fontSize: ds.fontSize(15),
+                      fontSize: ds.fontSize(typeScale.body),
                       color: glassColors.textPrimary,
                       lineHeight: ds.spacing(22),
-                      fontWeight: '500',
+                      fontWeight: weight.semibold,
                     }}
                   >
                     {messageText}
@@ -3151,8 +3152,8 @@ function FulfillmentConfirmationScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: ds.spacing(12) }}>
                   <Text
                     style={{
-                      fontSize: ds.fontSize(15),
-                      fontWeight: '700',
+                      fontSize: ds.fontSize(typeScale.body),
+                      fontWeight: weight.bold,
                       color: glassColors.textPrimary,
                     }}
                   >
@@ -3160,8 +3161,8 @@ function FulfillmentConfirmationScreen() {
                   </Text>
                   <Text
                     style={{
-                      fontSize: ds.fontSize(15),
-                      fontWeight: '600',
+                      fontSize: ds.fontSize(typeScale.body),
+                      fontWeight: weight.semibold,
                       color: glassColors.textSecondary,
                       marginLeft: ds.spacing(6),
                     }}
@@ -3179,19 +3180,19 @@ function FulfillmentConfirmationScreen() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   paddingVertical: ds.spacing(32),
-                  backgroundColor: '#FFFFFF',
+                  backgroundColor: color.card,
                   borderWidth: glassHairlineWidth,
                   borderColor: glassColors.divider,
                   borderRadius: glassRadii.surface,
                 }}
               >
-                <Text style={{ color: glassColors.textSecondary, fontSize: ds.fontSize(14) }}>No regular items in this supplier section</Text>
+                <Text style={{ color: glassColors.textSecondary, fontSize: ds.fontSize(typeScale.body) }}>No regular items in this supplier section</Text>
               </View>
             ) : (
               <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: ds.spacing(48) }}>
                 <Ionicons name="list-outline" size={ds.icon(48)} color={glassColors.textMuted} />
-                <Text style={{ color: glassColors.textSecondary, fontSize: ds.fontSize(16), marginTop: ds.spacing(12) }}>No items to confirm</Text>
-                <Text style={{ color: glassColors.textMuted, fontSize: ds.fontSize(14), marginTop: ds.spacing(4) }}>Return to fulfillment to select items</Text>
+                <Text style={{ color: glassColors.textSecondary, fontSize: ds.fontSize(typeScale.body), marginTop: ds.spacing(12) }}>No items to confirm</Text>
+                <Text style={{ color: glassColors.textMuted, fontSize: ds.fontSize(typeScale.body), marginTop: ds.spacing(4) }}>Return to fulfillment to select items</Text>
               </View>
             )
           )}
@@ -3244,14 +3245,14 @@ function FulfillmentConfirmationScreen() {
                               borderRadius: ds.spacing(13),
                               backgroundColor: palette.background,
                               borderWidth: 1.5,
-                              borderColor: '#FFFFFF',
+                              borderColor: color.card,
                               alignItems: 'center',
                               justifyContent: 'center',
                               marginLeft: cIdx === 0 ? 0 : -ds.spacing(6),
                               zIndex: item.contributors.length - cIdx,
                             }}
                           >
-                            <Text style={{ color: palette.text, fontSize: ds.fontSize(10), fontWeight: '700' }}>
+                            <Text style={{ color: palette.text, fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold }}>
                               {getInitials(contributor.name)}
                             </Text>
                           </View>
@@ -3263,15 +3264,15 @@ function FulfillmentConfirmationScreen() {
                             width: ds.spacing(26),
                             height: ds.spacing(26),
                             borderRadius: ds.spacing(13),
-                            backgroundColor: '#F2ECE4',
+                            backgroundColor: color.well,
                             borderWidth: 1.5,
-                            borderColor: '#FFFFFF',
+                            borderColor: color.card,
                             alignItems: 'center',
                             justifyContent: 'center',
                             marginLeft: -ds.spacing(6),
                           }}
                         >
-                          <Text style={{ color: '#7B6B5D', fontSize: ds.fontSize(10), fontWeight: '700' }}>
+                          <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold }}>
                             +{contributorCount - 3}
                           </Text>
                         </View>
@@ -3279,8 +3280,8 @@ function FulfillmentConfirmationScreen() {
                     </View>
                     <Text
                       style={{
-                        fontSize: ds.fontSize(13),
-                        fontWeight: '600',
+                        fontSize: ds.fontSize(typeScale.secondary),
+                        fontWeight: weight.semibold,
                         color: glassColors.textSecondary,
                       }}
                       numberOfLines={1}
@@ -3300,14 +3301,14 @@ function FulfillmentConfirmationScreen() {
                         justifyContent: 'center',
                       }}
                     >
-                      <Text style={{ color: AVATAR_PALETTE[0].text, fontSize: ds.fontSize(10), fontWeight: '700' }}>
+                      <Text style={{ color: AVATAR_PALETTE[0].text, fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold }}>
                         {getInitials(singleContributorName)}
                       </Text>
                     </View>
                     <Text
                       style={{
-                        fontSize: ds.fontSize(13),
-                        fontWeight: '600',
+                        fontSize: ds.fontSize(typeScale.secondary),
+                        fontWeight: weight.semibold,
                         color: glassColors.textSecondary,
                       }}
                       numberOfLines={1}
@@ -3326,17 +3327,17 @@ function FulfillmentConfirmationScreen() {
                     key={note.id}
                     style={{
                       borderRadius: glassRadii.button,
-                      backgroundColor: '#EFF6FF',
+                      backgroundColor: color.tint,
                       borderWidth: glassHairlineWidth,
-                      borderColor: '#BFDBFE',
+                      borderColor: color.hairline,
                       paddingHorizontal: ds.spacing(12),
                       paddingVertical: ds.spacing(8),
                     }}
                   >
-                    <Text style={{ fontSize: ds.fontSize(12), fontWeight: '600', color: '#1D4ED8' }}>
+                    <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: color.accent }}>
                       {note.author} · {note.locationName} ({note.shortCode})
                     </Text>
-                    <Text style={{ fontSize: ds.fontSize(13), color: '#1E3A5F', marginTop: ds.spacing(3) }}>
+                    <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink, marginTop: ds.spacing(3) }}>
                       {note.text}
                     </Text>
                   </View>
@@ -3405,10 +3406,10 @@ function FulfillmentConfirmationScreen() {
                         paddingVertical: ds.spacing(14),
                       }}
                     >
-                      <Text style={{ fontSize: ds.fontSize(14), fontWeight: '600', color: glassColors.textPrimary }}>
+                      <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: glassColors.textPrimary }}>
                         Ordered by: {hasMultipleContributors ? `${contributorCount} people` : singleContributorName}
                       </Text>
-                      <Text style={{ fontSize: ds.fontSize(12), color: glassColors.textSecondary, marginTop: ds.spacing(4) }}>
+                      <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: glassColors.textSecondary, marginTop: ds.spacing(4) }}>
                         Final total: {finalTotalText}
                       </Text>
 
@@ -3416,8 +3417,8 @@ function FulfillmentConfirmationScreen() {
                         <View style={{ marginTop: ds.spacing(12) }}>
                           <Text
                             style={{
-                              fontSize: ds.fontSize(11),
-                              fontWeight: '700',
+                              fontSize: ds.fontSize(typeScale.caption),
+                              fontWeight: weight.bold,
                               color: glassColors.textSecondary,
                               textTransform: 'uppercase',
                               letterSpacing: 0.5,
@@ -3450,18 +3451,18 @@ function FulfillmentConfirmationScreen() {
                                     marginRight: ds.spacing(8),
                                   }}
                                 >
-                                  <Text style={{ color: AVATAR_PALETTE[contributorIndex % AVATAR_PALETTE.length].text, fontSize: ds.fontSize(9), fontWeight: '700' }}>
+                                  <Text style={{ color: AVATAR_PALETTE[contributorIndex % AVATAR_PALETTE.length].text, fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold }}>
                                     {getInitials(contributor.name)}
                                   </Text>
                                 </View>
-                                <Text style={{ fontSize: ds.fontSize(14), color: glassColors.textPrimary }}>{contributor.name}</Text>
+                                <Text style={{ fontSize: ds.fontSize(typeScale.body), color: glassColors.textPrimary }}>{contributor.name}</Text>
                               </View>
-                              <Text style={{ fontSize: ds.fontSize(14), fontWeight: '600', color: glassColors.textPrimary }}>
+                              <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: glassColors.textPrimary }}>
                                 {formatQuantity(contributor.quantity)} {item.unitLabel}
                               </Text>
                             </View>
                           ))}
-                          <Text style={{ fontSize: ds.fontSize(12), color: glassColors.textSecondary, marginTop: ds.spacing(8) }}>
+                          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: glassColors.textSecondary, marginTop: ds.spacing(8) }}>
                             Contributors total: {contributorTotalText}
                           </Text>
 
@@ -3477,7 +3478,7 @@ function FulfillmentConfirmationScreen() {
                                 backgroundColor: glassColors.mediumFill,
                               }}
                             >
-                              <Text style={{ fontSize: ds.fontSize(12), fontWeight: '700', color: glassColors.textPrimary }}>Reset to sum</Text>
+                              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.bold, color: glassColors.textPrimary }}>Reset to sum</Text>
                             </TouchableOpacity>
                           )}
                         </View>
@@ -3487,8 +3488,8 @@ function FulfillmentConfirmationScreen() {
                         <View style={{ marginTop: ds.spacing(12) }}>
                           <Text
                             style={{
-                              fontSize: ds.fontSize(11),
-                              fontWeight: '700',
+                              fontSize: ds.fontSize(typeScale.caption),
+                              fontWeight: weight.bold,
                               color: glassColors.textSecondary,
                               textTransform: 'uppercase',
                               letterSpacing: 0.5,
@@ -3507,15 +3508,15 @@ function FulfillmentConfirmationScreen() {
                               }}
                             >
                               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <Text style={{ fontSize: ds.fontSize(14), color: glassColors.textPrimary }}>
+                                <Text style={{ fontSize: ds.fontSize(typeScale.body), color: glassColors.textPrimary }}>
                                   {detail.locationName}
                                   {detail.shortCode ? ` (${detail.shortCode})` : ''}
                                 </Text>
-                                <Text style={{ fontSize: ds.fontSize(14), fontWeight: '600', color: glassColors.textPrimary }}>
+                                <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: glassColors.textPrimary }}>
                                   {formatQuantity(detail.quantity)} {item.unitLabel}
                                 </Text>
                               </View>
-                              <Text style={{ fontSize: ds.fontSize(12), color: glassColors.textSecondary, marginTop: ds.spacing(3) }}>Ordered by {detail.orderedBy}</Text>
+                              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: glassColors.textSecondary, marginTop: ds.spacing(3) }}>Ordered by {detail.orderedBy}</Text>
                             </View>
                           ))}
                         </View>
@@ -3525,8 +3526,8 @@ function FulfillmentConfirmationScreen() {
                         <View style={{ marginTop: ds.spacing(12) }}>
                           <Text
                             style={{
-                              fontSize: ds.fontSize(11),
-                              fontWeight: '700',
+                              fontSize: ds.fontSize(typeScale.caption),
+                              fontWeight: weight.bold,
                               color: glassColors.textSecondary,
                               textTransform: 'uppercase',
                               letterSpacing: 0.5,
@@ -3541,17 +3542,17 @@ function FulfillmentConfirmationScreen() {
                               style={{
                                 borderRadius: glassRadii.button,
                                 borderWidth: glassHairlineWidth,
-                                borderColor: '#BFDBFE',
-                                backgroundColor: '#EFF6FF',
+                                borderColor: color.hairline,
+                                backgroundColor: color.tint,
                                 paddingHorizontal: ds.spacing(12),
                                 paddingVertical: ds.spacing(8),
                                 marginBottom: noteIndex < item.notes.length - 1 ? ds.spacing(6) : 0,
                               }}
                             >
-                              <Text style={{ fontSize: ds.fontSize(12), fontWeight: '600', color: '#1D4ED8' }}>
+                              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: color.accent }}>
                                 {note.author} · {note.locationName} ({note.shortCode})
                               </Text>
-                              <Text style={{ fontSize: ds.fontSize(13), color: '#1E3A5F', marginTop: ds.spacing(3) }}>{note.text}</Text>
+                              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink, marginTop: ds.spacing(3) }}>{note.text}</Text>
                             </View>
                           ))}
                         </View>
@@ -3584,7 +3585,7 @@ function FulfillmentConfirmationScreen() {
           >
             <Pressable
               style={{
-                backgroundColor: '#FFFFFF',
+                backgroundColor: color.card,
                 borderTopLeftRadius: glassRadii.surface,
                 borderTopRightRadius: glassRadii.surface,
                 paddingHorizontal: ds.spacing(20),
@@ -3595,10 +3596,10 @@ function FulfillmentConfirmationScreen() {
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: ds.spacing(14) }}>
                 <View style={{ flex: 1, paddingRight: ds.spacing(8) }}>
-                  <Text style={{ fontSize: ds.fontSize(20), fontWeight: '700', color: glassColors.textPrimary }}>
+                  <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.bold, color: glassColors.textPrimary }}>
                     {(noteRegularItem?.notes.length || noteRemainingItem?.note) ? 'Edit Note' : 'Add Note'}
                   </Text>
-                  <Text style={{ fontSize: ds.fontSize(13), color: glassColors.textSecondary, marginTop: ds.spacing(4) }}>
+                  <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: glassColors.textSecondary, marginTop: ds.spacing(4) }}>
                     {noteRegularItem?.name || noteRemainingItem?.name || ''}
                   </Text>
                 </View>
@@ -3630,11 +3631,11 @@ function FulfillmentConfirmationScreen() {
                   backgroundColor: glassColors.mediumFill,
                   paddingHorizontal: ds.spacing(14),
                   paddingVertical: ds.spacing(14),
-                  fontSize: ds.fontSize(15),
+                  fontSize: ds.fontSize(typeScale.body),
                   color: glassColors.textPrimary,
                 }}
               />
-              <Text style={{ fontSize: ds.fontSize(12), color: glassColors.textMuted, marginTop: ds.spacing(8) }}>{noteDraft.length}/240</Text>
+              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: glassColors.textMuted, marginTop: ds.spacing(8) }}>{noteDraft.length}/240</Text>
 
               <View style={{ flexDirection: 'row', marginTop: ds.spacing(16) }}>
                 <TouchableOpacity
@@ -3649,7 +3650,7 @@ function FulfillmentConfirmationScreen() {
                     marginRight: ds.spacing(10),
                   }}
                 >
-                  <Text style={{ fontSize: ds.fontSize(15), fontWeight: '600', color: glassColors.textPrimary }}>Cancel</Text>
+                  <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: glassColors.textPrimary }}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleSaveNote}
@@ -3658,12 +3659,12 @@ function FulfillmentConfirmationScreen() {
                     flex: 1,
                     paddingVertical: ds.spacing(14),
                     borderRadius: glassRadii.button,
-                    backgroundColor: isSavingNote ? '#F79B8C' : glassColors.accent,
+                    backgroundColor: isSavingNote ? color.disabled : glassColors.accent,
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <Text style={{ fontSize: ds.fontSize(15), fontWeight: '700', color: '#FFFFFF' }}>
+                  <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.bold, color: color.card }}>
                     {isSavingNote ? 'Saving...' : 'Save Note'}
                   </Text>
                 </TouchableOpacity>
@@ -3703,9 +3704,9 @@ function FulfillmentConfirmationScreen() {
                 />
                 <Text
                   style={{
-                    fontWeight: '600',
+                    fontWeight: weight.semibold,
                     marginLeft: 8,
-                    fontSize: 15,
+                    fontSize: typeScale.body,
                     color: actionsDisabled ? glassColors.textTertiary : glassColors.textPrimary,
                   }}
                 >
@@ -3734,9 +3735,9 @@ function FulfillmentConfirmationScreen() {
                 />
                 <Text
                   style={{
-                    fontWeight: '700',
+                    fontWeight: weight.bold,
                     marginLeft: ds.spacing(8),
-                    fontSize: ds.fontSize(17),
+                    fontSize: ds.fontSize(typeScale.title),
                     color: actionsDisabled ? glassColors.accent : glassColors.textOnPrimary,
                   }}
                 >
@@ -3765,9 +3766,9 @@ function FulfillmentConfirmationScreen() {
               />
               <Text
                 style={{
-                  fontWeight: '700',
+                  fontWeight: weight.bold,
                   marginLeft: ds.spacing(8),
-                  fontSize: ds.fontSize(17),
+                  fontSize: ds.fontSize(typeScale.title),
                   color: actionsDisabled ? glassColors.accent : glassColors.textOnPrimary,
                 }}
               >

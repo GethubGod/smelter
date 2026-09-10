@@ -12,6 +12,7 @@ import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { BrandLogo } from './BrandLogo';
 import { BottomSheetShell } from './BottomSheetShell';
 import { resolveLocationSwitchTarget } from '@/features/cart/locationSwitch';
+import { typeScale, weight } from '@/theme/tokens';
 
 export interface ConfirmLocationOption {
   id: string;
@@ -94,10 +95,10 @@ export function ConfirmLocationBottomSheet({
       {viewMode === 'change' ? (
         <>
           <View style={{ paddingHorizontal: ds.spacing(6), paddingBottom: ds.spacing(8) }}>
-            <Text style={{ fontSize: ds.fontSize(18), fontWeight: '700', color: colors.textPrimary }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.bold, color: colors.textPrimary }}>
               Change Location
             </Text>
-            <Text style={{ fontSize: ds.fontSize(13), marginTop: ds.spacing(4), color: colors.textSecondary }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(4), color: colors.textSecondary }}>
               Select another location.
             </Text>
           </View>
@@ -140,7 +141,7 @@ export function ConfirmLocationBottomSheet({
                       <BrandLogo variant="inline" size={18} />
                     </View>
                     <View style={{ flex: 1, marginLeft: ds.spacing(12) }}>
-                      <Text style={{ fontSize: ds.fontSize(16), fontWeight: '500', color: colors.textPrimary }}>
+                      <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: colors.textPrimary }}>
                         {location.name}
                       </Text>
                     </View>
@@ -150,7 +151,7 @@ export function ConfirmLocationBottomSheet({
               </View>
             ) : (
               <View style={{ borderRadius: radii.button, borderWidth: hairline, borderColor: colors.glassBorder, backgroundColor: colors.background, paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(20), alignItems: 'center' }}>
-                <Text style={{ fontSize: ds.fontSize(14), color: colors.textSecondary, textAlign: 'center' }}>
+                <Text style={{ fontSize: ds.fontSize(typeScale.body), color: colors.textSecondary, textAlign: 'center' }}>
                   No other cart locations available.
                 </Text>
               </View>
@@ -160,7 +161,7 @@ export function ConfirmLocationBottomSheet({
               onPress={() => setViewMode('confirm')}
               style={{ paddingVertical: ds.spacing(16), marginTop: ds.spacing(4) }}
             >
-              <Text style={{ fontSize: ds.fontSize(15), fontWeight: '600', color: colors.textSecondary, textAlign: 'center' }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: colors.textSecondary, textAlign: 'center' }}>
                 Back
               </Text>
             </TouchableOpacity>
@@ -169,7 +170,7 @@ export function ConfirmLocationBottomSheet({
       ) : (
         <>
           <View style={{ paddingHorizontal: ds.spacing(6), paddingBottom: ds.spacing(10) }}>
-            <Text style={{ fontSize: ds.fontSize(18), fontWeight: '700', color: colors.textPrimary }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.bold, color: colors.textPrimary }}>
               Confirm Location
             </Text>
           </View>
@@ -203,14 +204,14 @@ export function ConfirmLocationBottomSheet({
                   <BrandLogo variant="inline" size={18} />
                 </View>
                 <View style={{ flex: 1, marginLeft: ds.spacing(12) }}>
-                  <Text style={{ fontSize: ds.fontSize(17), fontWeight: '600', color: colors.textPrimary }} numberOfLines={1}>
+                  <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.semibold, color: colors.textPrimary }} numberOfLines={1}>
                     {selectedLocation?.name || 'Selected location'}
                   </Text>
                 </View>
               </View>
             </View>
 
-            <Text style={{ fontSize: ds.fontSize(13), marginTop: ds.spacing(10), color: colors.textSecondary }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(10), color: colors.textSecondary }}>
               {submitLabel}
             </Text>
 
@@ -231,12 +232,12 @@ export function ConfirmLocationBottomSheet({
               {isSubmitting ? (
                 <>
                   <ActivityIndicator color={colors.white} size="small" />
-                  <Text style={{ fontSize: ds.fontSize(17), marginLeft: ds.spacing(8), color: colors.white, fontWeight: '600' }}>
+                  <Text style={{ fontSize: ds.fontSize(typeScale.title), marginLeft: ds.spacing(8), color: colors.white, fontWeight: weight.semibold }}>
                     Submitting...
                   </Text>
                 </>
               ) : (
-                <Text style={{ fontSize: ds.fontSize(17), color: colors.white, fontWeight: '600' }}>
+                <Text style={{ fontSize: ds.fontSize(typeScale.title), color: colors.white, fontWeight: weight.semibold }}>
                   Confirm & Submit
                 </Text>
               )}
@@ -257,7 +258,7 @@ export function ConfirmLocationBottomSheet({
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ fontSize: ds.fontSize(17), fontWeight: '600', color: colors.textPrimary }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.semibold, color: colors.textPrimary }}>
                 Change Location
               </Text>
             </TouchableOpacity>
@@ -267,7 +268,7 @@ export function ConfirmLocationBottomSheet({
               disabled={isSubmitting}
               style={{ paddingVertical: ds.spacing(16), marginTop: ds.spacing(4) }}
             >
-              <Text style={{ fontSize: ds.fontSize(15), fontWeight: '600', color: colors.textSecondary, textAlign: 'center' }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: colors.textSecondary, textAlign: 'center' }}>
                 Cancel
               </Text>
             </TouchableOpacity>

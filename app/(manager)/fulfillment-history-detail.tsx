@@ -10,6 +10,7 @@ import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
 import { useAuthStore, useOrderStore } from '@/store';
 import { supabase } from '@/lib/supabase';
 import { useModuleAccessGuard } from '@/hooks';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 function formatQuantity(value: number): string {
   if (!Number.isFinite(value)) return '0';
@@ -200,9 +201,9 @@ function FulfillmentHistoryDetailScreen() {
 
   if (!isLoading && !pastOrder) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50" edges={['top', 'left', 'right']}>
+      <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }} edges={['top', 'left', 'right']}>
         <ManagerScaleContainer>
-          <View className="bg-white px-4 py-3 border-b border-gray-100 flex-row items-center">
+          <View className="px-4 py-3 border-b flex-row items-center" style={{ backgroundColor: color.card, borderColor: color.hairline }}>
             <TouchableOpacity
               onPress={() => router.back()}
               className="p-2 mr-2"
@@ -210,10 +211,10 @@ function FulfillmentHistoryDetailScreen() {
             >
               <Ionicons name="arrow-back" size={20} color={colors.gray[700]} />
             </TouchableOpacity>
-            <Text className="text-lg font-bold text-gray-900">Past Order</Text>
+            <Text className="font-bold" style={{ fontSize: typeScale.title, color: color.ink }}>Past Order</Text>
           </View>
           <View className="flex-1 items-center justify-center px-8">
-            <Text className="text-gray-500 text-base">Order not found.</Text>
+            <Text style={{ color: color.ink2, fontSize: typeScale.body }}>Order not found.</Text>
           </View>
         </ManagerScaleContainer>
       </SafeAreaView>
@@ -221,9 +222,9 @@ function FulfillmentHistoryDetailScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }} edges={['top', 'left', 'right', 'bottom']}>
       <ManagerScaleContainer>
-        <View className="bg-white px-4 py-3 border-b border-gray-100 flex-row items-center">
+        <View className="px-4 py-3 border-b flex-row items-center" style={{ backgroundColor: color.card, borderColor: color.hairline }}>
           <TouchableOpacity
             onPress={() => router.back()}
             className="p-2 mr-2"
@@ -233,37 +234,37 @@ function FulfillmentHistoryDetailScreen() {
           </TouchableOpacity>
           <View className="flex-1">
             <View className="flex-row items-center">
-              <Text className="text-lg font-bold text-gray-900">{supplierLabel}</Text>
+              <Text className="font-bold" style={{ fontSize: typeScale.title, color: color.ink }}>{supplierLabel}</Text>
               {pastOrder?.syncStatus === 'pending_sync' && (
-                <View className="ml-2 rounded-full border border-orange-300 bg-orange-100 px-2 py-0.5">
-                  <Text className="text-[10px] font-semibold text-orange-800">Pending sync</Text>
+                <View className="ml-2 border px-2 py-0.5" style={{ borderRadius: radius.pill, borderColor: color.warning, backgroundColor: color.warningBg }}>
+                  <Text className="font-semibold" style={{ fontSize: typeScale.caption, color: color.warning }}>Pending sync</Text>
                 </View>
               )}
             </View>
-            <Text className="text-xs text-gray-500">
+            <Text style={{ fontSize: typeScale.secondary, color: color.ink2 }}>
               {pastOrder ? new Date(pastOrder.createdAt).toLocaleString() : 'Loading...'}
             </Text>
           </View>
         </View>
 
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 24 }}>
-          <View className="bg-white rounded-2xl border border-gray-100 p-4 mb-4">
-            <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Summary</Text>
-            <Text className="text-sm text-gray-700">
+          <View className="border p-4 mb-4" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline }}>
+            <Text className="font-semibold uppercase tracking-wide mb-2" style={{ fontSize: typeScale.secondary, color: color.ink2 }}>Summary</Text>
+            <Text style={{ fontSize: typeScale.body, color: color.ink2 }}>
               {(pastOrder?.itemCount ?? items.length)} line
               {(pastOrder?.itemCount ?? items.length) === 1 ? '' : 's'} •{' '}
               {(pastOrder?.remainingCount ?? 0)} remaining • Sent via{' '}
               {pastOrder?.shareMethod === 'copy' ? 'copy' : 'share'}
             </Text>
             {pastOrder?.syncError && (
-              <Text className="text-xs text-orange-700 mt-2">{pastOrder.syncError}</Text>
+              <Text className="mt-2" style={{ fontSize: typeScale.secondary, color: color.warning }}>{pastOrder.syncError}</Text>
             )}
           </View>
 
-          <View className="bg-white rounded-2xl border border-gray-100 p-4 mb-4">
-            <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Items</Text>
+          <View className="border p-4 mb-4" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline }}>
+            <Text className="font-semibold uppercase tracking-wide mb-3" style={{ fontSize: typeScale.secondary, color: color.ink2 }}>Items</Text>
             {items.length === 0 ? (
-              <Text className="text-sm text-gray-500">No item snapshot available.</Text>
+              <Text style={{ fontSize: typeScale.body, color: color.ink2 }}>No item snapshot available.</Text>
             ) : (
               items.map((item, index) => {
                 const locationLabel = item.locationName || item.locationGroup || '';
@@ -273,16 +274,16 @@ function FulfillmentHistoryDetailScreen() {
                     className={`py-2.5 ${index < items.length - 1 ? 'border-b border-gray-100' : ''}`}
                   >
                     <View className="flex-row items-center justify-between">
-                      <Text className="text-sm font-medium text-gray-900 flex-1 pr-3">{item.itemName}</Text>
-                      <Text className="text-sm font-semibold text-gray-700">
+                      <Text className="flex-1 pr-3" style={{ fontSize: typeScale.body, fontWeight: weight.semibold, color: color.ink }}>{item.itemName}</Text>
+                      <Text className="font-semibold" style={{ fontSize: typeScale.body, color: color.ink2 }}>
                         {formatQuantity(item.quantity)} {item.unit}
                       </Text>
                     </View>
                     {locationLabel.length > 0 && (
-                      <Text className="text-xs text-gray-500 mt-1">{locationLabel}</Text>
+                      <Text className="mt-1" style={{ fontSize: typeScale.secondary, color: color.ink2 }}>{locationLabel}</Text>
                     )}
                     {item.note && (
-                      <Text className="text-xs text-blue-700 mt-1">Note: {item.note}</Text>
+                      <Text className="mt-1" style={{ fontSize: typeScale.secondary, color: color.accent }}>Note: {item.note}</Text>
                     )}
                   </View>
                 );
@@ -290,17 +291,17 @@ function FulfillmentHistoryDetailScreen() {
             )}
           </View>
 
-          <View className="bg-white rounded-2xl border border-gray-100 p-4 mb-4">
-            <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Message</Text>
-            <View className="bg-gray-50 rounded-xl p-3">
-              <Text className="text-sm text-gray-800 leading-5">
+          <View className="border p-4 mb-4" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline }}>
+            <Text className="font-semibold uppercase tracking-wide mb-3" style={{ fontSize: typeScale.secondary, color: color.ink2 }}>Message</Text>
+            <View className="p-3" style={{ backgroundColor: color.page, borderRadius: radius.control }}>
+              <Text className="leading-5" style={{ fontSize: typeScale.body, color: color.ink }}>
                 {pastOrder?.messageText || 'No message available.'}
               </Text>
             </View>
           </View>
         </ScrollView>
 
-        <View className="bg-white border-t border-gray-200 px-4 py-4">
+        <View className="border-t px-4 py-4" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
           {items.length > 0 && (
             <TouchableOpacity
               onPress={handleReorder}
@@ -322,19 +323,19 @@ function FulfillmentHistoryDetailScreen() {
           <View className="flex-row">
             <TouchableOpacity
               onPress={copyMessage}
-              className="flex-1 rounded-xl py-3 items-center justify-center bg-gray-100 mr-3 flex-row"
+              className="flex-1 py-3 items-center justify-center mr-3 flex-row" style={{ borderRadius: radius.control, backgroundColor: color.well }}
               disabled={!pastOrder}
             >
               <Ionicons name="copy-outline" size={17} color={colors.gray[700]} />
-              <Text className="text-gray-700 font-semibold ml-2">Copy</Text>
+              <Text className="font-semibold ml-2" style={{ color: color.ink2 }}>Copy</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={shareMessage}
-              className="flex-1 rounded-xl py-3 items-center justify-center bg-primary-500 flex-row"
+              className="flex-1 py-3 items-center justify-center flex-row" style={{ borderRadius: radius.control, backgroundColor: color.accent }}
               disabled={!pastOrder}
             >
               <Ionicons name="share-social-outline" size={17} color="white" />
-              <Text className="text-white font-semibold ml-2">Share Again</Text>
+              <Text className="font-semibold ml-2" style={{ color: color.onAccent }}>Share Again</Text>
             </TouchableOpacity>
           </View>
         </View>

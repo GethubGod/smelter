@@ -18,6 +18,7 @@ import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerConfirmationHaptic } from '@/lib/haptics';
 import { glassColors, glassHairlineWidth, glassSpacing } from '@/theme/design';
 import type { Location } from '@/types';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 const CLOSED_HEIGHT = 76;
 const OPEN_HEADER_HEIGHT = 62;
@@ -32,7 +33,7 @@ const CLOSED_CONFIRMATION_MS = 1200;
 const SELECTION_FEEDBACK_DELAY_MS = 150;
 const REDUCED_MOTION_SELECTION_DELAY_MS = 90;
 const SHADOW_STYLE = {
-  shadowColor: '#000000',
+  shadowColor: color.ink,
   shadowOffset: { width: 0, height: 16 },
   shadowOpacity: 0.22,
   shadowRadius: 24,
@@ -101,7 +102,7 @@ function getLocationTone(location: Location | null): LocationTone {
   }
 
   return {
-    dot: '#FFFFFF',
+    dot: color.card,
     halo: 'rgba(255,255,255,0.14)',
     border: 'rgba(255,255,255,0.24)',
     selectedBackground: 'rgba(255,255,255,0.08)',
@@ -452,7 +453,7 @@ export function FloatingLocationSelector({
           style={[
             StyleSheet.absoluteFillObject,
             {
-              backgroundColor: '#000000',
+              backgroundColor: color.ink,
             },
           ]}
         />
@@ -571,7 +572,7 @@ export function FloatingLocationSelector({
               onPress={toggleSelector}
               style={styles.headerButton}
             >
-              <Ionicons name="chevron-down" size={18} color="#FFFFFF" />
+              <Ionicons name="chevron-down" size={18} color=color.card />
             </TouchableOpacity>
           </View>
 
@@ -685,7 +686,7 @@ export function FloatingLocationSelector({
                             { backgroundColor: locationTone.dot },
                           ]}
                         >
-                          <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                          <Ionicons name="checkmark" size={16} color=color.card />
                         </View>
                       ) : (
                         <Ionicons
@@ -727,7 +728,7 @@ const styles = StyleSheet.create({
   indicatorShell: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: radius.card,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: glassHairlineWidth,
@@ -737,7 +738,7 @@ const styles = StyleSheet.create({
   locationDot: {
     width: 14,
     height: 14,
-    borderRadius: 7,
+    borderRadius: radius.control,
     shadowOffset: { width: 0, height: 0 },
     shadowRadius: 10,
     elevation: 2,
@@ -746,7 +747,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: radius.card,
     borderWidth: 1,
   },
   closedTextWrap: {
@@ -755,31 +756,31 @@ const styles = StyleSheet.create({
   },
   closedEyebrow: {
     color: 'rgba(255,255,255,0.56)',
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: typeScale.caption,
+    fontWeight: weight.bold,
     letterSpacing: 0.9,
     textTransform: 'uppercase',
   },
   closedLabel: {
     marginTop: 4,
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
+    color: color.card,
+    fontSize: typeScale.title,
+    fontWeight: weight.bold,
   },
   countPill: {
     minWidth: 28,
     height: 28,
     paddingHorizontal: 8,
-    borderRadius: 14,
+    borderRadius: radius.card,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.12)',
     marginRight: 10,
   },
   countPillText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
+    color: color.card,
+    fontSize: typeScale.secondary,
+    fontWeight: weight.bold,
   },
   openContent: {
     flex: 1,
@@ -795,14 +796,14 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   openTitle: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '700',
+    color: color.card,
+    fontSize: typeScale.title,
+    fontWeight: weight.bold,
   },
   headerButton: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: radius.card,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.08)',
@@ -815,7 +816,7 @@ const styles = StyleSheet.create({
     minHeight: ROW_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 22,
+    borderRadius: radius.sheet,
     paddingHorizontal: 16,
     backgroundColor: 'rgba(255,255,255,0.04)',
     borderWidth: glassHairlineWidth,
@@ -827,7 +828,7 @@ const styles = StyleSheet.create({
   rowIndicatorShell: {
     width: 42,
     height: 42,
-    borderRadius: 21,
+    borderRadius: radius.sheet,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: glassHairlineWidth,
@@ -836,25 +837,25 @@ const styles = StyleSheet.create({
   rowLocationDot: {
     width: 15,
     height: 15,
-    borderRadius: 7.5,
+    borderRadius: radius.control,
     shadowOffset: { width: 0, height: 0 },
     shadowRadius: 10,
     elevation: 2,
   },
   locationName: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    color: color.card,
+    fontSize: typeScale.body,
+    fontWeight: weight.semibold,
   },
   selectedLocationName: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: color.card,
+    fontWeight: weight.bold,
   },
   locationMeta: {
     marginTop: 4,
     color: 'rgba(255,255,255,0.56)',
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: typeScale.secondary,
+    fontWeight: weight.semibold,
   },
   selectedLocationMeta: {
     color: 'rgba(255,255,255,0.8)',
@@ -862,7 +863,7 @@ const styles = StyleSheet.create({
   selectedIndicator: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: radius.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -874,14 +875,14 @@ const styles = StyleSheet.create({
   },
   emptyStateTitle: {
     marginTop: 10,
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
+    color: color.card,
+    fontSize: typeScale.body,
+    fontWeight: weight.bold,
   },
   emptyStateBody: {
     marginTop: 6,
     color: 'rgba(255,255,255,0.58)',
-    fontSize: 12,
+    fontSize: typeScale.secondary,
     textAlign: 'center',
     lineHeight: 18,
   },

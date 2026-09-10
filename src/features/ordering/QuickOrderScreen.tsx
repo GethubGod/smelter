@@ -177,6 +177,7 @@ import {
   type QuickOrderMergeResult,
   type QuickOrderOperationResult,
 } from "./quickOrderItems";
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 type QuickOrderFlag = {
   type: string;
@@ -983,7 +984,7 @@ const VoiceReviewCard = React.memo(function VoiceReviewCard({
       style={[
         styles.voiceReviewCard,
         {
-          borderRadius: ds.radius(18),
+          borderRadius: radius.card,
           padding: ds.spacing(14),
           marginTop: ds.spacing(10),
         },
@@ -991,7 +992,7 @@ const VoiceReviewCard = React.memo(function VoiceReviewCard({
     >
       <View style={styles.voiceReviewHeader}>
         <Ionicons name="mic-circle" size={ds.icon(20)} color={quickOrderAccent} />
-        <Text style={[styles.voiceReviewTitle, { fontSize: ds.fontSize(16) }]}>
+        <Text style={[styles.voiceReviewTitle, { fontSize: ds.fontSize(typeScale.body) }]}>
           Suggested from voice
         </Text>
         <Pressable
@@ -1010,25 +1011,25 @@ const VoiceReviewCard = React.memo(function VoiceReviewCard({
           {safeActions.map((action, index) => (
             <View key={`${action.itemId}:${action.unit}:${index}`} style={styles.voiceReviewRow}>
               <Ionicons name="checkmark-circle" size={ds.icon(17)} color={colors.statusGreen} />
-              <Text style={[styles.voiceReviewRowText, { fontSize: ds.fontSize(15) }]} numberOfLines={1}>
+              <Text style={[styles.voiceReviewRowText, { fontSize: ds.fontSize(typeScale.body) }]} numberOfLines={1}>
                 {formatVoiceReviewAction(action)}
               </Text>
             </View>
           ))}
         </View>
       ) : (
-        <Text style={[styles.voiceReviewMutedText, { fontSize: ds.fontSize(14), marginTop: ds.spacing(8) }]}>
+        <Text style={[styles.voiceReviewMutedText, { fontSize: ds.fontSize(typeScale.body), marginTop: ds.spacing(8) }]}>
           I cleaned the voice input, but could not safely match an item yet.
         </Text>
       )}
 
       {review.unresolved.length > 0 ? (
-        <View style={[styles.voiceReviewUnresolved, { marginTop: ds.spacing(12), padding: ds.spacing(10), borderRadius: ds.radius(12) }]}>
-          <Text style={[styles.voiceReviewSectionLabel, { fontSize: ds.fontSize(12) }]}>
+        <View style={[styles.voiceReviewUnresolved, { marginTop: ds.spacing(12), padding: ds.spacing(10), borderRadius: radius.control }]}>
+          <Text style={[styles.voiceReviewSectionLabel, { fontSize: ds.fontSize(typeScale.secondary) }]}>
             Needs review
           </Text>
           {review.unresolved.slice(0, 4).map((entry, index) => (
-            <Text key={`${entry.reason}:${index}`} style={[styles.voiceReviewWarningText, { fontSize: ds.fontSize(13) }]}>
+            <Text key={`${entry.reason}:${index}`} style={[styles.voiceReviewWarningText, { fontSize: ds.fontSize(typeScale.secondary) }]}>
               {voiceUnresolvedLabel(entry)}
               {entry.alternatives?.length ? ` - did you mean ${entry.alternatives.map((alt) => alt.itemName).join(" or ")}?` : ""}
             </Text>
@@ -1037,7 +1038,7 @@ const VoiceReviewCard = React.memo(function VoiceReviewCard({
       ) : null}
 
       {review.warnings.length > 0 && review.unresolved.length === 0 ? (
-        <Text style={[styles.voiceReviewMutedText, { fontSize: ds.fontSize(12), marginTop: ds.spacing(8) }]} numberOfLines={2}>
+        <Text style={[styles.voiceReviewMutedText, { fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(8) }]} numberOfLines={2}>
           {review.warnings.join(" ")}
         </Text>
       ) : null}
@@ -1051,7 +1052,7 @@ const VoiceReviewCard = React.memo(function VoiceReviewCard({
           style={({ pressed }) => [
             styles.voiceReviewPrimaryButton,
             {
-              borderRadius: ds.radius(12),
+              borderRadius: radius.control,
               paddingVertical: ds.spacing(10),
               opacity: !canAdd ? 0.45 : pressed ? 0.82 : 1,
             },
@@ -1060,7 +1061,7 @@ const VoiceReviewCard = React.memo(function VoiceReviewCard({
           {isAdding ? (
             <ActivityIndicator size="small" color={colors.textOnPrimary} />
           ) : (
-            <Text style={[styles.voiceReviewPrimaryText, { fontSize: ds.fontSize(14) }]}>
+            <Text style={[styles.voiceReviewPrimaryText, { fontSize: ds.fontSize(typeScale.body) }]}>
               Add to order
             </Text>
           )}
@@ -1072,13 +1073,13 @@ const VoiceReviewCard = React.memo(function VoiceReviewCard({
           style={({ pressed }) => [
             styles.voiceReviewSecondaryButton,
             {
-              borderRadius: ds.radius(12),
+              borderRadius: radius.control,
               paddingVertical: ds.spacing(10),
               opacity: pressed ? 0.75 : 1,
             },
           ]}
         >
-          <Text style={[styles.voiceReviewSecondaryText, { fontSize: ds.fontSize(14) }]}>
+          <Text style={[styles.voiceReviewSecondaryText, { fontSize: ds.fontSize(typeScale.body) }]}>
             Edit text
           </Text>
         </Pressable>
@@ -1089,13 +1090,13 @@ const VoiceReviewCard = React.memo(function VoiceReviewCard({
           style={({ pressed }) => [
             styles.voiceReviewSecondaryButton,
             {
-              borderRadius: ds.radius(12),
+              borderRadius: radius.control,
               paddingVertical: ds.spacing(10),
               opacity: pressed ? 0.75 : 1,
             },
           ]}
         >
-          <Text style={[styles.voiceReviewSecondaryText, { fontSize: ds.fontSize(14) }]}>
+          <Text style={[styles.voiceReviewSecondaryText, { fontSize: ds.fontSize(typeScale.body) }]}>
             Retry
           </Text>
         </Pressable>
@@ -1660,7 +1661,7 @@ function renderInlineMarkdown(text: string): React.ReactNode {
         <Text
           key={index}
           style={{
-            fontWeight: "800",
+            fontWeight: weight.bold,
             ...(Platform.OS === "android" ? { backgroundColor: "transparent" } : null),
           }}
         >
@@ -1717,38 +1718,38 @@ const CARD_BADGE_CONFIG: Record<
   "needs-input": {
     label: "NEEDS INPUT",
     icon: "alert-circle",
-    background: "#FEF3C7",
-    foreground: "#92400E",
+    background: color.warningBg,
+    foreground: color.warning,
   },
   added: {
     label: "ADDED",
     icon: "checkmark-circle",
-    background: "#DCFCE7",
-    foreground: "#166534",
+    background: color.goodBg,
+    foreground: color.good,
   },
   info: {
     label: "INFO",
     icon: "sparkles-outline",
-    background: "#EFF6FF",
-    foreground: "#1E40AF",
+    background: color.tint,
+    foreground: color.accent,
   },
   dismissed: {
     label: "DISMISSED",
     icon: "close-circle",
-    background: "#F3F4F6",
-    foreground: "#6B7280",
+    background: color.well,
+    foreground: color.ink2,
   },
   voided: {
     label: "VOIDED",
     icon: "close-circle",
-    background: "#F3F4F6",
-    foreground: "#6B7280",
+    background: color.well,
+    foreground: color.ink2,
   },
   reverted: {
     label: "REVERTED",
     icon: "arrow-undo",
-    background: "#F3F4F6",
-    foreground: "#6B7280",
+    background: color.well,
+    foreground: color.ink2,
   },
 };
 
@@ -1790,7 +1791,7 @@ const AIResponsePill = React.memo(function AIResponsePill({
         pill.tone === "caution" && styles.aiPillCaution,
         pill.tone === "success" && styles.aiPillSuccess,
         {
-          borderRadius: ds.radius(20),
+          borderRadius: radius.card,
           paddingHorizontal: ds.spacing(14),
           paddingVertical: ds.spacing(10),
           marginTop: ds.spacing(10),
@@ -1801,7 +1802,7 @@ const AIResponsePill = React.memo(function AIResponsePill({
       <Text style={[
         styles.aiPillText,
         pill.tone === "caution" && styles.aiPillTextCaution,
-        { fontSize: ds.fontSize(16) },
+        { fontSize: ds.fontSize(typeScale.body) },
         Platform.OS === "android" ? styles.aiPillTextAndroid : null,
       ]}>
         {renderInlineMarkdown(text)}
@@ -1863,7 +1864,7 @@ const InlineRevertButton = React.memo(function InlineRevertButton({
         <Text
           style={[
             styles.revertAffordanceText,
-            { fontSize: ds.fontSize(12), color: tint },
+            { fontSize: ds.fontSize(typeScale.secondary), color: tint },
           ]}
         >
           {text}
@@ -1908,7 +1909,7 @@ const ClarificationCard = React.memo(function ClarificationCard({
         style={[
           styles.chatDismissedPillCard,
           {
-            borderRadius: ds.radius(16),
+            borderRadius: radius.card,
             padding: ds.spacing(12),
             marginTop: ds.spacing(10),
           },
@@ -1931,7 +1932,7 @@ const ClarificationCard = React.memo(function ClarificationCard({
       style={[
         styles.chatWhiteCard,
         {
-          borderRadius: ds.radius(16),
+          borderRadius: radius.card,
           padding: ds.spacing(14),
           marginTop: ds.spacing(10),
         },
@@ -1941,7 +1942,7 @@ const ClarificationCard = React.memo(function ClarificationCard({
       <Text
         style={[
           styles.chatWhiteCardText,
-          { fontSize: ds.fontSize(15), marginTop: ds.spacing(10) },
+          { fontSize: ds.fontSize(typeScale.body), marginTop: ds.spacing(10) },
         ]}
       >
         {renderInlineMarkdown(messageWithBold)}
@@ -2059,7 +2060,7 @@ const SuggestionCard = React.memo(function SuggestionCard({
         style={[
           styles.chatDismissedPillCard,
           {
-            borderRadius: ds.radius(16),
+            borderRadius: radius.card,
             padding: ds.spacing(12),
             marginTop: ds.spacing(10),
           },
@@ -2078,7 +2079,7 @@ const SuggestionCard = React.memo(function SuggestionCard({
         style={[
           styles.chatDismissedPillCard,
           {
-            borderRadius: ds.radius(16),
+            borderRadius: radius.card,
             padding: ds.spacing(12),
             marginTop: ds.spacing(10),
           },
@@ -2088,7 +2089,7 @@ const SuggestionCard = React.memo(function SuggestionCard({
         <Text
           style={[
             styles.chatWhiteCardText,
-            { fontSize: ds.fontSize(15), marginTop: ds.spacing(8) },
+            { fontSize: ds.fontSize(typeScale.body), marginTop: ds.spacing(8) },
           ]}
         >
           Suggestion discarded.
@@ -2107,7 +2108,7 @@ const SuggestionCard = React.memo(function SuggestionCard({
       style={[
         styles.chatWhiteCard,
         {
-          borderRadius: ds.radius(16),
+          borderRadius: radius.card,
           padding: ds.spacing(14),
           marginTop: ds.spacing(10),
         },
@@ -2117,7 +2118,7 @@ const SuggestionCard = React.memo(function SuggestionCard({
       <Text
         style={[
           styles.chatWhiteCardText,
-          { fontSize: ds.fontSize(15), marginTop: ds.spacing(10) },
+          { fontSize: ds.fontSize(typeScale.body), marginTop: ds.spacing(10) },
         ]}
       >
         {renderInlineMarkdown(messageWithBold || title)}
@@ -2191,7 +2192,7 @@ const SafetyWarningCard = React.memo(function SafetyWarningCard({
         styles.noticeCard,
         blocked ? styles.blockedCard : info ? styles.stockCard : styles.warningCard,
         {
-          borderRadius: ds.radius(16),
+          borderRadius: radius.card,
           padding: ds.spacing(12),
           marginTop: ds.spacing(10),
         },
@@ -2204,11 +2205,11 @@ const SafetyWarningCard = React.memo(function SafetyWarningCard({
       />
       <View style={{ flex: 1, gap: ds.spacing(2) }}>
         {title ? (
-          <Text style={[styles.stockTitle, { fontSize: ds.fontSize(13) }]}>
+          <Text style={[styles.stockTitle, { fontSize: ds.fontSize(typeScale.secondary) }]}>
             {title}
           </Text>
         ) : null}
-        <Text style={[styles.noticeText, { fontSize: ds.fontSize(14) }]}>
+        <Text style={[styles.noticeText, { fontSize: ds.fontSize(typeScale.body) }]}>
           {warning.message}
         </Text>
       </View>
@@ -2231,14 +2232,14 @@ const BlockedOperationCard = React.memo(function BlockedOperationCard({
         styles.noticeCard,
         styles.blockedCard,
         {
-          borderRadius: ds.radius(16),
+          borderRadius: radius.card,
           padding: ds.spacing(12),
           marginTop: ds.spacing(10),
         },
       ]}
     >
       <Ionicons name="ban-outline" size={ds.icon(18)} color={colors.statusRed} />
-      <Text style={[styles.noticeText, { fontSize: ds.fontSize(14) }]}>
+      <Text style={[styles.noticeText, { fontSize: ds.fontSize(typeScale.body) }]}>
         {operation.message}
       </Text>
     </View>
@@ -2262,7 +2263,7 @@ const StockUpdateCard = React.memo(function StockUpdateCard({
         styles.noticeCard,
         styles.stockCard,
         {
-          borderRadius: ds.radius(16),
+          borderRadius: radius.card,
           padding: ds.spacing(12),
           marginTop: ds.spacing(10),
         },
@@ -2270,20 +2271,20 @@ const StockUpdateCard = React.memo(function StockUpdateCard({
     >
       <Ionicons name="clipboard-outline" size={ds.icon(18)} color={quickOrderAccent} />
       <View style={[styles.stockTextCluster, { marginLeft: ds.spacing(8), gap: ds.spacing(4) }]}>
-        <Text style={[styles.stockTitle, { fontSize: ds.fontSize(13) }]}>
+        <Text style={[styles.stockTitle, { fontSize: ds.fontSize(typeScale.secondary) }]}>
           Current stock
         </Text>
         {visibleUpdates.map((update, index) => (
           <Text
             key={`${update.item_id}:${update.original_text}:${index}`}
-            style={[styles.stockRowText, { fontSize: ds.fontSize(14) }]}
+            style={[styles.stockRowText, { fontSize: ds.fontSize(typeScale.body) }]}
           >
             {update.item_name} {update.quantity}
             {update.unit ? ` ${update.unit}` : ""}
           </Text>
         ))}
         {updates.length > 4 ? (
-          <Text style={[styles.stockMoreText, { fontSize: ds.fontSize(12) }]}>
+          <Text style={[styles.stockMoreText, { fontSize: ds.fontSize(typeScale.secondary) }]}>
             +{updates.length - 4} more
           </Text>
         ) : null}
@@ -2329,7 +2330,7 @@ const InventoryUpdateCard = React.memo(function InventoryUpdateCard({
         styles.noticeCard,
         styles.stockCard,
         {
-          borderRadius: ds.radius(16),
+          borderRadius: radius.card,
           padding: ds.spacing(12),
           marginTop: ds.spacing(10),
         },
@@ -2337,7 +2338,7 @@ const InventoryUpdateCard = React.memo(function InventoryUpdateCard({
     >
       <Ionicons name="clipboard-outline" size={ds.icon(18)} color={quickOrderAccent} />
       <View style={[styles.stockTextCluster, { marginLeft: ds.spacing(8), gap: ds.spacing(4) }]}>
-        <Text style={[styles.stockTitle, { fontSize: ds.fontSize(13) }]}>
+        <Text style={[styles.stockTitle, { fontSize: ds.fontSize(typeScale.secondary) }]}>
           Updated
         </Text>
         {visibleUpdates.map((update, index) => (
@@ -2345,7 +2346,7 @@ const InventoryUpdateCard = React.memo(function InventoryUpdateCard({
             key={`${update.item_id}:${index}`}
             style={[styles.inventoryUpdateRow, { gap: ds.spacing(6) }]}
           >
-            <Text style={[styles.stockRowText, { fontSize: ds.fontSize(14) }]}>
+            <Text style={[styles.stockRowText, { fontSize: ds.fontSize(typeScale.body) }]}>
               {update.item_name}
               {update.current_quantity != null
                 ? ` ${formatQuickOrderQuantity(update.current_quantity, update.current_unit)}`
@@ -2358,16 +2359,16 @@ const InventoryUpdateCard = React.memo(function InventoryUpdateCard({
                   size={ds.icon(14)}
                   color={colors.textSecondary}
                 />
-                <Text style={[styles.inventoryUpdateNewText, { fontSize: ds.fontSize(14) }]}>
+                <Text style={[styles.inventoryUpdateNewText, { fontSize: ds.fontSize(typeScale.body) }]}>
                   {formatQuickOrderQuantity(update.new_quantity, update.new_unit)}
                 </Text>
               </>
             ) : (
               <>
-                <Text style={[styles.inventoryUpdateDashText, { fontSize: ds.fontSize(14) }]}>
+                <Text style={[styles.inventoryUpdateDashText, { fontSize: ds.fontSize(typeScale.body) }]}>
                   –
                 </Text>
-                <Text style={[styles.inventoryUpdateNotOrderedText, { fontSize: ds.fontSize(14) }]}>
+                <Text style={[styles.inventoryUpdateNotOrderedText, { fontSize: ds.fontSize(typeScale.body) }]}>
                   {formatQuickOrderQuantity(0, update.new_unit ?? update.current_unit)}
                 </Text>
               </>
@@ -2383,7 +2384,7 @@ const InventoryUpdateCard = React.memo(function InventoryUpdateCard({
             onPress={handleToggle}
             hitSlop={8}
           >
-            <Text style={[styles.stockMoreText, { fontSize: ds.fontSize(12) }]}>
+            <Text style={[styles.stockMoreText, { fontSize: ds.fontSize(typeScale.secondary) }]}>
               {expanded ? "Show less" : `+${hiddenCount} more`}
             </Text>
           </Pressable>
@@ -2447,7 +2448,7 @@ const RecommendationCard = React.memo(function RecommendationCard({
         styles.recommendationCard,
         decision === "previewed" && styles.suggestionCardAdded,
         {
-          borderRadius: ds.radius(16),
+          borderRadius: radius.card,
           padding: ds.spacing(12),
           marginTop: ds.spacing(10),
         },
@@ -2456,11 +2457,11 @@ const RecommendationCard = React.memo(function RecommendationCard({
       <View style={styles.suggestionHeader}>
         <Ionicons name="sparkles-outline" size={ds.icon(18)} color={quickOrderAccent} />
         <View style={styles.suggestionTextCluster}>
-          <Text style={[styles.suggestionTitle, { fontSize: ds.fontSize(15) }]}>
+          <Text style={[styles.suggestionTitle, { fontSize: ds.fontSize(typeScale.body) }]}>
             {usesPreview ? "Suggested order" : recommendations[0].item_name}
           </Text>
           {usesPreview ? (
-            <Text style={[styles.suggestionMessage, { fontSize: ds.fontSize(13) }]}>
+            <Text style={[styles.suggestionMessage, { fontSize: ds.fontSize(typeScale.secondary) }]}>
               {recommendations
                 .slice(0, 4)
                 .map((item) => `${item.item_name} ${formatQuickOrderQuantity(item.suggested_quantity, item.unit)}`)
@@ -2469,14 +2470,14 @@ const RecommendationCard = React.memo(function RecommendationCard({
           ) : (
             <>
               {firstCurrentStock != null ? (
-                <Text style={[styles.suggestionMessage, { fontSize: ds.fontSize(13) }]}>
+                <Text style={[styles.suggestionMessage, { fontSize: ds.fontSize(typeScale.secondary) }]}>
                   Current: {formatQuickOrderQuantity(firstCurrentStock, recommendations[0].unit)} remaining
                 </Text>
               ) : null}
-              <Text style={[styles.suggestionMessage, { fontSize: ds.fontSize(13) }]}>
+              <Text style={[styles.suggestionMessage, { fontSize: ds.fontSize(typeScale.secondary) }]}>
                 Suggested order: {formatQuickOrderQuantity(recommendations[0].suggested_quantity, recommendations[0].unit)}
               </Text>
-              <Text style={[styles.suggestionMessage, { fontSize: ds.fontSize(13) }]}>
+              <Text style={[styles.suggestionMessage, { fontSize: ds.fontSize(typeScale.secondary) }]}>
                 Reason: {recommendations[0].reason}
               </Text>
             </>
@@ -6194,14 +6195,14 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
             style={[
               styles.errorCard,
               {
-                borderRadius: ds.radius(16),
+                borderRadius: radius.card,
                 paddingHorizontal: ds.spacing(14),
                 paddingVertical: ds.spacing(10),
                 marginTop: ds.spacing(10),
               },
             ]}
           >
-            <Text style={[styles.errorText, { fontSize: ds.fontSize(15) }]}>
+            <Text style={[styles.errorText, { fontSize: ds.fontSize(typeScale.body) }]}>
               {errorText}
             </Text>
             {canRetry ? (
@@ -6213,12 +6214,12 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
                   styles.retryButton,
                   {
                     marginTop: ds.spacing(10),
-                    borderRadius: ds.radius(12),
+                    borderRadius: radius.control,
                     opacity: pressed ? 0.7 : 1,
                   },
                 ]}
               >
-                <Text style={[styles.retryText, { fontSize: ds.fontSize(14) }]}>
+                <Text style={[styles.retryText, { fontSize: ds.fontSize(typeScale.body) }]}>
                   Retry
                 </Text>
               </Pressable>
@@ -6358,7 +6359,7 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
                   style={[
                     styles.sessionErrorCard,
                     {
-                      borderRadius: ds.radius(16),
+                      borderRadius: radius.card,
                       padding: ds.spacing(14),
                       marginTop: ds.spacing(10),
                     },
@@ -6367,7 +6368,7 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
                   <Text
                     style={[
                       styles.sessionErrorText,
-                      { fontSize: ds.fontSize(15) },
+                      { fontSize: ds.fontSize(typeScale.body) },
                     ]}
                   >
                     {sessionLoadError}
@@ -6380,13 +6381,13 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
                       styles.retryButton,
                       {
                         marginTop: ds.spacing(10),
-                        borderRadius: ds.radius(12),
+                        borderRadius: radius.control,
                         opacity: pressed ? 0.7 : 1,
                       },
                     ]}
                   >
                     <Text
-                      style={[styles.retryText, { fontSize: ds.fontSize(14) }]}
+                      style={[styles.retryText, { fontSize: ds.fontSize(typeScale.body) }]}
                     >
                       Retry
                     </Text>
@@ -6411,7 +6412,7 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
                     style={[
                       styles.typingCard,
                       {
-                        borderRadius: ds.radius(18),
+                        borderRadius: radius.card,
                         paddingHorizontal: ds.spacing(14),
                         paddingVertical: ds.spacing(11),
                         marginTop: ds.spacing(10),
@@ -6420,7 +6421,7 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
                   >
                     <ActivityIndicator color={quickOrderAccent} />
                     <Text
-                      style={[styles.typingText, { fontSize: ds.fontSize(15) }]}
+                      style={[styles.typingText, { fontSize: ds.fontSize(typeScale.body) }]}
                     >
                       Reading order...
                     </Text>
@@ -6487,12 +6488,12 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
               style={[
                 styles.missingReviewCard,
                 {
-                  borderRadius: ds.radius(18),
+                  borderRadius: radius.card,
                   padding: ds.spacing(16),
                 },
               ]}
             >
-              <Text style={[styles.missingReviewTitle, { fontSize: ds.fontSize(18) }]}>
+              <Text style={[styles.missingReviewTitle, { fontSize: ds.fontSize(typeScale.title) }]}>
                 Before you confirm, you may be missing {highConfidenceMissingSuggestions.length} usual {highConfidenceMissingSuggestions.length === 1 ? "item" : "items"}.
               </Text>
               <View style={{ marginTop: ds.spacing(10), gap: ds.spacing(8) }}>
@@ -6507,7 +6508,7 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
                       style={[
                         styles.missingReviewRow,
                         {
-                          borderRadius: ds.radius(12),
+                          borderRadius: radius.control,
                           padding: ds.spacing(10),
                         },
                       ]}
@@ -6518,10 +6519,10 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
                         color={selected ? quickOrderAccent : colors.textMuted}
                       />
                       <View style={styles.missingReviewRowText}>
-                        <Text style={[styles.missingReviewItem, { fontSize: ds.fontSize(15) }]}>
+                        <Text style={[styles.missingReviewItem, { fontSize: ds.fontSize(typeScale.body) }]}>
                           {suggestion.itemName} - {suggestion.suggestedQuantity}{suggestion.unit ? ` ${suggestion.unit}` : ""}
                         </Text>
-                        <Text style={[styles.missingReviewReason, { fontSize: ds.fontSize(12) }]}>
+                        <Text style={[styles.missingReviewReason, { fontSize: ds.fontSize(typeScale.secondary) }]}>
                           {suggestion.reason}
                         </Text>
                       </View>
@@ -6537,13 +6538,13 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
                   style={({ pressed }) => [
                     styles.missingReviewPrimaryButton,
                     {
-                      borderRadius: ds.radius(12),
+                      borderRadius: radius.control,
                       paddingVertical: ds.spacing(10),
                       opacity: pressed ? 0.75 : 1,
                     },
                   ]}
                 >
-                  <Text style={[styles.missingReviewPrimaryText, { fontSize: ds.fontSize(14) }]}>
+                  <Text style={[styles.missingReviewPrimaryText, { fontSize: ds.fontSize(typeScale.body) }]}>
                     Add selected
                   </Text>
                 </Pressable>
@@ -6554,13 +6555,13 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
                   style={({ pressed }) => [
                     styles.missingReviewSecondaryButton,
                     {
-                      borderRadius: ds.radius(12),
+                      borderRadius: radius.control,
                       paddingVertical: ds.spacing(10),
                       opacity: pressed ? 0.75 : 1,
                     },
                   ]}
                 >
-                  <Text style={[styles.missingReviewSecondaryText, { fontSize: ds.fontSize(14) }]}>
+                  <Text style={[styles.missingReviewSecondaryText, { fontSize: ds.fontSize(typeScale.body) }]}>
                     Skip and confirm
                   </Text>
                 </Pressable>
@@ -6571,13 +6572,13 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
                   style={({ pressed }) => [
                     styles.missingReviewCancelButton,
                     {
-                      borderRadius: ds.radius(12),
+                      borderRadius: radius.control,
                       paddingVertical: ds.spacing(10),
                       opacity: pressed ? 0.75 : 1,
                     },
                   ]}
                 >
-                  <Text style={[styles.missingReviewCancelText, { fontSize: ds.fontSize(14) }]}>
+                  <Text style={[styles.missingReviewCancelText, { fontSize: ds.fontSize(typeScale.body) }]}>
                     Cancel
                   </Text>
                 </Pressable>
@@ -6662,7 +6663,7 @@ const styles = StyleSheet.create({
   },
   sessionErrorText: {
     color: colors.statusRed,
-    fontWeight: "700",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   errorCard: {
@@ -6675,7 +6676,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: colors.statusRed,
-    fontWeight: "700",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   retryButton: {
@@ -6686,7 +6687,7 @@ const styles = StyleSheet.create({
   },
   retryText: {
     color: colors.statusRed,
-    fontWeight: "800",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   typingCard: {
@@ -6700,7 +6701,7 @@ const styles = StyleSheet.create({
   typingText: {
     marginLeft: 10,
     color: colors.textSecondary,
-    fontWeight: "700",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   voiceReviewCard: {
@@ -6717,7 +6718,7 @@ const styles = StyleSheet.create({
   voiceReviewTitle: {
     flex: 1,
     color: colors.textPrimary,
-    fontWeight: "800",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   voiceReviewRow: {
@@ -6728,7 +6729,7 @@ const styles = StyleSheet.create({
   voiceReviewRowText: {
     flex: 1,
     color: colors.textPrimary,
-    fontWeight: "700",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   voiceReviewUnresolved: {
@@ -6738,20 +6739,20 @@ const styles = StyleSheet.create({
   },
   voiceReviewSectionLabel: {
     color: colors.statusAmber,
-    fontWeight: "900",
+    fontWeight: weight.bold,
     letterSpacing: 0,
     textTransform: "uppercase",
     marginBottom: 4,
   },
   voiceReviewWarningText: {
     color: colors.textPrimary,
-    fontWeight: "700",
+    fontWeight: weight.bold,
     letterSpacing: 0,
     marginTop: 3,
   },
   voiceReviewMutedText: {
     color: colors.textSecondary,
-    fontWeight: "700",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   voiceReviewActions: {
@@ -6767,7 +6768,7 @@ const styles = StyleSheet.create({
   },
   voiceReviewPrimaryText: {
     color: colors.textOnPrimary,
-    fontWeight: "900",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   voiceReviewSecondaryButton: {
@@ -6779,7 +6780,7 @@ const styles = StyleSheet.create({
   },
   voiceReviewSecondaryText: {
     color: quickOrderAccent,
-    fontWeight: "800",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   aiPill: {
@@ -6812,7 +6813,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     marginLeft: 10,
     color: colors.textPrimary,
-    fontWeight: "600",
+    fontWeight: weight.semibold,
     letterSpacing: 0,
   },
   aiPillTextAndroid: {
@@ -6822,50 +6823,50 @@ const styles = StyleSheet.create({
   },
   aiPillTextCaution: {
     color: colors.textPrimary,
-    fontWeight: "500",
+    fontWeight: weight.semibold,
   },
   chatWhiteCard: {
     alignSelf: "flex-start",
     width: "94%",
     backgroundColor: colors.white,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: color.hairlineStrong,
   },
   chatWhiteCardText: {
     color: colors.textPrimary,
-    fontWeight: "500",
+    fontWeight: weight.semibold,
     letterSpacing: 0,
   },
   chatDismissedPillCard: {
     alignSelf: "flex-start",
     backgroundColor: colors.white,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: color.hairlineStrong,
   },
   cardBadge: {
     alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 999,
+    borderRadius: radius.pill,
     paddingHorizontal: 8,
     paddingVertical: 3,
     gap: 4,
   },
   cardBadgeText: {
-    fontSize: 11,
-    fontWeight: "800",
+    fontSize: typeScale.caption,
+    fontWeight: weight.bold,
     letterSpacing: 0.4,
   },
   clarificationCard: {
     alignSelf: "flex-start",
     maxWidth: "94%",
-    backgroundColor: "#FEF3C7",
+    backgroundColor: color.warningBg,
     borderWidth: glassHairlineWidth,
-    borderColor: "#FDE68A",
+    borderColor: color.warning,
   },
   clarificationCardConfirmed: {
-    backgroundColor: "#DCFCE7",
-    borderColor: "#BBF7D0",
+    backgroundColor: color.goodBg,
+    borderColor: color.good,
   },
   clarificationCardDismissed: {
     backgroundColor: colors.glassCircle,
@@ -6878,19 +6879,19 @@ const styles = StyleSheet.create({
   clarificationText: {
     flex: 1,
     color: colors.textPrimary,
-    fontWeight: "500",
+    fontWeight: weight.semibold,
     letterSpacing: 0,
   },
   clarificationTextConfirmed: {
     flex: 1,
     color: colors.textPrimary,
-    fontWeight: "700",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   clarificationTextDismissed: {
     flex: 1,
     color: colors.textSecondary,
-    fontWeight: "600",
+    fontWeight: weight.semibold,
     letterSpacing: 0,
   },
   clarificationActions: {
@@ -6901,19 +6902,19 @@ const styles = StyleSheet.create({
   clarificationPrimaryButton: {
     backgroundColor: colors.white,
     borderWidth: 1,
-    borderColor: "#F59E0B",
+    borderColor: color.warning,
   },
   clarificationPrimaryButtonText: {
-    color: "#92400E",
-    fontWeight: "800",
+    color: color.warning,
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   clarificationGhostButton: {
     backgroundColor: "transparent",
   },
   clarificationGhostButtonText: {
-    color: "#92400E",
-    fontWeight: "700",
+    color: color.warning,
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   noticeCard: {
@@ -6927,7 +6928,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 8,
     color: colors.textPrimary,
-    fontWeight: "700",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   warningCard: {
@@ -6947,22 +6948,22 @@ const styles = StyleSheet.create({
   },
   stockTitle: {
     color: colors.textSecondary,
-    fontWeight: "800",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   stockRowText: {
     color: colors.textPrimary,
-    fontWeight: "800",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   stockMoreText: {
     color: colors.textMuted,
-    fontWeight: "700",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   personalContextNote: {
     color: colors.textMuted,
-    fontSize: 12,
+    fontSize: typeScale.secondary,
     fontStyle: "italic",
     marginBottom: 4,
     marginLeft: 4,
@@ -6972,9 +6973,9 @@ const styles = StyleSheet.create({
   },
   personalContextToggle: {
     color: colors.textMuted,
-    fontSize: 12,
+    fontSize: typeScale.secondary,
     fontStyle: "italic",
-    fontWeight: "700",
+    fontWeight: weight.bold,
     marginLeft: 4,
   },
   inventoryUpdateRow: {
@@ -6984,19 +6985,19 @@ const styles = StyleSheet.create({
   },
   inventoryUpdateNewText: {
     color: quickOrderAccent,
-    fontWeight: "800",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   inventoryUpdateDashText: {
     color: colors.textSecondary,
-    fontWeight: "800",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   // Counted but not ordered (above range, no order needed, etc.): "– 0 unit" in
   // black so it reads as deliberately left alone, distinct from the red orders.
   inventoryUpdateNotOrderedText: {
     color: colors.textPrimary,
-    fontWeight: "800",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   recommendationCard: {
@@ -7009,15 +7010,15 @@ const styles = StyleSheet.create({
   suggestionCard: {
     alignSelf: "flex-start",
     width: "94%",
-    backgroundColor: "#FEF3C7",
+    backgroundColor: color.warningBg,
     borderWidth: glassHairlineWidth,
-    borderColor: "#FDE68A",
+    borderColor: color.warning,
   },
   suggestionCardAdded: {
     width: "auto",
     maxWidth: "94%",
-    backgroundColor: "#DCFCE7",
-    borderColor: "#BBF7D0",
+    backgroundColor: color.goodBg,
+    borderColor: color.good,
   },
   suggestionCardDismissed: {
     width: "auto",
@@ -7027,7 +7028,7 @@ const styles = StyleSheet.create({
   },
   suggestionDismissedText: {
     color: colors.textSecondary,
-    fontWeight: "700",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   suggestionButtonRow: {
@@ -7037,19 +7038,19 @@ const styles = StyleSheet.create({
   suggestionPrimaryButton: {
     backgroundColor: colors.white,
     borderWidth: 1,
-    borderColor: "#F59E0B",
+    borderColor: color.warning,
   },
   suggestionPrimaryButtonText: {
-    color: "#92400E",
-    fontWeight: "800",
+    color: color.warning,
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   suggestionGhostButton: {
     backgroundColor: "transparent",
   },
   suggestionGhostButtonText: {
-    color: "#92400E",
-    fontWeight: "700",
+    color: color.warning,
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   suggestionHeader: {
@@ -7063,24 +7064,24 @@ const styles = StyleSheet.create({
   },
   suggestionTitle: {
     color: colors.textPrimary,
-    fontWeight: "500",
+    fontWeight: weight.semibold,
     letterSpacing: 0,
   },
   suggestionMessage: {
     marginTop: 2,
     color: colors.textSecondary,
-    fontWeight: "400",
+    fontWeight: weight.regular,
     letterSpacing: 0,
   },
   suggestionItems: {
     backgroundColor: colors.glassCircle,
-    borderRadius: 10,
+    borderRadius: radius.control,
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
   suggestionItemText: {
     color: colors.textSecondary,
-    fontWeight: "700",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   suggestionButton: {
@@ -7089,7 +7090,7 @@ const styles = StyleSheet.create({
   },
   suggestionButtonText: {
     color: quickOrderAccent,
-    fontWeight: "800",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   missingReviewBackdrop: {
@@ -7105,7 +7106,7 @@ const styles = StyleSheet.create({
   },
   missingReviewTitle: {
     color: colors.textPrimary,
-    fontWeight: "800",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   missingReviewRow: {
@@ -7122,13 +7123,13 @@ const styles = StyleSheet.create({
   },
   missingReviewItem: {
     color: colors.textPrimary,
-    fontWeight: "800",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   missingReviewReason: {
     marginTop: 3,
     color: colors.textSecondary,
-    fontWeight: "600",
+    fontWeight: weight.semibold,
     letterSpacing: 0,
   },
   missingReviewActions: {
@@ -7140,7 +7141,7 @@ const styles = StyleSheet.create({
   },
   missingReviewPrimaryText: {
     color: colors.textOnPrimary,
-    fontWeight: "800",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   missingReviewSecondaryButton: {
@@ -7151,7 +7152,7 @@ const styles = StyleSheet.create({
   },
   missingReviewSecondaryText: {
     color: quickOrderAccent,
-    fontWeight: "800",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   missingReviewCancelButton: {
@@ -7162,7 +7163,7 @@ const styles = StyleSheet.create({
   },
   missingReviewCancelText: {
     color: colors.textSecondary,
-    fontWeight: "800",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   revertAffordance: {
@@ -7175,7 +7176,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   revertAffordanceText: {
-    fontWeight: "700",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   suggestionAddedRow: {
@@ -7189,7 +7190,7 @@ const styles = StyleSheet.create({
   suggestionAddedText: {
     marginLeft: 8,
     color: colors.textPrimary,
-    fontWeight: "800",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
 });

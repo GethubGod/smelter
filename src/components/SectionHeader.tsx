@@ -5,6 +5,7 @@ import {
   glassColors,
   glassTypography,
 } from '@/theme/design';
+import { typeScale, weight } from '@/theme/tokens';
 
 interface SectionHeaderProps {
   title: string;
@@ -25,7 +26,7 @@ export function SectionHeader({
         style={{
           color: glassColors.textSecondary,
           fontSize: glassTypography.sectionLabel,
-          fontWeight: '600',
+          fontWeight: weight.semibold,
           letterSpacing: 1.5,
           textTransform: 'uppercase',
         }}
@@ -36,8 +37,8 @@ export function SectionHeader({
         <TouchableOpacity onPress={onPressAction} hitSlop={8}>
           <Text
             style={{
-              fontSize: ds.fontSize(13),
-              fontWeight: '600',
+              fontSize: ds.fontSize(typeScale.secondary),
+              fontWeight: weight.semibold,
               color: glassColors.accent,
             }}
           >

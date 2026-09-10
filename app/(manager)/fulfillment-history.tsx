@@ -22,6 +22,7 @@ import {
   type ReceiptDiscrepancy,
 } from '@/services/orderReceiving';
 import { describeDiscrepancyLine } from '@/features/simpleOrder/receiving/receiveLineState';
+import { color, radius, typeScale } from '@/theme/tokens';
 
 type DateFilter = 'all' | 'today' | '7d' | '30d';
 
@@ -200,9 +201,9 @@ function FulfillmentHistoryScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top', 'left', 'right']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }} edges={['top', 'left', 'right']}>
       <ManagerScaleContainer>
-        <View className="bg-white px-4 py-3 border-b border-gray-100 flex-row items-center">
+        <View className="px-4 py-3 border-b flex-row items-center" style={{ backgroundColor: color.card, borderColor: color.hairline }}>
           <TouchableOpacity
             onPress={() => router.replace('/(manager)/fulfillment')}
             className="p-2 mr-2"
@@ -211,22 +212,22 @@ function FulfillmentHistoryScreen() {
             <Ionicons name="arrow-back" size={20} color={colors.gray[700]} />
           </TouchableOpacity>
           <View className="flex-1">
-            <Text className="text-lg font-bold text-gray-900">Past Orders</Text>
-            <Text className="text-xs text-gray-500">
+            <Text className="font-bold" style={{ fontSize: typeScale.title, color: color.ink }}>Past Orders</Text>
+            <Text style={{ fontSize: typeScale.secondary, color: color.ink2 }}>
               {filteredOrders.length} order{filteredOrders.length === 1 ? '' : 's'}
             </Text>
           </View>
         </View>
 
-        <View className="px-4 pt-4 pb-2 bg-gray-50">
-          <View className="bg-white rounded-xl border border-gray-200 px-3 py-2.5 flex-row items-center">
+        <View className="px-4 pt-4 pb-2" style={{ backgroundColor: color.page }}>
+          <View className="border px-3 py-2.5 flex-row items-center" style={{ backgroundColor: color.card, borderRadius: radius.control, borderColor: color.hairlineStrong }}>
             <Ionicons name="search-outline" size={16} color={colors.gray[400]} />
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder="Search supplier"
               placeholderTextColor={colors.gray[400]}
-              className="ml-2 flex-1 text-sm text-gray-900"
+              className="ml-2 flex-1" style={{ fontSize: typeScale.body, color: color.ink }}
             />
           </View>
           <View className="flex-row mt-3">
@@ -261,27 +262,27 @@ function FulfillmentHistoryScreen() {
           ItemSeparatorComponent={() => <View className="h-3" />}
           ListHeaderComponent={
             discrepancies.length > 0 ? (
-              <View className="bg-white rounded-2xl border border-red-100 px-4 py-3 mb-4">
+              <View className="border px-4 py-3 mb-4" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.alert }}>
                 <View className="flex-row items-center mb-2">
                   <Ionicons name="alert-circle" size={16} color={colors.red} />
-                  <Text className="ml-1.5 text-sm font-bold text-gray-900">
+                  <Text className="ml-1.5 font-bold" style={{ fontSize: typeScale.body, color: color.ink }}>
                     Delivery issues (last 30 days)
                   </Text>
                 </View>
                 {discrepancies.slice(0, 5).map((entry) => (
                   <View
                     key={entry.line.id}
-                    className="flex-row items-start py-1.5 border-t border-gray-50"
+                    className="flex-row items-start py-1.5 border-t" style={{ borderColor: color.hairline }}
                   >
                     <View className="flex-1 pr-2">
-                      <Text className="text-sm font-semibold text-gray-900" numberOfLines={1}>
+                      <Text className="font-semibold" style={{ fontSize: typeScale.body, color: color.ink }} numberOfLines={1}>
                         {entry.line.itemName}
-                        <Text className="font-normal text-red-700">
+                        <Text className="font-normal" style={{ color: color.alert }}>
                           {'  '}
                           {describeDiscrepancyLine(entry.line)}
                         </Text>
                       </Text>
-                      <Text className="text-xs text-gray-500 mt-0.5" numberOfLines={1}>
+                      <Text className="mt-0.5" style={{ fontSize: typeScale.secondary, color: color.ink2 }} numberOfLines={1}>
                         {entry.supplierName}
                         {entry.employee?.name ? ` • ${entry.employee.name}` : ''}
                         {entry.receiptReceivedAt
@@ -292,7 +293,7 @@ function FulfillmentHistoryScreen() {
                   </View>
                 ))}
                 {discrepancies.length > 5 && (
-                  <Text className="text-xs text-gray-400 mt-1.5">
+                  <Text className="mt-1.5" style={{ fontSize: typeScale.secondary, color: color.ink3 }}>
                     +{discrepancies.length - 5} more flagged item
                     {discrepancies.length - 5 === 1 ? '' : 's'}
                   </Text>
@@ -312,7 +313,7 @@ function FulfillmentHistoryScreen() {
                       params: { id: item.id },
                     } as any)
                 }
-                className="bg-white rounded-2xl border border-gray-100 px-4 py-3"
+                className="border px-4 py-3" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline }}
                 activeOpacity={0.7}
               >
                 {(() => {
@@ -327,19 +328,19 @@ function FulfillmentHistoryScreen() {
                 <View className="flex-row items-start justify-between">
                   <View className="flex-1 pr-2">
                     <View className="flex-row items-center">
-                      <Text className="text-base font-semibold text-gray-900">{supplierLabel}</Text>
+                      <Text className="font-semibold" style={{ fontSize: typeScale.body, color: color.ink }}>{supplierLabel}</Text>
                       {supplierInactive && (
-                        <View className="ml-2 rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5">
-                          <Text className="text-[10px] font-semibold text-amber-800">Inactive</Text>
+                        <View className="ml-2 border px-2 py-0.5" style={{ borderRadius: radius.pill, borderColor: color.warning, backgroundColor: color.warningBg }}>
+                          <Text className="font-semibold" style={{ fontSize: typeScale.caption, color: color.warning }}>Inactive</Text>
                         </View>
                       )}
                       {item.syncStatus === 'pending_sync' && (
-                        <View className="ml-2 rounded-full border border-orange-300 bg-orange-100 px-2 py-0.5">
-                          <Text className="text-[10px] font-semibold text-orange-800">Pending sync</Text>
+                        <View className="ml-2 border px-2 py-0.5" style={{ borderRadius: radius.pill, borderColor: color.warning, backgroundColor: color.warningBg }}>
+                          <Text className="font-semibold" style={{ fontSize: typeScale.caption, color: color.warning }}>Pending sync</Text>
                         </View>
                       )}
                     </View>
-                    <Text className="text-xs text-gray-500 mt-1">{dateLabel}</Text>
+                    <Text className="mt-1" style={{ fontSize: typeScale.secondary, color: color.ink2 }}>{dateLabel}</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={16} color={colors.gray[400]} />
                 </View>
@@ -347,27 +348,27 @@ function FulfillmentHistoryScreen() {
                 })()}
 
                 <View className="flex-row items-center mt-3">
-                  <View className="px-2.5 py-1 rounded-full bg-gray-100 mr-2">
-                    <Text className="text-[11px] font-semibold text-gray-700">
+                  <View className="px-2.5 py-1 mr-2" style={{ borderRadius: radius.pill, backgroundColor: color.well }}>
+                    <Text className="font-semibold" style={{ fontSize: typeScale.caption, color: color.ink2 }}>
                       {item.itemCount} item{item.itemCount === 1 ? '' : 's'}
                     </Text>
                   </View>
                   {orderIdsWithIssues.has(item.id) && (
-                    <View className="px-2.5 py-1 rounded-full bg-red-100 mr-2">
-                      <Text className="text-[11px] font-semibold text-red-700">
+                    <View className="px-2.5 py-1 mr-2" style={{ borderRadius: radius.pill, backgroundColor: color.alertBg }}>
+                      <Text className="font-semibold" style={{ fontSize: typeScale.caption, color: color.alert }}>
                         Delivery issue
                       </Text>
                     </View>
                   )}
                   {item.remainingCount > 0 && (
-                    <View className="px-2.5 py-1 rounded-full bg-amber-100 mr-2">
-                      <Text className="text-[11px] font-semibold text-amber-800">
+                    <View className="px-2.5 py-1 mr-2" style={{ borderRadius: radius.pill, backgroundColor: color.warningBg }}>
+                      <Text className="font-semibold" style={{ fontSize: typeScale.caption, color: color.warning }}>
                         {item.remainingCount} remaining
                       </Text>
                     </View>
                   )}
                   {summary.locations.length > 0 && (
-                    <Text className="text-xs text-gray-600">
+                    <Text style={{ fontSize: typeScale.secondary, color: color.ink2 }}>
                       {summary.locations.join(', ')}
                     </Text>
                   )}
@@ -378,8 +379,8 @@ function FulfillmentHistoryScreen() {
           ListEmptyComponent={
             <View className="items-center justify-center py-16">
               <Ionicons name="time-outline" size={40} color={colors.gray[300]} />
-              <Text className="text-gray-500 text-base mt-3">No past orders</Text>
-              <Text className="text-gray-400 text-sm mt-1 text-center px-10">
+              <Text className="mt-3" style={{ color: color.ink2, fontSize: typeScale.body }}>No past orders</Text>
+              <Text className="mt-1 text-center px-10" style={{ color: color.ink3, fontSize: typeScale.body }}>
                 Finalized supplier orders will show up here.
               </Text>
             </View>

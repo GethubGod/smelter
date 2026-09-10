@@ -15,6 +15,7 @@ import {
 } from '@/theme/design';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerConfirmationHaptic } from '@/lib/haptics';
+import { color, typeScale, weight } from '@/theme/tokens';
 
 interface InventoryItemCardProps {
   item: InventoryItem;
@@ -81,7 +82,7 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
   const categoryTint = categoryGlassTints[item.category] || { background: glassColors.mediumFill, icon: glassColors.textSecondary };
   const showControls = isExpanded || Boolean(cartItem);
 
-  const tinyFontSize = ds.fontSize(12);
+  const tinyFontSize = ds.fontSize(typeScale.secondary);
   const modeToggleHeight = Math.max(44, ds.buttonH - ds.spacing(6));
   const controlButtonSize = Math.max(40, ds.icon(40));
 
@@ -343,9 +344,9 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
           <View className="flex-row items-center">
             <Text
               style={{
-                fontSize: ds.fontSize(18),
+                fontSize: ds.fontSize(typeScale.title),
                 color: glassColors.textPrimary,
-                fontWeight: '600',
+                fontWeight: weight.semibold,
                 flexShrink: 1,
               }}
               numberOfLines={1}
@@ -383,13 +384,13 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
                   marginRight: ds.spacing(10),
                 }}
               >
-                <Text style={{ color: categoryColor, fontSize: tinyFontSize, fontWeight: '500' }}>
+                <Text style={{ color: categoryColor, fontSize: tinyFontSize, fontWeight: weight.semibold }}>
                   {getCategoryLabel(item.category)}
                 </Text>
               </View>
             )}
             <Text
-              style={{ fontSize: ds.fontSize(13), color: glassColors.textSecondary }}
+              style={{ fontSize: ds.fontSize(typeScale.secondary), color: glassColors.textSecondary }}
             >
               {item.pack_size} {item.base_unit}/{item.pack_unit}
             </Text>
@@ -405,9 +406,9 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
               >
                 <Text
                   style={{
-                    fontSize: ds.fontSize(9),
+                    fontSize: ds.fontSize(typeScale.caption),
                     color: glassStatusStyles.warning.text,
-                    fontWeight: '500',
+                    fontWeight: weight.semibold,
                   }}
                 >
                   Remaining
@@ -433,9 +434,9 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
           >
             <Text
               style={{
-                fontSize: ds.fontSize(16),
+                fontSize: ds.fontSize(typeScale.body),
                 color: glassColors.textOnPrimary,
-                fontWeight: '600',
+                fontWeight: weight.semibold,
               }}
             >
               Add
@@ -462,7 +463,7 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
                 borderRadius: glassRadii.button,
                 borderWidth: 1.5,
                 borderColor: 'rgba(0,0,0,0.12)',
-                backgroundColor: '#F2F2F2',
+                backgroundColor: color.well,
                 overflow: 'hidden',
               }}
             >
@@ -481,8 +482,8 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
               >
                 <Text
                   style={{
-                    fontSize: ds.fontSize(14),
-                    fontWeight: '600',
+                    fontSize: ds.fontSize(typeScale.body),
+                    fontWeight: weight.semibold,
                     color:
                       inputMode === 'quantity'
                         ? glassColors.textOnPrimary
@@ -507,8 +508,8 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
               >
                 <Text
                   style={{
-                    fontSize: ds.fontSize(14),
-                    fontWeight: '600',
+                    fontSize: ds.fontSize(typeScale.body),
+                    fontWeight: weight.semibold,
                     color:
                       inputMode === 'remaining'
                         ? glassColors.textOnPrimary
@@ -531,12 +532,12 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
                 paddingHorizontal: ds.spacing(12),
                 paddingVertical: ds.spacing(8),
                 borderRadius: glassRadii.stepper,
-                backgroundColor: '#F0F0F0',
+                backgroundColor: color.well,
                 borderWidth: 1,
                 borderColor: 'rgba(0,0,0,0.1)',
               }}
             >
-              <Text style={{ fontSize: ds.fontSize(15), fontWeight: "600", color: glassColors.textPrimary }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: glassColors.textPrimary }}>
                 {unitType === 'base' ? item.base_unit : item.pack_unit}
               </Text>
               <Ionicons
@@ -556,7 +557,7 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
                   borderRadius: glassRadii.stepper,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: '#EEEEEE',
+                  backgroundColor: color.well,
                   borderWidth: 1,
                   borderColor: 'rgba(0,0,0,0.1)',
                 }}
@@ -573,9 +574,9 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
                   borderRadius: glassRadii.button,
                   textAlign: 'center',
                   color: glassColors.textPrimary,
-                  fontWeight: '600',
-                  fontSize: ds.fontSize(17),
-                  backgroundColor: '#F5F5F5',
+                  fontWeight: weight.semibold,
+                  fontSize: ds.fontSize(typeScale.title),
+                  backgroundColor: color.page,
                   borderWidth: 1,
                   borderColor: 'rgba(0,0,0,0.08)',
                 }}
@@ -593,7 +594,7 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
                   borderRadius: glassRadii.stepper,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: '#EEEEEE',
+                  backgroundColor: color.well,
                   borderWidth: 1,
                   borderColor: 'rgba(0,0,0,0.1)',
                 }}
@@ -620,7 +621,7 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
                   onPress={handleCancelExpand}
                   accessibilityLabel="Cancel add item"
                 >
-                  <Ionicons name="close" size={ds.icon(20)} color="#DC2626" />
+                  <Ionicons name="close" size={ds.icon(20)} color=color.alert />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={{
@@ -687,14 +688,14 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
                   }}
                   accessibilityLabel="Remove from cart"
                 >
-                  <Ionicons name="close" size={ds.icon(20)} color="#DC2626" />
+                  <Ionicons name="close" size={ds.icon(20)} color=color.alert />
                 </TouchableOpacity>
               </View>
             )}
           </View>
 
           {inputMode === 'remaining' && (
-            <Text style={{ fontSize: ds.fontSize(10), color: glassColors.textSecondary, marginTop: ds.spacing(8) }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.caption), color: glassColors.textSecondary, marginTop: ds.spacing(8) }}>
               Enter what is left on hand. A manager will decide order quantity.
             </Text>
           )}
