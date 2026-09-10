@@ -18,7 +18,8 @@ import * as SMS from 'expo-sms';
 import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore, useOrderStore, useSettingsStore } from '@/store';
 import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
-import { GlassSurface, LoadingIndicator, StackScreenHeader } from '@/components';
+import { GlassSurface, StackScreenHeader } from '@/components';
+import { Loading } from '@/components/ui';
 import { buildSupplierConfirmationData } from '@/services/fulfillmentDataSource';
 import type {
   ConfirmationRegularItemData,
@@ -693,7 +694,7 @@ export function SendAllScreen() {
 
         {isLoading ? (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <LoadingIndicator size="small" color={glassColors.accent} />
+            <Loading size="inline" color={glassColors.accent} label="Loading send all" />
             <Text
               style={{
                 marginTop: ds.spacing(12),

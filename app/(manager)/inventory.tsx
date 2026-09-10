@@ -23,7 +23,7 @@ import {
   InventoryItem,
  KNOWN_ITEM_CATEGORIES, KNOWN_SUPPLIER_CATEGORIES } from '@/types';
 import { getCategoryLabel, getSupplierCategoryLabel, categoryColors, colors } from '@/constants';
-import { LoadingIndicator } from '@/components';
+import { Loading } from '@/components/ui';
 import { getInventoryWithStock, InventoryWithStock } from '@/lib/api/stock';
 import { supabase } from '@/lib/supabase';
 import { getCheckStatus } from '@/store/stockStore';
@@ -2660,7 +2660,7 @@ export default function ManagerInventoryScreen() {
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
-                    <LoadingIndicator size="small" />
+                    <Loading size="inline" color={color.onAccent} label="Adding item" />
                   ) : (
                     <Text className="font-bold" style={{ color: color.onAccent, fontSize: ds.fontSize(typeScale.title) }}>Add Item</Text>
                   )}
@@ -2854,7 +2854,7 @@ export default function ManagerInventoryScreen() {
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
-                  <LoadingIndicator size="small" />
+                  <Loading size="inline" color={color.onAccent} label="Adding items" />
                 ) : (
                   <>
                     <Ionicons name="add-circle" size={20} color="white" />
