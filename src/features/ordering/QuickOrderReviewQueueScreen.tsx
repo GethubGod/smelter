@@ -1179,9 +1179,4 @@ const styles = StyleSheet.create({
   footerSecondaryButton: {
     backgroundColor: colors.glassCircle,
   },
-  rejectOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: colors.scrim,
-  },
 });
