@@ -1,12 +1,7 @@
 import React, { memo } from 'react';
 import { Text, View } from 'react-native';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import {
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-  grayScale,
-} from '@/theme/design';
+import { color, radius, space, tracking, typeScale, weight } from '@/theme/tokens';
 import { WheelPicker, type WheelPickerOption } from './WheelPicker';
 import type { UnitType } from '@/types';
 
@@ -76,18 +71,18 @@ function WheelPickerGroupImpl({
       <View
         style={{
           flexDirection: 'row',
-          paddingHorizontal: ds.spacing(8),
-          marginBottom: ds.spacing(4),
+          paddingHorizontal: ds.spacing(space[2]),
+          marginBottom: ds.spacing(space[1]),
         }}
       >
         {[unitLabel, amountLabel, piecesLabel].map((lbl) => (
           <View key={lbl} style={{ flex: 1, alignItems: 'center' }}>
             <Text
               style={{
-                fontSize: ds.fontSize(10),
-                fontWeight: '700',
-                letterSpacing: 1.4,
-                color: glassColors.textSecondary,
+                fontSize: ds.fontSize(typeScale.caption),
+                fontWeight: weight.bold,
+                letterSpacing: tracking.caption,
+                color: color.ink3,
                 textTransform: 'uppercase',
               }}
             >
@@ -114,11 +109,11 @@ function WheelPickerGroupImpl({
             right: 0,
             top: bandTop,
             height: itemHeight,
-            backgroundColor: grayScale[100],
-            borderTopWidth: glassHairlineWidth,
-            borderBottomWidth: glassHairlineWidth,
-            borderColor: glassColors.divider,
-            borderRadius: glassRadii.tag,
+            backgroundColor: color.well,
+            borderTopWidth: 1,
+            borderBottomWidth: 1,
+            borderColor: color.hairline,
+            borderRadius: radius.control,
           }}
         />
 
