@@ -492,3 +492,1070 @@ select id, invited_name, used_at, used_by from public.invites where id = '1888bf
  1888bff2-d174-4995-ab20-fb177cf250da | E2E Invitee  | 2026-09-05 23:40:50.827+00 | 
 (1 row)
 ```
+
+## pr75-00-fixture-baseline
+
+Run at 2026-09-09T05:39:14Z against `supabase_db_smelter-performance`.
+
+```sql
+select 'users' as t, count(*) from public.users
+union all select 'orders', count(*) from public.orders
+union all select 'order_items', count(*) from public.order_items
+union all select 'past_orders', count(*) from public.past_orders
+union all select 'order_receipts', count(*) from public.order_receipts
+union all select 'invites', count(*) from public.invites
+union all select 'login_identities', count(*) from public.login_identities
+union all select 'reminders', count(*) from public.reminders
+union all select 'stock_updates', count(*) from public.stock_updates
+union all select 'stock_check_sessions', count(*) from public.stock_check_sessions
+order by 1;
+select id, name, short_code, active from public.locations order by name;
+select id, name, unit_type from public.inventory_items order by name;
+```
+
+```
+          t           | count 
+----------------------+-------
+ invites              |     0
+ login_identities     |     3
+ order_items          |     3
+ order_receipts       |     0
+ orders               |     2
+ past_orders          |     0
+ reminders            |     0
+ stock_check_sessions |     0
+ stock_updates        |     0
+ users                |     3
+(10 rows)
+
+                  id                  |        name        | short_code | active 
+--------------------------------------+--------------------+------------+--------
+ 45000000-0000-4000-8000-000000000002 | Fixture Poki & Pho | FP         | t
+ 45000000-0000-4000-8000-000000000001 | Fixture Sushi      | FS         | t
+(2 rows)
+
+ERROR:  column "unit_type" does not exist
+LINE 1: select id, name, unit_type from public.inventory_items order...
+                         ^
+```
+
+## pr75-00-fixture-catalog
+
+Run at 2026-09-09T05:39:28Z against `supabase_db_smelter-performance`.
+
+```sql
+select id, name, base_unit, pack_unit, category, aliases, location_id, default_supplier
+from public.inventory_items where active order by name;
+select id, name, active from public.suppliers order by name;
+select sa.id, sa.name, sa.location_id, count(ai.id) as items
+from public.storage_areas sa left join public.area_items ai on ai.area_id = sa.id
+group by sa.id, sa.name, sa.location_id order by sa.name;
+select id, order_number, status, order_type, entry_method, location_id from public.orders order by order_number;
+```
+
+```
+                  id                  |      name       | base_unit | pack_unit | category |  aliases  | location_id | default_supplier  
+--------------------------------------+-----------------+-----------+-----------+----------+-----------+-------------+-------------------
+ 46000000-0000-4000-8000-000000000004 | Fixture Avocado | each      | case      | produce  | {avocado} |             | Local QA Supplier
+ 46000000-0000-4000-8000-000000000003 | Fixture Nori    | pack      | case      | dry      | {nori}    |             | Local QA Supplier
+ 46000000-0000-4000-8000-000000000002 | Fixture Rice    | bag       | pallet    | dry      | {rice}    |             | Local QA Supplier
+ 46000000-0000-4000-8000-000000000001 | Fixture Salmon  | fillet    | case      | fish     | {salmon}  |             | Local QA Supplier
+(4 rows)
+
+                  id                  |       name        | active 
+--------------------------------------+-------------------+--------
+ 4c000000-0000-4000-8000-000000000001 | Local QA Supplier | t
+(1 row)
+
+                  id                  |         name         |             location_id              | items 
+--------------------------------------+----------------------+--------------------------------------+-------
+ 47000000-0000-4000-8000-000000000002 | Fixture Dry Storage  | 45000000-0000-4000-8000-000000000001 |     1
+ 47000000-0000-4000-8000-000000000001 | Fixture Freezer      | 45000000-0000-4000-8000-000000000001 |     2
+ 47000000-0000-4000-8000-000000000003 | Fixture Poki Storage | 45000000-0000-4000-8000-000000000002 |     1
+(3 rows)
+
+                  id                  | order_number |  status   | order_type |   entry_method   |             location_id              
+--------------------------------------+--------------+-----------+------------+------------------+--------------------------------------
+ 4b000000-0000-4000-8000-000000000001 |            1 | submitted | manual     | simple_checklist | 45000000-0000-4000-8000-000000000001
+ 4b000000-0000-4000-8000-000000000002 |            2 | fulfilled | manual     | manual           | 45000000-0000-4000-8000-000000000002
+(2 rows)
+```
+
+## pr75-01-manager-sign-in
+
+Run at 2026-09-09T05:53:42Z against `supabase_db_smelter-performance`.
+
+```sql
+select scope, success, count(*) from public.login_auth_attempts group by 1,2 order by 1,2;
+select login_name, credential_kind, display_name from public.login_identities order by login_name;
+select email, last_sign_in_at is not null as signed_in from auth.users order by email;
+```
+
+```
+ scope  | success | count 
+--------+---------+-------
+ client | t       |     1
+ name   | t       |     1
+(2 rows)
+
+    login_name    | credential_kind |   display_name   
+------------------+-----------------+------------------
+ e2e employee     | pin             | E2E Employee
+ e2e employee two | pin             | E2E Employee Two
+ e2e manager      | pin             | E2E Manager
+(3 rows)
+
+           email            | signed_in 
+----------------------------+-----------
+ e2e.employee@smelter.test  | f
+ e2e.employee2@smelter.test | f
+ e2e.manager@smelter.test   | t
+(3 rows)
+```
+
+## pr75-02-quick-order-send
+
+Run at 2026-09-09T05:57:19Z against `supabase_db_smelter-performance`.
+
+```sql
+select id, order_number, status, order_type, entry_method, location_id, created_at
+from public.orders order by created_at desc limit 2;
+select oi.id, ii.name, oi.quantity, oi.unit_type, oi.input_mode, oi.status
+from public.order_items oi join public.inventory_items ii on ii.id = oi.inventory_item_id
+where oi.order_id = (select id from public.orders order by created_at desc limit 1)
+order by ii.name;
+select id, status, created_at from public.quick_order_sessions order by created_at desc limit 1;
+```
+
+```
+                  id                  | order_number |  status   | order_type |   entry_method   |             location_id              |          created_at           
+--------------------------------------+--------------+-----------+------------+------------------+--------------------------------------+-------------------------------
+ d903d75d-1a41-4e63-920f-0738db48e228 |            5 | submitted | manual     | quick_order      | 45000000-0000-4000-8000-000000000001 | 2026-09-09 05:57:02.339017+00
+ 4b000000-0000-4000-8000-000000000001 |            1 | submitted | manual     | simple_checklist | 45000000-0000-4000-8000-000000000001 | 2026-09-09 05:38:50.232181+00
+(2 rows)
+
+                  id                  |      name      | quantity | unit_type | input_mode | status  
+--------------------------------------+----------------+----------+-----------+------------+---------
+ 9a25c2bd-fc8b-4669-8381-0ed61221deae | Fixture Rice   |     2.00 | base      | quantity   | pending
+ b33b7b25-f891-4ed9-b846-dca4dee5abea | Fixture Salmon |     3.00 | base      | quantity   | pending
+(2 rows)
+
+                  id                  |  status   |          created_at           
+--------------------------------------+-----------+-------------------------------
+ 51bdbdd3-6ae2-4b14-924a-4ea5a65177d9 | submitted | 2026-09-09 05:55:12.960509+00
+(1 row)
+```
+
+## pr75-03-fulfillment-send-all
+
+Run at 2026-09-09T05:58:32Z against `supabase_db_smelter-performance`.
+
+```sql
+select id, share_method, supplier_name, created_at from public.past_orders order by created_at desc limit 3;
+select poi.item_name, poi.quantity, poi.unit
+from public.past_order_items poi
+where poi.past_order_id = (select id from public.past_orders order by created_at desc limit 1)
+order by poi.item_name, poi.unit;
+select status, count(*) from public.order_items group by 1 order by 1;
+```
+
+```
+                  id                  | share_method |   supplier_name   |          created_at          
+--------------------------------------+--------------+-------------------+------------------------------
+ 59dc0db9-8801-45cc-927b-eb3a7cd3af71 | copy         | Local QA Supplier | 2026-09-09 05:58:21.16469+00
+(1 row)
+
+   item_name    | quantity |  unit  
+----------------+----------+--------
+ Fixture Rice   |        2 | bag
+ Fixture Rice   |        1 | pallet
+ Fixture Salmon |        6 | fillet
+(3 rows)
+
+ status | count 
+--------+-------
+ sent   |     5
+(1 row)
+```
+
+## pr75-04-receive-delivery
+
+Run at 2026-09-09T06:01:23Z against `supabase_db_smelter-performance`.
+
+```sql
+select id, status, supplier_name, received_by, created_at from public.order_receipts order by created_at desc limit 2;
+select ori.item_name, ori.ordered_qty, ori.received_qty, ori.status, ori.note
+from public.order_receipt_items ori
+where ori.receipt_id = (select id from public.order_receipts order by created_at desc limit 1)
+order by ori.item_name, ori.ordered_qty;
+```
+
+```
+ERROR:  column "supplier_name" does not exist
+LINE 1: select id, status, supplier_name, received_by, created_at fr...
+                           ^
+ERROR:  column ori.item_name does not exist
+LINE 1: select ori.item_name, ori.ordered_qty, ori.received_qty, ori...
+               ^
+```
+
+## pr75-04-receive-delivery
+
+Run at 2026-09-09T06:01:35Z against `supabase_db_smelter-performance`.
+
+```sql
+select r.id, r.status, r.received_by, r.received_at, po.supplier_name
+from public.order_receipts r join public.past_orders po on po.id = r.past_order_id
+order by r.created_at desc limit 2;
+select poi.item_name, poi.quantity as ordered_qty, poi.unit, ori.received, ori.received_qty, ori.note
+from public.order_receipt_items ori
+join public.past_order_items poi on poi.id = ori.past_order_item_id
+where ori.receipt_id = (select id from public.order_receipts order by created_at desc limit 1)
+order by poi.item_name, poi.unit;
+```
+
+```
+                  id                  | status  |             received_by              |          received_at          |   supplier_name   
+--------------------------------------+---------+--------------------------------------+-------------------------------+-------------------
+ 71b48171-ff97-4024-abc7-fbc8f20b4539 | partial | 1c923ddb-3977-41a4-82b8-39cadef19690 | 2026-09-09 06:00:27.385342+00 | Local QA Supplier
+(1 row)
+
+   item_name    | ordered_qty |  unit  | received | received_qty |    note    
+----------------+-------------+--------+----------+--------------+------------
+ Fixture Rice   |           2 | bag    | t        |              | 
+ Fixture Rice   |           1 | pallet | t        |              | 
+ Fixture Salmon |           6 | fillet | t        |            2 | PR75 short
+(3 rows)
+```
+
+## pr75-05-order-status-changes
+
+Run at 2026-09-09T06:04:41Z against `supabase_db_smelter-performance`.
+
+```sql
+select id, order_number, status, fulfilled_at, fulfilled_by, updated_at
+from public.orders where id = 'd903d75d-1a41-4e63-920f-0738db48e228';
+select status, count(*) from public.orders group by 1 order by 1;
+```
+
+```
+ERROR:  column "updated_at" does not exist
+LINE 1: ...order_number, status, fulfilled_at, fulfilled_by, updated_at
+                                                             ^
+HINT:  Perhaps you meant to reference the column "orders.created_at".
+  status   | count 
+-----------+-------
+ submitted |     1
+ fulfilled |     2
+(2 rows)
+```
+
+## pr75-05-order-status-changes
+
+Run at 2026-09-09T06:04:46Z against `supabase_db_smelter-performance`.
+
+```sql
+select id, order_number, status, fulfilled_at, fulfilled_by
+from public.orders where id = 'd903d75d-1a41-4e63-920f-0738db48e228';
+select status, count(*) from public.orders group by 1 order by 1;
+```
+
+```
+                  id                  | order_number |  status   |        fulfilled_at        |             fulfilled_by             
+--------------------------------------+--------------+-----------+----------------------------+--------------------------------------
+ d903d75d-1a41-4e63-920f-0738db48e228 |            5 | fulfilled | 2026-09-09 06:04:29.967+00 | 1c923ddb-3977-41a4-82b8-39cadef19690
+(1 row)
+
+  status   | count 
+-----------+-------
+ submitted |     1
+ fulfilled |     2
+(2 rows)
+```
+
+## pr75-70-fixture-baseline-rebuild
+
+Run at 2026-09-10T02:15:33Z against `supabase_db_smelter-performance`.
+
+```sql
+select 'users' as t, count(*) from public.users
+union all select 'orders', count(*) from public.orders
+union all select 'order_items', count(*) from public.order_items
+union all select 'past_orders', count(*) from public.past_orders
+union all select 'order_receipts', count(*) from public.order_receipts
+union all select 'stock_updates', count(*) from public.stock_updates
+union all select 'stock_check_sessions', count(*) from public.stock_check_sessions
+union all select 'quick_order_sessions', count(*) from public.quick_order_sessions
+order by 1;
+select id, order_number, status, entry_method from public.orders order by order_number;
+select status, count(*) from public.order_items group by 1 order by 1;
+select sa.name, ai.id, ii.name as item, ai.current_quantity, sa.last_checked_at
+from public.storage_areas sa
+join public.area_items ai on ai.area_id = sa.id
+join public.inventory_items ii on ii.id = ai.inventory_item_id
+order by sa.name, ii.name;
+```
+
+```
+          t           | count 
+----------------------+-------
+ order_items          |     5
+ order_receipts       |     1
+ orders               |     3
+ past_orders          |     1
+ quick_order_sessions |     1
+ stock_check_sessions |     1
+ stock_updates        |     0
+ users                |     3
+(8 rows)
+
+                  id                  | order_number |  status   |   entry_method   
+--------------------------------------+--------------+-----------+------------------
+ 4b000000-0000-4000-8000-000000000001 |            1 | submitted | simple_checklist
+ 4b000000-0000-4000-8000-000000000002 |            2 | fulfilled | manual
+ d903d75d-1a41-4e63-920f-0738db48e228 |            5 | fulfilled | quick_order
+(3 rows)
+
+ status  | count 
+---------+-------
+ pending |     2
+ sent    |     3
+(2 rows)
+
+         name         |                  id                  |      item       | current_quantity | last_checked_at 
+----------------------+--------------------------------------+-----------------+------------------+-----------------
+ Fixture Dry Storage  | 48000000-0000-4000-8000-000000000003 | Fixture Nori    |               20 | 
+ Fixture Freezer      | 48000000-0000-4000-8000-000000000002 | Fixture Rice    |               10 | 
+ Fixture Freezer      | 48000000-0000-4000-8000-000000000001 | Fixture Salmon  |                3 | 
+ Fixture Poki Storage | 48000000-0000-4000-8000-000000000004 | Fixture Avocado |                8 | 
+(4 rows)
+```
+
+## pr75-71-manager-sign-in
+
+Run at 2026-09-10T02:28:38Z against `supabase_db_smelter-performance`.
+
+```sql
+select scope, success, count(*) from public.login_auth_attempts group by 1,2 order by 1,2;
+select email, last_sign_in_at from auth.users order by email;
+select login_name, credential_kind, display_name from public.login_identities order by login_name;
+```
+
+```
+ scope  | success | count 
+--------+---------+-------
+ client | t       |     2
+ name   | t       |     2
+(2 rows)
+
+           email            |        last_sign_in_at        
+----------------------------+-------------------------------
+ e2e.employee@smelter.test  | 
+ e2e.employee2@smelter.test | 
+ e2e.manager@smelter.test   | 2026-09-10 02:28:25.529389+00
+(3 rows)
+
+    login_name    | credential_kind |   display_name   
+------------------+-----------------+------------------
+ e2e employee     | pin             | E2E Employee
+ e2e employee two | pin             | E2E Employee Two
+ e2e manager      | pin             | E2E Manager
+(3 rows)
+```
+
+## pr75-72-quick-order-send
+
+Run at 2026-09-10T02:31:49Z against `supabase_db_smelter-performance`.
+
+```sql
+select id, order_number, status, order_type, entry_method, location_id, created_by, created_at
+from public.orders order by created_at desc limit 2;
+select oi.id, ii.name, oi.quantity, oi.unit_type, oi.input_mode, oi.status
+from public.order_items oi join public.inventory_items ii on ii.id = oi.inventory_item_id
+where oi.order_id = (select id from public.orders order by created_at desc limit 1)
+order by ii.name;
+select id, status, created_at from public.quick_order_sessions order by created_at desc limit 2;
+```
+
+```
+ERROR:  column "created_by" does not exist
+LINE 1: ...r, status, order_type, entry_method, location_id, created_by...
+                                                             ^
+HINT:  Perhaps you meant to reference the column "orders.created_at".
+                  id                  |      name      | quantity | unit_type | input_mode | status  
+--------------------------------------+----------------+----------+-----------+------------+---------
+ 98ec91c2-45ed-4385-a90e-4128ff65492d | Fixture Rice   |     2.00 | base      | quantity   | pending
+ 476e6762-4222-4dba-956c-5a3420bfeeed | Fixture Salmon |     3.00 | base      | quantity   | pending
+(2 rows)
+
+                  id                  |  status   |          created_at           
+--------------------------------------+-----------+-------------------------------
+ ae21ca86-80a0-4c39-9a7f-bf4d52780ffd | submitted | 2026-09-10 02:30:07.537641+00
+ 51bdbdd3-6ae2-4b14-924a-4ea5a65177d9 | submitted | 2026-09-09 05:55:12.960509+00
+(2 rows)
+```
+
+## pr75-72-quick-order-send
+
+Run at 2026-09-10T02:31:54Z against `supabase_db_smelter-performance`.
+
+```sql
+select id, order_number, status, order_type, entry_method, location_id, user_id, created_at
+from public.orders order by created_at desc limit 2;
+select oi.id, ii.name, oi.quantity, oi.unit_type, oi.input_mode, oi.status
+from public.order_items oi join public.inventory_items ii on ii.id = oi.inventory_item_id
+where oi.order_id = (select id from public.orders order by created_at desc limit 1)
+order by ii.name;
+select id, status, created_at from public.quick_order_sessions order by created_at desc limit 2;
+```
+
+```
+                  id                  | order_number |  status   | order_type | entry_method |             location_id              |               user_id                |          created_at           
+--------------------------------------+--------------+-----------+------------+--------------+--------------------------------------+--------------------------------------+-------------------------------
+ d1622417-d0e3-4115-9d4d-22ddfc107c7a |           10 | submitted | manual     | quick_order  | 45000000-0000-4000-8000-000000000001 | 1c923ddb-3977-41a4-82b8-39cadef19690 | 2026-09-10 02:31:32.97399+00
+ d903d75d-1a41-4e63-920f-0738db48e228 |            5 | fulfilled | manual     | quick_order  | 45000000-0000-4000-8000-000000000001 | 1c923ddb-3977-41a4-82b8-39cadef19690 | 2026-09-09 05:57:02.339017+00
+(2 rows)
+
+                  id                  |      name      | quantity | unit_type | input_mode | status  
+--------------------------------------+----------------+----------+-----------+------------+---------
+ 98ec91c2-45ed-4385-a90e-4128ff65492d | Fixture Rice   |     2.00 | base      | quantity   | pending
+ 476e6762-4222-4dba-956c-5a3420bfeeed | Fixture Salmon |     3.00 | base      | quantity   | pending
+(2 rows)
+
+                  id                  |  status   |          created_at           
+--------------------------------------+-----------+-------------------------------
+ ae21ca86-80a0-4c39-9a7f-bf4d52780ffd | submitted | 2026-09-10 02:30:07.537641+00
+ 51bdbdd3-6ae2-4b14-924a-4ea5a65177d9 | submitted | 2026-09-09 05:55:12.960509+00
+(2 rows)
+```
+
+## pr75-73-fulfillment-send-all
+
+Run at 2026-09-10T02:32:39Z against `supabase_db_smelter-performance`.
+
+```sql
+select id, share_method, supplier_name, created_at from public.past_orders order by created_at desc limit 2;
+select poi.item_name, poi.quantity, poi.unit
+from public.past_order_items poi
+where poi.past_order_id = (select id from public.past_orders order by created_at desc limit 1)
+order by poi.item_name, poi.unit;
+select status, count(*) from public.order_items group by 1 order by 1;
+select o.order_number, oi.status, count(*) from public.orders o join public.order_items oi on oi.order_id = o.id group by 1,2 order by 1,2;
+```
+
+```
+                  id                  | share_method |   supplier_name   |          created_at           
+--------------------------------------+--------------+-------------------+-------------------------------
+ 42bd8a4b-ec99-46e6-affb-5cff331ccc21 | copy         | Local QA Supplier | 2026-09-10 02:32:25.705526+00
+ 59dc0db9-8801-45cc-927b-eb3a7cd3af71 | copy         | Local QA Supplier | 2026-09-09 05:58:21.16469+00
+(2 rows)
+
+   item_name    | quantity |  unit  
+----------------+----------+--------
+ Fixture Rice   |        2 | bag
+ Fixture Salmon |        3 | fillet
+(2 rows)
+
+ status  | count 
+---------+-------
+ pending |     2
+ sent    |     5
+(2 rows)
+
+ order_number | status  | count 
+--------------+---------+-------
+            1 | pending |     2
+            2 | sent    |     1
+            5 | sent    |     2
+           10 | sent    |     2
+(4 rows)
+```
+
+## pr75-74-alias-fixture-adjustment
+
+Run at 2026-09-10T02:33:28Z against `supabase_db_smelter-performance`.
+
+```sql
+-- Add alias tokens that are not substrings of the item names so the alias
+-- search path can be distinguished from the name search path.
+update public.inventory_items set aliases = array['salmon','sake'] where name = 'Fixture Salmon';
+update public.inventory_items set aliases = array['rice','gohan'] where name = 'Fixture Rice';
+select name, aliases from public.inventory_items order by name;
+```
+
+```
+UPDATE 1
+UPDATE 1
+      name       |    aliases    
+-----------------+---------------
+ Fixture Avocado | {avocado}
+ Fixture Nori    | {nori}
+ Fixture Rice    | {rice,gohan}
+ Fixture Salmon  | {salmon,sake}
+(4 rows)
+```
+
+## pr75-75-order-status-changes
+
+Run at 2026-09-10T02:38:11Z against `supabase_db_smelter-performance`.
+
+```sql
+select id, order_number, status, fulfilled_at, fulfilled_by
+from public.orders where id = 'd1622417-d0e3-4115-9d4d-22ddfc107c7a';
+select status, count(*) from public.orders group by 1 order by 1;
+```
+
+```
+                  id                  | order_number |  status   |        fulfilled_at        |             fulfilled_by             
+--------------------------------------+--------------+-----------+----------------------------+--------------------------------------
+ d1622417-d0e3-4115-9d4d-22ddfc107c7a |           10 | fulfilled | 2026-09-10 02:38:04.873+00 | 1c923ddb-3977-41a4-82b8-39cadef19690
+(1 row)
+
+  status   | count 
+-----------+-------
+ submitted |     1
+ fulfilled |     3
+(2 rows)
+```
+
+## pr75-76-scroll-fixture-items
+
+Run at 2026-09-10T02:41:09Z against `supabase_db_smelter-performance`.
+
+```sql
+-- Two extra disposable catalog items so the Quick Order list exceeds the
+-- four visible row slots and the custom scrollbar renders.
+insert into public.inventory_items
+  (id, name, base_unit, pack_unit, pack_size, category, supplier_category, aliases, default_supplier, supplier_id, emoji)
+select '46000000-0000-4000-8000-000000000005', 'Fixture Tofu', 'block', 'case', 12, 'protein', 'dry', array['tofu'], 'Local QA Supplier', s.id, '🍚'
+from public.suppliers s where s.name = 'Local QA Supplier'
+on conflict (id) do nothing;
+insert into public.inventory_items
+  (id, name, base_unit, pack_unit, pack_size, category, supplier_category, aliases, default_supplier, supplier_id, emoji)
+select '46000000-0000-4000-8000-000000000006', 'Fixture Wasabi', 'tube', 'case', 24, 'sauces', 'dry', array['wasabi'], 'Local QA Supplier', s.id, '🍚'
+from public.suppliers s where s.name = 'Local QA Supplier'
+on conflict (id) do nothing;
+select name, base_unit, pack_unit, aliases, active from public.inventory_items order by name;
+```
+
+```
+INSERT 0 1
+INSERT 0 1
+      name       | base_unit | pack_unit |    aliases    | active 
+-----------------+-----------+-----------+---------------+--------
+ Fixture Avocado | each      | case      | {avocado}     | t
+ Fixture Nori    | pack      | case      | {nori}        | t
+ Fixture Rice    | bag       | pallet    | {rice,gohan}  | t
+ Fixture Salmon  | fillet    | case      | {salmon,sake} | t
+ Fixture Tofu    | block     | case      | {tofu}        | t
+ Fixture Wasabi  | tube      | case      | {wasabi}      | t
+(6 rows)
+```
+
+## pr75-77-quick-order-catalog-extension
+
+Run at 2026-09-10T02:42:33Z against `supabase_db_smelter-performance`.
+
+```sql
+-- Mirror the two extra disposable items into the Quick Order parser catalog.
+insert into public.qo_items (id, inventory_item_id, name, category, aliases, supplier,
+  supplier_id, order_unit, target_stock, active)
+values
+  ('4d000000-0000-4000-8000-000000000005', '46000000-0000-4000-8000-000000000005', 'Fixture Tofu', 'protein', 'tofu', 'Local QA Supplier', '4c000000-0000-4000-8000-000000000001', 'block', 10, true),
+  ('4d000000-0000-4000-8000-000000000006', '46000000-0000-4000-8000-000000000006', 'Fixture Wasabi', 'sauces', 'wasabi', 'Local QA Supplier', '4c000000-0000-4000-8000-000000000001', 'tube', 6, true)
+on conflict (id) do update set name = excluded.name, aliases = excluded.aliases, active = excluded.active;
+select name, aliases, order_unit, active from public.qo_items order by name;
+```
+
+```
+INSERT 0 2
+      name       | aliases | order_unit | active 
+-----------------+---------+------------+--------
+ Fixture Avocado | avocado | each       | t
+ Fixture Nori    | nori    | pack       | t
+ Fixture Rice    | rice    | bag        | t
+ Fixture Salmon  | salmon  | fillet     | t
+ Fixture Tofu    | tofu    | block      | t
+ Fixture Wasabi  | wasabi  | tube       | t
+(6 rows)
+```
+
+## pr75-80-stock-count-baseline
+
+Run at 2026-09-10T13:45:03Z against `supabase_db_smelter-performance`.
+
+```sql
+-- Baseline before the PR #75 stock count save attempt.
+select count(*) as stock_updates from public.stock_updates;
+select count(*) as stock_check_sessions from public.stock_check_sessions;
+select name, current_quantity from public.area_items ai
+  join public.inventory_items ii on ii.id = ai.inventory_item_id order by name;
+select name, last_checked_at from public.storage_areas order by name;
+```
+
+```
+ stock_updates 
+---------------
+             0
+(1 row)
+
+ stock_check_sessions 
+----------------------
+                    1
+(1 row)
+
+      name       | current_quantity 
+-----------------+------------------
+ Fixture Avocado |                8
+ Fixture Nori    |               20
+ Fixture Rice    |               10
+ Fixture Salmon  |                3
+(4 rows)
+
+         name         | last_checked_at 
+----------------------+-----------------
+ Fixture Dry Storage  | 
+ Fixture Freezer      | 
+ Fixture Poki Storage | 
+(3 rows)
+```
+
+## pr75-81-stock-count-save
+
+Run at 2026-09-10T13:49:59Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: after saving a stock count for Fixture Salmon (Fixture Freezer,
+-- Fixture Sushi) the UI reported "1 of 2 checked" and "current stock 0 case".
+select count(*) as stock_updates from public.stock_updates;
+select count(*) as stock_check_sessions from public.stock_check_sessions;
+select ii.name, ai.current_quantity, ai.updated_at from public.area_items ai
+  join public.inventory_items ii on ii.id = ai.inventory_item_id order by ii.name;
+select name, last_checked_at from public.storage_areas order by name;
+```
+
+```
+ stock_updates 
+---------------
+             1
+(1 row)
+
+ stock_check_sessions 
+----------------------
+                    1
+(1 row)
+
+      name       | current_quantity |          updated_at           
+-----------------+------------------+-------------------------------
+ Fixture Avocado |                8 | 2026-09-10 02:15:16.940831+00
+ Fixture Nori    |               20 | 2026-09-10 02:15:16.940831+00
+ Fixture Rice    |               10 | 2026-09-10 02:15:16.940831+00
+ Fixture Salmon  |                0 | 2026-09-10 13:49:42.160303+00
+(4 rows)
+
+         name         |        last_checked_at        
+----------------------+-------------------------------
+ Fixture Dry Storage  | 
+ Fixture Freezer      | 2026-09-10 13:49:42.160303+00
+ Fixture Poki Storage | 
+(3 rows)
+```
+
+## pr75-82-stock-count-offline-pending
+
+Run at 2026-09-10T13:50:37Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: Fixture Rice counted while supabase_kong_smelter-performance was
+-- stopped. The UI accepted the count ("2 of 2 checked", "current stock 0 pallet").
+-- The database must still show the pre-offline value until the gateway returns.
+select count(*) as stock_updates from public.stock_updates;
+select ii.name, ai.current_quantity from public.area_items ai
+  join public.inventory_items ii on ii.id = ai.inventory_item_id order by ii.name;
+```
+
+```
+ stock_updates 
+---------------
+             1
+(1 row)
+
+      name       | current_quantity 
+-----------------+------------------
+ Fixture Avocado |                8
+ Fixture Nori    |               20
+ Fixture Rice    |               10
+ Fixture Salmon  |                0
+(4 rows)
+```
+
+## pr75-83-stock-count-offline-sync
+
+Run at 2026-09-10T13:52:27Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: Fixture Rice was counted while the gateway was stopped, then the
+-- gateway was restarted and the app was force quit and relaunched twice.
+-- Stock check now reports "2 checked, 1 unchecked" for Fixture Sushi.
+select count(*) as stock_updates from public.stock_updates;
+select ii.name, ai.current_quantity, ai.updated_at from public.area_items ai
+  join public.inventory_items ii on ii.id = ai.inventory_item_id order by ii.name;
+select name, last_checked_at from public.storage_areas order by name;
+```
+
+```
+ stock_updates 
+---------------
+             2
+(1 row)
+
+      name       | current_quantity |          updated_at           
+-----------------+------------------+-------------------------------
+ Fixture Avocado |                8 | 2026-09-10 02:15:16.940831+00
+ Fixture Nori    |               20 | 2026-09-10 02:15:16.940831+00
+ Fixture Rice    |                0 | 2026-09-10 13:52:13.959767+00
+ Fixture Salmon  |                0 | 2026-09-10 13:49:42.160303+00
+(4 rows)
+
+         name         |        last_checked_at        
+----------------------+-------------------------------
+ Fixture Dry Storage  | 
+ Fixture Freezer      | 2026-09-10 13:52:13.959767+00
+ Fixture Poki Storage | 
+(3 rows)
+```
+
+## pr75-84-cached-inventory-newest
+
+Run at 2026-09-10T13:54:05Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 manual check: cached inventory after going offline, force quitting and
+-- relaunching. The app container's inventory-storage held all six catalog items
+-- including Fixture Tofu and Fixture Wasabi, the two most recently added rows,
+-- so the persisted cache is the newest state.
+select name, active from public.inventory_items order by name;
+```
+
+```
+      name       | active 
+-----------------+--------
+ Fixture Avocado | t
+ Fixture Nori    | t
+ Fixture Rice    | t
+ Fixture Salmon  | t
+ Fixture Tofu    | t
+ Fixture Wasabi  | t
+(6 rows)
+```
+
+## pr75-85-invite-create
+
+Run at 2026-09-10T13:56:32Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: manager created a single use invite for "PR75 Invitee",
+-- location group Sushi, 7 day expiry, default module preset.
+select name, location_group, modules, expires_at > now() as unexpired,
+       used_at, used_by, created_by
+  from public.invites order by created_at desc limit 2;
+```
+
+```
+ERROR:  column "name" does not exist
+LINE 1: select name, location_group, modules, expires_at > now() as ...
+               ^
+```
+
+## pr75-85-invite-create
+
+Run at 2026-09-10T13:56:45Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: manager created a single use invite for "PR75 Invitee",
+-- location group Sushi, 7 day expiry, default module preset.
+select invited_name, role, location_group, module_preset,
+       round(extract(epoch from (expires_at - created_at)) / 86400) as expiry_days,
+       used_at, used_by, created_by
+  from public.invites order by created_at desc limit 2;
+```
+
+```
+ invited_name |   role   | location_group |                                       module_preset                                       | expiry_days | used_at | used_by |              created_by              
+--------------+----------+----------------+-------------------------------------------------------------------------------------------+-------------+---------+---------+--------------------------------------
+ PR75 Invitee | employee | sushi          | {"tips": false, "stock_check": true, "ordering_simple": true, "ordering_advanced": false} |           7 |         |         | 1c923ddb-3977-41a4-82b8-39cadef19690
+(1 row)
+```
+
+## pr75-86-reminder-send-and-scheduling
+
+Run at 2026-09-10T14:00:57Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: manager sent a reminder to E2E Employee from
+-- (manager)/employee-reminders, then saved a recurring rule from
+-- (manager)/employee-reminders-recurring (employee scope, Mon/Wed/Fri 15:00,
+-- condition "no order today", channels push + in-app).
+select count(*) as reminders from public.reminders;
+select status, channel, outcome from public.reminder_events order by created_at desc limit 3;
+select type, title from public.notifications order by created_at desc limit 3;
+select scope, days_of_week, time_of_day, timezone, condition_type, channels, enabled
+  from public.recurring_reminder_rules order by created_at desc limit 2;
+```
+
+```
+ reminders 
+-----------
+         1
+(1 row)
+
+ERROR:  column "status" does not exist
+LINE 1: select status, channel, outcome from public.reminder_events ...
+               ^
+ERROR:  column "type" does not exist
+LINE 1: select type, title from public.notifications order by create...
+               ^
+  scope   | days_of_week | time_of_day |      timezone       | condition_type |            channels            | enabled 
+----------+--------------+-------------+---------------------+----------------+--------------------------------+---------
+ employee | {1,3,5}      | 15:00:00    | America/Los_Angeles | no_order_today | {"push": true, "in_app": true} | t
+(1 row)
+```
+
+## pr75-87-reminder-send-rows
+
+Run at 2026-09-10T14:01:07Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: rows written by the reminder send (see pr75-86 for the rule).
+select event_type, channels_attempted, delivery_result, push_delivery_status
+  from public.reminder_events order by sent_at desc limit 3;
+select notification_type, title from public.notifications order by created_at desc limit 3;
+```
+
+```
+ event_type | channels_attempted |                                                                                                                                                         delivery_result                                                                                                                                                          | push_delivery_status 
+------------+--------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------
+ sent       | ["in_app", "push"] | {"push": {"status": "no_tokens", "attempted": true, "receiptIds": [], "tokenCount": 0, "errorDetail": null, "failureCount": 0, "successCount": 0, "deliveryOutcome": null, "tokenResolutionFailed": false}, "source": "manual", "notifications_enabled": true, "in_app_notification_id": "fc6499e9-b1f5-4d93-b81b-441545d86848"} | 
+(1 row)
+
+ notification_type |     title      
+-------------------+----------------
+ employee_reminder | Order reminder
+(1 row)
+```
+
+## pr75-88-invite-accept
+
+Run at 2026-09-10T14:04:13Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: the invite deep link was opened while signed out and the
+-- invitee finished onboarding with a 4 digit app PIN.
+select invited_name, used_at is not null as used, used_by is not null as has_user
+  from public.invites order by created_at desc limit 1;
+select u.email, p.full_name, p.role, p.default_location_id
+  from auth.users u join public.profiles p on p.id = u.id
+  where p.full_name = 'PR75 Invitee';
+select li.method, li.secret_hash is not null as has_secret
+  from public.login_identities li
+  join public.profiles p on p.id = li.user_id
+  where p.full_name = 'PR75 Invitee';
+select um.module, um.enabled from public.user_modules um
+  join public.profiles p on p.id = um.user_id
+  where p.full_name = 'PR75 Invitee' order by um.module;
+```
+
+```
+ invited_name | used | has_user 
+--------------+------+----------
+ PR75 Invitee | t    | t
+(1 row)
+
+ERROR:  column p.default_location_id does not exist
+LINE 1: select u.email, p.full_name, p.role, p.default_location_id
+                                             ^
+ERROR:  column li.method does not exist
+LINE 1: select li.method, li.secret_hash is not null as has_secret
+               ^
+ERROR:  column um.module does not exist
+LINE 1: select um.module, um.enabled from public.user_modules um
+               ^
+```
+
+## pr75-89-invite-accept-rows
+
+Run at 2026-09-10T14:04:26Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: rows created by the invite acceptance (see pr75-88 for the invite).
+select p.full_name, p.role, p.provider, p.profile_completed, u.email
+  from auth.users u join public.profiles p on p.id = u.id
+  where p.full_name = 'PR75 Invitee';
+select li.login_name, li.credential_kind, li.secret_hash is not null as has_secret
+  from public.login_identities li
+  join public.profiles p on p.id = li.user_id
+  where p.full_name = 'PR75 Invitee';
+select um.module_key, um.enabled from public.user_modules um
+  join public.profiles p on p.id = um.user_id
+  where p.full_name = 'PR75 Invitee' order by um.module_key;
+```
+
+```
+  full_name   |   role   | provider | profile_completed |                                 email                                 
+--------------+----------+----------+-------------------+-----------------------------------------------------------------------
+ PR75 Invitee | employee | email    | t                 | join-a7da2ddd-5ead-4b66-8106-99d4763c90ee@members.babytunasystems.com
+(1 row)
+
+  login_name  | credential_kind | has_secret 
+--------------+-----------------+------------
+ pr75 invitee | pin             | t
+(1 row)
+
+    module_key     | enabled 
+-------------------+---------
+ ordering_advanced | f
+ ordering_simple   | t
+ stock_check       | t
+ tips              | f
+(4 rows)
+```
+
+## pr75-90-credential-before
+
+Run at 2026-09-10T14:04:36Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: PIN secret fingerprint for PR75 Invitee before the change.
+select li.login_name, li.credential_kind,
+       left(md5(li.secret_hash), 8) as secret_md5, li.updated_at
+  from public.login_identities li
+  join public.profiles p on p.id = li.user_id
+  where p.full_name = 'PR75 Invitee';
+```
+
+```
+  login_name  | credential_kind | secret_md5 |          updated_at           
+--------------+-----------------+------------+-------------------------------
+ pr75 invitee | pin             | 5a8c7be2   | 2026-09-10 14:03:55.877401+00
+(1 row)
+```
+
+## pr75-91-credential-change
+
+Run at 2026-09-10T14:06:24Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: PR75 Invitee changed their app PIN from settings/profile.
+-- Compare with pr75-90-credential-before (secret_md5 5a8c7be2).
+select li.login_name, li.credential_kind,
+       left(md5(li.secret_hash), 8) as secret_md5, li.updated_at
+  from public.login_identities li
+  join public.profiles p on p.id = li.user_id
+  where p.full_name = 'PR75 Invitee';
+```
+
+```
+  login_name  | credential_kind | secret_md5 |          updated_at           
+--------------+-----------------+------------+-------------------------------
+ pr75 invitee | pin             | 97438a0e   | 2026-09-10 14:06:11.172328+00
+(1 row)
+```
+
+## pr75-92-login-after-credential-change
+
+Run at 2026-09-10T14:08:00Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: signed out and signed back in as "PR75 Invitee" with the new PIN.
+select a.outcome, a.method, a.created_at
+  from public.login_auth_attempts a
+  join public.profiles p on p.id = a.user_id
+  where p.full_name = 'PR75 Invitee' order by a.created_at desc limit 5;
+select u.last_sign_in_at is not null as signed_in, u.last_sign_in_at
+  from auth.users u join public.profiles p on p.id = u.id
+  where p.full_name = 'PR75 Invitee';
+```
+
+```
+ERROR:  column a.user_id does not exist
+LINE 3:   join public.profiles p on p.id = a.user_id
+                                           ^
+ signed_in |        last_sign_in_at        
+-----------+-------------------------------
+ t         | 2026-09-10 14:07:43.309551+00
+(1 row)
+```
+
+## pr75-93-login-attempts
+
+Run at 2026-09-10T14:08:12Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: successful sign-in attempts recorded for the new PIN
+-- (see pr75-92 for auth.users.last_sign_in_at).
+select scope, success, attempted_at from public.login_auth_attempts
+  order by attempted_at desc limit 5;
+```
+
+```
+ scope  | success |         attempted_at          
+--------+---------+-------------------------------
+ name   | t       | 2026-09-10 14:07:43.238802+00
+ client | t       | 2026-09-10 14:07:43.238802+00
+ name   | t       | 2026-09-10 02:28:25.400679+00
+ client | t       | 2026-09-10 02:28:25.400679+00
+ name   | t       | 2026-09-09 05:53:30.763303+00
+(5 rows)
+```
+
+## pr75-94-account-deletion-before
+
+Run at 2026-09-10T14:08:20Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: rows for PR75 Invitee before Delete account.
+select (select count(*) from auth.users u join public.profiles p on p.id=u.id where p.full_name='PR75 Invitee') as auth_users,
+       (select count(*) from public.profiles where full_name='PR75 Invitee') as profiles,
+       (select count(*) from public.login_identities li join public.profiles p on p.id=li.user_id where p.full_name='PR75 Invitee') as login_identities,
+       (select count(*) from public.user_modules um join public.profiles p on p.id=um.user_id where p.full_name='PR75 Invitee') as user_modules;
+select invited_name, used_at is not null as used, used_by is not null as has_used_by from public.invites order by created_at desc limit 1;
+```
+
+```
+ auth_users | profiles | login_identities | user_modules 
+------------+----------+------------------+--------------
+          1 |        1 |                1 |            4
+(1 row)
+
+ invited_name | used | has_used_by 
+--------------+------+-------------
+ PR75 Invitee | t    | t
+(1 row)
+```
+
+## pr75-95-account-deletion-after
+
+Run at 2026-09-10T14:10:02Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: PR75 Invitee deleted their own account from settings/profile.
+-- Compare with pr75-94-account-deletion-before (1 / 1 / 1 / 4).
+select (select count(*) from public.profiles where full_name='PR75 Invitee') as profiles,
+       (select count(*) from public.login_identities where login_name='pr75 invitee') as login_identities,
+       (select count(*) from auth.users where email like 'join-%@members.babytunasystems.com') as join_auth_users;
+-- The invite keeps used_at so it cannot be reused, but used_by is cleared.
+select invited_name, used_at is not null as used, used_by is not null as has_used_by
+  from public.invites order by created_at desc limit 1;
+```
+
+```
+ profiles | login_identities | join_auth_users 
+----------+------------------+-----------------
+        0 |                0 |               0
+(1 row)
+
+ invited_name | used | has_used_by 
+--------------+------+-------------
+ PR75 Invitee | t    | f
+(1 row)
+```
