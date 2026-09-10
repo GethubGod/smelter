@@ -172,8 +172,8 @@ export default function EmployeeReminderSettingsScreen() {
 
         <View className="border-t" style={{ backgroundColor: color.card, borderColor: color.hairline, paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}>
           <TouchableOpacity
-            className={isSaving ? 'bg-orange-300 rounded-xl items-center justify-center' : 'bg-primary-500 rounded-xl items-center justify-center'}
-            style={{ minHeight: Math.max(48, ds.buttonH) }}
+            className="items-center justify-center"
+            style={{ backgroundColor: isSaving ? color.tint : color.accent, borderRadius: radius.control, minHeight: Math.max(48, ds.buttonH) }}
             onPress={handleSave}
             disabled={isSaving || isLoading}
           >

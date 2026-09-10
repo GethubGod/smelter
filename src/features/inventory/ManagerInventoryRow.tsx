@@ -145,11 +145,9 @@ function ManagerInventoryRowInner({
             />
             {item.status === 'critical' && reorderQty > 0 && !isBulkMode ? (
               <TouchableOpacity
-                className={`rounded-full items-center justify-center border ${added ? 'border-green-500' : 'border-orange-500'}`}
-                style={{
-                  width: Math.max(36, ds.icon(32)),
-                  height: Math.max(36, ds.icon(32)),
-                }}
+                className="items-center justify-center border"
+                style={{ borderRadius: radius.pill, borderColor: added ? color.good : color.warning, width: Math.max(36, ds.icon(32)),
+                  height: Math.max(36, ds.icon(32)) }}
                 onPress={handleAddToReorder}
               >
                 <Ionicons
@@ -249,18 +247,16 @@ function ManagerInventoryRowInner({
           </Text>
           {item.status === 'critical' && reorderQty > 0 && !isBulkMode ? (
             <TouchableOpacity
-              className={`rounded-full border ${added ? 'border-green-500' : 'border-orange-500'}`}
-              style={{
-                paddingHorizontal: ds.spacing(12),
+              className="border"
+              style={{ borderRadius: radius.pill, borderColor: added ? color.good : color.warning, paddingHorizontal: ds.spacing(12),
                 paddingVertical: ds.spacing(6),
                 minHeight: Math.max(32, ds.icon(28)),
-                justifyContent: 'center',
-              }}
+                justifyContent: 'center' }}
               onPress={handleAddToReorder}
             >
               <Text
-                className={`font-semibold ${added ? 'text-green-600' : 'text-orange-600'}`}
-                style={{ fontSize: ds.fontSize(typeScale.secondary) }}
+                className="font-semibold"
+                style={{ color: added ? color.good : color.warning, fontSize: ds.fontSize(typeScale.secondary) }}
               >
                 {added ? '✓ Added' : `Reorder ${reorderQty}`}
               </Text>

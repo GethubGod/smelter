@@ -322,9 +322,7 @@ export default function ManagerOrdersScreen() {
                   activeOpacity={0.7}
                 >
                   <View
-                    className={`w-9 h-9 rounded-full items-center justify-center mr-3 ${
-                      isSelected ? 'bg-primary-500' : 'bg-gray-200'
-                    }`}
+                    className="w-9 h-9 items-center justify-center mr-3" style={{ borderRadius: radius.pill, backgroundColor: isSelected ? color.accent : color.well }}
                   >
                     <BrandLogo variant="inline" size={18} />
                   </View>

@@ -237,9 +237,9 @@ function FulfillmentHistoryScreen() {
                 <TouchableOpacity
                   key={option.key}
                   onPress={() => setDateFilter(option.key)}
-                  className={`px-3 py-2 rounded-full mr-2 ${selected ? 'bg-primary-500' : 'bg-white border border-gray-200'}`}
+                  className={`px-3 py-2 mr-2 ${selected ? '' : 'border'}`} style={{ borderRadius: radius.pill, backgroundColor: selected ? color.accent : color.card, borderColor: selected ? undefined : color.hairlineStrong }}
                 >
-                  <Text className={`text-xs font-semibold ${selected ? 'text-white' : 'text-gray-600'}`}>
+                  <Text className="font-semibold" style={{ fontSize: typeScale.secondary, color: selected ? color.onAccent : color.ink2 }}>
                     {option.label}
                   </Text>
                 </TouchableOpacity>

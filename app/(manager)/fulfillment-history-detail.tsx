@@ -271,7 +271,7 @@ function FulfillmentHistoryDetailScreen() {
                 return (
                   <View
                     key={item.id}
-                    className={`py-2.5 ${index < items.length - 1 ? 'border-b border-gray-100' : ''}`}
+                    className={`py-2.5 ${index < items.length - 1 ? 'border-b' : ''}`} style={{ borderColor: index < items.length - 1 ? color.hairline : undefined }}
                   >
                     <View className="flex-row items-center justify-between">
                       <Text className="flex-1 pr-3" style={{ fontSize: typeScale.body, fontWeight: weight.semibold, color: color.ink }}>{item.itemName}</Text>
@@ -306,16 +306,14 @@ function FulfillmentHistoryDetailScreen() {
             <TouchableOpacity
               onPress={handleReorder}
               disabled={isReordering || !pastOrder}
-              className={`rounded-xl py-3 items-center justify-center flex-row mb-3 ${
-                isReordering ? 'bg-gray-200' : 'bg-green-500'
-              }`}
+              className="py-3 items-center justify-center flex-row mb-3" style={{ borderRadius: radius.control, backgroundColor: isReordering ? color.well : color.good }}
             >
               <Ionicons
                 name="refresh-outline"
                 size={17}
                 color={isReordering ? colors.gray[400] : 'white'}
               />
-              <Text className={`font-semibold ml-2 ${isReordering ? 'text-gray-400' : 'text-white'}`}>
+              <Text className="font-semibold ml-2" style={{ color: isReordering ? color.ink3 : color.onAccent }}>
                 {isReordering ? 'Creating Reorder...' : 'Reorder'}
               </Text>
             </TouchableOpacity>

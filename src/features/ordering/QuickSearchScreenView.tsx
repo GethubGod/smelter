@@ -457,12 +457,10 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
       return (
         <TouchableOpacity
           onPress={() => handleSelectItem(item)}
-          className={`flex-row items-center ${isFirst ? "bg-primary-50" : ""}`}
-          style={{
-            paddingHorizontal: ds.spacing(16),
+          className="flex-row items-center"
+          style={{ backgroundColor: isFirst ? color.tint : undefined, paddingHorizontal: ds.spacing(16),
             paddingVertical: ds.spacing(12),
-            minHeight: ds.rowH,
-          }}
+            minHeight: ds.rowH }}
           activeOpacity={0.7}
         >
           <Text style={{ fontSize: ds.icon(32), marginRight: ds.spacing(12) }}>
@@ -523,15 +521,11 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
           {screenState === "quantity" && selectedItem && (
             <TouchableOpacity
               onPress={handleAddToCart}
-              className={`rounded-xl items-center flex-row justify-center ${
-                canAddToCart ? "bg-primary-500" : "bg-primary-300"
-              }`}
-              style={{
-                minHeight: ds.buttonH,
+              className={`items-center flex-row justify-center ${canAddToCart ? '' : 'bg-primary-300'}`}
+              style={{ borderRadius: radius.control, backgroundColor: canAddToCart ? color.accent : undefined, minHeight: ds.buttonH,
                 paddingHorizontal: ds.spacing(16),
                 marginHorizontal: ds.spacing(12),
-                marginVertical: ds.spacing(8),
-              }}
+                marginVertical: ds.spacing(8) }}
               activeOpacity={0.8}
               disabled={!canAddToCart}
             >
@@ -1132,44 +1126,24 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                 >
                   <TouchableOpacity
                     onPress={() => setInputMode("quantity")}
-                    className={`flex-1 rounded-l-lg items-center justify-center ${
-                      inputMode === "quantity"
-                        ? "bg-primary-500"
-                        : "bg-gray-100"
-                    }`}
-                    style={{
-                      minHeight: Math.max(44, ds.buttonH - ds.spacing(6)),
-                    }}
+                    className="flex-1 items-center justify-center"
+                    style={{ borderTopLeftRadius: radius.control, borderBottomLeftRadius: radius.control, backgroundColor: inputMode === "quantity" ? color.accent : color.well, minHeight: Math.max(44, ds.buttonH - ds.spacing(6)) }}
                   >
                     <Text
-                      style={{ fontSize: ds.fontSize(typeScale.secondary) }}
-                      className={`font-semibold ${
-                        inputMode === "quantity"
-                          ? "text-white"
-                          : "text-gray-600"
-                      }`}
+                      style={{ color: inputMode === "quantity" ? color.onAccent : color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}
+                      className="font-semibold"
                     >
                       Order Qty
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => setInputMode("remaining")}
-                    className={`flex-1 rounded-r-lg items-center justify-center ${
-                      inputMode === "remaining"
-                        ? "bg-primary-500"
-                        : "bg-gray-100"
-                    }`}
-                    style={{
-                      minHeight: Math.max(44, ds.buttonH - ds.spacing(6)),
-                    }}
+                    className="flex-1 items-center justify-center"
+                    style={{ borderTopRightRadius: radius.control, borderBottomRightRadius: radius.control, backgroundColor: inputMode === "remaining" ? color.accent : color.well, minHeight: Math.max(44, ds.buttonH - ds.spacing(6)) }}
                   >
                     <Text
-                      style={{ fontSize: ds.fontSize(typeScale.secondary) }}
-                      className={`font-semibold ${
-                        inputMode === "remaining"
-                          ? "text-white"
-                          : "text-gray-600"
-                      }`}
+                      style={{ color: inputMode === "remaining" ? color.onAccent : color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}
+                      className="font-semibold"
                     >
                       Remaining
                     </Text>
@@ -1266,29 +1240,15 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                         setSelectedUnit("pack");
                         quantityInputRef.current?.focus();
                       }}
-                      className={`rounded-l-lg justify-center ${
-                        selectedUnit === "pack"
-                          ? "bg-primary-500"
-                          : hasInventoryUnit(selectedItem, "pack")
-                            ? "bg-gray-100"
-                            : "bg-gray-200"
-                      }`}
-                      style={{
-                        minHeight: 44,
+                      className="justify-center"
+                      style={{ borderTopLeftRadius: radius.control, borderBottomLeftRadius: radius.control, backgroundColor: selectedUnit === "pack" ? color.accent : color.well, minHeight: 44,
                         paddingHorizontal: ds.spacing(12),
-                        opacity: hasInventoryUnit(selectedItem, "pack") ? 1 : 0.55,
-                      }}
+                        opacity: hasInventoryUnit(selectedItem, "pack") ? 1 : 0.55 }}
                       disabled={!hasInventoryUnit(selectedItem, "pack")}
                     >
                       <Text
-                        style={{ fontSize: ds.fontSize(typeScale.body) }}
-                        className={`font-medium ${
-                          selectedUnit === "pack"
-                            ? "text-white"
-                            : hasInventoryUnit(selectedItem, "pack")
-                              ? "text-gray-600"
-                              : "text-gray-400"
-                        }`}
+                        style={{ fontWeight: weight.semibold, color: selectedUnit === "pack" ? color.onAccent : hasInventoryUnit(selectedItem, "pack") ? color.ink2 : color.ink3, fontSize: ds.fontSize(typeScale.body) }}
+
                       >
                         {selectedItem.pack_unit || "Pack"}
                       </Text>
@@ -1299,29 +1259,15 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                         setSelectedUnit("base");
                         quantityInputRef.current?.focus();
                       }}
-                      className={`rounded-r-lg justify-center ${
-                        selectedUnit === "base"
-                          ? "bg-primary-500"
-                          : hasInventoryUnit(selectedItem, "base")
-                            ? "bg-gray-100"
-                            : "bg-gray-200"
-                      }`}
-                      style={{
-                        minHeight: 44,
+                      className="justify-center"
+                      style={{ borderTopRightRadius: radius.control, borderBottomRightRadius: radius.control, backgroundColor: selectedUnit === "base" ? color.accent : color.well, minHeight: 44,
                         paddingHorizontal: ds.spacing(12),
-                        opacity: hasInventoryUnit(selectedItem, "base") ? 1 : 0.55,
-                      }}
+                        opacity: hasInventoryUnit(selectedItem, "base") ? 1 : 0.55 }}
                       disabled={!hasInventoryUnit(selectedItem, "base")}
                     >
                       <Text
-                        style={{ fontSize: ds.fontSize(typeScale.body) }}
-                        className={`font-medium ${
-                          selectedUnit === "base"
-                            ? "text-white"
-                            : hasInventoryUnit(selectedItem, "base")
-                              ? "text-gray-600"
-                              : "text-gray-400"
-                        }`}
+                        style={{ fontWeight: weight.semibold, color: selectedUnit === "base" ? color.onAccent : hasInventoryUnit(selectedItem, "base") ? color.ink2 : color.ink3, fontSize: ds.fontSize(typeScale.body) }}
+
                       >
                         {selectedItem.base_unit || "Base"}
                       </Text>
@@ -1422,21 +1368,15 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                     return (
                       <TouchableOpacity
                         key={cat}
-                        className={`rounded-lg ${
-                          isSelected ? "bg-primary-500" : "bg-gray-100"
-                        }`}
-                        style={{
-                          minHeight: Math.max(40, ds.buttonH - ds.spacing(10)),
+
+                        style={{ borderRadius: radius.control, backgroundColor: isSelected ? color.accent : color.well, minHeight: Math.max(40, ds.buttonH - ds.spacing(10)),
                           paddingHorizontal: ds.spacing(12),
-                          justifyContent: "center",
-                        }}
+                          justifyContent: "center" }}
                         onPress={() => setNewItemCategory(cat)}
                       >
                         <Text
-                          style={{ fontSize: ds.fontSize(typeScale.body) }}
-                          className={`font-medium ${
-                            isSelected ? "text-white" : "text-gray-700"
-                          }`}
+                          style={{ fontWeight: weight.semibold, color: isSelected ? color.onAccent : color.ink2, fontSize: ds.fontSize(typeScale.body) }}
+
                         >
                           {getCategoryLabel(cat)}
                         </Text>
@@ -1463,21 +1403,15 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                     return (
                       <TouchableOpacity
                         key={sup}
-                        className={`rounded-lg ${
-                          isSelected ? "bg-primary-500" : "bg-gray-100"
-                        }`}
-                        style={{
-                          minHeight: Math.max(40, ds.buttonH - ds.spacing(10)),
+
+                        style={{ borderRadius: radius.control, backgroundColor: isSelected ? color.accent : color.well, minHeight: Math.max(40, ds.buttonH - ds.spacing(10)),
                           paddingHorizontal: ds.spacing(12),
-                          justifyContent: "center",
-                        }}
+                          justifyContent: "center" }}
                         onPress={() => setNewItemSupplier(sup)}
                       >
                         <Text
-                          style={{ fontSize: ds.fontSize(typeScale.body) }}
-                          className={`font-medium ${
-                            isSelected ? "text-white" : "text-gray-700"
-                          }`}
+                          style={{ fontWeight: weight.semibold, color: isSelected ? color.onAccent : color.ink2, fontSize: ds.fontSize(typeScale.body) }}
+
                         >
                           {sup === "fish_supplier"
                             ? "Fish Supplier"
@@ -1588,10 +1522,8 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
                 paddingVertical: ds.spacing(14) }}
             >
               <TouchableOpacity
-                className={`rounded-xl items-center flex-row justify-center ${
-                  isCreatingItem ? "bg-primary-300" : "bg-primary-500"
-                }`}
-                style={{ minHeight: ds.buttonH }}
+                className={`items-center flex-row justify-center ${isCreatingItem ? 'bg-primary-300' : ''}`}
+                style={{ borderRadius: radius.control, backgroundColor: isCreatingItem ? undefined : color.accent, minHeight: ds.buttonH }}
                 onPress={handleCreateItem}
                 disabled={isCreatingItem}
               >
@@ -1632,10 +1564,8 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
             >
               <TouchableOpacity
                 onPress={handleAddToCart}
-                className={`rounded-xl items-center flex-row justify-center ${
-                  canAddToCart ? "bg-primary-500" : "bg-primary-300"
-                }`}
-                style={{ minHeight: ds.buttonH }}
+                className={`items-center flex-row justify-center ${canAddToCart ? '' : 'bg-primary-300'}`}
+                style={{ borderRadius: radius.control, backgroundColor: canAddToCart ? color.accent : undefined, minHeight: ds.buttonH }}
                 activeOpacity={0.8}
                 disabled={!canAddToCart}
               >

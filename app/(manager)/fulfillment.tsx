@@ -2892,9 +2892,7 @@ function FulfillmentScreen() {
                   breakdownRows.map((row, index) => (
                     <View
                       key={`${row.name}-${index}`}
-                      className={`py-3 ${
-                        index < breakdownRows.length - 1 ? 'border-b border-gray-100' : ''
-                      }`}
+                      className={`py-3 ${index < breakdownRows.length - 1 ? 'border-b' : ''}`} style={{ borderColor: index < breakdownRows.length - 1 ? color.hairline : undefined }}
                     >
                       <View className="flex-row items-center justify-between">
                         <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>{row.name}</Text>
@@ -2986,9 +2984,7 @@ function FulfillmentScreen() {
                 <TouchableOpacity
                   onPress={handleSaveItemNote}
                   disabled={isSavingNote}
-                  className={`flex-1 py-3 rounded-xl items-center justify-center ${
-                    isSavingNote ? 'bg-primary-300' : 'bg-primary-500'
-                  }`}
+                  className={`flex-1 py-3 items-center justify-center ${isSavingNote ? 'bg-primary-300' : ''}`} style={{ borderRadius: radius.control, backgroundColor: isSavingNote ? undefined : color.accent }}
                 >
                   <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.onAccent }}>
                     {isSavingNote ? 'Saving...' : 'Save Note'}

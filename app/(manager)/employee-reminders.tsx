@@ -389,13 +389,11 @@ export default function EmployeeRemindersScreen() {
 
           <TouchableOpacity
             onPress={() => handleReminderPress(row)}
-            className={isSending ? 'bg-orange-300 items-center justify-center' : 'bg-primary-500 items-center justify-center'}
-            style={{
-              minHeight: Math.max(42, ds.buttonH - ds.spacing(6)),
+            className="items-center justify-center"
+            style={{ backgroundColor: isSending ? color.tint : color.accent, minHeight: Math.max(42, ds.buttonH - ds.spacing(6)),
               minWidth: Math.max(106, ds.buttonPadH * 4),
               borderRadius: radius.control,
-              paddingHorizontal: ds.spacing(10),
-            }}
+              paddingHorizontal: ds.spacing(10) }}
             disabled={isSending}
           >
             <Text className="font-semibold" style={{ color: color.onAccent, fontSize: ds.fontSize(typeScale.secondary) }}>

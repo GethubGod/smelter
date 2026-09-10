@@ -1662,8 +1662,8 @@ export default function ManagerInventoryScreen() {
                   onPress={() => setCategoryFilter(category)}
                 >
                   <Text
-                    className={`font-semibold ${isSelected ? 'text-white' : 'text-gray-700'}`}
-                    style={{ fontSize: ds.fontSize(typeScale.secondary) }}
+                    className="font-semibold"
+                    style={{ color: isSelected ? color.onAccent : color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}
                   >
                     {category ? getCategoryLabel(category) : 'All'}
                   </Text>
@@ -1743,32 +1743,24 @@ export default function ManagerInventoryScreen() {
           >
             <View className="flex-row items-center justify-between">
               <TouchableOpacity
-                className={`flex-1 rounded-xl border items-center ${
-                  bulkSelectedCount === 0 ? 'border-gray-200 bg-gray-100' : 'border-gray-200 bg-white'
-                }`}
-                style={{
-                  paddingHorizontal: ds.spacing(12),
+                className="flex-1 border items-center"
+                style={{ borderRadius: radius.control, borderColor: color.hairlineStrong, backgroundColor: bulkSelectedCount === 0 ? color.well : color.card, paddingHorizontal: ds.spacing(12),
                   paddingVertical: ds.spacing(12),
                   marginRight: ds.spacing(8),
                   minHeight: ds.buttonH,
-                  justifyContent: 'center',
-                }}
+                  justifyContent: 'center' }}
                 onPress={openBulkMove}
                 disabled={bulkSelectedCount === 0}
               >
                 <Text className="font-semibold" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>Move</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className={`flex-1 rounded-xl border items-center ${
-                  bulkSelectedCount === 0 ? 'border-gray-200 bg-gray-100' : 'border-gray-200 bg-white'
-                }`}
-                style={{
-                  paddingHorizontal: ds.spacing(12),
+                className="flex-1 border items-center"
+                style={{ borderRadius: radius.control, borderColor: color.hairlineStrong, backgroundColor: bulkSelectedCount === 0 ? color.well : color.card, paddingHorizontal: ds.spacing(12),
                   paddingVertical: ds.spacing(12),
                   marginRight: ds.spacing(8),
                   minHeight: ds.buttonH,
-                  justifyContent: 'center',
-                }}
+                  justifyContent: 'center' }}
                 onPress={handleBulkRemove}
                 disabled={bulkSelectedCount === 0}
               >
@@ -1937,7 +1929,7 @@ export default function ManagerInventoryScreen() {
 
           <View className="border-t px-4 py-4" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
             <TouchableOpacity
-              className={`rounded-xl py-4 items-center ${isEditSaving ? 'bg-primary-300' : 'bg-primary-500'}`}
+              className={`py-4 items-center ${isEditSaving ? 'bg-primary-300' : ''}`} style={{ borderRadius: radius.control, backgroundColor: isEditSaving ? undefined : color.accent }}
               onPress={handleSaveEdit}
               disabled={isEditSaving || !selectedAreaItem}
             >
@@ -1992,9 +1984,7 @@ export default function ManagerInventoryScreen() {
                     return (
                       <TouchableOpacity
                         key={area.id}
-                        className={`border rounded-xl px-4 py-3 mb-3 ${
-                          isSelected ? 'border-orange-200 bg-orange-50' : 'border-gray-200'
-                        } ${isCurrent ? 'opacity-50' : ''}`}
+                        className={`border px-4 py-3 mb-3 ${isCurrent ? 'opacity-50' : ''}`} style={{ borderRadius: radius.control, borderColor: isSelected ? color.warning : color.hairlineStrong, backgroundColor: isSelected ? color.warningBg : undefined }}
                         onPress={() => handleSelectMoveArea(area.id)}
                         disabled={isCurrent}
                       >
@@ -2066,27 +2056,19 @@ export default function ManagerInventoryScreen() {
                       <Text className="font-semibold mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>MOVE TYPE</Text>
                       <View className="flex-row">
                         <TouchableOpacity
-                          className={`flex-1 border rounded-xl py-3 items-center mr-2 ${
-                            moveMode === 'replace' ? 'border-orange-200 bg-orange-50' : 'border-gray-200'
-                          }`}
+                          className="flex-1 border py-3 items-center mr-2" style={{ borderRadius: radius.control, borderColor: moveMode === 'replace' ? color.warning : color.hairlineStrong, backgroundColor: moveMode === 'replace' ? color.warningBg : undefined }}
                           onPress={() => setMoveMode('replace')}
                         >
-                          <Text className={`text-sm font-semibold ${
-                            moveMode === 'replace' ? 'text-orange-600' : 'text-gray-700'
-                          }`}>
+                          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: moveMode === 'replace' ? color.warning : color.ink2 }}>
                             Replace Existing
                           </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                          className={`flex-1 border rounded-xl py-3 items-center ${
-                            moveMode === 'duplicate' ? 'border-orange-200 bg-orange-50' : 'border-gray-200'
-                          } ${moveTargetExisting ? 'opacity-50' : ''}`}
+                          className={`flex-1 border py-3 items-center ${moveTargetExisting ? 'opacity-50' : ''}`} style={{ borderRadius: radius.control, borderColor: moveMode === 'duplicate' ? color.warning : color.hairlineStrong, backgroundColor: moveMode === 'duplicate' ? color.warningBg : undefined }}
                           onPress={() => setMoveMode('duplicate')}
                           disabled={!!moveTargetExisting}
                         >
-                          <Text className={`text-sm font-semibold ${
-                            moveMode === 'duplicate' ? 'text-orange-600' : 'text-gray-700'
-                          }`}>
+                          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: moveMode === 'duplicate' ? color.warning : color.ink2 }}>
                             Add Duplicate
                           </Text>
                         </TouchableOpacity>
@@ -2109,7 +2091,7 @@ export default function ManagerInventoryScreen() {
 
           <View className="border-t px-4 py-4" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
             <TouchableOpacity
-              className={`rounded-xl py-4 items-center ${isMoveSaving || !moveTargetAreaId ? 'bg-orange-200' : 'bg-orange-500'}`}
+              className="py-4 items-center" style={{ borderRadius: radius.control, backgroundColor: isMoveSaving || !moveTargetAreaId ? color.tint : color.accent }}
               onPress={handleMoveItem}
               disabled={isMoveSaving || !moveTargetAreaId}
             >
@@ -2152,9 +2134,7 @@ export default function ManagerInventoryScreen() {
             {bulkMoveAreas.map((area) => (
               <TouchableOpacity
                 key={area.id}
-                className={`border rounded-xl px-4 py-3 mb-3 ${
-                  bulkMoveAreaId === area.id ? 'border-orange-200 bg-orange-50' : 'border-gray-200'
-                }`}
+                className="border px-4 py-3 mb-3" style={{ borderRadius: radius.control, borderColor: bulkMoveAreaId === area.id ? color.warning : color.hairlineStrong, backgroundColor: bulkMoveAreaId === area.id ? color.warningBg : undefined }}
                 onPress={() => setBulkMoveAreaId(area.id)}
               >
                 <View className="flex-row items-center justify-between">
@@ -2211,7 +2191,7 @@ export default function ManagerInventoryScreen() {
 
           <View className="border-t px-4 py-4" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
             <TouchableOpacity
-              className={`rounded-xl py-4 items-center ${isBulkSaving || !bulkMoveAreaId ? 'bg-orange-200' : 'bg-orange-500'}`}
+              className="py-4 items-center" style={{ borderRadius: radius.control, backgroundColor: isBulkSaving || !bulkMoveAreaId ? color.tint : color.accent }}
               onPress={handleBulkMoveItems}
               disabled={isBulkSaving || !bulkMoveAreaId}
             >
@@ -2523,10 +2503,10 @@ export default function ManagerInventoryScreen() {
                         return (
                           <TouchableOpacity
                             key={sup}
-                            className={`px-3 py-2 rounded-lg ${isSelected ? 'bg-primary-500' : 'bg-gray-100'}`}
+                            className="px-3 py-2" style={{ borderRadius: radius.control, backgroundColor: isSelected ? color.accent : color.well }}
                             onPress={() => setForm({ ...form, supplier_category: sup })}
                           >
-                            <Text className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-gray-700'}`}>
+                            <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: isSelected ? color.onAccent : color.ink2 }}>
                               {getSupplierCategoryLabel(sup)}
                             </Text>
                           </TouchableOpacity>
@@ -2541,9 +2521,7 @@ export default function ManagerInventoryScreen() {
                       {ADD_EMOJIS.map((emoji) => (
                         <TouchableOpacity
                           key={emoji}
-                          className={`h-10 w-10 rounded-xl items-center justify-center ${
-                            newItemEmoji === emoji ? 'bg-orange-100 border border-orange-200' : 'bg-gray-100'
-                          }`}
+                          className={`h-10 w-10 items-center justify-center ${newItemEmoji === emoji ? 'border' : ''}`} style={{ borderRadius: radius.control, backgroundColor: newItemEmoji === emoji ? color.warningBg : color.well, borderColor: newItemEmoji === emoji ? color.warning : undefined }}
                           onPress={() => setNewItemEmoji(emoji)}
                         >
                           <Text style={{ fontSize: ds.fontSize(typeScale.title) }}>{emoji}</Text>
@@ -2705,7 +2683,7 @@ export default function ManagerInventoryScreen() {
               )}
               {addStep === 'assign' && (
                 <TouchableOpacity
-                  className={`rounded-xl py-4 items-center ${isSubmitting ? 'bg-primary-300' : 'bg-primary-500'}`}
+                  className={`py-4 items-center ${isSubmitting ? 'bg-primary-300' : ''}`} style={{ borderRadius: radius.control, backgroundColor: isSubmitting ? undefined : color.accent }}
                   onPress={handleAddItemFlow}
                   disabled={isSubmitting}
                 >
@@ -2857,10 +2835,10 @@ export default function ManagerInventoryScreen() {
                     return (
                       <TouchableOpacity
                         key={sup}
-                        className={`px-3 py-2 rounded-lg ${isSelected ? 'bg-primary-500' : 'bg-gray-100'}`}
+                        className="px-3 py-2" style={{ borderRadius: radius.control, backgroundColor: isSelected ? color.accent : color.well }}
                         onPress={() => setBulkSupplier(sup)}
                       >
-                        <Text className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-gray-700'}`}>
+                        <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: isSelected ? color.onAccent : color.ink2 }}>
                           {getSupplierCategoryLabel(sup)}
                         </Text>
                       </TouchableOpacity>
@@ -2907,9 +2885,7 @@ export default function ManagerInventoryScreen() {
 
             <View className="border-t px-4 py-4" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
               <TouchableOpacity
-                className={`rounded-xl py-4 items-center flex-row justify-center ${
-                  isSubmitting ? 'bg-primary-300' : 'bg-primary-500'
-                }`}
+                className={`py-4 items-center flex-row justify-center ${isSubmitting ? 'bg-primary-300' : ''}`} style={{ borderRadius: radius.control, backgroundColor: isSubmitting ? undefined : color.accent }}
                 onPress={handleBulkAdd}
                 disabled={isSubmitting}
               >
