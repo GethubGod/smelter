@@ -1,5 +1,10 @@
 import React, { memo, useCallback, useMemo } from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetShell } from '@/components/BottomSheetShell';
@@ -11,6 +16,7 @@ import {
   glassRadii,
 } from '@/theme/design';
 import { typeScale, weight } from '@/theme/tokens';
+import { Loading } from '@/components/ui';
 
 export interface SupplierPickerOption {
   id: string;
@@ -167,7 +173,7 @@ export const SupplierPickerBottomSheet = memo(function SupplierPickerBottomSheet
               paddingVertical: ds.spacing(24),
             }}
           >
-            <ActivityIndicator color={glassColors.accent} size="small" />
+            <Loading size="inline" color={glassColors.accent} />
             <Text
               style={{
                 marginLeft: ds.spacing(10),

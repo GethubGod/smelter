@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -13,6 +12,7 @@ import { BrandLogo } from './BrandLogo';
 import { BottomSheetShell } from './BottomSheetShell';
 import { resolveLocationSwitchTarget } from '@/features/cart/locationSwitch';
 import { color, typeScale, weight } from '@/theme/tokens';
+import { Loading } from '@/components/ui';
 
 export interface ConfirmLocationOption {
   id: string;
@@ -231,7 +231,7 @@ export function ConfirmLocationBottomSheet({
             >
               {isSubmitting ? (
                 <>
-                  <ActivityIndicator color={colors.white} size="small" />
+                  <Loading size="inline" color={colors.white} />
                   <Text style={{ fontSize: ds.fontSize(typeScale.title), marginLeft: ds.spacing(8), color: colors.white, fontWeight: weight.semibold }}>
                     Submitting...
                   </Text>

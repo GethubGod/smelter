@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Animated,
   Keyboard,
   KeyboardAvoidingView,
@@ -44,6 +43,7 @@ import { PreviousQuantitySuggestionCard } from "./PreviousQuantitySuggestionCard
 import { QuantityStepper } from "./QuantityStepper";
 import { UnitSegmentedControl } from "./UnitSegmentedControl";
 import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { Loading } from '@/components/ui';
 
 /** One entry in the quantity-fix walk-through. */
 export type QuickOrderQuantitySheetItem = {
@@ -566,7 +566,7 @@ function SheetBody({
             ]}
           >
             {isSaving ? (
-              <ActivityIndicator color={colors.textOnPrimary} />
+              <Loading size="inline" color={colors.textOnPrimary} />
             ) : (
               <View style={styles.primaryInner}>
                 <Text

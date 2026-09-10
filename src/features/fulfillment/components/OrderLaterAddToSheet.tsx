@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -12,6 +11,7 @@ import { colors, hairline, radii } from '@/theme/design';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { BottomSheetShell } from '@/components/BottomSheetShell';
 import { typeScale, weight } from '@/theme/tokens';
+import { Loading } from '@/components/ui';
 
 export interface OrderLaterSupplierOption {
   id: string;
@@ -225,7 +225,7 @@ export function OrderLaterAddToSheet({
           >
             {isSubmitting ? (
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <ActivityIndicator color={colors.white} size="small" />
+                <Loading size="inline" color={colors.white} />
                 <Text style={{ fontSize: ds.fontSize(typeScale.title), marginLeft: ds.spacing(8), fontWeight: weight.semibold, color: colors.white }}>
                   Adding...
                 </Text>

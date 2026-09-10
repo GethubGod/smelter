@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Keyboard,
   KeyboardEvent,
   LayoutChangeEvent,
@@ -27,6 +26,7 @@ import { isMessageSubmittable, type ComposerMode } from './quickOrderComposer';
 import { ComposerSuggestionPills } from './ComposerSuggestionPills';
 import { BAR_COUNT, RollingSpectrogram } from './RollingSpectrogram';
 import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { Loading } from '@/components/ui';
 
 type QuickOrderComposerBarProps = {
   onSubmit: (text: string) => void;
@@ -613,7 +613,7 @@ function QuickOrderComposerBarImpl({
                   pointerEvents="none"
                 >
                   {isVoiceBusy ? (
-                    <ActivityIndicator size="small" color={colors.textOnPrimary} />
+                    <Loading size="inline" color={colors.textOnPrimary} />
                   ) : (
                     <AnimatedIonicons
                       name="arrow-up"

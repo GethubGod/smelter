@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Modal,
   Pressable,
@@ -30,6 +29,7 @@ import {
   glassTabBarHeight,
 } from '@/theme/design';
 import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { Loading } from '@/components/ui';
 
 type ReviewStatus = 'pending' | 'approved' | 'rejected' | 'changes_requested' | 'not_required';
 type UnitType = 'base' | 'pack';
@@ -932,7 +932,7 @@ export function QuickOrderReviewQueueScreen() {
 
         {isLoading ? (
           <View style={styles.loadingState}>
-            <ActivityIndicator color={colors.primary} />
+            <Loading size="inline" color={colors.primary} />
           </View>
         ) : (
           <ScrollView

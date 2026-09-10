@@ -5,7 +5,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,6 +12,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { colors } from '@/constants';
 import { useStockStore } from '@/store';
 import { radius, typeScale, weight } from '@/theme/tokens';
+import { Loading } from '@/components/ui';
 
 interface QrScannerModalProps {
   visible: boolean;
@@ -83,7 +83,7 @@ export function QrScannerModal({ visible, onClose, onScan }: QrScannerModalProps
     if (permission === null) {
       return (
         <View style={styles.permissionContainer}>
-          <ActivityIndicator size="small" color={colors.primary[600]} />
+          <Loading size="inline" color={colors.primary[600]} />
           <Text style={styles.permissionText}>Requesting camera access...</Text>
         </View>
       );

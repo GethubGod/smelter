@@ -6,7 +6,6 @@ import React, {
   useState,
 } from "react";
 import {
-  ActivityIndicator,
   Alert,
   AppState,
   FlatList,
@@ -178,6 +177,7 @@ import {
   type QuickOrderOperationResult,
 } from "./quickOrderItems";
 import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { Loading } from '@/components/ui';
 
 type QuickOrderFlag = {
   type: string;
@@ -1059,7 +1059,7 @@ const VoiceReviewCard = React.memo(function VoiceReviewCard({
           ]}
         >
           {isAdding ? (
-            <ActivityIndicator size="small" color={colors.textOnPrimary} />
+            <Loading size="inline" color={colors.textOnPrimary} />
           ) : (
             <Text style={[styles.voiceReviewPrimaryText, { fontSize: ds.fontSize(typeScale.body) }]}>
               Add to order
@@ -6352,7 +6352,7 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
             ListEmptyComponent={
               isLoadingSession ? (
                 <View style={styles.loadingRow}>
-                  <ActivityIndicator color={quickOrderAccent} />
+                  <Loading size="inline" color={quickOrderAccent} />
                 </View>
               ) : sessionLoadError ? (
                 <View
@@ -6419,7 +6419,7 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
                       },
                     ]}
                   >
-                    <ActivityIndicator color={quickOrderAccent} />
+                    <Loading size="inline" color={quickOrderAccent} />
                     <Text
                       style={[styles.typingText, { fontSize: ds.fontSize(typeScale.body) }]}
                     >

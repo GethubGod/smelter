@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import {
-  ActivityIndicator,
   LayoutChangeEvent,
   StyleSheet,
   Text,
@@ -40,6 +39,7 @@ import {
   type ParsedQuickOrderItem,
 } from "./quickOrderItems";
 import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { Loading } from '@/components/ui';
 
 const CARD_PADDING = 13;
 const CARD_SECTION_GAP = 7;
@@ -657,11 +657,7 @@ function ConfirmButton({
       }}
     >
       {state === "confirming" ? (
-        <ActivityIndicator
-          color={variant.foreground}
-          style={{ marginRight: 6 }}
-          size="small"
-        />
+        <Loading size="inline" color={variant.foreground} style={{ marginRight: 6 }} />
       ) : null}
       <Text
         style={{

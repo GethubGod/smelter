@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   Text,
@@ -34,6 +33,7 @@ import {
   mapInventoryRow,
 } from './quickOrderConfig/types';
 import { typeScale, weight } from '@/theme/tokens';
+import { Loading } from '@/components/ui';
 
 const TAB_LABELS: Record<ConfigTab, string> = {
   aliases: 'Aliases',
@@ -247,7 +247,7 @@ export function QuickOrderConfigScreen() {
 
           {isLoading ? (
             <View style={{ paddingVertical: ds.spacing(60), alignItems: 'center' }}>
-              <ActivityIndicator color={colors.primary} />
+              <Loading size="inline" color={colors.primary} />
             </View>
           ) : activeTab === 'aliases' ? (
             <AliasesTab items={items} setItems={setItems} />

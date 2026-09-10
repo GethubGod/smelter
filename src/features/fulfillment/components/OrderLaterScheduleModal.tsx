@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Platform,
   ScrollView,
   Text,
@@ -14,6 +13,7 @@ import { colors, hairline, radii } from '@/theme/design';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { BottomSheetShell } from '@/components/BottomSheetShell';
 import { typeScale, weight } from '@/theme/tokens';
+import { Loading } from '@/components/ui';
 
 type SchedulePreset = 'later_today' | 'tomorrow' | 'pick_datetime';
 type PickerMode = 'later_today_time' | 'tomorrow_time' | 'custom_date' | 'custom_time' | null;
@@ -455,7 +455,7 @@ export function OrderLaterScheduleModal({
           >
             {submitting ? (
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <ActivityIndicator color={colors.white} size="small" />
+                <Loading size="inline" color={colors.white} />
                 <Text style={{ fontSize: ds.fontSize(typeScale.title), marginLeft: ds.spacing(8), fontWeight: weight.semibold, color: colors.white }}>
                   Saving...
                 </Text>

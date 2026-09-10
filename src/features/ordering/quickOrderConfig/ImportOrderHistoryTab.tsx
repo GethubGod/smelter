@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -15,6 +14,7 @@ import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { colors, glassColors, glassHairlineWidth, glassRadii } from '@/theme/design';
 import type { QuickOrderConfigItem } from './types';
 import { radius, typeScale, weight } from '@/theme/tokens';
+import { Loading } from '@/components/ui';
 
 type EmployeeOption = { id: string; name: string; role?: string | null };
 type DateStatus = 'idle' | 'valid' | 'needs_review' | 'invalid';
@@ -550,7 +550,7 @@ function PrimaryButton({ label, disabled, onPress }: { label: string; disabled?:
   const ds = useScaledStyles();
   return (
     <Pressable disabled={disabled} onPress={onPress} style={{ marginTop: ds.spacing(12), alignItems: 'center', borderRadius: radius.control, paddingVertical: ds.spacing(11), backgroundColor: disabled ? colors.textMuted : colors.primary }}>
-      {label.endsWith('...') ? <ActivityIndicator color={colors.textOnPrimary} /> : <Text style={{ color: colors.textOnPrimary, fontSize: ds.fontSize(typeScale.body), fontWeight: weight.bold }}>{label}</Text>}
+      {label.endsWith('...') ? <Loading size="inline" color={colors.textOnPrimary} /> : <Text style={{ color: colors.textOnPrimary, fontSize: ds.fontSize(typeScale.body), fontWeight: weight.bold }}>{label}</Text>}
     </Pressable>
   );
 }

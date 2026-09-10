@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
   KeyboardEvent,
@@ -27,6 +26,7 @@ import {
   type QuickOrderInventoryItem,
 } from './quickOrderItems';
 import { radius, typeScale, weight } from '@/theme/tokens';
+import { Loading } from '@/components/ui';
 
 export type QuickOrderItemEditResult = {
   itemId: string | null;
@@ -412,7 +412,7 @@ function EditModalBody({
             ]}
           >
             {isSaving ? (
-              <ActivityIndicator color={colors.textOnPrimary} />
+              <Loading size="inline" color={colors.textOnPrimary} />
             ) : (
               <Text style={[styles.primaryText, { fontSize: ds.fontSize(typeScale.body) }]}>Save</Text>
             )}
