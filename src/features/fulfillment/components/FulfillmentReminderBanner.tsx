@@ -7,6 +7,7 @@ import {
   glassHairlineWidth,
   glassRadii,
 } from '@/theme/design';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 type ReminderTone = 'warning' | 'success' | 'neutral';
 
@@ -22,11 +23,11 @@ const TONE_STYLES: Record<
   }
 > = {
   warning: {
-    backgroundColor: '#FFF8F5',
-    borderColor: '#F4D8D0',
-    iconBackground: '#FFF0EA',
+    backgroundColor: color.tint,
+    borderColor: color.hairline,
+    iconBackground: color.tint,
     iconColor: glassColors.accent,
-    titleColor: '#EE573F',
+    titleColor: color.accent,
     subtitleColor: glassColors.textSecondary,
   },
   success: {
@@ -72,7 +73,7 @@ export function FulfillmentReminderBanner({
         backgroundColor: palette.backgroundColor,
         borderColor: palette.borderColor,
         borderWidth: glassHairlineWidth,
-        borderRadius: 18,
+        borderRadius: radius.card,
         paddingHorizontal: ds.spacing(16),
         paddingVertical: ds.spacing(13),
         flexDirection: 'row',
@@ -97,8 +98,8 @@ export function FulfillmentReminderBanner({
         <Text
           style={{
             color: palette.titleColor,
-            fontSize: ds.fontSize(14),
-            fontWeight: '700',
+            fontSize: ds.fontSize(typeScale.body),
+            fontWeight: weight.bold,
           }}
           numberOfLines={1}
         >
@@ -107,8 +108,8 @@ export function FulfillmentReminderBanner({
         <Text
           style={{
             color: palette.subtitleColor,
-            fontSize: ds.fontSize(12),
-            lineHeight: ds.fontSize(16),
+            fontSize: ds.fontSize(typeScale.secondary),
+            lineHeight: ds.fontSize(typeScale.body),
             marginTop: 2,
           }}
           numberOfLines={2}

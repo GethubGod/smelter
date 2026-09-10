@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, glassColors, glassHairlineWidth } from '@/theme/design';
+import { radius, typeScale, weight } from '@/theme/tokens';
 
 type ErrorBoundaryProps = {
   children: React.ReactNode;
@@ -71,23 +72,23 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.textPrimary,
-    fontSize: 20,
-    fontWeight: '800',
+    fontSize: typeScale.title,
+    fontWeight: weight.bold,
     textAlign: 'center',
     letterSpacing: 0,
   },
   message: {
     marginTop: 10,
     color: colors.textSecondary,
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: typeScale.body,
+    fontWeight: weight.semibold,
     textAlign: 'center',
     lineHeight: 22,
     letterSpacing: 0,
   },
   retryButton: {
     marginTop: 18,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     backgroundColor: colors.primary,
     paddingHorizontal: 20,
     paddingVertical: 12,
@@ -96,8 +97,8 @@ const styles = StyleSheet.create({
   },
   retryText: {
     color: colors.textOnPrimary,
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: typeScale.body,
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
 });

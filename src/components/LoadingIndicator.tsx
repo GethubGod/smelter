@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -6,7 +6,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { colors } from '@/constants';
+import { color as token } from '@/theme/tokens';
 
 interface LoadingIndicatorProps {
   size?: 'small' | 'medium' | 'large';
@@ -17,7 +17,7 @@ interface LoadingIndicatorProps {
 
 const SMALL_CONFIG = {
   indicatorSize: 'small' as const,
-  defaultColor: colors.white,
+  defaultColor: token.onAccent,
 };
 
 const BAR_CONFIG = {
@@ -52,7 +52,7 @@ export function LoadingIndicator({
 }: LoadingIndicatorProps) {
   const isCompact = size === 'small';
   const config = BAR_CONFIG[size];
-  const indicatorColor = color ?? (isCompact ? SMALL_CONFIG.defaultColor : colors.primary[500]);
+  const indicatorColor = color ?? (isCompact ? SMALL_CONFIG.defaultColor : token.accent);
   const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -106,7 +106,7 @@ export function LoadingIndicator({
             height: config.trackHeight,
             borderRadius: config.trackHeight / 2,
             overflow: 'hidden',
-            backgroundColor: colors.gray[200],
+            backgroundColor: token.well,
             opacity: 0.9,
           }}
         >

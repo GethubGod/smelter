@@ -9,19 +9,21 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { GlassSurface } from '@/components';
+import {
+  GlassSurface,
+  LoadingIndicator,
+} from '@/components';
 import {
   getFloatingPillClearance,
   getTabBarBottomInset,
 } from '@/components/navigation';
-import { Loading } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import {
   glassColors,
   glassRadii,
   glassSpacing,
 } from '@/theme/design';
-import { typeScale } from '@/theme/tokens';
+import { typeScale, weight } from '@/theme/tokens';
 
 interface HomeScreenScrollProps {
   children: ReactNode;
@@ -154,7 +156,7 @@ export const HomeModuleCard = memo(function HomeModuleCard({
           <Text
             style={{
               fontSize: ds.fontSize(typeScale.body),
-              fontWeight: '700',
+              fontWeight: weight.bold,
               color: glassColors.textPrimary,
             }}
           >
@@ -165,7 +167,7 @@ export const HomeModuleCard = memo(function HomeModuleCard({
               <Text
                 style={{
                   fontSize: ds.fontSize(typeScale.secondary),
-                  fontWeight: '700',
+                  fontWeight: weight.bold,
                   color: glassColors.accent,
                 }}
               >
@@ -219,7 +221,7 @@ export const HomeModuleState = memo(function HomeModuleState({
         style={{
           marginTop: ds.spacing(12),
           fontSize: ds.fontSize(typeScale.body),
-          fontWeight: '600',
+          fontWeight: weight.semibold,
           color: glassColors.textPrimary,
         }}
       >
@@ -253,7 +255,7 @@ export const HomeModuleState = memo(function HomeModuleState({
           <Text
             style={{
               fontSize: ds.fontSize(typeScale.secondary),
-              fontWeight: '700',
+              fontWeight: weight.bold,
               color: glassColors.textOnPrimary,
             }}
           >
@@ -280,7 +282,7 @@ export const HomeModuleLoading = memo(function HomeModuleLoading({
         justifyContent: 'center',
       }}
     >
-      <Loading size="inline" label={text} />
+      <LoadingIndicator showText text={text} />
     </View>
   );
 });

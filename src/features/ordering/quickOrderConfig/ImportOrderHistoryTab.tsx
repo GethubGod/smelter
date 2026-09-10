@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -14,6 +13,8 @@ import { supabase } from '@/lib/supabase';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { colors, glassColors, glassHairlineWidth, glassRadii } from '@/theme/design';
 import type { QuickOrderConfigItem } from './types';
+import { radius, typeScale, weight } from '@/theme/tokens';
+import { Loading } from '@/components/ui/Loading';
 
 type EmployeeOption = { id: string; name: string; role?: string | null };
 type DateStatus = 'idle' | 'valid' | 'needs_review' | 'invalid';
@@ -226,7 +227,7 @@ export function ImportOrderHistoryTab({ items }: { items: QuickOrderConfigItem[]
           ))}
         </ScrollView>
         {employeeQuery.trim() && !selectedEmployee ? (
-          <Text style={{ color: colors.textSecondary, fontSize: ds.fontSize(12), fontWeight: '700', marginBottom: ds.spacing(10) }}>
+          <Text style={{ color: colors.textSecondary, fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.bold, marginBottom: ds.spacing(10) }}>
             New employee name will be linked automatically when they sign up.
           </Text>
         ) : null}
@@ -267,7 +268,7 @@ export function ImportOrderHistoryTab({ items }: { items: QuickOrderConfigItem[]
             alignSelf: 'center',
             width: ds.spacing(48),
             height: ds.spacing(48),
-            borderRadius: ds.radius(999),
+            borderRadius: radius.pill,
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: colors.primary,
@@ -313,12 +314,12 @@ function HistoryBlockCard({
     <View style={{
       borderWidth: 1,
       borderColor: glassColors.cardBorder,
-      borderRadius: ds.radius(14),
+      borderRadius: radius.card,
       padding: ds.spacing(12),
       backgroundColor: colors.white,
     }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: ds.spacing(10) }}>
-        <Text style={{ flex: 1, color: colors.textPrimary, fontSize: ds.fontSize(15), fontWeight: '900' }}>
+        <Text style={{ flex: 1, color: colors.textPrimary, fontSize: ds.fontSize(typeScale.body), fontWeight: weight.bold }}>
           History {index + 1}
         </Text>
         {canRemove ? (
@@ -367,7 +368,7 @@ function HistoryBlockCard({
       ) : null}
 
       {block.savedMessage ? (
-        <Text style={{ color: colors.statusGreen, fontSize: ds.fontSize(12), fontWeight: '800', marginTop: ds.spacing(10) }}>
+        <Text style={{ color: colors.statusGreen, fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.bold, marginTop: ds.spacing(10) }}>
           {block.savedMessage}
         </Text>
       ) : null}
@@ -387,7 +388,7 @@ function DateStatusText({ block }: { block: HistoryBlock }) {
   const ds = useScaledStyles();
   const valid = block.dateStatus === 'valid';
   return (
-    <Text style={{ color: valid ? colors.statusGreen : colors.statusRed, fontSize: ds.fontSize(12), fontWeight: '800', marginBottom: ds.spacing(10) }}>
+    <Text style={{ color: valid ? colors.statusGreen : colors.statusRed, fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.bold, marginBottom: ds.spacing(10) }}>
       {valid && block.placedAt
         ? `Date recognized as ${new Date(block.placedAt).toLocaleDateString()}.`
         : block.dateReason ?? 'Date needs review.'}
@@ -456,7 +457,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       borderRadius: glassRadii.surface,
       padding: ds.spacing(14),
     }}>
-      <Text style={{ color: colors.textPrimary, fontSize: ds.fontSize(17), fontWeight: '800', marginBottom: ds.spacing(10) }}>{title}</Text>
+      <Text style={{ color: colors.textPrimary, fontSize: ds.fontSize(typeScale.title), fontWeight: weight.bold, marginBottom: ds.spacing(10) }}>{title}</Text>
       {children}
     </View>
   );
@@ -464,7 +465,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function FieldLabel({ text }: { text: string }) {
   const ds = useScaledStyles();
-  return <Text style={{ color: colors.textSecondary, fontSize: ds.fontSize(12), fontWeight: '800', marginBottom: ds.spacing(6) }}>{text}</Text>;
+  return <Text style={{ color: colors.textSecondary, fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.bold, marginBottom: ds.spacing(6) }}>{text}</Text>;
 }
 
 function Pill({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
@@ -473,13 +474,13 @@ function Pill({ label, selected, onPress }: { label: string; selected: boolean; 
     <Pressable onPress={onPress} style={{
       minHeight: ds.spacing(36),
       justifyContent: 'center',
-      borderRadius: 999,
+      borderRadius: radius.pill,
       paddingHorizontal: ds.spacing(12),
       backgroundColor: selected ? colors.primary : colors.white,
       borderWidth: 1,
       borderColor: selected ? colors.primary : glassColors.cardBorder,
     }}>
-      <Text style={{ color: selected ? colors.textOnPrimary : colors.textPrimary, fontSize: ds.fontSize(13), fontWeight: '800' }}>{label}</Text>
+      <Text style={{ color: selected ? colors.textOnPrimary : colors.textPrimary, fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.bold }}>{label}</Text>
     </Pressable>
   );
 }
@@ -491,13 +492,13 @@ function PreviewRow({ row, items, onChange }: { row: HistoryImportPreviewRow; it
     <View style={{
       borderWidth: 1,
       borderColor: glassColors.cardBorder,
-      borderRadius: ds.radius(10),
+      borderRadius: radius.control,
       padding: ds.spacing(10),
       gap: ds.spacing(8),
     }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: ds.spacing(8) }}>
-        <Text style={{ flex: 1, color: colors.textPrimary, fontSize: ds.fontSize(14), fontWeight: '800' }}>{row.originalLine}</Text>
-        <Text style={{ color: statusColor, fontSize: ds.fontSize(12), fontWeight: '900' }}>{row.status.replace('_', ' ')}</Text>
+        <Text style={{ flex: 1, color: colors.textPrimary, fontSize: ds.fontSize(typeScale.body), fontWeight: weight.bold }}>{row.originalLine}</Text>
+        <Text style={{ color: statusColor, fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.bold }}>{row.status.replace('_', ' ')}</Text>
       </View>
       <TextInput
         value={row.matchedItemName ?? ''}
@@ -539,8 +540,8 @@ function PreviewRow({ row, items, onChange }: { row: HistoryImportPreviewRow; it
 function StatusBanner({ text }: { text: string }) {
   const ds = useScaledStyles();
   return (
-    <View style={{ backgroundColor: colors.statusGreenBg, borderRadius: ds.radius(12), padding: ds.spacing(10) }}>
-      <Text style={{ color: colors.statusGreen, fontSize: ds.fontSize(13), fontWeight: '800' }}>{text}</Text>
+    <View style={{ backgroundColor: colors.statusGreenBg, borderRadius: radius.control, padding: ds.spacing(10) }}>
+      <Text style={{ color: colors.statusGreen, fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.bold }}>{text}</Text>
     </View>
   );
 }
@@ -548,8 +549,8 @@ function StatusBanner({ text }: { text: string }) {
 function PrimaryButton({ label, disabled, onPress }: { label: string; disabled?: boolean; onPress: () => void }) {
   const ds = useScaledStyles();
   return (
-    <Pressable disabled={disabled} onPress={onPress} style={{ marginTop: ds.spacing(12), alignItems: 'center', borderRadius: ds.radius(12), paddingVertical: ds.spacing(11), backgroundColor: disabled ? colors.textMuted : colors.primary }}>
-      {label.endsWith('...') ? <ActivityIndicator color={colors.textOnPrimary} /> : <Text style={{ color: colors.textOnPrimary, fontSize: ds.fontSize(14), fontWeight: '900' }}>{label}</Text>}
+    <Pressable disabled={disabled} onPress={onPress} style={{ marginTop: ds.spacing(12), alignItems: 'center', borderRadius: radius.control, paddingVertical: ds.spacing(11), backgroundColor: disabled ? colors.textMuted : colors.primary }}>
+      {label.endsWith('...') ? <Loading size="inline" color={colors.textOnPrimary} /> : <Text style={{ color: colors.textOnPrimary, fontSize: ds.fontSize(typeScale.body), fontWeight: weight.bold }}>{label}</Text>}
     </Pressable>
   );
 }
@@ -557,8 +558,8 @@ function PrimaryButton({ label, disabled, onPress }: { label: string; disabled?:
 function SecondaryButton({ label, onPress }: { label: string; onPress: () => void }) {
   const ds = useScaledStyles();
   return (
-    <Pressable onPress={onPress} style={{ marginTop: ds.spacing(8), alignItems: 'center', borderRadius: ds.radius(12), paddingVertical: ds.spacing(9), paddingHorizontal: ds.spacing(10), backgroundColor: colors.primaryPale, borderWidth: 1, borderColor: colors.primaryLight }}>
-      <Text style={{ color: colors.primary, fontSize: ds.fontSize(13), fontWeight: '800' }}>{label}</Text>
+    <Pressable onPress={onPress} style={{ marginTop: ds.spacing(8), alignItems: 'center', borderRadius: radius.control, paddingVertical: ds.spacing(9), paddingHorizontal: ds.spacing(10), backgroundColor: colors.primaryPale, borderWidth: 1, borderColor: colors.primaryLight }}>
+      <Text style={{ color: colors.primary, fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.bold }}>{label}</Text>
     </Pressable>
   );
 }
@@ -567,7 +568,7 @@ function inputStyle(ds: ReturnType<typeof useScaledStyles>) {
   return {
     borderWidth: 1,
     borderColor: glassColors.cardBorder,
-    borderRadius: ds.radius(10),
+    borderRadius: radius.control,
     paddingHorizontal: ds.spacing(10),
     paddingVertical: ds.spacing(9),
     color: colors.textPrimary,

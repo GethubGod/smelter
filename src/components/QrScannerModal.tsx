@@ -1,17 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Modal,
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { colors } from '@/constants';
 import { useStockStore } from '@/store';
+import { radius, typeScale, weight } from '@/theme/tokens';
+import { Loading } from '@/components/ui/Loading';
+import { Sheet } from '@/components/ui/Sheet';
 
 interface QrScannerModalProps {
   visible: boolean;
@@ -82,7 +83,7 @@ export function QrScannerModal({ visible, onClose, onScan }: QrScannerModalProps
     if (permission === null) {
       return (
         <View style={styles.permissionContainer}>
-          <ActivityIndicator size="small" color={colors.primary[600]} />
+          <Loading size="inline" color={colors.primary[600]} />
           <Text style={styles.permissionText}>Requesting camera access...</Text>
         </View>
       );
@@ -112,35 +113,24 @@ export function QrScannerModal({ visible, onClose, onScan }: QrScannerModalProps
   }, [permission, hasPermission, canAskAgain, requestPermission, handleOpenSettings]);
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Scan QR Code</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={22} color={colors.gray[600]} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.cameraContainer}>
-            {statusContent ? (
-              statusContent
-            ) : (
-              <CameraView
-                style={StyleSheet.absoluteFill}
-                barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-                onBarcodeScanned={handleBarcodeScanned}
-              />
-            )}
-            <View style={styles.frame} />
-          </View>
-
-          <Text style={styles.instruction}>Scan the QR code at any station.</Text>
-
-          {error && <Text style={styles.errorText}>{error}</Text>}
-        </View>
+    <Sheet visible={visible} title="Scan QR Code" onClose={onClose}>
+      <View style={styles.cameraContainer}>
+        {statusContent ? (
+          statusContent
+        ) : (
+          <CameraView
+            style={StyleSheet.absoluteFill}
+            barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+            onBarcodeScanned={handleBarcodeScanned}
+          />
+        )}
+        <View style={styles.frame} />
       </View>
-    </Modal>
+
+      <Text style={styles.instruction}>Scan the QR code at any station.</Text>
+
+      {error && <Text style={styles.errorText}>{error}</Text>}
+    </Sheet>
   );
 }
 
@@ -153,7 +143,7 @@ const styles = StyleSheet.create({
   },
   container: {
     backgroundColor: colors.background,
-    borderRadius: 24,
+    borderRadius: radius.sheet,
     overflow: 'hidden',
   },
   header: {
@@ -166,8 +156,8 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.gray[100],
   },
   title: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: typeScale.title,
+    fontWeight: weight.bold,
     color: colors.text,
   },
   cameraContainer: {
@@ -179,7 +169,7 @@ const styles = StyleSheet.create({
   frame: {
     width: 220,
     height: 220,
-    borderRadius: 16,
+    borderRadius: radius.card,
     borderWidth: 2,
     borderColor: colors.overlay,
   },
@@ -187,14 +177,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 8,
-    fontSize: 14,
+    fontSize: typeScale.body,
     textAlign: 'center',
     color: colors.gray[700],
   },
   errorText: {
     paddingBottom: 16,
     paddingHorizontal: 20,
-    fontSize: 13,
+    fontSize: typeScale.secondary,
     textAlign: 'center',
     color: colors.error,
   },
@@ -212,10 +202,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary[500],
     paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: 999,
+    borderRadius: radius.pill,
   },
   permissionButtonText: {
     color: colors.white,
-    fontWeight: '600',
+    fontWeight: weight.semibold,
   },
 });

@@ -37,6 +37,8 @@ import {
   type ManagerInventoryStockItem as InventoryStockItem,
 } from '@/features/inventory/ManagerInventoryRow';
 import { selectManagerInventoryOrderState } from '@/features/inventory/managerInventorySelectors';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { Sheet } from '@/components/ui/Sheet';
 
 
 const categories = [...KNOWN_ITEM_CATEGORIES];
@@ -1347,16 +1349,16 @@ export default function ManagerInventoryScreen() {
 
     return (
       <View className="items-center justify-center" style={{ paddingVertical: ds.spacing(48) }}>
-        <Text style={{ fontSize: ds.fontSize(32) }}>{icon}</Text>
+        <Text style={{ fontSize: ds.fontSize(typeScale.display) }}>{icon}</Text>
         <Text
-          className="text-gray-700 text-center font-semibold"
-          style={{ fontSize: ds.fontSize(16), marginTop: ds.spacing(16) }}
+          className="text-center font-semibold"
+          style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.body), marginTop: ds.spacing(16) }}
         >
           {title}
         </Text>
         <Text
-          className="text-gray-400 text-center"
-          style={{ fontSize: ds.fontSize(14), marginTop: ds.spacing(8) }}
+          className="text-center"
+          style={{ color: color.ink3, fontSize: ds.fontSize(typeScale.body), marginTop: ds.spacing(8) }}
         >
           {subtitle}
         </Text>
@@ -1368,7 +1370,7 @@ export default function ManagerInventoryScreen() {
     () =>
       isStockLoading ? (
         <View className="items-center justify-center" style={{ paddingVertical: ds.spacing(48) }}>
-          <Text className="text-gray-400" style={{ fontSize: ds.fontSize(14) }}>
+          <Text style={{ color: color.ink3, fontSize: ds.fontSize(typeScale.body) }}>
             Loading inventory...
           </Text>
         </View>
@@ -1404,10 +1406,10 @@ export default function ManagerInventoryScreen() {
   const bulkItemCount = parseBulkInput().length;
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top', 'left', 'right']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }} edges={['top', 'left', 'right']}>
       <View className="flex-1">
         {/* Header */}
-        <View className="bg-white border-b border-gray-200">
+        <View className="border-b" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
           <View
             className="flex-row items-center"
             style={{
@@ -1422,9 +1424,9 @@ export default function ManagerInventoryScreen() {
                   onPress={exitBulkMode}
                   className="justify-center"
                 >
-                  <Text className="text-primary-500 font-semibold" style={{ fontSize: ds.fontSize(15) }}>Cancel</Text>
+                  <Text className="font-semibold" style={{ color: color.accent, fontSize: ds.fontSize(typeScale.body) }}>Cancel</Text>
                 </TouchableOpacity>
-                <Text className="font-semibold text-gray-900" style={{ fontSize: ds.fontSize(16) }}>
+                <Text className="font-semibold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>
                   {bulkSelectedCount} selected
                 </Text>
                 <TouchableOpacity
@@ -1432,7 +1434,7 @@ export default function ManagerInventoryScreen() {
                   onPress={exitBulkMode}
                   className="justify-center"
                 >
-                  <Text className="text-primary-500 font-semibold" style={{ fontSize: ds.fontSize(15) }}>Done</Text>
+                  <Text className="font-semibold" style={{ color: color.accent, fontSize: ds.fontSize(typeScale.body) }}>Done</Text>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -1442,7 +1444,7 @@ export default function ManagerInventoryScreen() {
                   style={{
                     width: headerIconSize,
                     height: headerIconSize,
-                    borderRadius: ds.radius(10),
+                    borderRadius: radius.control,
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
@@ -1451,8 +1453,8 @@ export default function ManagerInventoryScreen() {
                 </TouchableOpacity>
 
                 <Text
-                  className="font-bold text-gray-900"
-                  style={{ fontSize: ds.fontSize(22), marginLeft: ds.spacing(4), flexShrink: 1 }}
+                  className="font-bold"
+                  style={{ color: color.ink, fontSize: ds.fontSize(typeScale.title), marginLeft: ds.spacing(4), flexShrink: 1 }}
                   numberOfLines={1}
                 >
                   Inventory
@@ -1463,26 +1465,22 @@ export default function ManagerInventoryScreen() {
                 {/* Cart button */}
                 <TouchableOpacity
                   onPress={() => router.push('/(manager)/cart')}
-                  className="relative rounded-full bg-gray-100 items-center justify-center"
-                  style={{
-                    width: headerIconSize,
+                  className="relative items-center justify-center"
+                  style={{ borderRadius: radius.pill, backgroundColor: color.well, width: headerIconSize,
                     height: headerIconSize,
-                    marginRight: ds.spacing(8),
-                  }}
+                    marginRight: ds.spacing(8) }}
                 >
                   <Ionicons name="cart-outline" size={ds.icon(20)} color={colors.gray[700]} />
                   {cartCount > 0 && (
                     <View
-                      className="absolute bg-primary-500 rounded-full items-center justify-center"
-                      style={{
-                        top: -ds.spacing(2),
+                      className="absolute items-center justify-center"
+                      style={{ backgroundColor: color.accent, borderRadius: radius.pill, top: -ds.spacing(2),
                         right: -ds.spacing(2),
                         minWidth: badgeSize,
                         height: badgeSize,
-                        paddingHorizontal: ds.spacing(4),
-                      }}
+                        paddingHorizontal: ds.spacing(4) }}
                     >
-                      <Text className="text-white font-bold" style={{ fontSize: ds.fontSize(11) }}>
+                      <Text className="font-bold" style={{ color: color.onAccent, fontSize: ds.fontSize(typeScale.caption) }}>
                         {cartCount > 99 ? '99+' : cartCount}
                       </Text>
                     </View>
@@ -1492,24 +1490,20 @@ export default function ManagerInventoryScreen() {
                 {/* Location Pill */}
                 <TouchableOpacity
                   onPress={() => setShowLocationModal(true)}
-                  className="flex-row items-center bg-gray-100 rounded-full"
-                  style={{
-                    paddingHorizontal: ds.spacing(12),
+                  className="flex-row items-center"
+                  style={{ backgroundColor: color.well, borderRadius: radius.pill, paddingHorizontal: ds.spacing(12),
                     minHeight: headerIconSize,
                     marginRight: ds.spacing(8),
-                    flexShrink: 1,
-                  }}
+                    flexShrink: 1 }}
                   activeOpacity={0.7}
                 >
                   <Ionicons name="location" size={ds.icon(14)} color={colors.primary[500]} />
                   <Text
-                    className="text-gray-800 font-bold"
-                    style={{
-                      fontSize: ds.fontSize(13),
+                    className="font-bold"
+                    style={{ color: color.ink, fontSize: ds.fontSize(typeScale.secondary),
                       marginLeft: ds.spacing(6),
                       marginRight: ds.spacing(4),
-                      maxWidth: ds.spacing(100),
-                    }}
+                      maxWidth: ds.spacing(100) }}
                     numberOfLines={1}
                     ellipsizeMode="tail"
                   >
@@ -1521,11 +1515,9 @@ export default function ManagerInventoryScreen() {
                 {/* Menu button */}
                 <TouchableOpacity
                   onPress={() => setShowActionMenu(true)}
-                  className="rounded-full bg-gray-100 items-center justify-center"
-                  style={{
-                    width: headerIconSize,
-                    height: headerIconSize,
-                  }}
+                  className="items-center justify-center"
+                  style={{ borderRadius: radius.pill, backgroundColor: color.well, width: headerIconSize,
+                    height: headerIconSize }}
                 >
                   <Ionicons name="ellipsis-horizontal" size={ds.icon(18)} color={colors.gray[600]} />
                 </TouchableOpacity>
@@ -1538,34 +1530,30 @@ export default function ManagerInventoryScreen() {
         <View style={{ paddingHorizontal: ds.spacing(16), paddingTop: ds.spacing(12) }}>
           {stockError && (
             <View
-              className="rounded-2xl bg-red-50"
-              style={{
-                paddingHorizontal: ds.spacing(16),
+
+              style={{ borderRadius: radius.card, backgroundColor: color.alertBg, paddingHorizontal: ds.spacing(16),
                 paddingVertical: ds.spacing(12),
-                marginBottom: ds.spacing(12),
-              }}
+                marginBottom: ds.spacing(12) }}
             >
-              <Text className="text-red-700" style={{ fontSize: ds.fontSize(12) }}>{stockError}</Text>
+              <Text style={{ color: color.alert, fontSize: ds.fontSize(typeScale.secondary) }}>{stockError}</Text>
             </View>
           )}
 
           <View
-            className="flex-row items-center bg-white border border-gray-100 rounded-2xl"
-            style={{
-              borderRadius: ds.radius(16),
+            className="flex-row items-center border"
+            style={{ backgroundColor: color.card, borderColor: color.hairline, borderRadius: radius.card,
               paddingHorizontal: ds.spacing(14),
               height: ds.buttonH,
               shadowColor: colors.text,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.06,
               shadowRadius: 10,
-              elevation: 3,
-            }}
+              elevation: 3 }}
           >
             <Ionicons name="search-outline" size={ds.icon(20)} color={colors.gray[400]} />
             <TextInput
-              className="flex-1 text-gray-900"
-              style={{ fontSize: ds.fontSize(14), marginLeft: ds.spacing(8) }}
+              className="flex-1"
+              style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body), marginLeft: ds.spacing(8) }}
               placeholder="Search items..."
               placeholderTextColor={colors.gray[400]}
               value={searchQuery}
@@ -1611,27 +1599,23 @@ export default function ManagerInventoryScreen() {
                     <View>
                       {pill.key === 'overdue' ? (
                         <Text
-                          className="font-semibold text-gray-400"
-                          style={{
-                            fontSize: ds.fontSize(10),
+                          className="font-semibold"
+                          style={{ color: color.ink3, fontSize: ds.fontSize(typeScale.caption),
                             letterSpacing: 0.5,
-                            marginBottom: ds.spacing(6),
-                          }}
+                            marginBottom: ds.spacing(6) }}
                         >
                           COUNT FRESHNESS
                         </Text>
                       ) : null}
                       <TouchableOpacity
-                        className="rounded-2xl border"
-                        style={{
-                          paddingHorizontal: ds.spacing(16),
+                        className="border"
+                        style={{ borderRadius: radius.card, paddingHorizontal: ds.spacing(16),
                           paddingVertical: ds.spacing(10),
                           marginRight: ds.spacing(10),
                           minWidth: ds.spacing(88),
                           borderColor: isSelected ? colors.primary[500] : colors.gray[200],
                           backgroundColor: isSelected ? colors.primary[50] : colors.white,
-                          opacity: isDimmed ? 0.5 : 1,
-                        }}
+                          opacity: isDimmed ? 0.5 : 1 }}
                         onPress={() =>
                           setSelectedStat((prev) => (prev === pill.key ? 'all' : pill.key))
                         }
@@ -1641,16 +1625,16 @@ export default function ManagerInventoryScreen() {
                             style={{
                               width: ds.spacing(8),
                               height: ds.spacing(8),
-                              borderRadius: 999,
+                              borderRadius: radius.pill,
                               backgroundColor: pill.color,
                               marginRight: ds.spacing(6),
                             }}
                           />
-                          <Text className="text-gray-500" style={{ fontSize: ds.fontSize(12) }}>
+                          <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>
                             {pill.label}
                           </Text>
                         </View>
-                        <Text className="font-bold" style={{ fontSize: ds.fontSize(18), color: pill.color }}>
+                        <Text className="font-bold" style={{ fontSize: ds.fontSize(typeScale.title), color: pill.color }}>
                           {pill.count}
                         </Text>
                       </TouchableOpacity>
@@ -1671,18 +1655,16 @@ export default function ManagerInventoryScreen() {
               return (
                 <TouchableOpacity
                   key={category || 'all'}
-                  className="rounded-full"
-                  style={{
-                    paddingHorizontal: ds.spacing(16),
+
+                  style={{ borderRadius: radius.pill, paddingHorizontal: ds.spacing(16),
                     paddingVertical: ds.spacing(8),
                     marginRight: ds.spacing(8),
-                    backgroundColor: isSelected ? colors.primary[500] : colors.gray[100],
-                  }}
+                    backgroundColor: isSelected ? colors.primary[500] : colors.gray[100] }}
                   onPress={() => setCategoryFilter(category)}
                 >
                   <Text
-                    className={`font-semibold ${isSelected ? 'text-white' : 'text-gray-700'}`}
-                    style={{ fontSize: ds.fontSize(13) }}
+                    className="font-semibold"
+                    style={{ color: isSelected ? color.onAccent : color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}
                   >
                     {category ? getCategoryLabel(category) : 'All'}
                   </Text>
@@ -1695,29 +1677,25 @@ export default function ManagerInventoryScreen() {
             className="flex-row items-center justify-between"
             style={{ paddingVertical: ds.spacing(8) }}
           >
-            <Text className="text-gray-500" style={{ fontSize: ds.fontSize(13) }}>
+            <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>
               {sortedItems.length} item{sortedItems.length !== 1 ? 's' : ''}
             </Text>
             <View className="flex-row items-center">
               <TouchableOpacity
-                className="rounded-full items-center justify-center"
-                style={{
-                  width: Math.max(36, ds.icon(32)),
+                className="items-center justify-center"
+                style={{ borderRadius: radius.pill, width: Math.max(36, ds.icon(32)),
                   height: Math.max(36, ds.icon(32)),
                   backgroundColor: inventoryView === 'list' ? colors.primary[50] : colors.gray[100],
-                  marginRight: ds.spacing(8),
-                }}
+                  marginRight: ds.spacing(8) }}
                 onPress={() => setInventoryView('list')}
               >
                 <Ionicons name="list" size={ds.icon(16)} color={inventoryView === 'list' ? colors.primary[600] : colors.gray[500]} />
               </TouchableOpacity>
               <TouchableOpacity
-                className="rounded-full items-center justify-center"
-                style={{
-                  width: Math.max(36, ds.icon(32)),
+                className="items-center justify-center"
+                style={{ borderRadius: radius.pill, width: Math.max(36, ds.icon(32)),
                   height: Math.max(36, ds.icon(32)),
-                  backgroundColor: inventoryView === 'compact' ? colors.primary[50] : colors.gray[100],
-                }}
+                  backgroundColor: inventoryView === 'compact' ? colors.primary[50] : colors.gray[100] }}
                 onPress={() => setInventoryView('compact')}
               >
                 <Ionicons name="grid-outline" size={ds.icon(16)} color={inventoryView === 'compact' ? colors.primary[600] : colors.gray[500]} />
@@ -1737,24 +1715,20 @@ export default function ManagerInventoryScreen() {
 
         {!isBulkMode && stats.reorder > 0 && (
           <View
-            className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200"
-            style={{
-              paddingHorizontal: ds.spacing(16),
-              paddingVertical: ds.spacing(12),
-            }}
+            className="absolute bottom-0 left-0 right-0 border-t"
+            style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, paddingHorizontal: ds.spacing(16),
+              paddingVertical: ds.spacing(12) }}
           >
             <TouchableOpacity
-              className="rounded-full bg-orange-500 items-center"
-              style={{
-                paddingVertical: ds.spacing(14),
+              className="items-center"
+              style={{ borderRadius: radius.pill, backgroundColor: color.accent, paddingVertical: ds.spacing(14),
                 minHeight: ds.buttonH,
-                justifyContent: 'center',
-              }}
+                justifyContent: 'center' }}
               onPress={handleCreateOrderFromReorder}
             >
               <Text
-                className="font-semibold text-white"
-                style={{ fontSize: ds.buttonFont }}
+                className="font-semibold"
+                style={{ color: color.onAccent, fontSize: ds.buttonFont }}
               >
                 Create Order from {stats.reorder} Items Needing Reorder
               </Text>
@@ -1764,56 +1738,44 @@ export default function ManagerInventoryScreen() {
 
         {isBulkMode && (
           <View
-            className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200"
-            style={{
-              paddingHorizontal: ds.spacing(16),
-              paddingVertical: ds.spacing(10),
-            }}
+            className="absolute bottom-0 left-0 right-0 border-t"
+            style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, paddingHorizontal: ds.spacing(16),
+              paddingVertical: ds.spacing(10) }}
           >
             <View className="flex-row items-center justify-between">
               <TouchableOpacity
-                className={`flex-1 rounded-xl border items-center ${
-                  bulkSelectedCount === 0 ? 'border-gray-200 bg-gray-100' : 'border-gray-200 bg-white'
-                }`}
-                style={{
-                  paddingHorizontal: ds.spacing(12),
+                className="flex-1 border items-center"
+                style={{ borderRadius: radius.control, borderColor: color.hairlineStrong, backgroundColor: bulkSelectedCount === 0 ? color.well : color.card, paddingHorizontal: ds.spacing(12),
                   paddingVertical: ds.spacing(12),
                   marginRight: ds.spacing(8),
                   minHeight: ds.buttonH,
-                  justifyContent: 'center',
-                }}
+                  justifyContent: 'center' }}
                 onPress={openBulkMove}
                 disabled={bulkSelectedCount === 0}
               >
-                <Text className="font-semibold text-gray-700" style={{ fontSize: ds.fontSize(13) }}>Move</Text>
+                <Text className="font-semibold" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>Move</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className={`flex-1 rounded-xl border items-center ${
-                  bulkSelectedCount === 0 ? 'border-gray-200 bg-gray-100' : 'border-gray-200 bg-white'
-                }`}
-                style={{
-                  paddingHorizontal: ds.spacing(12),
+                className="flex-1 border items-center"
+                style={{ borderRadius: radius.control, borderColor: color.hairlineStrong, backgroundColor: bulkSelectedCount === 0 ? color.well : color.card, paddingHorizontal: ds.spacing(12),
                   paddingVertical: ds.spacing(12),
                   marginRight: ds.spacing(8),
                   minHeight: ds.buttonH,
-                  justifyContent: 'center',
-                }}
+                  justifyContent: 'center' }}
                 onPress={handleBulkRemove}
                 disabled={bulkSelectedCount === 0}
               >
-                <Text className="font-semibold text-gray-700" style={{ fontSize: ds.fontSize(13) }}>Remove</Text>
+                <Text className="font-semibold" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>Remove</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className="flex-1 rounded-xl border border-gray-200 items-center bg-white"
-                style={{
-                  paddingHorizontal: ds.spacing(12),
+                className="flex-1 border items-center"
+                style={{ borderRadius: radius.control, borderColor: color.hairlineStrong, backgroundColor: color.card, paddingHorizontal: ds.spacing(12),
                   paddingVertical: ds.spacing(12),
                   minHeight: ds.buttonH,
-                  justifyContent: 'center',
-                }}
+                  justifyContent: 'center' }}
                 onPress={handleBulkSelectAll}
               >
-                <Text className="font-semibold text-gray-700" style={{ fontSize: ds.fontSize(13) }}>Select All</Text>
+                <Text className="font-semibold" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>Select All</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1831,13 +1793,11 @@ export default function ManagerInventoryScreen() {
           }}
         >
           <View
-            className="bg-gray-900 rounded-xl shadow-lg"
-            style={{
-              paddingHorizontal: ds.spacing(16),
-              paddingVertical: ds.spacing(12),
-            }}
+            className="shadow-lg"
+            style={{ backgroundColor: color.ink, borderRadius: radius.control, paddingHorizontal: ds.spacing(16),
+              paddingVertical: ds.spacing(12) }}
           >
-            <Text className="text-white text-center font-medium" style={{ fontSize: ds.fontSize(14) }}>{toastMessage}</Text>
+            <Text className="text-center" style={{ color: color.onAccent, fontWeight: weight.semibold, fontSize: ds.fontSize(typeScale.body) }}>{toastMessage}</Text>
           </View>
         </Animated.View>
       )}
@@ -1849,9 +1809,9 @@ export default function ManagerInventoryScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowEditModal(false)}
       >
-        <SafeAreaView className="flex-1 bg-gray-50">
-          <View className="bg-white px-4 py-4 border-b border-gray-200 flex-row items-center justify-between">
-            <Text className="text-lg font-bold text-gray-900">Edit Stock Settings</Text>
+        <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }}>
+          <View className="px-4 py-4 border-b flex-row items-center justify-between" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
+            <Text className="font-bold" style={{ fontSize: ds.fontSize(typeScale.title), color: color.ink }}>Edit Stock Settings</Text>
             <TouchableOpacity onPress={() => setShowEditModal(false)}>
               <Ionicons name="close" size={20} color={colors.gray[500]} />
             </TouchableOpacity>
@@ -1860,60 +1820,60 @@ export default function ManagerInventoryScreen() {
           <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
             {editingItem && selectedAreaItem ? (
               <>
-                <View className="bg-white rounded-2xl p-4 border border-gray-100">
+                <View className="p-4 border" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline }}>
                   <View className="flex-row items-center">
-                    <Text className="text-2xl mr-3">
+                    <Text className="mr-3" style={{ fontSize: ds.fontSize(typeScale.display) }}>
                       {CATEGORY_EMOJI[editingItem.inventory_item.category] ?? '📦'}
                     </Text>
                     <View className="flex-1">
-                      <Text className="text-base font-semibold text-gray-900">
+                      <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>
                         {editingItem.inventory_item.name}
                       </Text>
-                      <Text className="text-xs text-gray-500 mt-1">
+                      <Text className="mt-1" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
                         {selectedAreaItem.area.name} • {editingItem.location.name}
                       </Text>
                     </View>
                   </View>
                 </View>
 
-                <View className="mt-5 bg-white rounded-2xl p-4 border border-gray-100">
-                  <Text className="text-xs font-semibold text-gray-500 mb-3">COUNTING UNIT</Text>
+                <View className="mt-5 p-4 border" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline }}>
+                  <Text className="font-semibold mb-3" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>COUNTING UNIT</Text>
                   <TouchableOpacity
-                    className="border border-gray-200 rounded-xl px-4 py-3 flex-row items-center justify-between"
+                    className="border px-4 py-3 flex-row items-center justify-between" style={{ borderColor: color.hairlineStrong, borderRadius: radius.control }}
                     onPress={() => setShowCountUnitPicker(true)}
                   >
-                    <Text className="text-sm font-medium text-gray-900">
+                    <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink }}>
                       {editForm.unit_type}
                     </Text>
                     <Ionicons name="chevron-down" size={16} color={colors.gray[400]} />
                   </TouchableOpacity>
 
-                  <Text className="text-xs font-semibold text-gray-500 mt-5 mb-3">
+                  <Text className="font-semibold mt-5 mb-3" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
                     STOCK LEVELS (in {editForm.unit_type})
                   </Text>
                   <View>
                     <View className="mb-4">
-                      <Text className="text-xs text-gray-500 mb-2">Minimum • Reorder when below</Text>
+                      <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>Minimum • Reorder when below</Text>
                       <TextInput
-                        className="border border-gray-200 rounded-xl px-4 py-3 text-gray-900"
+                        className="border px-4 py-3" style={{ borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink }}
                         keyboardType="number-pad"
                         value={editForm.min}
                         onChangeText={(value) => setEditForm((prev) => ({ ...prev, min: value }))}
                       />
                     </View>
                     <View className="mb-4">
-                      <Text className="text-xs text-gray-500 mb-2">Par Level • Ideal amount</Text>
+                      <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>Par Level • Ideal amount</Text>
                       <TextInput
-                        className="border border-gray-200 rounded-xl px-4 py-3 text-gray-900"
+                        className="border px-4 py-3" style={{ borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink }}
                         keyboardType="number-pad"
                         value={editForm.par}
                         onChangeText={(value) => setEditForm((prev) => ({ ...prev, par: value }))}
                       />
                     </View>
                     <View>
-                      <Text className="text-xs text-gray-500 mb-2">Maximum • Order up to</Text>
+                      <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>Maximum • Order up to</Text>
                       <TextInput
-                        className="border border-gray-200 rounded-xl px-4 py-3 text-gray-900"
+                        className="border px-4 py-3" style={{ borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink }}
                         keyboardType="number-pad"
                         value={editForm.max}
                         onChangeText={(value) => setEditForm((prev) => ({ ...prev, max: value }))}
@@ -1922,59 +1882,59 @@ export default function ManagerInventoryScreen() {
                   </View>
                 </View>
 
-                <View className="mt-5 bg-white rounded-2xl p-4 border border-gray-100">
-                  <Text className="text-xs font-semibold text-gray-500 mb-3">REORDER SETTINGS</Text>
-                  <Text className="text-xs text-gray-500 mb-2">Order in</Text>
+                <View className="mt-5 p-4 border" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline }}>
+                  <Text className="font-semibold mb-3" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>REORDER SETTINGS</Text>
+                  <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>Order in</Text>
                   <TouchableOpacity
-                    className="border border-gray-200 rounded-xl px-4 py-3 flex-row items-center justify-between"
+                    className="border px-4 py-3 flex-row items-center justify-between" style={{ borderColor: color.hairlineStrong, borderRadius: radius.control }}
                     onPress={() => setShowOrderUnitPicker(true)}
                   >
-                    <Text className="text-sm font-medium text-gray-900">
+                    <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink }}>
                       {editForm.order_unit}
                     </Text>
                     <Ionicons name="chevron-down" size={16} color={colors.gray[400]} />
                   </TouchableOpacity>
 
-                  <Text className="text-xs text-gray-500 mt-4 mb-2">Conversion • {editForm.unit_type} per {editForm.order_unit}</Text>
+                  <Text className="mt-4 mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>Conversion • {editForm.unit_type} per {editForm.order_unit}</Text>
                   <TextInput
-                    className="border border-gray-200 rounded-xl px-4 py-3 text-gray-900"
+                    className="border px-4 py-3" style={{ borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink }}
                     keyboardType="number-pad"
                     value={editForm.conversion}
                     onChangeText={(value) => setEditForm((prev) => ({ ...prev, conversion: value }))}
                   />
                   {editForm.conversion ? (
-                    <Text className="text-xs text-gray-400 mt-2">
+                    <Text className="mt-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}>
                       {editForm.conversion} {editForm.unit_type} = 1 {editForm.order_unit}
                     </Text>
                   ) : null}
                 </View>
 
-                <View className="mt-5 bg-white rounded-2xl p-4 border border-gray-100">
+                <View className="mt-5 p-4 border" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline }}>
                   <TouchableOpacity
                     className="py-3"
                     onPress={openMoveModal}
                   >
-                    <Text className="text-sm font-semibold text-gray-900">Move to Different Area</Text>
+                    <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>Move to Different Area</Text>
                   </TouchableOpacity>
                   <TouchableOpacity className="py-3" onPress={handleDeactivateAreaItem}>
-                    <Text className="text-sm font-semibold text-red-600">Deactivate Item</Text>
+                    <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.alert }}>Deactivate Item</Text>
                   </TouchableOpacity>
                 </View>
               </>
             ) : (
               <View className="items-center justify-center py-20">
-                <Text className="text-gray-500">No editable settings found.</Text>
+                <Text style={{ color: color.ink2 }}>No editable settings found.</Text>
               </View>
             )}
           </ScrollView>
 
-          <View className="bg-white border-t border-gray-200 px-4 py-4">
+          <View className="border-t px-4 py-4" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
             <TouchableOpacity
-              className={`rounded-xl py-4 items-center ${isEditSaving ? 'bg-primary-300' : 'bg-primary-500'}`}
+              className={`py-4 items-center ${isEditSaving ? 'bg-primary-300' : ''}`} style={{ borderRadius: radius.control, backgroundColor: isEditSaving ? undefined : color.accent }}
               onPress={handleSaveEdit}
               disabled={isEditSaving || !selectedAreaItem}
             >
-              <Text className="text-white font-semibold">
+              <Text className="font-semibold" style={{ color: color.onAccent }}>
                 {isEditSaving ? 'Saving...' : 'Save Changes'}
               </Text>
             </TouchableOpacity>
@@ -1989,9 +1949,9 @@ export default function ManagerInventoryScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowMoveModal(false)}
       >
-        <SafeAreaView className="flex-1 bg-gray-50">
-          <View className="bg-white px-4 py-4 border-b border-gray-200 flex-row items-center justify-between">
-            <Text className="text-lg font-bold text-gray-900">Move Item</Text>
+        <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }}>
+          <View className="px-4 py-4 border-b flex-row items-center justify-between" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
+            <Text className="font-bold" style={{ fontSize: ds.fontSize(typeScale.title), color: color.ink }}>Move Item</Text>
             <TouchableOpacity onPress={() => setShowMoveModal(false)}>
               <Ionicons name="close" size={20} color={colors.gray[500]} />
             </TouchableOpacity>
@@ -2000,24 +1960,24 @@ export default function ManagerInventoryScreen() {
           <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
             {editingItem && selectedAreaItem ? (
               <>
-                <View className="bg-white rounded-2xl p-4 border border-gray-100">
+                <View className="p-4 border" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline }}>
                   <View className="flex-row items-center">
-                    <Text className="text-2xl mr-3">
+                    <Text className="mr-3" style={{ fontSize: ds.fontSize(typeScale.display) }}>
                       {CATEGORY_EMOJI[editingItem.inventory_item.category] ?? '📦'}
                     </Text>
                     <View className="flex-1">
-                      <Text className="text-base font-semibold text-gray-900">
+                      <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>
                         {editingItem.inventory_item.name}
                       </Text>
-                      <Text className="text-xs text-gray-500 mt-1">
+                      <Text className="mt-1" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
                         Currently in: {selectedAreaItem.area.name}
                       </Text>
                     </View>
                   </View>
                 </View>
 
-                <View className="mt-5 bg-white rounded-2xl p-4 border border-gray-100">
-                  <Text className="text-xs font-semibold text-gray-500 mb-3">MOVE TO</Text>
+                <View className="mt-5 p-4 border" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline }}>
+                  <Text className="font-semibold mb-3" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>MOVE TO</Text>
                   {areaOptions.map((area) => {
                     const isCurrent = area.id === selectedAreaItem.area_id;
                     const isSelected = area.id === moveTargetAreaId;
@@ -2025,9 +1985,7 @@ export default function ManagerInventoryScreen() {
                     return (
                       <TouchableOpacity
                         key={area.id}
-                        className={`border rounded-xl px-4 py-3 mb-3 ${
-                          isSelected ? 'border-orange-200 bg-orange-50' : 'border-gray-200'
-                        } ${isCurrent ? 'opacity-50' : ''}`}
+                        className={`border px-4 py-3 mb-3 ${isCurrent ? 'opacity-50' : ''}`} style={{ borderRadius: radius.control, borderColor: isSelected ? color.warning : color.hairlineStrong, backgroundColor: isSelected ? color.warningBg : undefined }}
                         onPress={() => handleSelectMoveArea(area.id)}
                         disabled={isCurrent}
                       >
@@ -2038,18 +1996,18 @@ export default function ManagerInventoryScreen() {
                               size={18}
                               color={isCurrent ? colors.gray[300] : colors.primary[500]}
                             />
-                            <Text className="text-sm font-medium text-gray-900 ml-2">
+                            <Text className="ml-2" style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink }}>
                               {area.icon ?? '📦'} {area.name}
                             </Text>
                           </View>
                           {isCurrent ? (
-                            <Text className="text-xs text-gray-400">Current</Text>
+                            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}>Current</Text>
                           ) : null}
                         </View>
                         {existing && !isCurrent ? (
                           <View className="flex-row items-center mt-2">
                             <Ionicons name="alert-circle" size={14} color={colors.warning} />
-                            <Text className="text-xs text-amber-600 ml-1">Item already exists here</Text>
+                            <Text className="ml-1" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.warning }}>Item already exists here</Text>
                           </View>
                         ) : null}
                       </TouchableOpacity>
@@ -2058,74 +2016,66 @@ export default function ManagerInventoryScreen() {
                 </View>
 
                 {moveTargetAreaId ? (
-                  <View className="mt-5 bg-white rounded-2xl p-4 border border-gray-100">
-                    <Text className="text-xs font-semibold text-gray-500 mb-3">
+                  <View className="mt-5 p-4 border" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline }}>
+                    <Text className="font-semibold mb-3" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
                       NEW SETTINGS FOR {moveTargetArea?.name?.toUpperCase() ?? 'AREA'}
                     </Text>
 
-                    <Text className="text-xs text-gray-500 mb-2">Count Unit</Text>
+                    <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>Count Unit</Text>
                     <TouchableOpacity
-                      className="border border-gray-200 rounded-xl px-4 py-3 flex-row items-center justify-between"
+                      className="border px-4 py-3 flex-row items-center justify-between" style={{ borderColor: color.hairlineStrong, borderRadius: radius.control }}
                       onPress={() => setShowMoveUnitPicker(true)}
                     >
-                      <Text className="text-sm font-medium text-gray-900">{moveForm.unit_type}</Text>
+                      <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink }}>{moveForm.unit_type}</Text>
                       <Ionicons name="chevron-down" size={16} color={colors.gray[400]} />
                     </TouchableOpacity>
 
                     <View className="mt-4">
-                      <Text className="text-xs text-gray-500 mb-2">Min Quantity</Text>
+                      <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>Min Quantity</Text>
                       <TextInput
-                        className="border border-gray-200 rounded-xl px-4 py-3 text-gray-900"
+                        className="border px-4 py-3" style={{ borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink }}
                         keyboardType="number-pad"
                         value={moveForm.min}
                         onChangeText={(value) => setMoveForm((prev) => ({ ...prev, min: value }))}
                       />
                     </View>
                     <View className="mt-4">
-                      <Text className="text-xs text-gray-500 mb-2">Max Quantity</Text>
+                      <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>Max Quantity</Text>
                       <TextInput
-                        className="border border-gray-200 rounded-xl px-4 py-3 text-gray-900"
+                        className="border px-4 py-3" style={{ borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink }}
                         keyboardType="number-pad"
                         value={moveForm.max}
                         onChangeText={(value) => setMoveForm((prev) => ({ ...prev, max: value }))}
                       />
                     </View>
 
-                    <Text className="text-xs text-gray-400 mt-3">
+                    <Text className="mt-3" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}>
                       Current quantity will reset to 0 for the new area.
                     </Text>
 
                     <View className="mt-5">
-                      <Text className="text-xs font-semibold text-gray-500 mb-2">MOVE TYPE</Text>
+                      <Text className="font-semibold mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>MOVE TYPE</Text>
                       <View className="flex-row">
                         <TouchableOpacity
-                          className={`flex-1 border rounded-xl py-3 items-center mr-2 ${
-                            moveMode === 'replace' ? 'border-orange-200 bg-orange-50' : 'border-gray-200'
-                          }`}
+                          className="flex-1 border py-3 items-center mr-2" style={{ borderRadius: radius.control, borderColor: moveMode === 'replace' ? color.warning : color.hairlineStrong, backgroundColor: moveMode === 'replace' ? color.warningBg : undefined }}
                           onPress={() => setMoveMode('replace')}
                         >
-                          <Text className={`text-sm font-semibold ${
-                            moveMode === 'replace' ? 'text-orange-600' : 'text-gray-700'
-                          }`}>
+                          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: moveMode === 'replace' ? color.warning : color.ink2 }}>
                             Replace Existing
                           </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                          className={`flex-1 border rounded-xl py-3 items-center ${
-                            moveMode === 'duplicate' ? 'border-orange-200 bg-orange-50' : 'border-gray-200'
-                          } ${moveTargetExisting ? 'opacity-50' : ''}`}
+                          className={`flex-1 border py-3 items-center ${moveTargetExisting ? 'opacity-50' : ''}`} style={{ borderRadius: radius.control, borderColor: moveMode === 'duplicate' ? color.warning : color.hairlineStrong, backgroundColor: moveMode === 'duplicate' ? color.warningBg : undefined }}
                           onPress={() => setMoveMode('duplicate')}
                           disabled={!!moveTargetExisting}
                         >
-                          <Text className={`text-sm font-semibold ${
-                            moveMode === 'duplicate' ? 'text-orange-600' : 'text-gray-700'
-                          }`}>
+                          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: moveMode === 'duplicate' ? color.warning : color.ink2 }}>
                             Add Duplicate
                           </Text>
                         </TouchableOpacity>
                       </View>
                       {moveTargetExisting ? (
-                        <Text className="text-xs text-amber-600 mt-2">
+                        <Text className="mt-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.warning }}>
                           Item already exists here. Replace only.
                         </Text>
                       ) : null}
@@ -2135,26 +2085,26 @@ export default function ManagerInventoryScreen() {
               </>
             ) : (
               <View className="items-center justify-center py-20">
-                <Text className="text-gray-500">No item selected.</Text>
+                <Text style={{ color: color.ink2 }}>No item selected.</Text>
               </View>
             )}
           </ScrollView>
 
-          <View className="bg-white border-t border-gray-200 px-4 py-4">
+          <View className="border-t px-4 py-4" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
             <TouchableOpacity
-              className={`rounded-xl py-4 items-center ${isMoveSaving || !moveTargetAreaId ? 'bg-orange-200' : 'bg-orange-500'}`}
+              className="py-4 items-center" style={{ borderRadius: radius.control, backgroundColor: isMoveSaving || !moveTargetAreaId ? color.tint : color.accent }}
               onPress={handleMoveItem}
               disabled={isMoveSaving || !moveTargetAreaId}
             >
-              <Text className="text-white font-semibold">
+              <Text className="font-semibold" style={{ color: color.onAccent }}>
                 {isMoveSaving ? 'Moving...' : 'Move Item'}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              className="mt-3 rounded-xl py-3 items-center border border-gray-200"
+              className="mt-3 py-3 items-center border" style={{ borderRadius: radius.control, borderColor: color.hairlineStrong }}
               onPress={() => setShowMoveModal(false)}
             >
-              <Text className="text-sm font-semibold text-gray-700">Cancel</Text>
+              <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -2167,27 +2117,25 @@ export default function ManagerInventoryScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowBulkMoveModal(false)}
       >
-        <SafeAreaView className="flex-1 bg-gray-50">
-          <View className="bg-white px-4 py-4 border-b border-gray-200 flex-row items-center justify-between">
-            <Text className="text-lg font-bold text-gray-900">Move Items</Text>
+        <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }}>
+          <View className="px-4 py-4 border-b flex-row items-center justify-between" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
+            <Text className="font-bold" style={{ fontSize: ds.fontSize(typeScale.title), color: color.ink }}>Move Items</Text>
             <TouchableOpacity onPress={() => setShowBulkMoveModal(false)}>
               <Ionicons name="close" size={20} color={colors.gray[500]} />
             </TouchableOpacity>
           </View>
 
           <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
-            <Text className="text-xs font-semibold text-gray-500 mb-3">MOVE TO</Text>
+            <Text className="font-semibold mb-3" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>MOVE TO</Text>
             {bulkMoveAreas.length === 0 && (
               <View className="items-center py-6">
-                <Text className="text-sm text-gray-400">No areas available.</Text>
+                <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink3 }}>No areas available.</Text>
               </View>
             )}
             {bulkMoveAreas.map((area) => (
               <TouchableOpacity
                 key={area.id}
-                className={`border rounded-xl px-4 py-3 mb-3 ${
-                  bulkMoveAreaId === area.id ? 'border-orange-200 bg-orange-50' : 'border-gray-200'
-                }`}
+                className="border px-4 py-3 mb-3" style={{ borderRadius: radius.control, borderColor: bulkMoveAreaId === area.id ? color.warning : color.hairlineStrong, backgroundColor: bulkMoveAreaId === area.id ? color.warningBg : undefined }}
                 onPress={() => setBulkMoveAreaId(area.id)}
               >
                 <View className="flex-row items-center justify-between">
@@ -2197,7 +2145,7 @@ export default function ManagerInventoryScreen() {
                       size={18}
                       color={colors.primary[500]}
                     />
-                    <Text className="text-sm font-medium text-gray-900 ml-2">
+                    <Text className="ml-2" style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink }}>
                       {area.icon ?? '📦'} {area.name}
                     </Text>
                   </View>
@@ -2205,34 +2153,34 @@ export default function ManagerInventoryScreen() {
               </TouchableOpacity>
             ))}
 
-            <View className="mt-4 bg-white rounded-2xl p-4 border border-gray-100">
-              <Text className="text-xs font-semibold text-gray-500 mb-3">NEW SETTINGS</Text>
-              <Text className="text-xs text-gray-500 mb-2">Count Unit</Text>
+            <View className="mt-4 p-4 border" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline }}>
+              <Text className="font-semibold mb-3" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>NEW SETTINGS</Text>
+              <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>Count Unit</Text>
               <TouchableOpacity
-                className="border border-gray-200 rounded-xl px-4 py-3 flex-row items-center justify-between"
+                className="border px-4 py-3 flex-row items-center justify-between" style={{ borderColor: color.hairlineStrong, borderRadius: radius.control }}
                 onPress={() => {
                   setAddUnitPickerTarget({ areaId: 'bulk', field: 'unit' });
                   setShowAddUnitPicker(true);
                 }}
               >
-                <Text className="text-sm text-gray-900">{bulkMoveSettings.unit_type}</Text>
+                <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>{bulkMoveSettings.unit_type}</Text>
                 <Ionicons name="chevron-down" size={16} color={colors.gray[400]} />
               </TouchableOpacity>
 
               <View className="flex-row gap-3 mt-4">
                 <View className="flex-1">
-                  <Text className="text-xs text-gray-500 mb-2">Min</Text>
+                  <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>Min</Text>
                   <TextInput
-                    className="border border-gray-200 rounded-xl px-3 py-2 text-gray-900"
+                    className="border px-3 py-2" style={{ borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink }}
                     keyboardType="number-pad"
                     value={bulkMoveSettings.min}
                     onChangeText={(value) => setBulkMoveSettings((prev) => ({ ...prev, min: value }))}
                   />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-xs text-gray-500 mb-2">Max</Text>
+                  <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>Max</Text>
                   <TextInput
-                    className="border border-gray-200 rounded-xl px-3 py-2 text-gray-900"
+                    className="border px-3 py-2" style={{ borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink }}
                     keyboardType="number-pad"
                     value={bulkMoveSettings.max}
                     onChangeText={(value) => setBulkMoveSettings((prev) => ({ ...prev, max: value }))}
@@ -2242,187 +2190,158 @@ export default function ManagerInventoryScreen() {
             </View>
           </ScrollView>
 
-          <View className="bg-white border-t border-gray-200 px-4 py-4">
+          <View className="border-t px-4 py-4" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
             <TouchableOpacity
-              className={`rounded-xl py-4 items-center ${isBulkSaving || !bulkMoveAreaId ? 'bg-orange-200' : 'bg-orange-500'}`}
+              className="py-4 items-center" style={{ borderRadius: radius.control, backgroundColor: isBulkSaving || !bulkMoveAreaId ? color.tint : color.accent }}
               onPress={handleBulkMoveItems}
               disabled={isBulkSaving || !bulkMoveAreaId}
             >
-              <Text className="text-white font-semibold">
+              <Text className="font-semibold" style={{ color: color.onAccent }}>
                 {isBulkSaving ? 'Moving...' : 'Move Items'}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              className="mt-3 rounded-xl py-3 items-center border border-gray-200"
+              className="mt-3 py-3 items-center border" style={{ borderRadius: radius.control, borderColor: color.hairlineStrong }}
               onPress={() => setShowBulkMoveModal(false)}
             >
-              <Text className="text-sm font-semibold text-gray-700">Cancel</Text>
+              <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>
       </Modal>
 
       {/* Count Unit Picker */}
-      <Modal
+      <Sheet
         visible={showCountUnitPicker}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowCountUnitPicker(false)}
+        title="Select Counting Unit"
+        onClose={() => setShowCountUnitPicker(false)}
       >
-        <View className="flex-1 bg-black/40 justify-end">
-          <View className="bg-white rounded-t-2xl p-4">
-            <Text className="text-base font-semibold text-gray-900 mb-2">Select Counting Unit</Text>
-            {COUNT_UNITS.map((unit) => (
-              <TouchableOpacity
-                key={unit}
-                className="py-3"
-                onPress={() => handleChangeUnitType(unit)}
-              >
-                <Text className="text-sm text-gray-700">{unit}</Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity className="py-3 items-center" onPress={() => setShowCountUnitPicker(false)}>
-              <Text className="text-sm font-semibold text-primary-500">Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        {COUNT_UNITS.map((unit) => (
+          <TouchableOpacity
+            key={unit}
+            className="py-3"
+            onPress={() => handleChangeUnitType(unit)}
+          >
+            <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>{unit}</Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity className="py-3 items-center" onPress={() => setShowCountUnitPicker(false)}>
+          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>Cancel</Text>
+        </TouchableOpacity>
+      </Sheet>
 
       {/* Order Unit Picker */}
-      <Modal
+      <Sheet
         visible={showOrderUnitPicker}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowOrderUnitPicker(false)}
+        title="Select Order Unit"
+        onClose={() => setShowOrderUnitPicker(false)}
       >
-        <View className="flex-1 bg-black/40 justify-end">
-          <View className="bg-white rounded-t-2xl p-4">
-            <Text className="text-base font-semibold text-gray-900 mb-2">Select Order Unit</Text>
-            {ORDER_UNITS.map((unit) => (
-              <TouchableOpacity
-                key={unit}
-                className="py-3"
-                onPress={() => {
-                  setEditForm((prev) => ({ ...prev, order_unit: unit }));
-                  setShowOrderUnitPicker(false);
-                }}
-              >
-                <Text className="text-sm text-gray-700">{unit}</Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity className="py-3 items-center" onPress={() => setShowOrderUnitPicker(false)}>
-              <Text className="text-sm font-semibold text-primary-500">Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        {ORDER_UNITS.map((unit) => (
+          <TouchableOpacity
+            key={unit}
+            className="py-3"
+            onPress={() => {
+              setEditForm((prev) => ({ ...prev, order_unit: unit }));
+              setShowOrderUnitPicker(false);
+            }}
+          >
+            <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>{unit}</Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity className="py-3 items-center" onPress={() => setShowOrderUnitPicker(false)}>
+          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>Cancel</Text>
+        </TouchableOpacity>
+      </Sheet>
 
       {/* Move Unit Picker */}
-      <Modal
+      <Sheet
         visible={showMoveUnitPicker}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowMoveUnitPicker(false)}
+        title="Select Count Unit"
+        onClose={() => setShowMoveUnitPicker(false)}
       >
-        <View className="flex-1 bg-black/40 justify-end">
-          <View className="bg-white rounded-t-2xl p-4">
-            <Text className="text-base font-semibold text-gray-900 mb-2">Select Count Unit</Text>
-            {COUNT_UNITS.map((unit) => (
-              <TouchableOpacity
-                key={unit}
-                className="py-3"
-                onPress={() => {
-                  setMoveForm((prev) => ({ ...prev, unit_type: unit }));
-                  setShowMoveUnitPicker(false);
-                }}
-              >
-                <Text className="text-sm text-gray-700">{unit}</Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity className="py-3 items-center" onPress={() => setShowMoveUnitPicker(false)}>
-              <Text className="text-sm font-semibold text-primary-500">Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        {COUNT_UNITS.map((unit) => (
+          <TouchableOpacity
+            key={unit}
+            className="py-3"
+            onPress={() => {
+              setMoveForm((prev) => ({ ...prev, unit_type: unit }));
+              setShowMoveUnitPicker(false);
+            }}
+          >
+            <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>{unit}</Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity className="py-3 items-center" onPress={() => setShowMoveUnitPicker(false)}>
+          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>Cancel</Text>
+        </TouchableOpacity>
+      </Sheet>
 
       {/* Location Modal */}
-      <Modal
+      <Sheet
         visible={showLocationModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowLocationModal(false)}
+        title="Select Location"
+        onClose={() => setShowLocationModal(false)}
       >
-        <View className="flex-1 bg-black/40 justify-center px-6">
-          <View className="bg-white rounded-2xl p-4">
-            <Text className="text-base font-semibold text-gray-900 mb-3">Select Location</Text>
-            <TouchableOpacity
-              className="py-3"
-              onPress={() => {
-                setLocationFilter('all');
-                setShowLocationModal(false);
-              }}
-            >
-              <Text className="text-sm text-gray-700">All Locations</Text>
-            </TouchableOpacity>
-            {locations.map((loc) => (
-              <TouchableOpacity
-                key={loc.id}
-                className="py-3"
-                onPress={() => {
-                  setLocationFilter(loc.id);
-                  setShowLocationModal(false);
-                }}
-              >
-                <Text className="text-sm text-gray-700">{loc.name}</Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity
-              className="mt-2 py-3 items-center"
-              onPress={() => setShowLocationModal(false)}
-            >
-              <Text className="text-sm font-semibold text-primary-500">Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        <TouchableOpacity
+          className="py-3"
+          onPress={() => {
+            setLocationFilter('all');
+            setShowLocationModal(false);
+          }}
+        >
+          <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>All Locations</Text>
+        </TouchableOpacity>
+        {locations.map((loc) => (
+          <TouchableOpacity
+            key={loc.id}
+            className="py-3"
+            onPress={() => {
+              setLocationFilter(loc.id);
+              setShowLocationModal(false);
+            }}
+          >
+            <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>{loc.name}</Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity
+          className="mt-2 py-3 items-center"
+          onPress={() => setShowLocationModal(false)}
+        >
+          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>Cancel</Text>
+        </TouchableOpacity>
+      </Sheet>
 
       {/* Action Menu */}
-      <Modal
+      <Sheet
         visible={showActionMenu}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowActionMenu(false)}
+        title="Inventory actions"
+        onClose={() => setShowActionMenu(false)}
       >
-        <View className="flex-1 bg-black/40 justify-end">
-          <View className="bg-white rounded-t-2xl p-4">
-            <TouchableOpacity
-              className="py-3"
-              onPress={() => {
-                setShowActionMenu(false);
-                openAddFlow();
-              }}
-            >
-              <Text className="text-base text-gray-900">Add Item</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="py-3"
-              onPress={() => {
-                setShowActionMenu(false);
-                enterBulkMode();
-              }}
-            >
-              <Text className="text-base text-gray-900">Select</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="py-3 items-center"
-              onPress={() => setShowActionMenu(false)}
-            >
-              <Text className="text-sm font-semibold text-primary-500">Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        <TouchableOpacity
+          className="py-3"
+          onPress={() => {
+            setShowActionMenu(false);
+            openAddFlow();
+          }}
+        >
+          <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>Add Item</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          className="py-3"
+          onPress={() => {
+            setShowActionMenu(false);
+            enterBulkMode();
+          }}
+        >
+          <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>Select</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          className="py-3 items-center"
+          onPress={() => setShowActionMenu(false)}
+        >
+          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>Cancel</Text>
+        </TouchableOpacity>
+      </Sheet>
 
       {/* Add Item Modal */}
       <Modal
@@ -2434,12 +2353,12 @@ export default function ManagerInventoryScreen() {
           setAddStep('select');
         }}
       >
-        <SafeAreaView className="flex-1 bg-gray-50">
+        <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             className="flex-1"
           >
-            <View className="bg-white px-4 py-4 border-b border-gray-200 flex-row items-center justify-between">
+            <View className="px-4 py-4 border-b flex-row items-center justify-between" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
               <TouchableOpacity
                 onPress={() => {
                   if (addStep === 'select') {
@@ -2453,9 +2372,9 @@ export default function ManagerInventoryScreen() {
                   }
                 }}
               >
-                <Text className="text-primary-500 font-medium">{addStep === 'select' ? 'Cancel' : 'Back'}</Text>
+                <Text style={{ color: color.accent, fontWeight: weight.semibold }}>{addStep === 'select' ? 'Cancel' : 'Back'}</Text>
               </TouchableOpacity>
-              <Text className="text-lg font-bold text-gray-900">
+              <Text className="font-bold" style={{ fontSize: ds.fontSize(typeScale.title), color: color.ink }}>
                 {addStep === 'select' ? 'Add Item' : addStep === 'create' ? 'New Item' : 'Add to Areas'}
               </Text>
               <View style={{ width: 50 }} />
@@ -2464,10 +2383,10 @@ export default function ManagerInventoryScreen() {
             <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
               {addStep === 'select' && (
                 <>
-                  <View className="bg-white border border-gray-200 rounded-xl px-4 py-3 flex-row items-center">
+                  <View className="border px-4 py-3 flex-row items-center" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, borderRadius: radius.control }}>
                     <Ionicons name="search-outline" size={18} color={colors.gray[400]} />
                     <TextInput
-                      className="flex-1 ml-2 text-gray-900"
+                      className="flex-1 ml-2" style={{ color: color.ink }}
                       placeholder="Search existing items..."
                       placeholderTextColor={colors.gray[400]}
                       value={addSearchQuery}
@@ -2475,21 +2394,21 @@ export default function ManagerInventoryScreen() {
                     />
                   </View>
 
-                  <Text className="text-xs font-semibold text-gray-500 mt-5 mb-3">EXISTING ITEMS</Text>
+                  <Text className="font-semibold mt-5 mb-3" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>EXISTING ITEMS</Text>
                   {isAddSearching && (
-                    <Text className="text-xs text-gray-400 mb-2">Searching...</Text>
+                    <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}>Searching...</Text>
                   )}
                   {addSearchResults.map((result) => (
                     <TouchableOpacity
                       key={result.item.id}
-                      className="bg-white border border-gray-100 rounded-xl p-4 mb-3"
+                      className="border p-4 mb-3" style={{ backgroundColor: color.card, borderColor: color.hairline, borderRadius: radius.control }}
                       onPress={() => handleSelectExistingItem(result.item)}
                     >
                       <View className="flex-row items-center">
-                        <Text className="text-lg mr-2">{CATEGORY_EMOJI[result.item.category] ?? '📦'}</Text>
+                        <Text className="mr-2" style={{ fontSize: ds.fontSize(typeScale.title) }}>{CATEGORY_EMOJI[result.item.category] ?? '📦'}</Text>
                         <View className="flex-1">
-                          <Text className="text-sm font-semibold text-gray-900">{result.item.name}</Text>
-                          <Text className="text-xs text-gray-500 mt-1">
+                          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>{result.item.name}</Text>
+                          <Text className="mt-1" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
                             {getCategoryLabel(result.item.category)} • In {result.areaCount} area
                             {result.areaCount !== 1 ? 's' : ''}
                           </Text>
@@ -2500,15 +2419,15 @@ export default function ManagerInventoryScreen() {
                   ))}
                   {addSearchQuery.trim().length > 0 && !isAddSearching && addSearchResults.length === 0 && (
                     <View className="items-center py-6">
-                      <Text className="text-sm text-gray-400">No items found.</Text>
+                      <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink3 }}>No items found.</Text>
                     </View>
                   )}
 
                   <TouchableOpacity
-                    className="bg-white border border-dashed border-gray-300 rounded-xl p-4 mt-3 items-center"
+                    className="border border-dashed p-4 mt-3 items-center" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, borderRadius: radius.control }}
                     onPress={handleStartCreateItem}
                   >
-                    <Text className="text-sm font-semibold text-primary-600">+ Create New Item</Text>
+                    <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>+ Create New Item</Text>
                   </TouchableOpacity>
                 </>
               )}
@@ -2516,9 +2435,9 @@ export default function ManagerInventoryScreen() {
               {addStep === 'create' && (
                 <>
                   <View className="mb-4">
-                    <Text className="text-sm font-medium text-gray-700 mb-2">Item Name *</Text>
+                    <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink2 }}>Item Name *</Text>
                     <TextInput
-                      className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900"
+                      className="border px-4 py-3" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink }}
                       placeholder="e.g., Dragon Fruit"
                       placeholderTextColor={colors.gray[400]}
                       value={form.name}
@@ -2527,19 +2446,19 @@ export default function ManagerInventoryScreen() {
                   </View>
 
                   <View className="mb-4">
-                    <Text className="text-sm font-medium text-gray-700 mb-2">Category *</Text>
+                    <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink2 }}>Category *</Text>
                     <View className="flex-row flex-wrap gap-2">
                       {categories.map((cat) => {
                         const isSelected = form.category === cat;
-                        const color = categoryColors[cat] || '#999999';
+                        const categoryColor = categoryColors[cat] || color.ink3;
                         return (
                           <TouchableOpacity
                             key={cat}
-                            className="px-3 py-2 rounded-lg"
-                            style={{ backgroundColor: isSelected ? color : color + '20' }}
+                            className="px-3 py-2"
+                            style={{ borderRadius: radius.control, backgroundColor: isSelected ? categoryColor : categoryColor + '20' }}
                             onPress={() => setForm({ ...form, category: cat })}
                           >
-                            <Text style={{ color: isSelected ? colors.white : color }} className="text-sm font-medium">
+                            <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: isSelected ? colors.white : categoryColor }}>
                               {getCategoryLabel(cat)}
                             </Text>
                           </TouchableOpacity>
@@ -2549,17 +2468,17 @@ export default function ManagerInventoryScreen() {
                   </View>
 
                   <View className="mb-4">
-                    <Text className="text-sm font-medium text-gray-700 mb-2">Supplier</Text>
+                    <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink2 }}>Supplier</Text>
                     <View className="flex-row flex-wrap gap-2">
                       {supplierCategories.map((sup) => {
                         const isSelected = form.supplier_category === sup;
                         return (
                           <TouchableOpacity
                             key={sup}
-                            className={`px-3 py-2 rounded-lg ${isSelected ? 'bg-primary-500' : 'bg-gray-100'}`}
+                            className="px-3 py-2" style={{ borderRadius: radius.control, backgroundColor: isSelected ? color.accent : color.well }}
                             onPress={() => setForm({ ...form, supplier_category: sup })}
                           >
-                            <Text className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-gray-700'}`}>
+                            <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: isSelected ? color.onAccent : color.ink2 }}>
                               {getSupplierCategoryLabel(sup)}
                             </Text>
                           </TouchableOpacity>
@@ -2569,17 +2488,15 @@ export default function ManagerInventoryScreen() {
                   </View>
 
                   <View className="mb-6">
-                    <Text className="text-sm font-medium text-gray-700 mb-2">Emoji</Text>
+                    <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink2 }}>Emoji</Text>
                     <View className="flex-row flex-wrap gap-2">
                       {ADD_EMOJIS.map((emoji) => (
                         <TouchableOpacity
                           key={emoji}
-                          className={`h-10 w-10 rounded-xl items-center justify-center ${
-                            newItemEmoji === emoji ? 'bg-orange-100 border border-orange-200' : 'bg-gray-100'
-                          }`}
+                          className={`h-10 w-10 items-center justify-center ${newItemEmoji === emoji ? 'border' : ''}`} style={{ borderRadius: radius.control, backgroundColor: newItemEmoji === emoji ? color.warningBg : color.well, borderColor: newItemEmoji === emoji ? color.warning : undefined }}
                           onPress={() => setNewItemEmoji(emoji)}
                         >
-                          <Text className="text-lg">{emoji}</Text>
+                          <Text style={{ fontSize: ds.fontSize(typeScale.title) }}>{emoji}</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
@@ -2589,22 +2506,22 @@ export default function ManagerInventoryScreen() {
 
               {addStep === 'assign' && (
                 <>
-                  <View className="bg-white rounded-2xl p-4 border border-gray-100 mb-4">
+                  <View className="p-4 border mb-4" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline }}>
                     <View className="flex-row items-center">
-                      <Text className="text-2xl mr-3">
+                      <Text className="mr-3" style={{ fontSize: ds.fontSize(typeScale.display) }}>
                         {selectedAddItem
                           ? CATEGORY_EMOJI[selectedAddItem.category] ?? '📦'
                           : newItemEmoji || CATEGORY_EMOJI[form.category] || '📦'}
                       </Text>
                       <View className="flex-1">
-                        <Text className="text-base font-semibold text-gray-900">
+                        <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>
                           {selectedAddItem ? selectedAddItem.name : form.name}
                         </Text>
-                        <Text className="text-xs text-gray-500 mt-1">
+                        <Text className="mt-1" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
                           {selectedAddItem ? getCategoryLabel(selectedAddItem.category) : getCategoryLabel(form.category)}
                         </Text>
                         {addLocationId && (
-                          <Text className="text-xs text-gray-400 mt-1">
+                          <Text className="mt-1" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}>
                             Location: {locations.find((loc) => loc.id === addLocationId)?.name ?? 'Selected location'}
                           </Text>
                         )}
@@ -2612,10 +2529,10 @@ export default function ManagerInventoryScreen() {
                     </View>
                   </View>
 
-                  <Text className="text-xs font-semibold text-gray-500 mb-3">SELECT STORAGE AREAS</Text>
+                  <Text className="font-semibold mb-3" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>SELECT STORAGE AREAS</Text>
                   {addAreaOptions.length === 0 && (
                     <View className="items-center py-8">
-                      <Text className="text-sm text-gray-400">No storage areas found for this location.</Text>
+                      <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink3 }}>No storage areas found for this location.</Text>
                     </View>
                   )}
                   {addAreaOptions.map((area) => {
@@ -2623,7 +2540,7 @@ export default function ManagerInventoryScreen() {
                     const selected = settings?.selected;
                     const alreadyExists = addExistingAreaIds.includes(area.id);
                     return (
-                      <View key={area.id} className="bg-white border border-gray-100 rounded-2xl p-4 mb-3">
+                      <View key={area.id} className="border p-4 mb-3" style={{ backgroundColor: color.card, borderColor: color.hairline, borderRadius: radius.card }}>
                         <TouchableOpacity
                           className="flex-row items-center justify-between"
                           onPress={() => toggleAddAreaSelection(area.id)}
@@ -2635,34 +2552,34 @@ export default function ManagerInventoryScreen() {
                               size={18}
                               color={alreadyExists ? colors.gray[300] : selected ? colors.primary[500] : colors.gray[400]}
                             />
-                            <Text className="text-sm font-semibold text-gray-900 ml-2">
+                            <Text className="font-semibold ml-2" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>
                               {area.icon ?? '📦'} {area.name}
                             </Text>
                           </View>
                           {alreadyExists ? (
-                            <Text className="text-xs text-amber-600">Already added</Text>
+                            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.warning }}>Already added</Text>
                           ) : null}
                         </TouchableOpacity>
 
                         {selected && !alreadyExists && (
                           <View className="mt-4">
-                            <Text className="text-xs text-gray-500 mb-2">Count in</Text>
+                            <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>Count in</Text>
                             <TouchableOpacity
-                              className="border border-gray-200 rounded-xl px-3 py-2 flex-row items-center justify-between"
+                              className="border px-3 py-2 flex-row items-center justify-between" style={{ borderColor: color.hairlineStrong, borderRadius: radius.control }}
                               onPress={() => {
                                 setAddUnitPickerTarget({ areaId: area.id, field: 'unit' });
                                 setShowAddUnitPicker(true);
                               }}
                             >
-                              <Text className="text-sm text-gray-900">{settings?.unit_type}</Text>
+                              <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>{settings?.unit_type}</Text>
                               <Ionicons name="chevron-down" size={16} color={colors.gray[400]} />
                             </TouchableOpacity>
 
                             <View className="flex-row gap-3 mt-3">
                               <View className="flex-1">
-                                <Text className="text-xs text-gray-500 mb-2">Min</Text>
+                                <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>Min</Text>
                                 <TextInput
-                                  className="border border-gray-200 rounded-xl px-3 py-2 text-gray-900"
+                                  className="border px-3 py-2" style={{ borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink }}
                                   keyboardType="number-pad"
                                   value={settings?.min}
                                   onChangeText={(value) =>
@@ -2674,9 +2591,9 @@ export default function ManagerInventoryScreen() {
                                 />
                               </View>
                               <View className="flex-1">
-                                <Text className="text-xs text-gray-500 mb-2">Max</Text>
+                                <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>Max</Text>
                                 <TextInput
-                                  className="border border-gray-200 rounded-xl px-3 py-2 text-gray-900"
+                                  className="border px-3 py-2" style={{ borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink }}
                                   keyboardType="number-pad"
                                   value={settings?.max}
                                   onChangeText={(value) =>
@@ -2691,22 +2608,22 @@ export default function ManagerInventoryScreen() {
 
                             <View className="flex-row items-center gap-3 mt-3">
                               <View className="flex-1">
-                                <Text className="text-xs text-gray-500 mb-2">Order in</Text>
+                                <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>Order in</Text>
                                 <TouchableOpacity
-                                  className="border border-gray-200 rounded-xl px-3 py-2 flex-row items-center justify-between"
+                                  className="border px-3 py-2 flex-row items-center justify-between" style={{ borderColor: color.hairlineStrong, borderRadius: radius.control }}
                                   onPress={() => {
                                     setAddUnitPickerTarget({ areaId: area.id, field: 'order' });
                                     setShowAddUnitPicker(true);
                                   }}
                                 >
-                                  <Text className="text-sm text-gray-900">{settings?.order_unit}</Text>
+                                  <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>{settings?.order_unit}</Text>
                                   <Ionicons name="chevron-down" size={16} color={colors.gray[400]} />
                                 </TouchableOpacity>
                               </View>
                               <View className="flex-1">
-                                <Text className="text-xs text-gray-500 mb-2">Conversion</Text>
+                                <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>Conversion</Text>
                                 <TextInput
-                                  className="border border-gray-200 rounded-xl px-3 py-2 text-gray-900"
+                                  className="border px-3 py-2" style={{ borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink }}
                                   keyboardType="number-pad"
                                   value={settings?.conversion}
                                   onChangeText={(value) =>
@@ -2727,25 +2644,25 @@ export default function ManagerInventoryScreen() {
               )}
             </ScrollView>
 
-            <View className="bg-white border-t border-gray-200 px-4 py-4">
+            <View className="border-t px-4 py-4" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
               {addStep === 'create' && (
                 <TouchableOpacity
-                  className="rounded-xl py-4 items-center bg-primary-500"
+                  className="py-4 items-center" style={{ borderRadius: radius.control, backgroundColor: color.accent }}
                   onPress={handleContinueToAreas}
                 >
-                  <Text className="text-white font-bold text-lg">Continue →</Text>
+                  <Text className="font-bold" style={{ color: color.onAccent, fontSize: ds.fontSize(typeScale.title) }}>Continue →</Text>
                 </TouchableOpacity>
               )}
               {addStep === 'assign' && (
                 <TouchableOpacity
-                  className={`rounded-xl py-4 items-center ${isSubmitting ? 'bg-primary-300' : 'bg-primary-500'}`}
+                  className={`py-4 items-center ${isSubmitting ? 'bg-primary-300' : ''}`} style={{ borderRadius: radius.control, backgroundColor: isSubmitting ? undefined : color.accent }}
                   onPress={handleAddItemFlow}
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
                     <LoadingIndicator size="small" />
                   ) : (
-                    <Text className="text-white font-bold text-lg">Add Item</Text>
+                    <Text className="font-bold" style={{ color: color.onAccent, fontSize: ds.fontSize(typeScale.title) }}>Add Item</Text>
                   )}
                 </TouchableOpacity>
               )}
@@ -2755,56 +2672,48 @@ export default function ManagerInventoryScreen() {
       </Modal>
 
       {/* Add Item Unit Picker */}
-      <Modal
+      <Sheet
         visible={showAddUnitPicker}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowAddUnitPicker(false)}
+        title={addUnitPickerTarget?.field === 'order' ? 'Select Order Unit' : 'Select Count Unit'}
+        onClose={() => setShowAddUnitPicker(false)}
       >
-        <View className="flex-1 bg-black/40 justify-end">
-          <View className="bg-white rounded-t-2xl p-4">
-            <Text className="text-base font-semibold text-gray-900 mb-2">
-              Select {addUnitPickerTarget?.field === 'order' ? 'Order Unit' : 'Count Unit'}
-            </Text>
-            {(addUnitPickerTarget?.field === 'order' ? ORDER_UNITS : COUNT_UNITS).map((unit) => (
-              <TouchableOpacity
-                key={unit}
-                className="py-3"
-                onPress={() => {
-                  if (!addUnitPickerTarget) return;
-                  if (addUnitPickerTarget.areaId === 'bulk') {
-                    setBulkMoveSettings((prev) => ({
-                      ...prev,
-                      unit_type: unit,
-                    }));
-                  } else {
-                    setAddAreaSelections((prev) => ({
-                      ...prev,
-                      [addUnitPickerTarget.areaId]: {
-                        ...(prev[addUnitPickerTarget.areaId] || {
-                          selected: true,
-                          unit_type: 'each',
-                          min: '',
-                          max: '',
-                          order_unit: 'case',
-                          conversion: '',
-                        }),
-                        [addUnitPickerTarget.field === 'order' ? 'order_unit' : 'unit_type']: unit,
-                      },
-                    }));
-                  }
-                  setShowAddUnitPicker(false);
-                }}
-              >
-                <Text className="text-sm text-gray-700">{unit}</Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity className="py-3 items-center" onPress={() => setShowAddUnitPicker(false)}>
-              <Text className="text-sm font-semibold text-primary-500">Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        {(addUnitPickerTarget?.field === 'order' ? ORDER_UNITS : COUNT_UNITS).map((unit) => (
+          <TouchableOpacity
+            key={unit}
+            className="py-3"
+            onPress={() => {
+              if (!addUnitPickerTarget) return;
+              if (addUnitPickerTarget.areaId === 'bulk') {
+                setBulkMoveSettings((prev) => ({
+                  ...prev,
+                  unit_type: unit,
+                }));
+              } else {
+                setAddAreaSelections((prev) => ({
+                  ...prev,
+                  [addUnitPickerTarget.areaId]: {
+                    ...(prev[addUnitPickerTarget.areaId] || {
+                      selected: true,
+                      unit_type: 'each',
+                      min: '',
+                      max: '',
+                      order_unit: 'case',
+                      conversion: '',
+                    }),
+                    [addUnitPickerTarget.field === 'order' ? 'order_unit' : 'unit_type']: unit,
+                  },
+                }));
+              }
+              setShowAddUnitPicker(false);
+            }}
+          >
+            <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>{unit}</Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity className="py-3 items-center" onPress={() => setShowAddUnitPicker(false)}>
+          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>Cancel</Text>
+        </TouchableOpacity>
+      </Sheet>
 
       {/* Bulk Add Modal */}
       <Modal
@@ -2813,26 +2722,26 @@ export default function ManagerInventoryScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowBulkAddModal(false)}
       >
-        <SafeAreaView className="flex-1 bg-gray-50">
+        <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             className="flex-1"
           >
-            <View className="bg-white px-4 py-4 border-b border-gray-200 flex-row items-center justify-between">
+            <View className="px-4 py-4 border-b flex-row items-center justify-between" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
               <TouchableOpacity onPress={() => setShowBulkAddModal(false)}>
-                <Text className="text-primary-500 font-medium">Cancel</Text>
+                <Text style={{ color: color.accent, fontWeight: weight.semibold }}>Cancel</Text>
               </TouchableOpacity>
-              <Text className="text-lg font-bold text-gray-900">Bulk Add Items</Text>
+              <Text className="font-bold" style={{ fontSize: ds.fontSize(typeScale.title), color: color.ink }}>Bulk Add Items</Text>
               <View style={{ width: 50 }} />
             </View>
 
             <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
-              <View className="bg-blue-50 rounded-xl p-4 mb-4 border border-blue-100">
+              <View className="p-4 mb-4 border" style={{ backgroundColor: color.tint, borderRadius: radius.control, borderColor: color.tint }}>
                 <View className="flex-row items-start">
                   <Ionicons name="information-circle" size={20} color={colors.info} />
                   <View className="flex-1 ml-2">
-                    <Text className="text-blue-800 font-medium">How to use</Text>
-                    <Text className="text-blue-700 text-sm mt-1">
+                    <Text style={{ color: color.accent, fontWeight: weight.semibold }}>How to use</Text>
+                    <Text className="mt-1" style={{ color: color.accent, fontSize: ds.fontSize(typeScale.body) }}>
                       Enter one item name per line. All items will share the same category, supplier, and units.
                     </Text>
                   </View>
@@ -2840,40 +2749,40 @@ export default function ManagerInventoryScreen() {
               </View>
 
               <View className="mb-4">
-                <Text className="text-sm font-medium text-gray-700 mb-2">Item Names (one per line) *</Text>
+                <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink2 }}>Item Names (one per line) *</Text>
                 <TextInput
-                  className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900"
+                  className="border px-4 py-3"
                   placeholder={"Salmon\nTuna\nYellowtail\nMackerel"}
                   placeholderTextColor={colors.gray[400]}
                   value={bulkInput}
                   onChangeText={setBulkInput}
                   multiline
                   numberOfLines={8}
-                  style={{ height: 160, textAlignVertical: 'top' }}
+                  style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink, height: 160, textAlignVertical: 'top' }}
                 />
                 {bulkItemCount > 0 && (
-                  <Text className="text-sm text-primary-600 mt-2">
+                  <Text className="mt-2" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>
                     {bulkItemCount} item{bulkItemCount !== 1 ? 's' : ''} to add
                   </Text>
                 )}
               </View>
 
-              <Text className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3">Shared Settings</Text>
+              <Text className="font-bold uppercase tracking-wide mb-3" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>Shared Settings</Text>
 
               <View className="mb-4">
-                <Text className="text-sm font-medium text-gray-700 mb-2">Category</Text>
+                <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink2 }}>Category</Text>
                 <View className="flex-row flex-wrap gap-2">
                   {categories.map((cat) => {
                     const isSelected = bulkCategory === cat;
-                    const color = categoryColors[cat] || '#999999';
+                    const categoryColor = categoryColors[cat] || color.ink3;
                     return (
                       <TouchableOpacity
                         key={cat}
-                        className="px-3 py-2 rounded-lg"
-                        style={{ backgroundColor: isSelected ? color : color + '20' }}
+                        className="px-3 py-2"
+                        style={{ borderRadius: radius.control, backgroundColor: isSelected ? categoryColor : categoryColor + '20' }}
                         onPress={() => setBulkCategory(cat)}
                       >
-                        <Text style={{ color: isSelected ? colors.white : color }} className="text-sm font-medium">
+                        <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: isSelected ? colors.white : categoryColor }}>
                           {getCategoryLabel(cat)}
                         </Text>
                       </TouchableOpacity>
@@ -2883,17 +2792,17 @@ export default function ManagerInventoryScreen() {
               </View>
 
               <View className="mb-4">
-                <Text className="text-sm font-medium text-gray-700 mb-2">Supplier</Text>
+                <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink2 }}>Supplier</Text>
                 <View className="flex-row flex-wrap gap-2">
                   {supplierCategories.map((sup) => {
                     const isSelected = bulkSupplier === sup;
                     return (
                       <TouchableOpacity
                         key={sup}
-                        className={`px-3 py-2 rounded-lg ${isSelected ? 'bg-primary-500' : 'bg-gray-100'}`}
+                        className="px-3 py-2" style={{ borderRadius: radius.control, backgroundColor: isSelected ? color.accent : color.well }}
                         onPress={() => setBulkSupplier(sup)}
                       >
-                        <Text className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-gray-700'}`}>
+                        <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: isSelected ? color.onAccent : color.ink2 }}>
                           {getSupplierCategoryLabel(sup)}
                         </Text>
                       </TouchableOpacity>
@@ -2904,9 +2813,9 @@ export default function ManagerInventoryScreen() {
 
               <View className="flex-row gap-3 mb-4">
                 <View className="flex-1">
-                  <Text className="text-sm font-medium text-gray-700 mb-2">Base Unit</Text>
+                  <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink2 }}>Base Unit</Text>
                   <TextInput
-                    className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900"
+                    className="border px-4 py-3" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink }}
                     placeholder="e.g., lb"
                     placeholderTextColor={colors.gray[400]}
                     value={bulkBaseUnit}
@@ -2914,9 +2823,9 @@ export default function ManagerInventoryScreen() {
                   />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-sm font-medium text-gray-700 mb-2">Pack Unit</Text>
+                  <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink2 }}>Pack Unit</Text>
                   <TextInput
-                    className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900"
+                    className="border px-4 py-3" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink }}
                     placeholder="e.g., case"
                     placeholderTextColor={colors.gray[400]}
                     value={bulkPackUnit}
@@ -2926,9 +2835,9 @@ export default function ManagerInventoryScreen() {
               </View>
 
               <View className="mb-6">
-                <Text className="text-sm font-medium text-gray-700 mb-2">Pack Size</Text>
+                <Text className="mb-2" style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink2 }}>Pack Size</Text>
                 <TextInput
-                  className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900"
+                  className="border px-4 py-3" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink }}
                   placeholder="10"
                   placeholderTextColor={colors.gray[400]}
                   value={bulkPackSize}
@@ -2938,11 +2847,9 @@ export default function ManagerInventoryScreen() {
               </View>
             </ScrollView>
 
-            <View className="bg-white border-t border-gray-200 px-4 py-4">
+            <View className="border-t px-4 py-4" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
               <TouchableOpacity
-                className={`rounded-xl py-4 items-center flex-row justify-center ${
-                  isSubmitting ? 'bg-primary-300' : 'bg-primary-500'
-                }`}
+                className={`py-4 items-center flex-row justify-center ${isSubmitting ? 'bg-primary-300' : ''}`} style={{ borderRadius: radius.control, backgroundColor: isSubmitting ? undefined : color.accent }}
                 onPress={handleBulkAdd}
                 disabled={isSubmitting}
               >
@@ -2951,7 +2858,7 @@ export default function ManagerInventoryScreen() {
                 ) : (
                   <>
                     <Ionicons name="add-circle" size={20} color="white" />
-                    <Text className="text-white font-bold text-lg ml-2">Add Items</Text>
+                    <Text className="font-bold ml-2" style={{ color: color.onAccent, fontSize: ds.fontSize(typeScale.title) }}>Add Items</Text>
                   </>
                 )}
               </TouchableOpacity>

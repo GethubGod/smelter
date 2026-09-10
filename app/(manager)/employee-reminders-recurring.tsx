@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
-  Modal,
   RefreshControl,
   ScrollView,
   Switch,
@@ -9,6 +8,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -27,6 +27,8 @@ import {
   listRecurringReminderRules,
   upsertRecurringReminderRule,
 } from '@/services';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { Sheet } from '@/components/ui/Sheet';
 
 const WEEKDAY_OPTIONS = [
   { value: 0, label: 'Sun' },
@@ -107,6 +109,7 @@ function mapRuleToForm(rule: RecurringReminderRule): RuleFormState {
 
 export default function EmployeeReminderRecurringScreen() {
   const ds = useScaledStyles();
+  const { height: windowHeight } = useWindowDimensions();
   const { user, locations, fetchLocations } = useAuthStore();
 
   const [rules, setRules] = useState<RecurringReminderRule[]>([]);
@@ -313,11 +316,11 @@ export default function EmployeeReminderRecurringScreen() {
       : locationById.get(form.targetId) || 'Select location';
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top', 'left', 'right']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }} edges={['top', 'left', 'right']}>
       <ManagerScaleContainer>
         <View
-          className="bg-white border-b border-gray-100 flex-row items-center justify-between"
-          style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
+          className="border-b flex-row items-center justify-between"
+          style={{ backgroundColor: color.card, borderColor: color.hairline, paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
         >
           <View className="flex-row items-center flex-1">
             <TouchableOpacity
@@ -327,18 +330,18 @@ export default function EmployeeReminderRecurringScreen() {
               <Ionicons name="arrow-back" size={ds.icon(20)} color={colors.gray[700]} />
             </TouchableOpacity>
             <View className="flex-1">
-              <Text className="font-bold text-gray-900" style={{ fontSize: ds.fontSize(20) }}>
+              <Text className="font-bold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.title) }}>
                 Recurring Reminders
               </Text>
-              <Text className="text-gray-500" style={{ fontSize: ds.fontSize(12), marginTop: ds.spacing(2) }}>
+              <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(2) }}>
                 Schedule reminders that run automatically
               </Text>
             </View>
           </View>
 
           <TouchableOpacity
-            className="bg-gray-100 rounded-full items-center justify-center"
-            style={{ width: 42, height: 42 }}
+            className="items-center justify-center"
+            style={{ backgroundColor: color.well, borderRadius: radius.pill, width: 42, height: 42 }}
             onPress={runRulesNow}
           >
             <Ionicons name="play" size={ds.icon(18)} color={colors.gray[700]} />
@@ -351,29 +354,29 @@ export default function EmployeeReminderRecurringScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary[500]} />}
         >
           <TouchableOpacity
-            className="bg-primary-500 rounded-xl flex-row items-center justify-center"
-            style={{ minHeight: Math.max(48, ds.buttonH), marginBottom: ds.spacing(14) }}
+            className="flex-row items-center justify-center"
+            style={{ backgroundColor: color.accent, borderRadius: radius.control, minHeight: Math.max(48, ds.buttonH), marginBottom: ds.spacing(14) }}
             onPress={openNewRule}
           >
             <Ionicons name="add-circle-outline" size={ds.icon(18)} color={colors.white} />
-            <Text className="text-white font-semibold" style={{ fontSize: ds.fontSize(15), marginLeft: ds.spacing(6) }}>
+            <Text className="font-semibold" style={{ color: color.onAccent, fontSize: ds.fontSize(typeScale.body), marginLeft: ds.spacing(6) }}>
               New Recurring Rule
             </Text>
           </TouchableOpacity>
 
           {isLoading ? (
             <View className="items-center" style={{ paddingVertical: ds.spacing(40) }}>
-              <Text className="text-gray-500" style={{ fontSize: ds.fontSize(14) }}>
+              <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.body) }}>
                 Loading rules...
               </Text>
             </View>
           ) : rules.length === 0 ? (
-            <View className="bg-white rounded-2xl border border-gray-100 items-center" style={{ paddingVertical: ds.spacing(36), paddingHorizontal: ds.spacing(16) }}>
+            <View className="border items-center" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline, paddingVertical: ds.spacing(36), paddingHorizontal: ds.spacing(16) }}>
               <Ionicons name="repeat" size={ds.icon(34)} color={colors.gray[300]} />
-              <Text className="text-gray-700 font-semibold" style={{ fontSize: ds.fontSize(16), marginTop: ds.spacing(8) }}>
+              <Text className="font-semibold" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.body), marginTop: ds.spacing(8) }}>
                 No recurring reminders yet
               </Text>
-              <Text className="text-gray-500 text-center" style={{ fontSize: ds.fontSize(13), marginTop: ds.spacing(4) }}>
+              <Text className="text-center" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(4) }}>
                 Create a rule to remind employees automatically when no order is placed.
               </Text>
             </View>
@@ -392,29 +395,27 @@ export default function EmployeeReminderRecurringScreen() {
               return (
                 <View
                   key={rule.id}
-                  className="bg-white border border-gray-100"
-                  style={{
-                    borderRadius: ds.radius(16),
+                  className="border"
+                  style={{ backgroundColor: color.card, borderColor: color.hairline, borderRadius: radius.card,
                     paddingHorizontal: ds.spacing(14),
                     paddingVertical: ds.spacing(12),
-                    marginBottom: ds.spacing(10),
-                  }}
+                    marginBottom: ds.spacing(10) }}
                 >
                   <View className="flex-row items-start justify-between">
                     <View className="flex-1 pr-3">
-                      <Text className="font-semibold text-gray-900" style={{ fontSize: ds.fontSize(16) }}>
+                      <Text className="font-semibold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>
                         {rule.scope === 'employee' ? 'Employee Rule' : 'Location Rule'}
                       </Text>
-                      <Text className="text-gray-600" style={{ fontSize: ds.fontSize(13), marginTop: ds.spacing(2) }}>
+                      <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(2) }}>
                         Target: {targetLabel}
                       </Text>
-                      <Text className="text-gray-600" style={{ fontSize: ds.fontSize(13), marginTop: ds.spacing(2) }}>
+                      <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(2) }}>
                         {summarizeDays(rule.days_of_week)} at {String(rule.time_of_day).slice(0, 5)}
                       </Text>
-                      <Text className="text-gray-600" style={{ fontSize: ds.fontSize(13), marginTop: ds.spacing(2) }}>
+                      <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(2) }}>
                         {conditionLabel}
                       </Text>
-                      <Text className="text-gray-500" style={{ fontSize: ds.fontSize(12), marginTop: ds.spacing(2) }}>
+                      <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(2) }}>
                         Channels: {rule.channels?.push !== false ? 'Push' : ''}{rule.channels?.push !== false && rule.channels?.in_app !== false ? ' + ' : ''}{rule.channels?.in_app !== false ? 'In-app' : ''}
                       </Text>
                     </View>
@@ -431,18 +432,18 @@ export default function EmployeeReminderRecurringScreen() {
 
                   <View className="flex-row" style={{ columnGap: ds.spacing(8), marginTop: ds.spacing(10) }}>
                     <TouchableOpacity
-                      className="flex-1 rounded-xl bg-gray-100 items-center justify-center"
-                      style={{ minHeight: Math.max(40, ds.buttonH - ds.spacing(10)) }}
+                      className="flex-1 items-center justify-center"
+                      style={{ borderRadius: radius.control, backgroundColor: color.well, minHeight: Math.max(40, ds.buttonH - ds.spacing(10)) }}
                       onPress={() => openEditRule(rule)}
                     >
-                      <Text className="font-semibold text-gray-700" style={{ fontSize: ds.fontSize(13) }}>Edit</Text>
+                      <Text className="font-semibold" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>Edit</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      className="flex-1 rounded-xl bg-red-50 items-center justify-center"
-                      style={{ minHeight: Math.max(40, ds.buttonH - ds.spacing(10)) }}
+                      className="flex-1 items-center justify-center"
+                      style={{ borderRadius: radius.control, backgroundColor: color.alertBg, minHeight: Math.max(40, ds.buttonH - ds.spacing(10)) }}
                       onPress={() => handleDelete(rule)}
                     >
-                      <Text className="font-semibold text-red-700" style={{ fontSize: ds.fontSize(13) }}>Delete</Text>
+                      <Text className="font-semibold" style={{ color: color.alert, fontSize: ds.fontSize(typeScale.secondary) }}>Delete</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -451,244 +452,221 @@ export default function EmployeeReminderRecurringScreen() {
           )}
         </ScrollView>
 
-        <Modal
-          transparent
+        <Sheet
           visible={showEditor}
-          animationType="slide"
-          onRequestClose={() => setShowEditor(false)}
+          title={form.id ? 'Edit Rule' : 'New Rule'}
+          onClose={() => setShowEditor(false)}
         >
-          <View style={{ flex: 1, backgroundColor: colors.scrimStrong, justifyContent: 'flex-end' }}>
-            <View
-              className="bg-white"
-              style={{ borderTopLeftRadius: ds.radius(22), borderTopRightRadius: ds.radius(22), maxHeight: '92%' }}
-            >
-              <View
-                className="flex-row items-center justify-between border-b border-gray-100"
-                style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
+          <ScrollView
+            style={{ maxHeight: windowHeight * 0.7 }}
+            contentContainerStyle={{ paddingBottom: ds.spacing(28) }}
+          >
+            <Text className="uppercase" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.caption), marginBottom: ds.spacing(6) }}>
+              Scope
+            </Text>
+            <View className="flex-row" style={{ columnGap: ds.spacing(8), marginBottom: ds.spacing(12) }}>
+              <TouchableOpacity
+                className="flex-1 items-center justify-center"
+                style={{ backgroundColor: form.scope === 'employee' ? color.accent : color.well, borderRadius: radius.control, minHeight: Math.max(42, ds.buttonH - ds.spacing(8)) }}
+                onPress={() => setForm((prev) => ({ ...prev, scope: 'employee', targetId: '' }))}
               >
-                <Text className="font-semibold text-gray-900" style={{ fontSize: ds.fontSize(17) }}>
-                  {form.id ? 'Edit Rule' : 'New Rule'}
+                <Text className="font-semibold" style={{ color: form.scope === 'employee' ? color.onAccent : color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>
+                  Employee
                 </Text>
-                <TouchableOpacity onPress={() => setShowEditor(false)}>
-                  <Ionicons name="close" size={ds.icon(22)} color={colors.gray[600]} />
-                </TouchableOpacity>
-              </View>
-
-              <ScrollView contentContainerStyle={{ padding: ds.spacing(16), paddingBottom: ds.spacing(28) }}>
-                <Text className="text-gray-500 uppercase" style={{ fontSize: ds.fontSize(11), marginBottom: ds.spacing(6) }}>
-                  Scope
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="flex-1 items-center justify-center"
+                style={{ backgroundColor: form.scope === 'location' ? color.accent : color.well, borderRadius: radius.control, minHeight: Math.max(42, ds.buttonH - ds.spacing(8)) }}
+                onPress={() => setForm((prev) => ({ ...prev, scope: 'location', targetId: '' }))}
+              >
+                <Text className="font-semibold" style={{ color: form.scope === 'location' ? color.onAccent : color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>
+                  Location
                 </Text>
-                <View className="flex-row" style={{ columnGap: ds.spacing(8), marginBottom: ds.spacing(12) }}>
-                  <TouchableOpacity
-                    className={form.scope === 'employee' ? 'flex-1 bg-primary-500 rounded-xl items-center justify-center' : 'flex-1 bg-gray-100 rounded-xl items-center justify-center'}
-                    style={{ minHeight: Math.max(42, ds.buttonH - ds.spacing(8)) }}
-                    onPress={() => setForm((prev) => ({ ...prev, scope: 'employee', targetId: '' }))}
-                  >
-                    <Text className={form.scope === 'employee' ? 'text-white font-semibold' : 'text-gray-700 font-semibold'} style={{ fontSize: ds.fontSize(13) }}>
-                      Employee
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className={form.scope === 'location' ? 'flex-1 bg-primary-500 rounded-xl items-center justify-center' : 'flex-1 bg-gray-100 rounded-xl items-center justify-center'}
-                    style={{ minHeight: Math.max(42, ds.buttonH - ds.spacing(8)) }}
-                    onPress={() => setForm((prev) => ({ ...prev, scope: 'location', targetId: '' }))}
-                  >
-                    <Text className={form.scope === 'location' ? 'text-white font-semibold' : 'text-gray-700 font-semibold'} style={{ fontSize: ds.fontSize(13) }}>
-                      Location
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <Text className="text-gray-500 uppercase" style={{ fontSize: ds.fontSize(11), marginBottom: ds.spacing(6) }}>
-                  Target
-                </Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ columnGap: ds.spacing(8), marginBottom: ds.spacing(12) }}
-                >
-                  {(form.scope === 'employee' ? employees.map((entry) => ({ id: entry.userId, label: entry.name })) : locations.map((entry) => ({ id: entry.id, label: entry.name }))).map((option) => (
-                    <TouchableOpacity
-                      key={option.id}
-                      className={form.targetId === option.id ? 'bg-primary-500 rounded-xl' : 'bg-gray-100 rounded-xl'}
-                      style={{ paddingHorizontal: ds.spacing(12), minHeight: Math.max(38, ds.buttonH - ds.spacing(12)), justifyContent: 'center' }}
-                      onPress={() => setForm((prev) => ({ ...prev, targetId: option.id }))}
-                    >
-                      <Text className={form.targetId === option.id ? 'text-white font-semibold' : 'text-gray-700 font-medium'} style={{ fontSize: ds.fontSize(13) }}>
-                        {option.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-
-                <Text className="text-gray-500 uppercase" style={{ fontSize: ds.fontSize(11), marginBottom: ds.spacing(6) }}>
-                  Days of Week
-                </Text>
-                <View className="flex-row flex-wrap" style={{ gap: ds.spacing(8), marginBottom: ds.spacing(12) }}>
-                  {WEEKDAY_OPTIONS.map((day) => {
-                    const selected = form.daysOfWeek.includes(day.value);
-                    return (
-                      <TouchableOpacity
-                        key={day.value}
-                        className={selected ? 'bg-primary-500 rounded-xl' : 'bg-gray-100 rounded-xl'}
-                        style={{
-                          minWidth: ds.spacing(44),
-                          minHeight: Math.max(36, ds.buttonH - ds.spacing(14)),
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          paddingHorizontal: ds.spacing(10),
-                        }}
-                        onPress={() => toggleDay(day.value)}
-                      >
-                        <Text className={selected ? 'text-white font-semibold' : 'text-gray-700 font-medium'} style={{ fontSize: ds.fontSize(12) }}>
-                          {day.label}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-
-                <Text className="text-gray-500 uppercase" style={{ fontSize: ds.fontSize(11), marginBottom: ds.spacing(6) }}>
-                  Time (HH:MM)
-                </Text>
-                <TextInput
-                  value={form.timeOfDay}
-                  onChangeText={(value) => setForm((prev) => ({ ...prev, timeOfDay: value }))}
-                  className="bg-gray-50 border border-gray-200 rounded-xl text-gray-900"
-                  style={{
-                    minHeight: Math.max(44, ds.buttonH - ds.spacing(6)),
-                    paddingHorizontal: ds.spacing(12),
-                    fontSize: ds.fontSize(15),
-                    marginBottom: ds.spacing(12),
-                  }}
-                />
-
-                <Text className="text-gray-500 uppercase" style={{ fontSize: ds.fontSize(11), marginBottom: ds.spacing(6) }}>
-                  Condition
-                </Text>
-                <View className="flex-row" style={{ columnGap: ds.spacing(8), marginBottom: ds.spacing(8) }}>
-                  <TouchableOpacity
-                    className={form.conditionType === 'no_order_today' ? 'flex-1 bg-primary-500 rounded-xl items-center justify-center' : 'flex-1 bg-gray-100 rounded-xl items-center justify-center'}
-                    style={{ minHeight: Math.max(40, ds.buttonH - ds.spacing(10)) }}
-                    onPress={() => setForm((prev) => ({ ...prev, conditionType: 'no_order_today' }))}
-                  >
-                    <Text className={form.conditionType === 'no_order_today' ? 'text-white font-semibold' : 'text-gray-700 font-semibold'} style={{ fontSize: ds.fontSize(12) }}>
-                      No order today
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className={form.conditionType === 'days_since_last_order_gte' ? 'flex-1 bg-primary-500 rounded-xl items-center justify-center' : 'flex-1 bg-gray-100 rounded-xl items-center justify-center'}
-                    style={{ minHeight: Math.max(40, ds.buttonH - ds.spacing(10)) }}
-                    onPress={() => setForm((prev) => ({ ...prev, conditionType: 'days_since_last_order_gte' }))}
-                  >
-                    <Text className={form.conditionType === 'days_since_last_order_gte' ? 'text-white font-semibold' : 'text-gray-700 font-semibold'} style={{ fontSize: ds.fontSize(12) }}>
-                      Days since order
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {form.conditionType === 'days_since_last_order_gte' && (
-                  <TextInput
-                    value={form.conditionValue}
-                    onChangeText={(value) => setForm((prev) => ({ ...prev, conditionValue: value.replace(/[^0-9]/g, '') }))}
-                    keyboardType="number-pad"
-                    className="bg-gray-50 border border-gray-200 rounded-xl text-gray-900"
-                    style={{
-                      minHeight: Math.max(44, ds.buttonH - ds.spacing(6)),
-                      paddingHorizontal: ds.spacing(12),
-                      fontSize: ds.fontSize(15),
-                      marginBottom: ds.spacing(12),
-                    }}
-                    placeholder="Days threshold"
-                  />
-                )}
-
-                <View className="flex-row items-center justify-between" style={{ marginBottom: ds.spacing(10) }}>
-                  <Text className="font-semibold text-gray-900" style={{ fontSize: ds.fontSize(15) }}>Quiet Hours</Text>
-                  <Switch
-                    value={form.quietHoursEnabled}
-                    onValueChange={(value) => setForm((prev) => ({ ...prev, quietHoursEnabled: value }))}
-                    trackColor={{ false: colors.gray[300], true: colors.primary[200] }}
-                    thumbColor={form.quietHoursEnabled ? colors.primary[500] : colors.gray[100]}
-                  />
-                </View>
-
-                {form.quietHoursEnabled && (
-                  <View className="flex-row" style={{ columnGap: ds.spacing(8), marginBottom: ds.spacing(12) }}>
-                    <TextInput
-                      value={form.quietStart}
-                      onChangeText={(value) => setForm((prev) => ({ ...prev, quietStart: value }))}
-                      placeholder="Start 22:00"
-                      className="flex-1 bg-gray-50 border border-gray-200 rounded-xl text-gray-900"
-                      style={{ minHeight: Math.max(44, ds.buttonH - ds.spacing(6)), paddingHorizontal: ds.spacing(12), fontSize: ds.fontSize(14) }}
-                    />
-                    <TextInput
-                      value={form.quietEnd}
-                      onChangeText={(value) => setForm((prev) => ({ ...prev, quietEnd: value }))}
-                      placeholder="End 07:00"
-                      className="flex-1 bg-gray-50 border border-gray-200 rounded-xl text-gray-900"
-                      style={{ minHeight: Math.max(44, ds.buttonH - ds.spacing(6)), paddingHorizontal: ds.spacing(12), fontSize: ds.fontSize(14) }}
-                    />
-                  </View>
-                )}
-
-                <Text className="text-gray-500 uppercase" style={{ fontSize: ds.fontSize(11), marginBottom: ds.spacing(6) }}>
-                  Channels
-                </Text>
-                <View className="flex-row" style={{ columnGap: ds.spacing(8), marginBottom: ds.spacing(12) }}>
-                  <TouchableOpacity
-                    className={form.push ? 'flex-1 bg-primary-500 rounded-xl items-center justify-center' : 'flex-1 bg-gray-100 rounded-xl items-center justify-center'}
-                    style={{ minHeight: Math.max(40, ds.buttonH - ds.spacing(10)) }}
-                    onPress={() => setForm((prev) => ({ ...prev, push: !prev.push }))}
-                  >
-                    <Text className={form.push ? 'text-white font-semibold' : 'text-gray-700 font-semibold'} style={{ fontSize: ds.fontSize(12) }}>
-                      Push
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className={form.inApp ? 'flex-1 bg-primary-500 rounded-xl items-center justify-center' : 'flex-1 bg-gray-100 rounded-xl items-center justify-center'}
-                    style={{ minHeight: Math.max(40, ds.buttonH - ds.spacing(10)) }}
-                    onPress={() => setForm((prev) => ({ ...prev, inApp: !prev.inApp }))}
-                  >
-                    <Text className={form.inApp ? 'text-white font-semibold' : 'text-gray-700 font-semibold'} style={{ fontSize: ds.fontSize(12) }}>
-                      In-app
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View className="flex-row items-center justify-between" style={{ marginBottom: ds.spacing(12) }}>
-                  <Text className="font-semibold text-gray-900" style={{ fontSize: ds.fontSize(15) }}>Rule Enabled</Text>
-                  <Switch
-                    value={form.enabled}
-                    onValueChange={(value) => setForm((prev) => ({ ...prev, enabled: value }))}
-                    trackColor={{ false: colors.gray[300], true: colors.primary[200] }}
-                    thumbColor={form.enabled ? colors.primary[500] : colors.gray[100]}
-                  />
-                </View>
-
-                <View className="bg-gray-100 rounded-xl" style={{ padding: ds.spacing(10), marginBottom: ds.spacing(12) }}>
-                  <Text className="text-gray-600" style={{ fontSize: ds.fontSize(12) }}>
-                    Target: {selectedTargetLabel || 'Not selected'}
-                  </Text>
-                  <Text className="text-gray-600" style={{ fontSize: ds.fontSize(12), marginTop: ds.spacing(2) }}>
-                    Schedule: {summarizeDays(form.daysOfWeek)} at {form.timeOfDay}
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  className={isSaving ? 'bg-orange-300 rounded-xl items-center justify-center' : 'bg-primary-500 rounded-xl items-center justify-center'}
-                  style={{ minHeight: Math.max(48, ds.buttonH) }}
-                  onPress={handleSave}
-                  disabled={isSaving}
-                >
-                  <Text className="text-white font-semibold" style={{ fontSize: ds.fontSize(15) }}>
-                    {isSaving ? 'Saving...' : 'Save Rule'}
-                  </Text>
-                </TouchableOpacity>
-              </ScrollView>
+              </TouchableOpacity>
             </View>
-          </View>
-        </Modal>
+
+            <Text className="uppercase" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.caption), marginBottom: ds.spacing(6) }}>
+              Target
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ columnGap: ds.spacing(8), marginBottom: ds.spacing(12) }}
+            >
+              {(form.scope === 'employee' ? employees.map((entry) => ({ id: entry.userId, label: entry.name })) : locations.map((entry) => ({ id: entry.id, label: entry.name }))).map((option) => (
+                <TouchableOpacity
+                  key={option.id}
+
+                  style={{ backgroundColor: form.targetId === option.id ? color.accent : color.well, borderRadius: radius.control, paddingHorizontal: ds.spacing(12), minHeight: Math.max(38, ds.buttonH - ds.spacing(12)), justifyContent: 'center' }}
+                  onPress={() => setForm((prev) => ({ ...prev, targetId: option.id }))}
+                >
+                  <Text className={form.targetId === option.id ? 'font-semibold' : ''} style={{ color: form.targetId === option.id ? color.onAccent : color.ink2, fontWeight: form.targetId === option.id ? undefined : weight.semibold, fontSize: ds.fontSize(typeScale.secondary) }}>
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <Text className="uppercase" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.caption), marginBottom: ds.spacing(6) }}>
+              Days of Week
+            </Text>
+            <View className="flex-row flex-wrap" style={{ gap: ds.spacing(8), marginBottom: ds.spacing(12) }}>
+              {WEEKDAY_OPTIONS.map((day) => {
+                const selected = form.daysOfWeek.includes(day.value);
+                return (
+                  <TouchableOpacity
+                    key={day.value}
+
+                    style={{ backgroundColor: selected ? color.accent : color.well, borderRadius: radius.control, minWidth: ds.spacing(44),
+                      minHeight: Math.max(36, ds.buttonH - ds.spacing(14)),
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      paddingHorizontal: ds.spacing(10) }}
+                    onPress={() => toggleDay(day.value)}
+                  >
+                    <Text className={selected ? 'font-semibold' : ''} style={{ color: selected ? color.onAccent : color.ink2, fontWeight: selected ? undefined : weight.semibold, fontSize: ds.fontSize(typeScale.secondary) }}>
+                      {day.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <Text className="uppercase" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.caption), marginBottom: ds.spacing(6) }}>
+              Time (HH:MM)
+            </Text>
+            <TextInput
+              value={form.timeOfDay}
+              onChangeText={(value) => setForm((prev) => ({ ...prev, timeOfDay: value }))}
+              className="border"
+              style={{ backgroundColor: color.page, borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink, minHeight: Math.max(44, ds.buttonH - ds.spacing(6)),
+                paddingHorizontal: ds.spacing(12),
+                fontSize: ds.fontSize(typeScale.body),
+                marginBottom: ds.spacing(12) }}
+            />
+
+            <Text className="uppercase" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.caption), marginBottom: ds.spacing(6) }}>
+              Condition
+            </Text>
+            <View className="flex-row" style={{ columnGap: ds.spacing(8), marginBottom: ds.spacing(8) }}>
+              <TouchableOpacity
+                className="flex-1 items-center justify-center"
+                style={{ backgroundColor: form.conditionType === 'no_order_today' ? color.accent : color.well, borderRadius: radius.control, minHeight: Math.max(40, ds.buttonH - ds.spacing(10)) }}
+                onPress={() => setForm((prev) => ({ ...prev, conditionType: 'no_order_today' }))}
+              >
+                <Text className="font-semibold" style={{ color: form.conditionType === 'no_order_today' ? color.onAccent : color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>
+                  No order today
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="flex-1 items-center justify-center"
+                style={{ backgroundColor: form.conditionType === 'days_since_last_order_gte' ? color.accent : color.well, borderRadius: radius.control, minHeight: Math.max(40, ds.buttonH - ds.spacing(10)) }}
+                onPress={() => setForm((prev) => ({ ...prev, conditionType: 'days_since_last_order_gte' }))}
+              >
+                <Text className="font-semibold" style={{ color: form.conditionType === 'days_since_last_order_gte' ? color.onAccent : color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>
+                  Days since order
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {form.conditionType === 'days_since_last_order_gte' && (
+              <TextInput
+                value={form.conditionValue}
+                onChangeText={(value) => setForm((prev) => ({ ...prev, conditionValue: value.replace(/[^0-9]/g, '') }))}
+                keyboardType="number-pad"
+                className="border"
+                style={{ backgroundColor: color.page, borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink, minHeight: Math.max(44, ds.buttonH - ds.spacing(6)),
+                  paddingHorizontal: ds.spacing(12),
+                  fontSize: ds.fontSize(typeScale.body),
+                  marginBottom: ds.spacing(12) }}
+                placeholder="Days threshold"
+              />
+            )}
+
+            <View className="flex-row items-center justify-between" style={{ marginBottom: ds.spacing(10) }}>
+              <Text className="font-semibold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>Quiet Hours</Text>
+              <Switch
+                value={form.quietHoursEnabled}
+                onValueChange={(value) => setForm((prev) => ({ ...prev, quietHoursEnabled: value }))}
+                trackColor={{ false: colors.gray[300], true: colors.primary[200] }}
+                thumbColor={form.quietHoursEnabled ? colors.primary[500] : colors.gray[100]}
+              />
+            </View>
+
+            {form.quietHoursEnabled && (
+              <View className="flex-row" style={{ columnGap: ds.spacing(8), marginBottom: ds.spacing(12) }}>
+                <TextInput
+                  value={form.quietStart}
+                  onChangeText={(value) => setForm((prev) => ({ ...prev, quietStart: value }))}
+                  placeholder="Start 22:00"
+                  className="flex-1 border"
+                  style={{ backgroundColor: color.page, borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink, minHeight: Math.max(44, ds.buttonH - ds.spacing(6)), paddingHorizontal: ds.spacing(12), fontSize: ds.fontSize(typeScale.body) }}
+                />
+                <TextInput
+                  value={form.quietEnd}
+                  onChangeText={(value) => setForm((prev) => ({ ...prev, quietEnd: value }))}
+                  placeholder="End 07:00"
+                  className="flex-1 border"
+                  style={{ backgroundColor: color.page, borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink, minHeight: Math.max(44, ds.buttonH - ds.spacing(6)), paddingHorizontal: ds.spacing(12), fontSize: ds.fontSize(typeScale.body) }}
+                />
+              </View>
+            )}
+
+            <Text className="uppercase" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.caption), marginBottom: ds.spacing(6) }}>
+              Channels
+            </Text>
+            <View className="flex-row" style={{ columnGap: ds.spacing(8), marginBottom: ds.spacing(12) }}>
+              <TouchableOpacity
+                className="flex-1 items-center justify-center"
+                style={{ backgroundColor: form.push ? color.accent : color.well, borderRadius: radius.control, minHeight: Math.max(40, ds.buttonH - ds.spacing(10)) }}
+                onPress={() => setForm((prev) => ({ ...prev, push: !prev.push }))}
+              >
+                <Text className="font-semibold" style={{ color: form.push ? color.onAccent : color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>
+                  Push
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="flex-1 items-center justify-center"
+                style={{ backgroundColor: form.inApp ? color.accent : color.well, borderRadius: radius.control, minHeight: Math.max(40, ds.buttonH - ds.spacing(10)) }}
+                onPress={() => setForm((prev) => ({ ...prev, inApp: !prev.inApp }))}
+              >
+                <Text className="font-semibold" style={{ color: form.inApp ? color.onAccent : color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>
+                  In-app
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View className="flex-row items-center justify-between" style={{ marginBottom: ds.spacing(12) }}>
+              <Text className="font-semibold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>Rule Enabled</Text>
+              <Switch
+                value={form.enabled}
+                onValueChange={(value) => setForm((prev) => ({ ...prev, enabled: value }))}
+                trackColor={{ false: colors.gray[300], true: colors.primary[200] }}
+                thumbColor={form.enabled ? colors.primary[500] : colors.gray[100]}
+              />
+            </View>
+
+            <View style={{ backgroundColor: color.well, borderRadius: radius.control, padding: ds.spacing(10), marginBottom: ds.spacing(12) }}>
+              <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>
+                Target: {selectedTargetLabel || 'Not selected'}
+              </Text>
+              <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(2) }}>
+                Schedule: {summarizeDays(form.daysOfWeek)} at {form.timeOfDay}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              className="items-center justify-center"
+              style={{ backgroundColor: isSaving ? color.tint : color.accent, borderRadius: radius.control, minHeight: Math.max(48, ds.buttonH) }}
+              onPress={handleSave}
+              disabled={isSaving}
+            >
+              <Text className="font-semibold" style={{ color: color.onAccent, fontSize: ds.fontSize(typeScale.body) }}>
+                {isSaving ? 'Saving...' : 'Save Rule'}
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </Sheet>
       </ManagerScaleContainer>
     </SafeAreaView>
   );

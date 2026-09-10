@@ -9,6 +9,7 @@ import {
   glassRadii,
 } from '@/theme/design';
 import { GlassSurface } from '@/components/ui';
+import { typeScale, weight } from '@/theme/tokens';
 
 function CategoryPill({
   label,
@@ -36,8 +37,8 @@ function CategoryPill({
     >
       <Text
         style={{
-          fontSize: ds.fontSize(13),
-          fontWeight: '600',
+          fontSize: ds.fontSize(typeScale.secondary),
+          fontWeight: weight.semibold,
           color: active ? glassColors.textOnPrimary : glassColors.textPrimary,
         }}
       >
@@ -98,8 +99,8 @@ export function BrowseCategoryScroller({
       <View className="flex-row items-center justify-between">
         <Text
           style={{
-            fontSize: ds.fontSize(12),
-            fontWeight: '600',
+            fontSize: ds.fontSize(typeScale.secondary),
+            fontWeight: weight.semibold,
             letterSpacing: 1.2,
             textTransform: 'uppercase',
             color: glassColors.textSecondary,
@@ -115,8 +116,8 @@ export function BrowseCategoryScroller({
           >
             <Text
               style={{
-                fontSize: ds.fontSize(12),
-                fontWeight: '600',
+                fontSize: ds.fontSize(typeScale.secondary),
+                fontWeight: weight.semibold,
                 color: glassColors.textSecondary,
               }}
             >

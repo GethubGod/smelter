@@ -39,94 +39,38 @@ const ROOT_IGNORES = [
  * add to it.
  */
 const DRIFT_ALLOWLIST = [
-  'src/features/inventory/ManagerInventoryRow.tsx',
-  // app (1 file, 9)
   'app/_layout.tsx',
-  // app/(manager) (12 files, 1289)
-  'app/(manager)/employee-reminders-delivery.tsx',
-  'app/(manager)/employee-reminders-recurring.tsx',
-  'app/(manager)/employee-reminders-settings.tsx',
-  'app/(manager)/employee-reminders.tsx',
-  'app/(manager)/export-fish-order.tsx',
-  'app/(manager)/fulfillment-confirmation.tsx',
-  'app/(manager)/fulfillment-history-detail.tsx',
-  'app/(manager)/fulfillment-history.tsx',
-  'app/(manager)/fulfillment.tsx',
   'app/(manager)/inventory.tsx',
-  'app/(manager)/orders.tsx',
-  'app/(manager)/profile.tsx',
-  // src/components (15 files, 163)
-  'src/components/BrowseCategoryScroller.tsx',
-  'src/components/CategoryFilter.tsx',
-  'src/components/ConfirmLocationBottomSheet.tsx',
-  'src/components/EmptyStateCard.tsx',
-  'src/components/ErrorBoundary.tsx',
-  'src/components/FloatingLocationSelector.tsx',
-  'src/components/HeaderCartButton.tsx',
-  'src/components/IdentityHeader.tsx',
-  'src/components/InventoryItemCard.tsx',
-  'src/components/ItemActionSheet.tsx',
-  'src/components/LocationSelectorButton.tsx',
-  'src/components/OrderCard.tsx',
-  'src/components/QrScannerModal.tsx',
-  'src/components/SectionHeader.tsx',
-  'src/components/StatusFilter.tsx',
-  // src/components/navigation (3 files, 13)
-  'src/components/navigation/FloatingPillTabBar.tsx',
-  'src/components/navigation/tabBarConfig.ts',
-  'src/components/navigation/TabButton.tsx',
-  // src/components/tuna-specialist (3 files, 29)
   'src/components/tuna-specialist/ConversationHistory.tsx',
-  'src/components/tuna-specialist/DebugPanel.tsx',
-  'src/components/tuna-specialist/SoundVisualizer.tsx',
   // src/features/browse (2 files, 37)
   'src/features/browse/BrowseInventoryScreenView.tsx',
   'src/features/browse/BrowseItemRow.tsx',
-  // src/features/fulfillment/components (12 files, 121)
-  'src/features/fulfillment/components/FulfillmentConfirmItemRow.tsx',
-  'src/features/fulfillment/components/FulfillmentExpandedSupplierItems.tsx',
-  'src/features/fulfillment/components/FulfillmentHeader.tsx',
-  'src/features/fulfillment/components/FulfillmentOrderLaterCard.tsx',
-  'src/features/fulfillment/components/FulfillmentReminderBanner.tsx',
-  'src/features/fulfillment/components/FulfillmentSupplierCard.tsx',
-  'src/features/fulfillment/components/FulfillmentSuppliersCard.tsx',
-  'src/features/fulfillment/components/FulfillmentSupplierSectionLabel.tsx',
-  'src/features/fulfillment/components/OrderLaterAddToSheet.tsx',
-  'src/features/fulfillment/components/OrderLaterScheduleModal.tsx',
-  'src/features/fulfillment/components/QuantityExportSelector.tsx',
-  'src/features/fulfillment/components/SupplierPickerBottomSheet.tsx',
-  // src/features/fulfillment/sendAll (1 file, 25)
-  'src/features/fulfillment/sendAll/SendAllScreen.tsx',
-  // src/features/ordering (17 files, 501)
-  'src/features/ordering/ComposerSuggestionPills.tsx',
-  'src/features/ordering/NeedsInputActionButtons.tsx',
-  'src/features/ordering/PreviousQuantitySuggestionCard.tsx',
-  'src/features/ordering/QuantityStepper.tsx',
-  'src/features/ordering/QuickOrderComposerBar.tsx',
-  'src/features/ordering/QuickOrderConfigScreen.tsx',
   'src/features/ordering/QuickOrderItemEditModal.tsx',
-  'src/features/ordering/QuickOrderItemRow.tsx',
-  'src/features/ordering/QuickOrderListCard.tsx',
   'src/features/ordering/QuickOrderQuantitySheet.tsx',
   'src/features/ordering/QuickOrderReviewQueueScreen.tsx',
-  'src/features/ordering/QuickOrderScreen.tsx',
-  'src/features/ordering/QuickOrderUserMessage.tsx',
-  'src/features/ordering/QuickOrderWelcomeMessage.tsx',
   'src/features/ordering/QuickSearchScreenView.tsx',
-  'src/features/ordering/RollingSpectrogram.tsx',
-  'src/features/ordering/UnitSegmentedControl.tsx',
-  // src/features/ordering/quickOrderConfig (5 files, 99)
-  'src/features/ordering/quickOrderConfig/AliasesTab.tsx',
   'src/features/ordering/quickOrderConfig/ExampleEditorModal.tsx',
-  'src/features/ordering/quickOrderConfig/ExamplesTab.tsx',
-  'src/features/ordering/quickOrderConfig/ImportOrderHistoryTab.tsx',
-  'src/features/ordering/quickOrderConfig/WeeklyLearningTab.tsx',
   // src/features/settings (1 file, 11)
   'src/features/settings/SupplierContactsScreen.tsx',
   // src/features/smart (1 file, 11)
   'src/features/smart/SmartOrderScreen.tsx',
+  // app (1 file, 9)
   'app/orders/\[id\].tsx',
   // app/(tabs) (1 file, 45)
+  // app/(manager) (1 file, 6): full-screen pageSheet forms (edit/move/add
+  // stock). Sheet/BottomSheetShell is a fixed-height bottom sheet with no
+  // internal scroll container; hosting these here would drop the scrolling
+  // form body. Needs a full-screen variant of the primitive, see #35.
+  // src/components/tuna-specialist (1 file, 2): full-screen pageSheet
+  // history view, same primitive gap as the inventory forms above, see #35.
+  // src/features/ordering (4 files, 8): two keyboard-aware bottom sheets
+  // (QuickOrderItemEditModal, QuickOrderQuantitySheet) that roll their own
+  // KeyboardAvoidingView + drag-to-dismiss, which BottomSheetShell does not
+  // support; and one full-screen pageSheet form
+  // (QuickOrderReviewQueueScreen's edit-and-approve modal, QuickSearchScreenView's
+  // quick-create modal). Same primitive gap as the inventory forms above, see #35.
+  // src/features/ordering/quickOrderConfig (1 file, 2): full-screen pageSheet
+  // form, same gap, see #35.
 ];
 
 module.exports = defineConfig([

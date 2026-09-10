@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerSelectionHaptic } from '@/lib/haptics';
 import { colors, quickOrderAccent } from '@/theme/design';
+import { radius, typeScale, weight } from '@/theme/tokens';
 
 /** How long the "Copied" confirmation stays visible after a tap. */
 const COPIED_RESET_MS = 1200;
@@ -51,13 +52,13 @@ export const QuickOrderUserMessage = React.memo(function QuickOrderUserMessage({
         style={[
           styles.bubble,
           {
-            borderRadius: ds.radius(20),
+            borderRadius: radius.card,
             paddingHorizontal: ds.spacing(16),
             paddingVertical: ds.spacing(10),
           },
         ]}
       >
-        <Text style={[styles.bubbleText, { fontSize: ds.fontSize(16) }]}>{text}</Text>
+        <Text style={[styles.bubbleText, { fontSize: ds.fontSize(typeScale.body) }]}>{text}</Text>
       </View>
       <Pressable
         accessibilityRole="button"
@@ -79,7 +80,7 @@ export const QuickOrderUserMessage = React.memo(function QuickOrderUserMessage({
             style={[
               styles.copyText,
               {
-                fontSize: ds.fontSize(12),
+                fontSize: ds.fontSize(typeScale.secondary),
                 color: copied ? colors.statusGreen : colors.textMuted,
               },
             ]}
@@ -103,7 +104,7 @@ const styles = StyleSheet.create({
   },
   bubbleText: {
     color: colors.textOnPrimary,
-    fontWeight: '700',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   copyButton: {
@@ -115,7 +116,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   copyText: {
-    fontWeight: '700',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
 });

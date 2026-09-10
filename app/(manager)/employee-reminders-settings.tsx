@@ -20,6 +20,7 @@ import {
   getReminderSystemSettings,
   updateReminderSystemSettings,
 } from '@/services';
+import { color, radius, typeScale } from '@/theme/tokens';
 
 export default function EmployeeReminderSettingsScreen() {
   const ds = useScaledStyles();
@@ -95,25 +96,25 @@ export default function EmployeeReminderSettingsScreen() {
     onChange: (value: string) => void;
     helpText: string;
   }) => (
-    <View className="bg-white border border-gray-100" style={{ borderRadius: ds.radius(14), padding: ds.spacing(14), marginBottom: ds.spacing(10) }}>
-      <Text className="font-semibold text-gray-900" style={{ fontSize: ds.fontSize(15) }}>{label}</Text>
-      <Text className="text-gray-500" style={{ fontSize: ds.fontSize(12), marginTop: ds.spacing(4), marginBottom: ds.spacing(10) }}>
+    <View className="border" style={{ backgroundColor: color.card, borderColor: color.hairline, borderRadius: radius.card, padding: ds.spacing(14), marginBottom: ds.spacing(10) }}>
+      <Text className="font-semibold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>{label}</Text>
+      <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(4), marginBottom: ds.spacing(10) }}>
         {helpText}
       </Text>
       <TextInput
         value={value}
         onChangeText={(text) => onChange(text.replace(/[^0-9]/g, ''))}
         keyboardType="number-pad"
-        className="bg-gray-50 border border-gray-200 rounded-xl text-gray-900"
-        style={{ minHeight: Math.max(46, ds.buttonH - ds.spacing(4)), paddingHorizontal: ds.spacing(12), fontSize: ds.fontSize(16) }}
+        className="border"
+        style={{ backgroundColor: color.page, borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink, minHeight: Math.max(46, ds.buttonH - ds.spacing(4)), paddingHorizontal: ds.spacing(12), fontSize: ds.fontSize(typeScale.body) }}
       />
     </View>
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top', 'left', 'right']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }} edges={['top', 'left', 'right']}>
       <ManagerScaleContainer>
-        <View className="bg-white border-b border-gray-100 flex-row items-center" style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}>
+        <View className="border-b flex-row items-center" style={{ backgroundColor: color.card, borderColor: color.hairline, paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}>
           <TouchableOpacity
             onPress={() => router.replace('/(manager)/employee-reminders')}
             style={{ padding: ds.spacing(8), marginRight: ds.spacing(8), minWidth: 44, minHeight: 44, justifyContent: 'center' }}
@@ -121,8 +122,8 @@ export default function EmployeeReminderSettingsScreen() {
             <Ionicons name="arrow-back" size={ds.icon(20)} color={colors.gray[700]} />
           </TouchableOpacity>
           <View>
-            <Text className="font-bold text-gray-900" style={{ fontSize: ds.fontSize(20) }}>Reminder Settings</Text>
-            <Text className="text-gray-500" style={{ fontSize: ds.fontSize(12), marginTop: ds.spacing(2) }}>
+            <Text className="font-bold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.title) }}>Reminder Settings</Text>
+            <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(2) }}>
               Configure overdue and reminder limits
             </Text>
           </View>
@@ -135,7 +136,7 @@ export default function EmployeeReminderSettingsScreen() {
         >
           {isLoading ? (
             <View className="items-center" style={{ paddingVertical: ds.spacing(40) }}>
-              <Text className="text-gray-500" style={{ fontSize: ds.fontSize(14) }}>
+              <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.body) }}>
                 Loading settings...
               </Text>
             </View>
@@ -160,8 +161,8 @@ export default function EmployeeReminderSettingsScreen() {
                 helpText="How long after scheduled time a recurring rule is considered due."
               />
 
-              <View className="bg-gray-100 rounded-xl" style={{ padding: ds.spacing(12), marginTop: ds.spacing(8) }}>
-                <Text className="text-gray-600" style={{ fontSize: ds.fontSize(12) }}>
+              <View style={{ backgroundColor: color.well, borderRadius: radius.control, padding: ds.spacing(12), marginTop: ds.spacing(8) }}>
+                <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>
                   These settings apply globally to all manager reminder workflows.
                 </Text>
               </View>
@@ -169,14 +170,14 @@ export default function EmployeeReminderSettingsScreen() {
           )}
         </ScrollView>
 
-        <View className="bg-white border-t border-gray-100" style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}>
+        <View className="border-t" style={{ backgroundColor: color.card, borderColor: color.hairline, paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}>
           <TouchableOpacity
-            className={isSaving ? 'bg-orange-300 rounded-xl items-center justify-center' : 'bg-primary-500 rounded-xl items-center justify-center'}
-            style={{ minHeight: Math.max(48, ds.buttonH) }}
+            className="items-center justify-center"
+            style={{ backgroundColor: isSaving ? color.tint : color.accent, borderRadius: radius.control, minHeight: Math.max(48, ds.buttonH) }}
             onPress={handleSave}
             disabled={isSaving || isLoading}
           >
-            <Text className="text-white font-semibold" style={{ fontSize: ds.fontSize(15) }}>
+            <Text className="font-semibold" style={{ color: color.onAccent, fontSize: ds.fontSize(typeScale.body) }}>
               {isSaving ? 'Saving...' : 'Save Settings'}
             </Text>
           </TouchableOpacity>

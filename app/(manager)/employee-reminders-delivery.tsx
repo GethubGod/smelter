@@ -16,6 +16,7 @@ import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
 import { useManagedRefresh } from '@/hooks/useManagedRefresh';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { ReminderDeliveryEvent, listReminderDeliveryEvents } from '@/services';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 function formatEventTime(value: string) {
   const date = new Date(value);
@@ -80,9 +81,9 @@ export default function EmployeeReminderDeliveryStatusScreen() {
   }, [events, query]);
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top', 'left', 'right']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }} edges={['top', 'left', 'right']}>
       <ManagerScaleContainer>
-        <View className="bg-white border-b border-gray-100 flex-row items-center" style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}>
+        <View className="border-b flex-row items-center" style={{ backgroundColor: color.card, borderColor: color.hairline, paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}>
           <TouchableOpacity
             onPress={() => router.replace('/(manager)/employee-reminders')}
             style={{ padding: ds.spacing(8), marginRight: ds.spacing(8), minWidth: 44, minHeight: 44, justifyContent: 'center' }}
@@ -90,8 +91,8 @@ export default function EmployeeReminderDeliveryStatusScreen() {
             <Ionicons name="arrow-back" size={ds.icon(20)} color={colors.gray[700]} />
           </TouchableOpacity>
           <View>
-            <Text className="font-bold text-gray-900" style={{ fontSize: ds.fontSize(20) }}>Delivery Status</Text>
-            <Text className="text-gray-500" style={{ fontSize: ds.fontSize(12), marginTop: ds.spacing(2) }}>
+            <Text className="font-bold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.title) }}>Delivery Status</Text>
+            <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(2) }}>
               Push and in-app reminder delivery history
             </Text>
           </View>
@@ -103,12 +104,10 @@ export default function EmployeeReminderDeliveryStatusScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary[500]} />}
         >
           <View
-            className="bg-white border border-gray-200 rounded-xl flex-row items-center"
-            style={{
-              paddingHorizontal: ds.spacing(12),
+            className="border flex-row items-center"
+            style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, borderRadius: radius.control, paddingHorizontal: ds.spacing(12),
               minHeight: Math.max(46, ds.buttonH - ds.spacing(4)),
-              marginBottom: ds.spacing(12),
-            }}
+              marginBottom: ds.spacing(12) }}
           >
             <Ionicons name="search" size={ds.icon(18)} color={colors.gray[400]} />
             <TextInput
@@ -119,7 +118,7 @@ export default function EmployeeReminderDeliveryStatusScreen() {
               style={{
                 flex: 1,
                 marginLeft: ds.spacing(8),
-                fontSize: ds.fontSize(15),
+                fontSize: ds.fontSize(typeScale.body),
                 color: colors.gray[900],
               }}
             />
@@ -127,17 +126,17 @@ export default function EmployeeReminderDeliveryStatusScreen() {
 
           {isLoading ? (
             <View className="items-center" style={{ paddingVertical: ds.spacing(40) }}>
-              <Text className="text-gray-500" style={{ fontSize: ds.fontSize(14) }}>
+              <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.body) }}>
                 Loading events...
               </Text>
             </View>
           ) : filteredEvents.length === 0 ? (
-            <View className="bg-white rounded-2xl border border-gray-100 items-center" style={{ paddingVertical: ds.spacing(36), paddingHorizontal: ds.spacing(16) }}>
+            <View className="border items-center" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline, paddingVertical: ds.spacing(36), paddingHorizontal: ds.spacing(16) }}>
               <Ionicons name="notifications-off-outline" size={ds.icon(34)} color={colors.gray[300]} />
-              <Text className="text-gray-700 font-semibold" style={{ fontSize: ds.fontSize(16), marginTop: ds.spacing(8) }}>
+              <Text className="font-semibold" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.body), marginTop: ds.spacing(8) }}>
                 No delivery events found
               </Text>
-              <Text className="text-gray-500 text-center" style={{ fontSize: ds.fontSize(13), marginTop: ds.spacing(4) }}>
+              <Text className="text-center" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(4) }}>
                 Send a reminder first to see delivery history.
               </Text>
             </View>
@@ -150,24 +149,22 @@ export default function EmployeeReminderDeliveryStatusScreen() {
               return (
                 <View
                   key={entry.id}
-                  className="bg-white border border-gray-100"
-                  style={{
-                    borderRadius: ds.radius(16),
+                  className="border"
+                  style={{ backgroundColor: color.card, borderColor: color.hairline, borderRadius: radius.card,
                     paddingHorizontal: ds.spacing(14),
                     paddingVertical: ds.spacing(12),
-                    marginBottom: ds.spacing(10),
-                  }}
+                    marginBottom: ds.spacing(10) }}
                 >
                   <View className="flex-row items-center justify-between">
-                    <Text className="font-semibold text-gray-900" style={{ fontSize: ds.fontSize(16), flex: 1, paddingRight: ds.spacing(8) }}>
+                    <Text className="font-semibold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body), flex: 1, paddingRight: ds.spacing(8) }}>
                       {employeeName}
                     </Text>
-                    <Text className="text-gray-500" style={{ fontSize: ds.fontSize(12) }}>
+                    <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>
                       {formatEventTime(entry.sent_at)}
                     </Text>
                   </View>
 
-                  <Text className="text-gray-700" style={{ fontSize: ds.fontSize(13), marginTop: ds.spacing(4) }}>
+                  <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(4) }}>
                     {formatEventType(entry.event_type)}
                   </Text>
 
@@ -179,10 +176,10 @@ export default function EmployeeReminderDeliveryStatusScreen() {
                           backgroundColor: colors.gray[200],
                           paddingHorizontal: ds.spacing(8),
                           paddingVertical: ds.spacing(3),
-                          borderRadius: ds.radius(999),
+                          borderRadius: radius.pill,
                         }}
                       >
-                        <Text style={{ color: colors.gray[700], fontSize: ds.fontSize(11), fontWeight: '700' }}>{channel}</Text>
+                        <Text style={{ color: colors.gray[700], fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold }}>{channel}</Text>
                       </View>
                     ))}
 
@@ -196,7 +193,7 @@ export default function EmployeeReminderDeliveryStatusScreen() {
                               : colors.errorBg,
                         paddingHorizontal: ds.spacing(8),
                         paddingVertical: ds.spacing(3),
-                        borderRadius: ds.radius(999),
+                        borderRadius: radius.pill,
                       }}
                     >
                       <Text
@@ -207,8 +204,8 @@ export default function EmployeeReminderDeliveryStatusScreen() {
                               : pushStatus === 'not_delivered_push_disabled'
                                 ? colors.gray[700]
                                 : colors.error,
-                          fontSize: ds.fontSize(11),
-                          fontWeight: '700',
+                          fontSize: ds.fontSize(typeScale.caption),
+                          fontWeight: weight.bold,
                         }}
                       >
                         Push: {pushStatus}
@@ -216,7 +213,7 @@ export default function EmployeeReminderDeliveryStatusScreen() {
                     </View>
                   </View>
 
-                  <Text className="text-gray-400" style={{ fontSize: ds.fontSize(11), marginTop: ds.spacing(8) }}>
+                  <Text style={{ color: color.ink3, fontSize: ds.fontSize(typeScale.caption), marginTop: ds.spacing(8) }}>
                     {new Date(entry.sent_at).toLocaleString()}
                   </Text>
                 </View>

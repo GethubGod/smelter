@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerSelectionHaptic } from '@/lib/haptics';
 import { colors, grayScale, quickOrderAccent } from '@/theme/design';
+import { radius, typeScale, weight } from '@/theme/tokens';
 
 export type ComposerSuggestionPill = {
   id: string;
@@ -43,7 +44,7 @@ function ComposerSuggestionPillsImpl({
 
   if (pills.length === 0) return null;
 
-  const iconSize = Math.round(ds.fontSize(16));
+  const iconSize = Math.round(ds.fontSize(typeScale.body));
 
   return (
     <View style={[styles.row, { gap: ds.spacing(10), paddingBottom: ds.spacing(10) }]}>
@@ -66,7 +67,7 @@ function ComposerSuggestionPillsImpl({
               {
                 backgroundColor: pill.accent ? quickOrderAccent : colors.white,
                 borderColor: pill.accent ? quickOrderAccent : grayScale[200],
-                borderRadius: ds.radius(22),
+                borderRadius: radius.sheet,
                 paddingHorizontal: ds.spacing(16),
                 paddingVertical: ds.spacing(10),
                 opacity: disabled ? 0.5 : 1,
@@ -79,7 +80,7 @@ function ComposerSuggestionPillsImpl({
               color={foreground}
               style={{ marginRight: ds.spacing(7) }}
             />
-            <Text numberOfLines={1} style={[styles.label, { color: foreground, fontSize: ds.fontSize(15) }]}>
+            <Text numberOfLines={1} style={[styles.label, { color: foreground, fontSize: ds.fontSize(typeScale.body) }]}>
               {pill.label}
             </Text>
           </Pressable>
@@ -110,7 +111,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   label: {
-    fontWeight: '700',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
 });

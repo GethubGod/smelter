@@ -2,12 +2,13 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useScaledStyles } from "@/hooks/useScaledStyles";
 import { quickOrderAccent } from "@/theme/design";
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 const PRIMARY_RED = quickOrderAccent;
-const PRIMARY_TEXT = "#FFFFFF";
-const GHOST_BG = "#FFFFFF";
-const GHOST_BORDER = "#D1D5DB";
-const GHOST_TEXT = "#1F2937";
+const PRIMARY_TEXT = color.card;
+const GHOST_BG = color.card;
+const GHOST_BORDER = color.hairlineStrong;
+const GHOST_TEXT = color.ink;
 
 export type NeedsInputPrimaryAction = {
   key: string;
@@ -35,7 +36,7 @@ export function NeedsInputActionButtons({
   rejectAccessibilityLabel = "No, dismiss this suggestion",
 }: NeedsInputActionButtonsProps) {
   const ds = useScaledStyles();
-  const pillRadius = ds.radius(999);
+  const pillRadius = radius.pill;
 
   return (
     <View
@@ -71,7 +72,7 @@ export function NeedsInputActionButtons({
             <Text
               style={[
                 styles.primaryLabel,
-                { fontSize: ds.fontSize(14) },
+                { fontSize: ds.fontSize(typeScale.body) },
               ]}
             >
               {action.label}
@@ -104,7 +105,7 @@ export function NeedsInputActionButtons({
           <Text
             style={[
               styles.ghostLabel,
-              { fontSize: ds.fontSize(14) },
+              { fontSize: ds.fontSize(typeScale.body) },
             ]}
           >
             {rejectLabel}
@@ -134,7 +135,7 @@ const styles = StyleSheet.create({
   },
   primaryLabel: {
     color: PRIMARY_TEXT,
-    fontWeight: "700",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   ghostPressable: {
@@ -151,7 +152,7 @@ const styles = StyleSheet.create({
   },
   ghostLabel: {
     color: GHOST_TEXT,
-    fontWeight: "600",
+    fontWeight: weight.semibold,
     letterSpacing: 0,
   },
 });

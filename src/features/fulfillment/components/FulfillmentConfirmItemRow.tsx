@@ -5,6 +5,7 @@ import { colors } from '@/constants';
 import { GlassSurface } from '@/components';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { glassColors, glassRadii, glassHairlineWidth } from '@/theme/design';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 type ChipTone = 'amber' | 'gray' | 'blue';
 type SurfaceTone = 'subtle' | 'homeGray';
@@ -64,8 +65,8 @@ export const FulfillmentConfirmItemRow = React.memo(function FulfillmentConfirmI
           style={{
             flex: 1,
             paddingRight: ds.spacing(8),
-            fontSize: ds.fontSize(17),
-            fontWeight: '700',
+            fontSize: ds.fontSize(typeScale.title),
+            fontWeight: weight.bold,
             color: glassColors.textPrimary,
           }}
           numberOfLines={2}
@@ -85,7 +86,7 @@ export const FulfillmentConfirmItemRow = React.memo(function FulfillmentConfirmI
                     case 'amber':
                       return { bg: glassColors.warningSoft, border: glassColors.accentBorder, text: glassColors.warningText };
                     case 'blue':
-                      return { bg: '#EFF6FF', border: '#BFDBFE', text: '#1D4ED8' };
+                      return { bg: color.tint, border: color.hairline, text: color.accent };
                     default:
                       return { bg: colors.gray[100], border: glassColors.cardBorder, text: glassColors.textSecondary };
                   }
@@ -103,7 +104,7 @@ export const FulfillmentConfirmItemRow = React.memo(function FulfillmentConfirmI
                       borderColor: tone.border,
                     }}
                   >
-                    <Text style={{ fontSize: ds.fontSize(12), fontWeight: '700', color: tone.text }}>{chip.label}</Text>
+                    <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.bold, color: tone.text }}>{chip.label}</Text>
                   </View>
                 );
               })}
@@ -125,7 +126,7 @@ export const FulfillmentConfirmItemRow = React.memo(function FulfillmentConfirmI
             style={{
               width: 42,
               height: 42,
-              borderRadius: 13,
+              borderRadius: radius.card,
               borderWidth: glassHairlineWidth,
               alignItems: 'center',
               justifyContent: 'center',
@@ -148,7 +149,7 @@ export const FulfillmentConfirmItemRow = React.memo(function FulfillmentConfirmI
               marginHorizontal: ds.spacing(8),
               height: 42,
               width: ds.spacing(74),
-              borderRadius: 13,
+              borderRadius: radius.card,
               borderWidth: glassHairlineWidth,
               borderColor: glassColors.cardBorder,
               backgroundColor: disableControls
@@ -158,8 +159,8 @@ export const FulfillmentConfirmItemRow = React.memo(function FulfillmentConfirmI
                   : colors.gray[100],
               paddingHorizontal: ds.spacing(8),
               textAlign: 'center',
-              fontSize: ds.fontSize(17),
-              fontWeight: '700',
+              fontSize: ds.fontSize(typeScale.title),
+              fontWeight: weight.bold,
               color: glassColors.textPrimary,
             }}
           />
@@ -170,7 +171,7 @@ export const FulfillmentConfirmItemRow = React.memo(function FulfillmentConfirmI
             style={{
               width: 42,
               height: 42,
-              borderRadius: 13,
+              borderRadius: radius.card,
               borderWidth: glassHairlineWidth,
               alignItems: 'center',
               justifyContent: 'center',

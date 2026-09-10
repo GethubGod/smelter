@@ -34,6 +34,7 @@ import {
   newBuilderItem,
   parseStructuredOutput,
 } from './types';
+import { radius, typeScale, weight } from '@/theme/tokens';
 
 type EditorType = 'mapping' | 'conflict_resolution';
 
@@ -242,8 +243,8 @@ export function ExampleEditorModal({
             <Text
               style={{
                 color: glassColors.textPrimary,
-                fontSize: ds.fontSize(17),
-                fontWeight: '500',
+                fontSize: ds.fontSize(typeScale.title),
+                fontWeight: weight.semibold,
               }}
             >
               Cancel
@@ -251,8 +252,8 @@ export function ExampleEditorModal({
           </TouchableOpacity>
           <Text
             style={{
-              fontSize: ds.fontSize(17),
-              fontWeight: '700',
+              fontSize: ds.fontSize(typeScale.title),
+              fontWeight: weight.bold,
               color: glassColors.textPrimary,
             }}
           >
@@ -266,8 +267,8 @@ export function ExampleEditorModal({
             <Text
               style={{
                 color: colors.primary,
-                fontSize: ds.fontSize(17),
-                fontWeight: '700',
+                fontSize: ds.fontSize(typeScale.title),
+                fontWeight: weight.bold,
                 opacity: saving ? 0.5 : 1,
               }}
             >
@@ -318,8 +319,8 @@ export function ExampleEditorModal({
                     <Text
                       style={{
                         color: active ? colors.primary : glassColors.textSecondary,
-                        fontWeight: '700',
-                        fontSize: ds.fontSize(13),
+                        fontWeight: weight.bold,
+                        fontSize: ds.fontSize(typeScale.secondary),
                       }}
                     >
                       {label}
@@ -368,8 +369,8 @@ export function ExampleEditorModal({
               <Text
                 style={{
                   color: glassColors.textPrimary,
-                  fontWeight: '600',
-                  fontSize: ds.fontSize(15),
+                  fontWeight: weight.semibold,
+                  fontSize: ds.fontSize(typeScale.body),
                 }}
               >
                 Active example
@@ -405,8 +406,8 @@ function MappingForm({
     <View>
       <Text
         style={{
-          fontSize: ds.fontSize(13),
-          fontWeight: '700',
+          fontSize: ds.fontSize(typeScale.secondary),
+          fontWeight: weight.bold,
           color: glassColors.textSecondary,
           marginBottom: ds.spacing(6),
           textTransform: 'uppercase',
@@ -431,15 +432,15 @@ function MappingForm({
           paddingTop: ds.spacing(12),
           paddingBottom: ds.spacing(12),
           color: glassColors.textPrimary,
-          fontSize: ds.fontSize(15),
+          fontSize: ds.fontSize(typeScale.body),
           textAlignVertical: 'top',
         }}
       />
 
       <Text
         style={{
-          fontSize: ds.fontSize(13),
-          fontWeight: '700',
+          fontSize: ds.fontSize(typeScale.secondary),
+          fontWeight: weight.bold,
           color: glassColors.textSecondary,
           marginTop: ds.spacing(18),
           marginBottom: ds.spacing(6),
@@ -483,7 +484,7 @@ function MappingForm({
         }}
       >
         <Ionicons name="add" size={ds.icon(18)} color={colors.primary} />
-        <Text style={{ color: colors.primary, fontWeight: '700', fontSize: ds.fontSize(14) }}>
+        <Text style={{ color: colors.primary, fontWeight: weight.bold, fontSize: ds.fontSize(typeScale.body) }}>
           Add output item
         </Text>
       </TouchableOpacity>
@@ -538,8 +539,8 @@ function OutputItemRow({
         <Text
           style={{
             flex: 1,
-            fontSize: ds.fontSize(13),
-            fontWeight: '700',
+            fontSize: ds.fontSize(typeScale.secondary),
+            fontWeight: weight.bold,
             color: glassColors.textSecondary,
             textTransform: 'uppercase',
             letterSpacing: 0.4,
@@ -573,7 +574,7 @@ function OutputItemRow({
           borderColor: glassColors.cardBorder,
           paddingHorizontal: ds.spacing(12),
           color: glassColors.textPrimary,
-          fontSize: ds.fontSize(15),
+          fontSize: ds.fontSize(typeScale.body),
         }}
       />
 
@@ -594,15 +595,15 @@ function OutputItemRow({
               style={({ pressed }) => ({
                 paddingHorizontal: ds.spacing(10),
                 paddingVertical: ds.spacing(9),
-                borderRadius: 8,
+                borderRadius: radius.control,
                 backgroundColor: pressed ? colors.primaryPale : grayScale[50],
               })}
             >
               <Text
                 style={{
                   color: glassColors.textPrimary,
-                  fontSize: ds.fontSize(14),
-                  fontWeight: '600',
+                  fontSize: ds.fontSize(typeScale.body),
+                  fontWeight: weight.semibold,
                 }}
               >
                 {item.name}
@@ -628,7 +629,7 @@ function OutputItemRow({
             borderColor: glassColors.cardBorder,
             paddingHorizontal: ds.spacing(12),
             color: glassColors.textPrimary,
-            fontSize: ds.fontSize(15),
+            fontSize: ds.fontSize(typeScale.body),
           }}
         />
         <TextInput
@@ -645,7 +646,7 @@ function OutputItemRow({
             borderColor: glassColors.cardBorder,
             paddingHorizontal: ds.spacing(12),
             color: glassColors.textPrimary,
-            fontSize: ds.fontSize(15),
+            fontSize: ds.fontSize(typeScale.body),
           }}
         />
       </View>
@@ -669,8 +670,8 @@ function OutputItemRow({
               <Text
                 style={{
                   color: active ? colors.textOnPrimary : glassColors.textPrimary,
-                  fontWeight: '700',
-                  fontSize: ds.fontSize(13),
+                  fontWeight: weight.bold,
+                  fontSize: ds.fontSize(typeScale.secondary),
                 }}
               >
                 {unitType === 'base' ? 'Base unit' : 'Pack unit'}
@@ -710,8 +711,8 @@ function ConflictForm({
     <View style={{ marginBottom: ds.spacing(14) }}>
       <Text
         style={{
-          fontSize: ds.fontSize(13),
-          fontWeight: '700',
+          fontSize: ds.fontSize(typeScale.secondary),
+          fontWeight: weight.bold,
           color: glassColors.textSecondary,
           marginBottom: ds.spacing(6),
           textTransform: 'uppercase',
@@ -734,7 +735,7 @@ function ConflictForm({
           borderColor: glassColors.cardBorder,
           paddingHorizontal: ds.spacing(14),
           color: glassColors.textPrimary,
-          fontSize: ds.fontSize(15),
+          fontSize: ds.fontSize(typeScale.body),
         }}
       />
     </View>
@@ -748,8 +749,8 @@ function ConflictForm({
 
       <Text
         style={{
-          fontSize: ds.fontSize(13),
-          fontWeight: '700',
+          fontSize: ds.fontSize(typeScale.secondary),
+          fontWeight: weight.bold,
           color: glassColors.textSecondary,
           marginBottom: ds.spacing(8),
           textTransform: 'uppercase',
@@ -779,8 +780,8 @@ function ConflictForm({
               <Text
                 style={{
                   color: active ? colors.textOnPrimary : glassColors.textPrimary,
-                  fontWeight: '700',
-                  fontSize: ds.fontSize(14),
+                  fontWeight: weight.bold,
+                  fontSize: ds.fontSize(typeScale.body),
                   textTransform: 'capitalize',
                 }}
               >

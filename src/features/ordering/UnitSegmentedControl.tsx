@@ -3,6 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import { triggerSelectionHaptic } from '@/lib/haptics';
 import { colors, quickOrderAccent } from '@/theme/design';
 import type { QuantityUnitOption } from './quickOrderQuantityFlow';
+import { radius, typeScale } from '@/theme/tokens';
 
 type UnitSegmentedControlProps = {
   options: QuantityUnitOption[];
@@ -34,7 +35,7 @@ export function UnitSegmentedControl({ options, value, onChange, disabled = fals
         flexDirection: 'row',
         alignItems: 'stretch',
         backgroundColor: colors.white,
-        borderRadius: 999,
+        borderRadius: radius.pill,
         padding: 4,
         minHeight: 48,
         shadowColor: colors.textPrimary,
@@ -65,7 +66,7 @@ export function UnitSegmentedControl({ options, value, onChange, disabled = fals
               minWidth: 0,
               alignItems: 'center',
               justifyContent: 'center',
-              borderRadius: 999,
+              borderRadius: radius.pill,
               minHeight: 40,
               paddingVertical: 8,
               paddingHorizontal: 2,
@@ -80,7 +81,7 @@ export function UnitSegmentedControl({ options, value, onChange, disabled = fals
               adjustsFontSizeToFit
               minimumFontScale={0.75}
               style={{
-                fontSize: 14,
+                fontSize: typeScale.body,
                 fontWeight: selected ? '800' : '600',
                 color: selected ? colors.textOnPrimary : colors.textSecondary,
                 textAlign: 'center',

@@ -7,6 +7,7 @@ import {
   glassColors,
   glassRadii,
 } from '@/theme/design';
+import { typeScale, weight } from '@/theme/tokens';
 
 interface FulfillmentOrderLaterCardProps {
   count: number;
@@ -102,8 +103,8 @@ export function FulfillmentOrderLaterCard({
             />
             <Text
               style={{
-                fontSize: ds.fontSize(15),
-                fontWeight: '700',
+                fontSize: ds.fontSize(typeScale.body),
+                fontWeight: weight.bold,
                 color: glassColors.textPrimary,
               }}
             >
@@ -116,8 +117,8 @@ export function FulfillmentOrderLaterCard({
               <Text
                 style={{
                   color: glassColors.textSecondary,
-                  fontSize: ds.fontSize(13),
-                  fontWeight: '600',
+                  fontSize: ds.fontSize(typeScale.secondary),
+                  fontWeight: weight.semibold,
                   marginRight: ds.spacing(6),
                 }}
               >
@@ -157,8 +158,8 @@ export function FulfillmentOrderLaterCard({
             <Text
               style={{
                 marginTop: ds.spacing(12),
-                fontSize: ds.fontSize(15),
-                fontWeight: '600',
+                fontSize: ds.fontSize(typeScale.body),
+                fontWeight: weight.semibold,
                 color: glassColors.textPrimary,
               }}
             >
@@ -167,9 +168,9 @@ export function FulfillmentOrderLaterCard({
             <Text
               style={{
                 marginTop: ds.spacing(6),
-                fontSize: ds.fontSize(12),
+                fontSize: ds.fontSize(typeScale.secondary),
                 color: glassColors.textSecondary,
-                lineHeight: ds.fontSize(18),
+                lineHeight: ds.fontSize(typeScale.title),
               }}
             >
               Items scheduled for a future order will appear here.

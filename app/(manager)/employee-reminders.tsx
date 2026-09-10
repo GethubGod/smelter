@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
-  Modal,
   RefreshControl,
   ScrollView,
   Text,
@@ -26,6 +25,8 @@ import {
   listEmployeesWithReminderStatus,
   sendReminder,
 } from '@/services';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { Sheet } from '@/components/ui/Sheet';
 
 type SortMode = 'overdue' | 'name' | 'location' | 'active_first';
 
@@ -322,34 +323,30 @@ export default function EmployeeRemindersScreen() {
     return (
       <View
         key={row.userId}
-        className="bg-white border border-gray-100"
-        style={{
-          borderRadius: ds.radius(16),
+        className="border"
+        style={{ backgroundColor: color.card, borderColor: color.hairline, borderRadius: radius.card,
           paddingHorizontal: ds.spacing(14),
           paddingVertical: ds.spacing(12),
-          marginBottom: ds.spacing(10),
-        }}
+          marginBottom: ds.spacing(10) }}
       >
         <View className="flex-row items-start">
           <View
-            className="items-center justify-center bg-gray-100"
-            style={{
-              width: Math.max(40, ds.icon(42)),
+            className="items-center justify-center"
+            style={{ backgroundColor: color.well, width: Math.max(40, ds.icon(42)),
               height: Math.max(40, ds.icon(42)),
-              borderRadius: ds.radius(999),
-              marginRight: ds.spacing(10),
-            }}
+              borderRadius: radius.pill,
+              marginRight: ds.spacing(10) }}
           >
-            <Text className="font-semibold text-gray-700" style={{ fontSize: ds.fontSize(16) }}>
+            <Text className="font-semibold" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.body) }}>
               {row.name.charAt(0).toUpperCase()}
             </Text>
           </View>
 
           <View className="flex-1 pr-2">
-            <Text className="font-semibold text-gray-900" style={{ fontSize: ds.fontSize(16) }}>
+            <Text className="font-semibold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>
               {row.name}
             </Text>
-            <Text className="text-gray-500" style={{ fontSize: ds.fontSize(13), marginTop: ds.spacing(2) }}>
+            <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(2) }}>
               {row.locationName} • {formatLastOrderLabel(row)}
             </Text>
 
@@ -359,10 +356,10 @@ export default function EmployeeRemindersScreen() {
                   backgroundColor: status.bg,
                   paddingHorizontal: ds.spacing(8),
                   paddingVertical: ds.spacing(3),
-                  borderRadius: ds.radius(999),
+                  borderRadius: radius.pill,
                 }}
               >
-                <Text style={{ color: status.text, fontSize: ds.fontSize(11), fontWeight: '700' }}>
+                <Text style={{ color: status.text, fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold }}>
                   {status.label}
                 </Text>
               </View>
@@ -373,10 +370,10 @@ export default function EmployeeRemindersScreen() {
                     backgroundColor: colors.gray[200],
                     paddingHorizontal: ds.spacing(8),
                     paddingVertical: ds.spacing(3),
-                    borderRadius: ds.radius(999),
+                    borderRadius: radius.pill,
                   }}
                 >
-                  <Text style={{ color: colors.gray[700], fontSize: ds.fontSize(11), fontWeight: '700' }}>
+                  <Text style={{ color: colors.gray[700], fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold }}>
                     Notifications OFF
                   </Text>
                 </View>
@@ -384,7 +381,7 @@ export default function EmployeeRemindersScreen() {
             </View>
 
             {row.activeReminder && (
-              <Text className="text-orange-700" style={{ fontSize: ds.fontSize(12), marginTop: ds.spacing(6) }}>
+              <Text style={{ color: color.warning, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(6) }}>
                 Active reminder count: {row.activeReminder.reminderCount}
               </Text>
             )}
@@ -392,16 +389,14 @@ export default function EmployeeRemindersScreen() {
 
           <TouchableOpacity
             onPress={() => handleReminderPress(row)}
-            className={isSending ? 'bg-orange-300 items-center justify-center' : 'bg-primary-500 items-center justify-center'}
-            style={{
-              minHeight: Math.max(42, ds.buttonH - ds.spacing(6)),
+            className="items-center justify-center"
+            style={{ backgroundColor: isSending ? color.tint : color.accent, minHeight: Math.max(42, ds.buttonH - ds.spacing(6)),
               minWidth: Math.max(106, ds.buttonPadH * 4),
-              borderRadius: ds.radius(12),
-              paddingHorizontal: ds.spacing(10),
-            }}
+              borderRadius: radius.control,
+              paddingHorizontal: ds.spacing(10) }}
             disabled={isSending}
           >
-            <Text className="text-white font-semibold" style={{ fontSize: ds.fontSize(13) }}>
+            <Text className="font-semibold" style={{ color: color.onAccent, fontSize: ds.fontSize(typeScale.secondary) }}>
               {isSending ? 'Sending...' : actionLabel}
             </Text>
           </TouchableOpacity>
@@ -411,11 +406,11 @@ export default function EmployeeRemindersScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top', 'left', 'right']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }} edges={['top', 'left', 'right']}>
       <ManagerScaleContainer>
         <View
-          className="bg-white border-b border-gray-100 flex-row items-center justify-between"
-          style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
+          className="border-b flex-row items-center justify-between"
+          style={{ backgroundColor: color.card, borderColor: color.hairline, paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
         >
           <View className="flex-row items-center flex-1">
             <TouchableOpacity
@@ -425,10 +420,10 @@ export default function EmployeeRemindersScreen() {
               <Ionicons name="arrow-back" size={ds.icon(20)} color={colors.gray[700]} />
             </TouchableOpacity>
             <View className="flex-1">
-              <Text className="font-bold text-gray-900" style={{ fontSize: ds.fontSize(20) }}>
+              <Text className="font-bold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.title) }}>
                 Employee Reminders
               </Text>
-              <Text className="text-gray-500" style={{ fontSize: ds.fontSize(12), marginTop: ds.spacing(2) }}>
+              <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(2) }}>
                 Send and track reminders by employee
               </Text>
             </View>
@@ -436,7 +431,7 @@ export default function EmployeeRemindersScreen() {
 
           <TouchableOpacity
             onPress={() => setShowMoreMenu(true)}
-            style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.gray[100], alignItems: 'center', justifyContent: 'center' }}
+            style={{ width: 40, height: 40, borderRadius: radius.card, backgroundColor: colors.gray[100], alignItems: 'center', justifyContent: 'center' }}
           >
             <Ionicons name="ellipsis-horizontal" size={18} color={colors.gray[700]} />
           </TouchableOpacity>
@@ -448,21 +443,21 @@ export default function EmployeeRemindersScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary[500]} />}
         >
           <View className="flex-row" style={{ columnGap: ds.spacing(8), marginBottom: ds.spacing(12) }}>
-            <View className="flex-1 bg-white rounded-xl border border-gray-100" style={{ padding: ds.spacing(10) }}>
-              <Text className="text-xs text-gray-500">Pending</Text>
-              <Text className="font-bold text-gray-900" style={{ fontSize: ds.fontSize(22), marginTop: ds.spacing(4) }}>
+            <View className="flex-1 border" style={{ backgroundColor: color.card, borderRadius: radius.control, borderColor: color.hairline, padding: ds.spacing(10) }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>Pending</Text>
+              <Text className="font-bold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.title), marginTop: ds.spacing(4) }}>
                 {stats.pendingReminders}
               </Text>
             </View>
-            <View className="flex-1 bg-white rounded-xl border border-gray-100" style={{ padding: ds.spacing(10) }}>
-              <Text className="text-xs text-gray-500">Overdue</Text>
-              <Text className="font-bold text-gray-900" style={{ fontSize: ds.fontSize(22), marginTop: ds.spacing(4) }}>
+            <View className="flex-1 border" style={{ backgroundColor: color.card, borderRadius: radius.control, borderColor: color.hairline, padding: ds.spacing(10) }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>Overdue</Text>
+              <Text className="font-bold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.title), marginTop: ds.spacing(4) }}>
                 {stats.overdueEmployees}
               </Text>
             </View>
-            <View className="flex-1 bg-white rounded-xl border border-gray-100" style={{ padding: ds.spacing(10) }}>
-              <Text className="text-xs text-gray-500">Notif Off</Text>
-              <Text className="font-bold text-gray-900" style={{ fontSize: ds.fontSize(22), marginTop: ds.spacing(4) }}>
+            <View className="flex-1 border" style={{ backgroundColor: color.card, borderRadius: radius.control, borderColor: color.hairline, padding: ds.spacing(10) }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>Notif Off</Text>
+              <Text className="font-bold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.title), marginTop: ds.spacing(4) }}>
                 {stats.notificationsOff}
               </Text>
             </View>
@@ -470,22 +465,22 @@ export default function EmployeeRemindersScreen() {
 
           <View className="flex-row" style={{ columnGap: ds.spacing(8), marginBottom: ds.spacing(10) }}>
             <TouchableOpacity
-              className="flex-1 bg-white border border-gray-200 rounded-xl flex-row items-center justify-between"
-              style={{ paddingHorizontal: ds.spacing(12), minHeight: Math.max(44, ds.buttonH - ds.spacing(6)) }}
+              className="flex-1 border flex-row items-center justify-between"
+              style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, borderRadius: radius.control, paddingHorizontal: ds.spacing(12), minHeight: Math.max(44, ds.buttonH - ds.spacing(6)) }}
               onPress={() => setShowLocationMenu(true)}
             >
-              <Text className="text-gray-700" numberOfLines={1} style={{ fontSize: ds.fontSize(13), flex: 1 }}>
+              <Text numberOfLines={1} style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), flex: 1 }}>
                 {selectedLocationName}
               </Text>
               <Ionicons name="chevron-down" size={ds.icon(16)} color={colors.gray[500]} />
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="flex-1 bg-white border border-gray-200 rounded-xl flex-row items-center justify-between"
-              style={{ paddingHorizontal: ds.spacing(12), minHeight: Math.max(44, ds.buttonH - ds.spacing(6)) }}
+              className="flex-1 border flex-row items-center justify-between"
+              style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, borderRadius: radius.control, paddingHorizontal: ds.spacing(12), minHeight: Math.max(44, ds.buttonH - ds.spacing(6)) }}
               onPress={() => setShowSortMenu(true)}
             >
-              <Text className="text-gray-700" numberOfLines={1} style={{ fontSize: ds.fontSize(13), flex: 1 }}>
+              <Text numberOfLines={1} style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), flex: 1 }}>
                 {selectedSortLabel}
               </Text>
               <Ionicons name="swap-vertical" size={ds.icon(16)} color={colors.gray[500]} />
@@ -493,12 +488,10 @@ export default function EmployeeRemindersScreen() {
           </View>
 
           <View
-            className="bg-white border border-gray-200 rounded-xl flex-row items-center"
-            style={{
-              paddingHorizontal: ds.spacing(12),
+            className="border flex-row items-center"
+            style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, borderRadius: radius.control, paddingHorizontal: ds.spacing(12),
               minHeight: Math.max(46, ds.buttonH - ds.spacing(4)),
-              marginBottom: ds.spacing(14),
-            }}
+              marginBottom: ds.spacing(14) }}
           >
             <Ionicons name="search" size={ds.icon(18)} color={colors.gray[400]} />
             <TextInput
@@ -509,7 +502,7 @@ export default function EmployeeRemindersScreen() {
               style={{
                 flex: 1,
                 marginLeft: ds.spacing(8),
-                fontSize: ds.fontSize(15),
+                fontSize: ds.fontSize(typeScale.body),
                 color: colors.gray[900],
               }}
             />
@@ -517,13 +510,11 @@ export default function EmployeeRemindersScreen() {
 
           {loadErrorMessage && (
             <View
-              className="bg-amber-50 border border-amber-200 flex-row items-start"
-              style={{
-                borderRadius: ds.radius(12),
+              className="border flex-row items-start"
+              style={{ backgroundColor: color.warningBg, borderColor: color.warning, borderRadius: radius.control,
                 paddingHorizontal: ds.spacing(10),
                 paddingVertical: ds.spacing(9),
-                marginBottom: ds.spacing(12),
-              }}
+                marginBottom: ds.spacing(12) }}
             >
               <Ionicons
                 name="warning-outline"
@@ -532,8 +523,8 @@ export default function EmployeeRemindersScreen() {
                 style={{ marginTop: 1 }}
               />
               <Text
-                className="text-amber-800"
-                style={{ fontSize: ds.fontSize(12), marginLeft: ds.spacing(8), flex: 1 }}
+
+                style={{ color: color.warning, fontSize: ds.fontSize(typeScale.secondary), marginLeft: ds.spacing(8), flex: 1 }}
               >
                 Reminders backend unavailable right now. Showing fallback view.
               </Text>
@@ -542,17 +533,17 @@ export default function EmployeeRemindersScreen() {
 
           {isLoading ? (
             <View className="items-center" style={{ paddingVertical: ds.spacing(40) }}>
-              <Text className="text-gray-500" style={{ fontSize: ds.fontSize(14) }}>
+              <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.body) }}>
                 Loading employees...
               </Text>
             </View>
           ) : filteredEmployees.length === 0 ? (
-            <View className="bg-white rounded-2xl border border-gray-100 items-center" style={{ paddingVertical: ds.spacing(36), paddingHorizontal: ds.spacing(14) }}>
+            <View className="border items-center" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline, paddingVertical: ds.spacing(36), paddingHorizontal: ds.spacing(14) }}>
               <Ionicons name="people-outline" size={ds.icon(34)} color={colors.gray[300]} />
-              <Text className="text-gray-700 font-semibold" style={{ fontSize: ds.fontSize(16), marginTop: ds.spacing(8) }}>
+              <Text className="font-semibold" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.body), marginTop: ds.spacing(8) }}>
                 {loadErrorMessage ? 'Reminder service unavailable' : 'No employees found'}
               </Text>
-              <Text className="text-gray-500 text-center" style={{ fontSize: ds.fontSize(13), marginTop: ds.spacing(4) }}>
+              <Text className="text-center" style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(4) }}>
                 {loadErrorMessage
                   ? 'Deploy the reminders Edge Functions and migration, then pull to refresh.'
                   : 'Try changing filters or search terms.'}
@@ -563,117 +554,95 @@ export default function EmployeeRemindersScreen() {
           )}
         </ScrollView>
 
-        <Modal transparent animationType="fade" visible={showLocationMenu} onRequestClose={() => setShowLocationMenu(false)}>
+        <Sheet
+          visible={showLocationMenu}
+          title="Filter by Location"
+          onClose={() => setShowLocationMenu(false)}
+        >
           <TouchableOpacity
-            activeOpacity={1}
-            onPress={() => setShowLocationMenu(false)}
-            style={{ flex: 1, backgroundColor: colors.scrim, justifyContent: 'flex-end' }}
+            style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
+            onPress={() => {
+              setSelectedLocationId(null);
+              setShowLocationMenu(false);
+            }}
           >
-            <View className="bg-white" style={{ borderTopLeftRadius: ds.radius(20), borderTopRightRadius: ds.radius(20), paddingBottom: ds.spacing(20) }}>
-              <Text className="font-semibold text-gray-900" style={{ fontSize: ds.fontSize(16), padding: ds.spacing(16) }}>
-                Filter by Location
-              </Text>
-              <TouchableOpacity
-                style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
-                onPress={() => {
-                  setSelectedLocationId(null);
-                  setShowLocationMenu(false);
-                }}
-              >
-                <Text className="text-gray-900" style={{ fontSize: ds.fontSize(15) }}>All Locations</Text>
-              </TouchableOpacity>
-              {locations.map((entry) => (
-                <TouchableOpacity
-                  key={entry.id}
-                  style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
-                  onPress={() => {
-                    setSelectedLocationId(entry.id);
-                    setShowLocationMenu(false);
-                  }}
-                >
-                  <Text className="text-gray-900" style={{ fontSize: ds.fontSize(15) }}>{entry.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <Text style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>All Locations</Text>
           </TouchableOpacity>
-        </Modal>
+          {locations.map((entry) => (
+            <TouchableOpacity
+              key={entry.id}
+              style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
+              onPress={() => {
+                setSelectedLocationId(entry.id);
+                setShowLocationMenu(false);
+              }}
+            >
+              <Text style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>{entry.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </Sheet>
 
-        <Modal transparent animationType="fade" visible={showSortMenu} onRequestClose={() => setShowSortMenu(false)}>
+        <Sheet
+          visible={showSortMenu}
+          title="Sort Employees"
+          onClose={() => setShowSortMenu(false)}
+        >
+          {SORT_OPTIONS.map((option) => (
+            <TouchableOpacity
+              key={option.value}
+              style={{
+                paddingHorizontal: ds.spacing(16),
+                paddingVertical: ds.spacing(12),
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+              onPress={() => {
+                setSortMode(option.value);
+                setShowSortMenu(false);
+              }}
+            >
+              <Text style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>{option.label}</Text>
+              {sortMode === option.value && <Ionicons name="checkmark" size={ds.icon(18)} color={colors.primary[500]} />}
+            </TouchableOpacity>
+          ))}
+        </Sheet>
+
+        <Sheet
+          visible={showMoreMenu}
+          title="More"
+          onClose={() => setShowMoreMenu(false)}
+        >
           <TouchableOpacity
-            activeOpacity={1}
-            onPress={() => setShowSortMenu(false)}
-            style={{ flex: 1, backgroundColor: colors.scrim, justifyContent: 'flex-end' }}
+            style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
+            onPress={() => {
+              setShowMoreMenu(false);
+              router.push('/(manager)/employee-reminders-recurring');
+            }}
           >
-            <View className="bg-white" style={{ borderTopLeftRadius: ds.radius(20), borderTopRightRadius: ds.radius(20), paddingBottom: ds.spacing(20) }}>
-              <Text className="font-semibold text-gray-900" style={{ fontSize: ds.fontSize(16), padding: ds.spacing(16) }}>
-                Sort Employees
-              </Text>
-              {SORT_OPTIONS.map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={{
-                    paddingHorizontal: ds.spacing(16),
-                    paddingVertical: ds.spacing(12),
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                  onPress={() => {
-                    setSortMode(option.value);
-                    setShowSortMenu(false);
-                  }}
-                >
-                  <Text className="text-gray-900" style={{ fontSize: ds.fontSize(15) }}>{option.label}</Text>
-                  {sortMode === option.value && <Ionicons name="checkmark" size={ds.icon(18)} color={colors.primary[500]} />}
-                </TouchableOpacity>
-              ))}
-            </View>
+            <Text style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>Recurring Reminders</Text>
           </TouchableOpacity>
-        </Modal>
 
-        <Modal transparent animationType="fade" visible={showMoreMenu} onRequestClose={() => setShowMoreMenu(false)}>
           <TouchableOpacity
-            activeOpacity={1}
-            onPress={() => setShowMoreMenu(false)}
-            style={{ flex: 1, backgroundColor: colors.scrim, justifyContent: 'flex-end' }}
+            style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
+            onPress={() => {
+              setShowMoreMenu(false);
+              router.push('/(manager)/employee-reminders-settings');
+            }}
           >
-            <View className="bg-white" style={{ borderTopLeftRadius: ds.radius(20), borderTopRightRadius: ds.radius(20), paddingBottom: ds.spacing(20) }}>
-              <Text className="font-semibold text-gray-900" style={{ fontSize: ds.fontSize(16), padding: ds.spacing(16) }}>
-                More
-              </Text>
-
-              <TouchableOpacity
-                style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
-                onPress={() => {
-                  setShowMoreMenu(false);
-                  router.push('/(manager)/employee-reminders-recurring');
-                }}
-              >
-                <Text className="text-gray-900" style={{ fontSize: ds.fontSize(15) }}>Recurring Reminders</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
-                onPress={() => {
-                  setShowMoreMenu(false);
-                  router.push('/(manager)/employee-reminders-settings');
-                }}
-              >
-                <Text className="text-gray-900" style={{ fontSize: ds.fontSize(15) }}>Reminder Settings</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
-                onPress={() => {
-                  setShowMoreMenu(false);
-                  router.push('/(manager)/employee-reminders-delivery');
-                }}
-              >
-                <Text className="text-gray-900" style={{ fontSize: ds.fontSize(15) }}>Notification Delivery Status</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>Reminder Settings</Text>
           </TouchableOpacity>
-        </Modal>
+
+          <TouchableOpacity
+            style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
+            onPress={() => {
+              setShowMoreMenu(false);
+              router.push('/(manager)/employee-reminders-delivery');
+            }}
+          >
+            <Text style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>Notification Delivery Status</Text>
+          </TouchableOpacity>
+        </Sheet>
       </ManagerScaleContainer>
     </SafeAreaView>
   );

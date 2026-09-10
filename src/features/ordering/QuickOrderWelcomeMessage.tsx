@@ -10,6 +10,7 @@ import {
   QUICK_ORDER_WELCOME_BODY_PARAGRAPHS,
   QUICK_ORDER_WELCOME_TITLE,
 } from "./quickOrderWelcome";
+import { radius, typeScale, weight } from '@/theme/tokens';
 
 type QuickOrderWelcomeMessageProps = {
   onLayout?: (event: LayoutChangeEvent) => void;
@@ -28,13 +29,13 @@ export const QuickOrderWelcomeMessageCard = React.memo(
         style={[
           styles.card,
           {
-            borderRadius: ds.radius(16),
+            borderRadius: radius.card,
             padding: ds.spacing(14),
             marginTop: ds.spacing(10),
           },
         ]}
       >
-        <Text style={[styles.title, { fontSize: ds.fontSize(16) }]}>
+        <Text style={[styles.title, { fontSize: ds.fontSize(typeScale.body) }]}>
           {QUICK_ORDER_WELCOME_TITLE}
         </Text>
 
@@ -42,7 +43,7 @@ export const QuickOrderWelcomeMessageCard = React.memo(
           {QUICK_ORDER_WELCOME_BODY_PARAGRAPHS.map((paragraph) => (
             <Text
               key={paragraph}
-              style={[styles.body, { fontSize: ds.fontSize(15) }]}
+              style={[styles.body, { fontSize: ds.fontSize(typeScale.body) }]}
             >
               {paragraph}
             </Text>
@@ -68,12 +69,12 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.textPrimary,
-    fontWeight: "800",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   body: {
     color: colors.textPrimary,
-    fontWeight: "500",
+    fontWeight: weight.semibold,
     letterSpacing: 0,
     lineHeight: 22,
   },
