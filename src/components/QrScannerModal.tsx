@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Modal,
   View,
   Text,
   TouchableOpacity,
@@ -13,6 +12,7 @@ import { colors } from '@/constants';
 import { useStockStore } from '@/store';
 import { radius, typeScale, weight } from '@/theme/tokens';
 import { Loading } from '@/components/ui/Loading';
+import { Sheet } from '@/components/ui/Sheet';
 
 interface QrScannerModalProps {
   visible: boolean;
@@ -113,35 +113,24 @@ export function QrScannerModal({ visible, onClose, onScan }: QrScannerModalProps
   }, [permission, hasPermission, canAskAgain, requestPermission, handleOpenSettings]);
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Scan QR Code</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={22} color={colors.gray[600]} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.cameraContainer}>
-            {statusContent ? (
-              statusContent
-            ) : (
-              <CameraView
-                style={StyleSheet.absoluteFill}
-                barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-                onBarcodeScanned={handleBarcodeScanned}
-              />
-            )}
-            <View style={styles.frame} />
-          </View>
-
-          <Text style={styles.instruction}>Scan the QR code at any station.</Text>
-
-          {error && <Text style={styles.errorText}>{error}</Text>}
-        </View>
+    <Sheet visible={visible} title="Scan QR Code" onClose={onClose}>
+      <View style={styles.cameraContainer}>
+        {statusContent ? (
+          statusContent
+        ) : (
+          <CameraView
+            style={StyleSheet.absoluteFill}
+            barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+            onBarcodeScanned={handleBarcodeScanned}
+          />
+        )}
+        <View style={styles.frame} />
       </View>
-    </Modal>
+
+      <Text style={styles.instruction}>Scan the QR code at any station.</Text>
+
+      {error && <Text style={styles.errorText}>{error}</Text>}
+    </Sheet>
   );
 }
 
