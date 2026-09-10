@@ -24,7 +24,7 @@ import { color, radius, size, space, typeScale, weight } from '@/theme/tokens';
 
 /**
  * Profile — the same grouped-card language as the rest of the settings stack:
- * SettingsScreenLayout supplies the shared StackScreenHeader (and its back
+ * SettingsScreenLayout supplies the shared ScreenHeader (and its back
  * control), then an identity card followed by labelled SettingsGroup sections
  * of SettingsRows. Editing behaviour is unchanged from the previous layout.
  */
