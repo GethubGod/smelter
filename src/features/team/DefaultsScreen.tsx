@@ -1,14 +1,15 @@
 // New employee defaults: the org-wide preset every new invite starts with.
-// Applies to invites only — existing team members keep what they have.
+// Applies to invites only. Existing team members keep what they have.
 
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router';
-import { StackScreenHeader } from '@/components';
+import { router, useFocusEffect } from 'expo-router';
 import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
+import { Card, EmptyState, Loading, ScreenHeader } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { tipsTheme } from '@/theme/design';
+import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
+import { color, space, typeScale, weight } from '@/theme/tokens';
 import {
   getEmployeeInviteDefaults,
   setEmployeeInviteDefaults,
@@ -25,6 +26,7 @@ const ROWS: { key: string; label: string }[] = [
 
 export default function DefaultsScreen() {
   const ds = useScaledStyles();
+  const { backTo } = useSettingsNavigationContext();
   const [defaults, setDefaults] = useState<EmployeeInviteDefaults | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -43,6 +45,14 @@ export default function DefaultsScreen() {
       void load();
     }, [load]),
   );
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace(backTo);
+  };
 
   const handleToggle = async (key: string, value: boolean) => {
     if (!defaults || saving) return;
@@ -64,39 +74,40 @@ export default function DefaultsScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: tipsTheme.page }} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.page }} edges={['left', 'right']}>
       <ManagerScaleContainer>
-        <View style={{ backgroundColor: tipsTheme.page }}>
-          <StackScreenHeader
-            title="New employee defaults"
-            subtitle="Every new invite starts with these. You can still change any person later."
-          />
-        </View>
+        <ScreenHeader
+          mode="pushed"
+          title="New employee defaults"
+          subtitle="Every new invite starts with these. You can still change any person later."
+          onBack={handleBack}
+        />
 
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{
-            paddingHorizontal: ds.spacing(20),
-            paddingTop: ds.spacing(8),
-            paddingBottom: ds.spacing(28),
+            paddingHorizontal: ds.spacing(space[4]),
+            paddingTop: ds.spacing(space[2]),
+            paddingBottom: ds.spacing(space[8]),
+            gap: ds.spacing(space[3]),
           }}
         >
           {error ? (
-            <View style={{ backgroundColor: tipsTheme.tint, borderRadius: 13, padding: ds.spacing(12) }}>
-              <Text style={{ fontSize: ds.fontSize(12.5), color: tipsTheme.alert }}>{error}</Text>
-              <TouchableOpacity onPress={() => void load()} style={{ marginTop: ds.spacing(6) }}>
-                <Text style={{ fontSize: ds.fontSize(12.5), fontWeight: '700', color: tipsTheme.alert }}>
-                  Retry
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <EmptyState
+              icon="alert-circle-outline"
+              tone="alert"
+              title="Unable to load the defaults"
+              body={error}
+              action={{ label: 'Retry', onPress: () => void load() }}
+              compact
+            />
           ) : defaults === null ? (
-            <View style={{ paddingVertical: ds.spacing(30), alignItems: 'center' }}>
-              <ActivityIndicator size="small" color={tipsTheme.accent} />
+            <View style={{ paddingVertical: ds.spacing(space[8]) }}>
+              <Loading size="inline" label="Loading the defaults" style={{ alignItems: 'center' }} />
             </View>
           ) : (
             <>
-              <TeamCard style={{ paddingHorizontal: ds.spacing(13), marginBottom: ds.spacing(9) }}>
+              <TeamCard style={{ paddingHorizontal: ds.spacing(space[3] + 2) }}>
                 {ROWS.map((row, index) => (
                   <ModuleToggleRow
                     key={row.key}
@@ -109,12 +120,14 @@ export default function DefaultsScreen() {
                 ))}
               </TeamCard>
 
-              <View style={{ backgroundColor: tipsTheme.tint, borderRadius: 13, padding: ds.spacing(12) }}>
-                <Text style={{ fontSize: ds.fontSize(11.5), color: tipsTheme.ink, lineHeight: 17 }}>
-                  <Text style={{ fontWeight: '700' }}>Applies to invites only. </Text>
+              <Card>
+                <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
+                  <Text style={{ fontWeight: weight.semibold, color: color.ink }}>
+                    Applies to invites only.{' '}
+                  </Text>
                   Current team members keep what they have.
                 </Text>
-              </View>
+              </Card>
             </>
           )}
         </ScrollView>
