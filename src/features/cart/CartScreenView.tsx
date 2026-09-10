@@ -27,7 +27,7 @@ import {
   ItemActionSheet,
 } from '@/components';
 import type { ItemActionSheetSection } from '@/components';
-import { getTabBarClearance, Loading, Sheet } from '@/components/ui';
+import { getTabBarClearance, Loading, Segment, Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { completePendingRemindersForUser } from '@/services/notificationService';
 import type { OrderingMode } from '@/features/ordering/types';
@@ -43,7 +43,6 @@ import { EmptyCartReorderState } from './EmptyCartReorderState';
 import { OrderSubmissionConfirmationOverlay } from './OrderSubmissionConfirmationOverlay';
 import { triggerConfirmationHaptic } from '@/lib/haptics';
 import { color, radius, space, typeScale, weight } from '@/theme/tokens';
-import { segmentedControlColors } from '@/theme/segmentedControls';
 import {
   getInventoryUnitLabel,
   getInventoryUnitSummary,
@@ -1060,61 +1059,16 @@ export function CartScreenView({
           <View style={{ paddingBottom: ds.spacing(10), paddingHorizontal: ds.spacing(4) }}>
             {/* Mode selector row + action buttons */}
             <View className="flex-row items-center justify-between" style={{ marginBottom: ds.spacing(8) }}>
-              <View
-                className="flex-row"
-                style={{
-                  backgroundColor: segmentedControlColors.inactiveBackground,
-                  borderRadius: radius.control,
-                  overflow: 'hidden',
-                }}
-              >
-                <TouchableOpacity
-                  onPress={() => applyItemModeChange(locationId, item, 'quantity')}
-                  style={{
-                    paddingHorizontal: ds.spacing(14),
-                    paddingVertical: ds.spacing(7),
-                    backgroundColor: !isRemainingMode
-                      ? segmentedControlColors.activeBackground
-                      : 'transparent',
-                  }}
-                  activeOpacity={0.75}
-                >
-                  <Text
-                    style={{
-                      fontSize: ds.fontSize(typeScale.body),
-                      fontWeight: weight.semibold,
-                      color: !isRemainingMode
-                        ? segmentedControlColors.activeText
-                        : segmentedControlColors.inactiveText,
-                    }}
-                  >
-                    Order Qty
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => applyItemModeChange(locationId, item, 'remaining')}
-                  style={{
-                    paddingHorizontal: ds.spacing(14),
-                    paddingVertical: ds.spacing(7),
-                    backgroundColor: isRemainingMode
-                      ? segmentedControlColors.activeBackground
-                      : 'transparent',
-                  }}
-                  activeOpacity={0.75}
-                >
-                  <Text
-                    style={{
-                      fontSize: ds.fontSize(typeScale.body),
-                      fontWeight: weight.semibold,
-                      color: isRemainingMode
-                        ? segmentedControlColors.activeText
-                        : segmentedControlColors.inactiveText,
-                    }}
-                  >
-                    Remaining
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              <Segment
+                accessibilityLabel="How this line is counted"
+                options={[
+                  { value: 'quantity', label: 'Order qty' },
+                  { value: 'remaining', label: 'Remaining' },
+                ]}
+                value={isRemainingMode ? 'remaining' : 'quantity'}
+                onChange={(next) => applyItemModeChange(locationId, item, next)}
+                style={{ flex: 1, marginRight: ds.spacing(space[2]) }}
+              />
 
               {/* Action buttons — menu + trash */}
               <View className="flex-row items-center">
@@ -1155,8 +1109,8 @@ export function CartScreenView({
               <View
                 className="flex-row"
                 style={{
-                  backgroundColor: segmentedControlColors.inactiveBackground,
-                  borderRadius: radius.control,
+                  backgroundColor: color.well,
+                  borderRadius: radius.pill,
                   overflow: 'hidden',
                 }}
               >
@@ -1166,7 +1120,7 @@ export function CartScreenView({
                     paddingHorizontal: ds.spacing(14),
                     paddingVertical: ds.spacing(7),
                     backgroundColor: resolvedUnitType === 'pack'
-                      ? segmentedControlColors.activeBackground
+                      ? color.accent
                       : packEnabled
                         ? 'transparent'
                         : color.well,
@@ -1180,9 +1134,9 @@ export function CartScreenView({
                       fontSize: ds.fontSize(typeScale.body),
                       fontWeight: weight.semibold,
                       color: resolvedUnitType === 'pack'
-                        ? segmentedControlColors.activeText
+                        ? color.onAccent
                         : packEnabled
-                          ? segmentedControlColors.inactiveText
+                          ? color.ink2
                           : color.ink3,
                     }}
                   >
@@ -1195,7 +1149,7 @@ export function CartScreenView({
                     paddingHorizontal: ds.spacing(14),
                     paddingVertical: ds.spacing(7),
                     backgroundColor: resolvedUnitType === 'base'
-                      ? segmentedControlColors.activeBackground
+                      ? color.accent
                       : baseEnabled
                         ? 'transparent'
                         : color.well,
@@ -1209,9 +1163,9 @@ export function CartScreenView({
                       fontSize: ds.fontSize(typeScale.body),
                       fontWeight: weight.semibold,
                       color: resolvedUnitType === 'base'
-                        ? segmentedControlColors.activeText
+                        ? color.onAccent
                         : baseEnabled
-                          ? segmentedControlColors.inactiveText
+                          ? color.ink2
                           : color.ink3,
                     }}
                   >

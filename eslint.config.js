@@ -144,10 +144,6 @@ const DRIFT_ALLOWLIST = [
   'src/features/fulfillment/components/SupplierPickerBottomSheet.tsx',
   // src/features/fulfillment/sendAll (1 file, 25)
   'src/features/fulfillment/sendAll/SendAllScreen.tsx',
-  // src/features/home (1 file, 23)
-  'src/features/home/HomeScreenView.tsx',
-  // src/features/home/components (1 file, 7)
-  'src/features/home/components/HomeScreenPrimitives.tsx',
   // src/features/ordering (17 files, 501)
   'src/features/ordering/ComposerSuggestionPills.tsx',
   'src/features/ordering/NeedsInputActionButtons.tsx',

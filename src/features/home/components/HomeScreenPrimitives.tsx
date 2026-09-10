@@ -9,20 +9,19 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  GlassSurface,
-  LoadingIndicator,
-} from '@/components';
+import { GlassSurface } from '@/components';
 import {
   getFloatingPillClearance,
   getTabBarBottomInset,
 } from '@/components/navigation';
+import { Loading } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import {
   glassColors,
   glassRadii,
   glassSpacing,
 } from '@/theme/design';
+import { typeScale } from '@/theme/tokens';
 
 interface HomeScreenScrollProps {
   children: ReactNode;
@@ -118,7 +117,7 @@ export const HomeSearchCard = memo(function HomeSearchCard({
           <Text
             style={{
               marginLeft: ds.spacing(12),
-              fontSize: ds.fontSize(16),
+              fontSize: ds.fontSize(typeScale.body),
               color: glassColors.textMuted,
             }}
             numberOfLines={1}
@@ -154,7 +153,7 @@ export const HomeModuleCard = memo(function HomeModuleCard({
         <View className="flex-row items-center justify-between">
           <Text
             style={{
-              fontSize: ds.fontSize(15),
+              fontSize: ds.fontSize(typeScale.body),
               fontWeight: '700',
               color: glassColors.textPrimary,
             }}
@@ -165,7 +164,7 @@ export const HomeModuleCard = memo(function HomeModuleCard({
             <TouchableOpacity onPress={onPressAction} hitSlop={8}>
               <Text
                 style={{
-                  fontSize: ds.fontSize(13),
+                  fontSize: ds.fontSize(typeScale.secondary),
                   fontWeight: '700',
                   color: glassColors.accent,
                 }}
@@ -219,7 +218,7 @@ export const HomeModuleState = memo(function HomeModuleState({
       <Text
         style={{
           marginTop: ds.spacing(12),
-          fontSize: ds.fontSize(15),
+          fontSize: ds.fontSize(typeScale.body),
           fontWeight: '600',
           color: glassColors.textPrimary,
         }}
@@ -229,9 +228,9 @@ export const HomeModuleState = memo(function HomeModuleState({
       <Text
         style={{
           marginTop: ds.spacing(6),
-          fontSize: ds.fontSize(12),
+          fontSize: ds.fontSize(typeScale.secondary),
           color: glassColors.textSecondary,
-          lineHeight: ds.fontSize(18),
+          lineHeight: ds.fontSize(typeScale.title),
         }}
       >
         {message}
@@ -253,7 +252,7 @@ export const HomeModuleState = memo(function HomeModuleState({
         >
           <Text
             style={{
-              fontSize: ds.fontSize(13),
+              fontSize: ds.fontSize(typeScale.secondary),
               fontWeight: '700',
               color: glassColors.textOnPrimary,
             }}
@@ -281,7 +280,7 @@ export const HomeModuleLoading = memo(function HomeModuleLoading({
         justifyContent: 'center',
       }}
     >
-      <LoadingIndicator showText text={text} />
+      <Loading size="inline" label={text} />
     </View>
   );
 });
