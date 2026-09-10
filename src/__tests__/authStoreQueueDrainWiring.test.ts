@@ -8,7 +8,9 @@ const mockAsyncStorage = {
   getItem: jest.fn(async () => null),
   setItem: jest.fn(async () => undefined),
   removeItem: jest.fn(async () => undefined),
-  multiRemove: jest.fn(async () => undefined),
+  multiRemove: jest.fn(async (keys: readonly string[]) => {
+    void keys;
+  }),
 };
 
 const signInWithPasswordMock = jest.fn();
@@ -224,6 +226,32 @@ describe('authStore notifies the stock-check queue gate', () => {
     expect(notifyAuthSessionRestoredMock).not.toHaveBeenCalled();
     expect(notifyAuthSessionClearedMock).toHaveBeenCalled();
   });
+
+  test('a relaunch into a suspended profile keeps the session but never arms the drain', async () => {
+    // Issue #62 + Sol review finding 1. The suspended restore keeps the
+    // session so the guards can route to /suspended, but the stock RPCs are
+    // SECURITY DEFINER and only check for an authenticated owner. Arming the
+    // drain here would commit counts an employee queued offline before the
+    // suspension landed.
+    getSessionMock.mockResolvedValue({ data: { session: sessionFor('employee-1') } } as never);
+    profileMaybeSingleMock.mockResolvedValue({
+      data: {
+        ...employeeProfileRow('employee-1'),
+        is_suspended: true,
+        suspended_at: '2026-09-09T00:00:00.000Z',
+        suspended_by: 'manager-1',
+      },
+      error: null,
+    });
+    userMaybeSingleMock.mockResolvedValue({ data: null, error: null });
+
+    await useAuthStore.getState().initialize();
+
+    expect(useAuthStore.getState().session).not.toBeNull();
+    expect(useAuthStore.getState().profile?.is_suspended).toBe(true);
+    expect(notifyAuthSessionRestoredMock).not.toHaveBeenCalled();
+  });
+
   test('a sign-out during hydration is not reported as a restored session', async () => {
     signInWithPasswordMock.mockResolvedValue({
       data: { session: sessionFor('employee-1') },
@@ -283,5 +311,23 @@ describe('authStore notifies the stock-check queue gate', () => {
     expect(useAuthStore.getState().session).toBeNull();
     expect(useAuthStore.getState().user).toBeNull();
     expect(clearSupabaseStoredSessionMock).toHaveBeenCalled();
+  });
+
+  test('sign out still removes the legacy draft key left behind by older installs', async () => {
+    // Sol review finding 4. draftStore is gone, but a device that ran an
+    // earlier build still has the previous user's draft under this key, and
+    // nothing else clears it now that the store is deleted.
+    useAuthStore.setState({
+      session: sessionFor('employee-1') as never,
+      user: { id: 'employee-1', email: 'employee-1@example.com' } as never,
+      profile: employeeProfileRow('employee-1') as never,
+    });
+
+    await useAuthStore.getState().signOut();
+
+    const removedKeys = mockAsyncStorage.multiRemove.mock.calls.flatMap(
+      ([keys]) => keys as readonly string[]
+    );
+    expect(removedKeys).toContain('draft-storage');
   });
 });

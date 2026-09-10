@@ -54,11 +54,12 @@ function ThemeManager() {
 }
 
 export default function RootLayout() {
-  const { initialize, isInitialized, session } = useAuthStore(
+  const { initialize, isInitialized, session, profile } = useAuthStore(
     useShallow((state) => ({
       initialize: state.initialize,
       isInitialized: state.isInitialized,
       session: state.session,
+      profile: state.profile,
     })),
   );
   const theme = useDisplayStore((state) => state.theme);
@@ -70,9 +71,16 @@ export default function RootLayout() {
     // 5c push reliability: renew the device push token registration when the
     // app foregrounds. Fire-and-forget — must never block UI or surface errors.
     const refreshPushTokenInBackground = () => {
-      const { session: currentSession, isLoading: authIsLoading } = useAuthStore.getState();
+      const {
+        session: currentSession,
+        profile: currentProfile,
+        isLoading: authIsLoading,
+      } = useAuthStore.getState();
       const userId = currentSession?.user?.id;
       if (!userId || authIsLoading) return;
+      // A suspended account keeps its session (issue #62) but must not keep a
+      // live push registration.
+      if (currentProfile?.is_suspended) return;
       refreshCurrentDevicePushTokenIfStale(userId).catch((error) => {
         console.warn("[push] Stale token refresh failed", error);
       });
@@ -166,8 +174,12 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 
-  // Only enable subscriptions when a live auth session exists.
-  if (session) {
+  // Only enable subscriptions when a live auth session exists and the account
+  // is not suspended. A suspended relaunch keeps its session so the guards can
+  // route to /suspended and so the profile subscription in the auth store sees
+  // a reinstatement, but it must not refresh orders or inventory or raise
+  // order notifications.
+  if (session && !profile?.is_suspended) {
     return (
       <RealtimeSubscriptionProvider>{content}</RealtimeSubscriptionProvider>
     );

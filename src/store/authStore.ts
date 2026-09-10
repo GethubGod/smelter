@@ -501,6 +501,12 @@ interface AuthState {
 }
 
 const USER_SCOPED_STORAGE_KEYS = [
+  // Migration cleanup (issue #61). draftStore was deleted, so nothing writes
+  // this key any more, but installs that ran an older build still have the
+  // previous user's draft on disk. Keep removing it on sign-out until those
+  // devices have turned over; dropping it here would strand draft contents on
+  // a shared device.
+  'draft-storage',
   'order-storage',
   'inventory-storage',
   'stock-storage',
@@ -1223,7 +1229,19 @@ export const useAuthStore = create<AuthState>()(
           activeSessionUserId === nextUserId &&
           get().session?.user?.id === nextUserId;
 
-        if (sessionStillCurrent) {
+        // A suspended session survives the restore (issue #62) so the guards
+        // can route to /suspended and a reinstatement is picked up live. It is
+        // still not a session that may write. The stock-check RPCs are
+        // SECURITY DEFINER and check only for an authenticated owner, not
+        // profiles.is_suspended, so an armed drain would commit counts queued
+        // before the suspension. Do not arm it.
+        // NEEDS-DAVID: rejecting suspended accounts inside the RPCs is a
+        // migration and is tracked separately.
+        const sessionIsSuspended = Boolean(
+          (profile ?? (get().profile?.id === nextUserId ? get().profile : null))?.is_suspended
+        );
+
+        if (sessionStillCurrent && !sessionIsSuspended) {
           notifyAuthSessionRestored(nextUserId);
         }
 
