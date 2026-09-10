@@ -17,7 +17,10 @@
  *  - the drain fires once both the queue is in memory and the auth store has
  *    reported a restored session, whichever arrives last;
  *  - it fires once per session, so later token refreshes do not re-drain;
- *  - signing out re-arms it for the next user.
+ *  - signing out re-arms it for the next user;
+ *  - the restored session's user id is held here so the stock-check store can
+ *    stamp queued writes with their owner and refuse to send one user's count
+ *    under another user's JWT.
  */
 
 type DrainFn = () => void;
@@ -26,6 +29,7 @@ let drain: DrainFn | null = null;
 let queueRehydrated = false;
 let authSessionRestored = false;
 let drainedForCurrentSession = false;
+let sessionUserId: string | null = null;
 
 function maybeDrain(): void {
   if (!drain) return;
@@ -52,18 +56,44 @@ export function notifyStockQueueRehydrated(): void {
 }
 
 /**
- * The auth store has a usable session: the Supabase client will send a JWT,
- * so the stock-check RPCs can resolve `auth.uid()`.
+ * The auth store has a usable session for `userId`: the Supabase client will
+ * send that user's JWT, so the stock-check RPCs can resolve `auth.uid()`.
+ *
+ * A different user id than the one currently held means an account switch
+ * that never passed through `notifyAuthSessionCleared` (fast user switching,
+ * or a session adopted from a deep link). That re-arms the launch drain so
+ * the arriving account still gets one, and re-points ownership so the
+ * departing account's queued writes are no longer eligible to send.
  */
-export function notifyAuthSessionRestored(): void {
+export function notifyAuthSessionRestored(userId: string): void {
+  if (!userId) return;
+  if (sessionUserId !== null && sessionUserId !== userId) {
+    drainedForCurrentSession = false;
+  }
+  sessionUserId = userId;
   authSessionRestored = true;
   maybeDrain();
 }
 
-/** The user signed out (or was signed out). Re-arm for the next session. */
+/**
+ * The user signed out, switched accounts, or deleted the account. Re-arm for
+ * the next session and drop the owner: with no owner, the stock-check store
+ * holds the queue instead of sending it under whatever session arrives next.
+ */
 export function notifyAuthSessionCleared(): void {
   authSessionRestored = false;
   drainedForCurrentSession = false;
+  sessionUserId = null;
+}
+
+/**
+ * The user id the current session belongs to, or null when no session has
+ * been reported (cold start before auth restore, or signed out). The
+ * stock-check store stamps queued writes with it and drains only the writes
+ * that match it.
+ */
+export function getStockQueueOwnerId(): string | null {
+  return sessionUserId;
 }
 
 /**
@@ -75,4 +105,5 @@ export function __resetStockQueueDrainGate(): void {
   queueRehydrated = false;
   authSessionRestored = false;
   drainedForCurrentSession = false;
+  sessionUserId = null;
 }
