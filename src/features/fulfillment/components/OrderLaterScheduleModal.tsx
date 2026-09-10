@@ -8,12 +8,11 @@ import {
 } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, hairline, radii } from '@/theme/design';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { BottomSheetShell } from '@/components/BottomSheetShell';
+import { Button } from '@/components/ui/Button';
+import { Sheet } from '@/components/ui/Sheet';
 import { typeScale, weight } from '@/theme/tokens';
-import { Loading } from '@/components/ui/Loading';
 
 type SchedulePreset = 'later_today' | 'tomorrow' | 'pick_datetime';
 type PickerMode = 'later_today_time' | 'tomorrow_time' | 'custom_date' | 'custom_time' | null;
@@ -78,7 +77,6 @@ export function OrderLaterScheduleModal({
   onConfirm,
 }: OrderLaterScheduleModalProps) {
   const ds = useScaledStyles();
-  const insets = useSafeAreaInsets();
   const now = useMemo(() => new Date(), []);
   const parsedInitial = useMemo(() => {
     if (typeof initialScheduledAt === 'string') {
@@ -299,19 +297,20 @@ export function OrderLaterScheduleModal({
   };
 
   return (
-    <BottomSheetShell
+    <Sheet
       visible={visible}
+      title={title}
       onClose={onClose}
-      bottomPadding={Math.max(ds.spacing(10), insets.bottom + ds.spacing(8))}
+      primary={{
+        label: submitting ? 'Saving...' : confirmLabel,
+        onPress: submit,
+        loading: submitting,
+        disabled: submitting,
+      }}
     >
-      <View style={{ paddingHorizontal: ds.spacing(6), paddingBottom: ds.spacing(10) }}>
-        <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.bold, color: colors.textPrimary }}>
-          {title}
-        </Text>
-        <Text style={{ fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(4), color: colors.textSecondary }}>
-          {subtitle}
-        </Text>
-      </View>
+      <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: colors.textSecondary }}>
+        {subtitle}
+      </Text>
 
       <ScrollView
         style={{ maxHeight: ds.spacing(420) }}
@@ -418,56 +417,7 @@ export function OrderLaterScheduleModal({
         {renderPicker()}
       </ScrollView>
 
-      <View style={{ paddingHorizontal: ds.spacing(6), paddingTop: ds.spacing(10) }}>
-        <View style={{ flexDirection: 'row' }}>
-          <TouchableOpacity
-            onPress={onClose}
-            disabled={submitting}
-            style={{
-              flex: 1,
-              borderRadius: radii.submitButton,
-              borderWidth: hairline,
-              borderColor: colors.glassBorder,
-              backgroundColor: colors.white,
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: ds.buttonH,
-              marginRight: ds.spacing(8),
-            }}
-            activeOpacity={0.8}
-          >
-            <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.semibold, color: colors.textPrimary }}>
-              Cancel
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={submit}
-            disabled={submitting}
-            style={{
-              flex: 1,
-              borderRadius: radii.submitButton,
-              backgroundColor: submitting ? colors.primaryLight : colors.primary,
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: ds.buttonH,
-            }}
-            activeOpacity={0.8}
-          >
-            {submitting ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Loading size="inline" color={colors.white} />
-                <Text style={{ fontSize: ds.fontSize(typeScale.title), marginLeft: ds.spacing(8), fontWeight: weight.semibold, color: colors.white }}>
-                  Saving...
-                </Text>
-              </View>
-            ) : (
-              <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.semibold, color: colors.white }}>
-                {confirmLabel}
-              </Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
-    </BottomSheetShell>
+      <Button label="Cancel" variant="secondary" onPress={onClose} disabled={submitting} />
+    </Sheet>
   );
 }
