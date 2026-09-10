@@ -60,10 +60,6 @@ const DRIFT_ALLOWLIST = [
   'app/(manager)/inventory.tsx',
   'app/(manager)/orders.tsx',
   'app/(manager)/profile.tsx',
-  'app/(tabs)/quick-order.tsx',
-  // app/orders (2 files, 116)
-  'app/orders/\[id\].tsx',
-  'app/orders/history.tsx',
   // src/components (15 files, 163)
   'src/components/BrowseCategoryScroller.tsx',
   'src/components/CategoryFilter.tsx',
@@ -104,10 +100,6 @@ const DRIFT_ALLOWLIST = [
   // src/features/browse (2 files, 37)
   'src/features/browse/BrowseInventoryScreenView.tsx',
   'src/features/browse/BrowseItemRow.tsx',
-  // src/features/cart (3 files, 84)
-  'src/features/cart/CartScreenView.tsx',
-  'src/features/cart/EmptyCartReorderState.tsx',
-  'src/features/cart/OrderSubmissionConfirmationOverlay.tsx',
   // src/features/fulfillment/components (12 files, 121)
   'src/features/fulfillment/components/FulfillmentConfirmItemRow.tsx',
   'src/features/fulfillment/components/FulfillmentExpandedSupplierItems.tsx',
@@ -123,10 +115,6 @@ const DRIFT_ALLOWLIST = [
   'src/features/fulfillment/components/SupplierPickerBottomSheet.tsx',
   // src/features/fulfillment/sendAll (1 file, 25)
   'src/features/fulfillment/sendAll/SendAllScreen.tsx',
-  // src/features/home (1 file, 23)
-  'src/features/home/HomeScreenView.tsx',
-  // src/features/home/components (1 file, 7)
-  'src/features/home/components/HomeScreenPrimitives.tsx',
   // src/features/ordering (17 files, 501)
   'src/features/ordering/ComposerSuggestionPills.tsx',
   'src/features/ordering/NeedsInputActionButtons.tsx',
@@ -153,42 +141,9 @@ const DRIFT_ALLOWLIST = [
   'src/features/ordering/quickOrderConfig/WeeklyLearningTab.tsx',
   // src/features/settings (1 file, 11)
   'src/features/settings/SupplierContactsScreen.tsx',
-  // src/features/simpleOrder (2 files, 20)
-  'src/features/simpleOrder/HistoryScreen.tsx',
-  'src/features/simpleOrder/SimpleOrderScreen.tsx',
-  // src/features/simpleOrder/components (12 files, 126)
-  'src/features/simpleOrder/components/ChecklistItemRow.tsx',
-  'src/features/simpleOrder/components/ChecklistSettingsSheet.tsx',
-  'src/features/simpleOrder/components/ChecklistToast.tsx',
-  'src/features/simpleOrder/components/ConfirmOrderSheet.tsx',
-  'src/features/simpleOrder/components/DirectSendQueue.tsx',
-  'src/features/simpleOrder/components/NoteSheet.tsx',
-  'src/features/simpleOrder/components/OrderDayReminderSheet.tsx',
-  'src/features/simpleOrder/components/PinnedOrderBar.tsx',
-  'src/features/simpleOrder/components/QuantityCardSheet.tsx',
-  'src/features/simpleOrder/components/QuickActionsSheet.tsx',
-  'src/features/simpleOrder/components/RecentOrdersSheet.tsx',
-  'src/features/simpleOrder/components/VoiceAddSheet.tsx',
-  // src/features/simpleOrder/receiving (1 file, 15)
-  'src/features/simpleOrder/receiving/ReceiveDeliveryScreen.tsx',
   // src/features/smart (1 file, 11)
   'src/features/smart/SmartOrderScreen.tsx',
-  // src/features/stock-check (3 files, 19)
-  'src/features/stock-check/PastChecksScreen.tsx',
-  'src/features/stock-check/StockCheckScreenView.tsx',
-  'src/features/stock-check/StockHomeScreen.tsx',
-  // src/features/stock-check/components (8 files, 57)
-  'src/features/stock-check/components/LocationSwitcherDropdown.tsx',
-  'src/features/stock-check/components/SetStockBottomSheet.tsx',
-  'src/features/stock-check/components/StationCard.tsx',
-  'src/features/stock-check/components/StationPickerBottomSheet.tsx',
-  'src/features/stock-check/components/StockCheckHeader.tsx',
-  'src/features/stock-check/components/StockCheckItemCard.tsx',
-  'src/features/stock-check/components/StockCheckProgressBar.tsx',
-  'src/features/stock-check/components/StorageAreaFilterBar.tsx',
-  // src/features/stock-check/components/wheel-picker (2 files, 3)
-  'src/features/stock-check/components/wheel-picker/WheelPicker.tsx',
-  'src/features/stock-check/components/wheel-picker/WheelPickerGroup.tsx',
+  'app/orders/\[id\].tsx',
   // app/(tabs) (1 file, 45)
 ];
 

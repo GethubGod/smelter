@@ -12,11 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { GlassSurface } from '@/components';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { useDisplayStore } from '@/store';
-import {
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-} from '@/theme/design';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 import {
   formatOrderConfirmationDisplayId,
   formatOrderConfirmationSubmittedTime,
@@ -361,7 +357,7 @@ export function OrderSubmissionConfirmationOverlay({
         <View
           style={[
             StyleSheet.absoluteFillObject,
-            { backgroundColor: 'rgba(0, 0, 0, 0.35)' },
+            { backgroundColor: color.scrim },
           ]}
         />
       </View>
@@ -381,23 +377,23 @@ export function OrderSubmissionConfirmationOverlay({
           style={{
             width: '100%',
             maxWidth: ds.spacing(360),
-            borderRadius: ds.radius(24),
+            borderRadius: radius.sheet,
             overflow: 'hidden',
-            borderWidth: glassHairlineWidth,
-            borderColor: glassColors.cardBorder,
+            borderWidth: 1,
+            borderColor: color.hairline,
           }}
         >
           <View
             style={{
               height: 7,
-              backgroundColor: glassColors.successSoft,
+              backgroundColor: color.goodBg,
             }}
           >
             <Animated.View
               style={{
                 height: '100%',
                 width: progressWidth,
-                backgroundColor: glassColors.successText,
+                backgroundColor: color.good,
               }}
             />
           </View>
@@ -426,16 +422,16 @@ export function OrderSubmissionConfirmationOverlay({
                 style={{
                   width: ds.icon(34),
                   height: ds.icon(34),
-                  borderRadius: glassRadii.round,
+                  borderRadius: radius.pill,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: glassColors.mediumFill,
+                  backgroundColor: color.well,
                 }}
               >
                 <Ionicons
                   name="close"
                   size={ds.icon(18)}
-                  color={glassColors.textSecondary}
+                  color={color.ink2}
                 />
               </TouchableOpacity>
             </Animated.View>
@@ -448,8 +444,8 @@ export function OrderSubmissionConfirmationOverlay({
                   top: ds.spacing(2),
                   width: ds.icon(76),
                   height: ds.icon(76),
-                  borderRadius: glassRadii.round,
-                  backgroundColor: glassColors.successSoft,
+                  borderRadius: radius.pill,
+                  backgroundColor: color.goodBg,
                   opacity: pulseOpacity,
                   transform: [{ scale: pulseScale }],
                 }}
@@ -459,8 +455,8 @@ export function OrderSubmissionConfirmationOverlay({
                 style={{
                   width: ds.icon(58),
                   height: ds.icon(58),
-                  borderRadius: glassRadii.round,
-                  backgroundColor: glassColors.successSoft,
+                  borderRadius: radius.pill,
+                  backgroundColor: color.goodBg,
                   alignItems: 'center',
                   justifyContent: 'center',
                   opacity: badgeOpacity,
@@ -476,7 +472,7 @@ export function OrderSubmissionConfirmationOverlay({
                   <Ionicons
                     name="checkmark"
                     size={ds.icon(28)}
-                    color={glassColors.successText}
+                    color={color.good}
                   />
                 </Animated.View>
               </Animated.View>
@@ -491,9 +487,9 @@ export function OrderSubmissionConfirmationOverlay({
                 <Text
                   style={{
                     marginTop: ds.spacing(18),
-                    fontSize: ds.fontSize(22),
-                    fontWeight: '800',
-                    color: glassColors.textPrimary,
+                    fontSize: ds.fontSize(typeScale.title),
+                    fontWeight: weight.bold,
+                    color: color.ink,
                     textAlign: 'center',
                   }}
                 >
@@ -502,9 +498,9 @@ export function OrderSubmissionConfirmationOverlay({
                 <Text
                   style={{
                     marginTop: ds.spacing(8),
-                    fontSize: ds.fontSize(14),
-                    color: glassColors.textSecondary,
-                    lineHeight: ds.fontSize(20),
+                    fontSize: ds.fontSize(typeScale.body),
+                    color: color.ink2,
+                    lineHeight: ds.fontSize(typeScale.title),
                     textAlign: 'center',
                   }}
                 >
@@ -514,10 +510,10 @@ export function OrderSubmissionConfirmationOverlay({
                 <View
                   style={{
                     marginTop: ds.spacing(20),
-                    borderRadius: ds.radius(18),
-                    borderWidth: glassHairlineWidth,
-                    borderColor: glassColors.cardBorder,
-                    backgroundColor: glassColors.background,
+                    borderRadius: radius.card,
+                    borderWidth: 1,
+                    borderColor: color.hairline,
+                    backgroundColor: color.page,
                     paddingHorizontal: ds.spacing(14),
                     paddingVertical: ds.spacing(12),
                     gap: ds.spacing(12),
@@ -526,8 +522,8 @@ export function OrderSubmissionConfirmationOverlay({
                   <View style={styles.detailRow}>
                     <Text
                       style={{
-                        fontSize: ds.fontSize(12),
-                        color: glassColors.textSecondary,
+                        fontSize: ds.fontSize(typeScale.secondary),
+                        color: color.ink2,
                       }}
                     >
                       Order ID
@@ -535,9 +531,9 @@ export function OrderSubmissionConfirmationOverlay({
                     <Text
                       style={{
                         marginLeft: ds.spacing(14),
-                        fontSize: ds.fontSize(13),
+                        fontSize: ds.fontSize(typeScale.secondary),
                         fontWeight: '700',
-                        color: glassColors.textPrimary,
+                        color: color.ink,
                         textAlign: 'right',
                       }}
                       numberOfLines={1}
@@ -549,8 +545,8 @@ export function OrderSubmissionConfirmationOverlay({
                   <View style={styles.detailRow}>
                     <Text
                       style={{
-                        fontSize: ds.fontSize(12),
-                        color: glassColors.textSecondary,
+                        fontSize: ds.fontSize(typeScale.secondary),
+                        color: color.ink2,
                       }}
                     >
                       Location
@@ -559,9 +555,9 @@ export function OrderSubmissionConfirmationOverlay({
                       style={{
                         flexShrink: 1,
                         marginLeft: ds.spacing(14),
-                        fontSize: ds.fontSize(13),
-                        fontWeight: '600',
-                        color: glassColors.textPrimary,
+                        fontSize: ds.fontSize(typeScale.secondary),
+                        fontWeight: weight.semibold,
+                        color: color.ink,
                         textAlign: 'right',
                       }}
                       numberOfLines={1}
@@ -573,8 +569,8 @@ export function OrderSubmissionConfirmationOverlay({
                   <View style={styles.detailRow}>
                     <Text
                       style={{
-                        fontSize: ds.fontSize(12),
-                        color: glassColors.textSecondary,
+                        fontSize: ds.fontSize(typeScale.secondary),
+                        color: color.ink2,
                       }}
                     >
                       Submitted
@@ -583,9 +579,9 @@ export function OrderSubmissionConfirmationOverlay({
                       style={{
                         flexShrink: 1,
                         marginLeft: ds.spacing(14),
-                        fontSize: ds.fontSize(13),
-                        fontWeight: '600',
-                        color: glassColors.textPrimary,
+                        fontSize: ds.fontSize(typeScale.secondary),
+                        fontWeight: weight.semibold,
+                        color: color.ink,
                         textAlign: 'right',
                       }}
                       numberOfLines={1}
@@ -606,13 +602,13 @@ export function OrderSubmissionConfirmationOverlay({
                   <Ionicons
                     name="time-outline"
                     size={ds.icon(14)}
-                    color={glassColors.successText}
+                    color={color.good}
                   />
                   <Text
                     style={{
                       marginLeft: ds.spacing(6),
-                      fontSize: ds.fontSize(12),
-                      color: glassColors.textSecondary,
+                      fontSize: ds.fontSize(typeScale.secondary),
+                      color: color.ink2,
                     }}
                   >
                     Submitted by {activeConfirmation.submittedBy}

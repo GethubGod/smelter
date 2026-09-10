@@ -9,8 +9,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { EmptyStateCard, LoadingIndicator } from '@/components';
-import { getFloatingPillClearance } from '@/components/navigation';
+import { Button, EmptyState, Loading, ScreenHeader, getTabBarClearance } from '@/components/ui';
 import { useResolvedActiveLocation } from '@/hooks/useResolvedActiveLocation';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import {
@@ -30,14 +29,7 @@ import {
   type ReceivableOrder,
   type ReceiptStatus,
 } from '@/services/orderReceiving';
-import {
-  colors,
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-  glassSpacing,
-  tipsTheme,
-} from '@/theme/design';
+import { color, radius, space, typeScale, weight } from '@/theme/tokens';
 import { formatQuantity } from '../checklistSelection';
 import { formatRecentOrderDate } from '../recentOrders';
 import {
@@ -88,8 +80,8 @@ function ReceiveLineRow({
     <View
       style={{
         paddingVertical: ds.spacing(8),
-        borderBottomWidth: isLast ? 0 : glassHairlineWidth,
-        borderBottomColor: glassColors.divider,
+        borderBottomWidth: isLast ? 0 : 1,
+        borderBottomColor: color.hairline,
       }}
     >
       <TouchableOpacity
@@ -110,16 +102,16 @@ function ReceiveLineRow({
         <Ionicons
           name={line.checked ? 'checkmark-circle' : 'alert-circle'}
           size={checkSize}
-          color={line.checked ? glassColors.successText : glassColors.warningText}
+          color={line.checked ? color.good : color.warning}
           style={{ marginRight: ds.spacing(12) }}
         />
         <View style={{ flex: 1, paddingRight: ds.spacing(8) }}>
           <Text
             numberOfLines={2}
             style={{
-              fontSize: ds.fontSize(16),
-              fontWeight: '600',
-              color: glassColors.textPrimary,
+              fontSize: ds.fontSize(typeScale.body),
+              fontWeight: weight.semibold,
+              color: color.ink,
             }}
           >
             {line.itemName}
@@ -127,8 +119,8 @@ function ReceiveLineRow({
           <Text
             style={{
               marginTop: 1,
-              fontSize: ds.fontSize(12),
-              color: glassColors.textMuted,
+              fontSize: ds.fontSize(typeScale.secondary),
+              color: color.ink3,
             }}
           >
             Ordered {formatQuantity(line.orderedQty)}
@@ -144,8 +136,8 @@ function ReceiveLineRow({
             <Text
               style={{
                 flex: 1,
-                fontSize: ds.fontSize(13),
-                color: glassColors.textSecondary,
+                fontSize: ds.fontSize(typeScale.secondary),
+                color: color.ink2,
               }}
             >
               Arrived: {formatQuantity(arrivedQty)}
@@ -165,13 +157,13 @@ function ReceiveLineRow({
                 borderRadius: stepperSize / 2,
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderWidth: glassHairlineWidth,
-                borderColor: glassColors.controlBorder,
-                backgroundColor: colors.glassCircle,
+                borderWidth: 1,
+                borderColor: color.hairline,
+                backgroundColor: color.well,
                 opacity: arrivedQty <= 0 ? 0.4 : 1,
               }}
             >
-              <Ionicons name="remove" size={ds.icon(20)} color={glassColors.textPrimary} />
+              <Ionicons name="remove" size={ds.icon(20)} color={color.ink} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
@@ -187,14 +179,14 @@ function ReceiveLineRow({
                 borderRadius: stepperSize / 2,
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderWidth: glassHairlineWidth,
-                borderColor: glassColors.controlBorder,
-                backgroundColor: colors.glassCircle,
+                borderWidth: 1,
+                borderColor: color.hairline,
+                backgroundColor: color.well,
                 marginLeft: ds.spacing(8),
                 opacity: arrivedQty >= line.orderedQty ? 0.4 : 1,
               }}
             >
-              <Ionicons name="add" size={ds.icon(20)} color={glassColors.textPrimary} />
+              <Ionicons name="add" size={ds.icon(20)} color={color.ink} />
             </TouchableOpacity>
           </View>
 
@@ -203,19 +195,19 @@ function ReceiveLineRow({
               value={line.note}
               onChangeText={(text) => onSetNote(line.pastOrderItemId, text)}
               placeholder="Add note (optional)"
-              placeholderTextColor={glassColors.textMuted}
+              placeholderTextColor={color.ink3}
               accessibilityLabel={`Note for ${line.itemName}`}
               style={{
                 marginTop: ds.spacing(8),
                 minHeight: 40,
                 paddingHorizontal: ds.spacing(12),
                 paddingVertical: ds.spacing(8),
-                borderRadius: glassRadii.button,
-                borderWidth: glassHairlineWidth,
-                borderColor: glassColors.controlBorder,
-                backgroundColor: glassColors.subtleFill,
-                fontSize: ds.fontSize(14),
-                color: glassColors.textPrimary,
+                borderRadius: radius.card,
+                borderWidth: 1,
+                borderColor: color.hairline,
+                backgroundColor: color.well,
+                fontSize: ds.fontSize(typeScale.body),
+                color: color.ink,
               }}
             />
           ) : null}
@@ -335,7 +327,7 @@ export function ReceiveDeliveryScreen() {
   const flaggedCount = countFlaggedLines(state);
   // Clear the floating pill toolbar (it stays visible on this screen with the
   // dots button appended).
-  const bottomInset = getFloatingPillClearance(insets.bottom);
+  const bottomInset = getTabBarClearance(insets.bottom);
   const saveButtonHeight = Math.max(56, ds.buttonH);
 
   let content: React.ReactNode;
@@ -346,14 +338,14 @@ export function ReceiveDeliveryScreen() {
         <Ionicons
           name={complete ? 'checkmark-circle' : 'alert-circle'}
           size={ds.icon(72)}
-          color={complete ? glassColors.successText : glassColors.warningText}
+          color={complete ? color.good : color.warning}
           style={{ marginBottom: ds.spacing(12) }}
         />
         <Text
           style={{
-            fontSize: ds.fontSize(22),
+            fontSize: ds.fontSize(typeScale.title),
             fontWeight: '700',
-            color: glassColors.textPrimary,
+            color: color.ink,
             marginBottom: ds.spacing(4),
           }}
         >
@@ -361,8 +353,8 @@ export function ReceiveDeliveryScreen() {
         </Text>
         <Text
           style={{
-            fontSize: ds.fontSize(15),
-            color: glassColors.textSecondary,
+            fontSize: ds.fontSize(typeScale.body),
+            color: color.ink2,
             textAlign: 'center',
             paddingHorizontal: ds.spacing(32),
             marginBottom: ds.spacing(20),
@@ -372,24 +364,12 @@ export function ReceiveDeliveryScreen() {
             ? 'Everything on this order arrived.'
             : `${phase.flaggedCount} item${phase.flaggedCount === 1 ? '' : 's'} flagged as missing or short. Your manager can see this.`}
         </Text>
-        <TouchableOpacity
+        <Button
+          label="Done"
           onPress={handleDone}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel="Done receiving"
-          style={{
-            minHeight: 52,
-            paddingHorizontal: ds.spacing(28),
-            borderRadius: glassRadii.submitButton,
-            backgroundColor: colors.primary,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Text style={{ fontSize: ds.fontSize(17), fontWeight: '700', color: colors.white }}>
-            Done
-          </Text>
-        </TouchableOpacity>
+          fullWidth={false}
+          accessibilityHint="Finishes receiving this delivery"
+        />
       </View>
     );
   } else if (phase.name === 'receipt') {
@@ -415,8 +395,8 @@ export function ReceiveDeliveryScreen() {
             <Text
               style={{
                 paddingVertical: ds.spacing(8),
-                fontSize: ds.fontSize(13),
-                color: glassColors.textSecondary,
+                fontSize: ds.fontSize(typeScale.secondary),
+                color: color.ink2,
               }}
             >
               Everything is marked as arrived. Tap anything that didn’t arrive in full.
@@ -426,8 +406,8 @@ export function ReceiveDeliveryScreen() {
         <View
           style={{
             position: 'absolute',
-            left: glassSpacing.screen,
-            right: glassSpacing.screen,
+            left: space[4],
+            right: space[4],
             bottom: bottomInset,
           }}
         >
@@ -435,8 +415,8 @@ export function ReceiveDeliveryScreen() {
             <Text
               style={{
                 marginBottom: ds.spacing(8),
-                fontSize: ds.fontSize(13),
-                color: glassColors.dangerText,
+                fontSize: ds.fontSize(typeScale.secondary),
+                color: color.alert,
                 textAlign: 'center',
               }}
             >
@@ -455,19 +435,19 @@ export function ReceiveDeliveryScreen() {
             }
             style={{
               minHeight: saveButtonHeight,
-              borderRadius: glassRadii.submitButton,
-              backgroundColor: colors.primary,
+              borderRadius: radius.card,
+              backgroundColor: color.accent,
               alignItems: 'center',
               justifyContent: 'center',
               opacity: isSaving ? 0.6 : 1,
-              shadowColor: colors.black,
+              shadowColor: color.ink,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.12,
               shadowRadius: 12,
               elevation: 4,
             }}
           >
-            <Text style={{ fontSize: ds.fontSize(17), fontWeight: '700', color: colors.white }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: '700', color: color.card }}>
               {isSaving
                 ? 'Saving…'
                 : flaggedCount > 0
@@ -480,27 +460,23 @@ export function ReceiveDeliveryScreen() {
     );
   } else if (listError) {
     content = (
-      <View style={{ paddingTop: ds.spacing(24) }}>
-        <EmptyStateCard
-          icon="alert-circle-outline"
-          title="Deliveries unavailable"
-          message={listError}
-          actionLabel="Try again"
-          onPressAction={() => void loadOrders()}
-        />
-      </View>
+      <EmptyState
+        icon="alert-circle-outline"
+        tone="alert"
+        title="Deliveries unavailable"
+        body={listError}
+        action={{ label: 'Try again', onPress: () => void loadOrders() }}
+      />
     );
   } else if (orders === null) {
-    content = <LoadingIndicator />;
+    content = <Loading label="Loading deliveries" />;
   } else if (orders.length === 0) {
     content = (
-      <View style={{ paddingTop: ds.spacing(24) }}>
-        <EmptyStateCard
-          icon="cube-outline"
-          title="Nothing to receive"
-          message="Orders sent in the last 30 days show up here until they are checked in."
-        />
-      </View>
+      <EmptyState
+        icon="cube-outline"
+        title="Nothing to receive"
+        body="Orders sent in the last 30 days show up here until they are checked in."
+      />
     );
   } else {
     content = (
@@ -513,8 +489,8 @@ export function ReceiveDeliveryScreen() {
             <Text
               style={{
                 paddingVertical: ds.spacing(8),
-                fontSize: ds.fontSize(13),
-                color: glassColors.dangerText,
+                fontSize: ds.fontSize(typeScale.secondary),
+                color: color.alert,
               }}
             >
               {actionError}
@@ -534,8 +510,8 @@ export function ReceiveDeliveryScreen() {
               minHeight: 64,
               paddingVertical: ds.spacing(10),
               borderBottomWidth:
-                index === orders.length - 1 ? 0 : glassHairlineWidth,
-              borderBottomColor: glassColors.divider,
+                index === orders.length - 1 ? 0 : 1,
+              borderBottomColor: color.hairline,
               opacity: openingOrderId !== null && openingOrderId !== item.id ? 0.5 : 1,
             }}
           >
@@ -543,9 +519,9 @@ export function ReceiveDeliveryScreen() {
               <Text
                 numberOfLines={1}
                 style={{
-                  fontSize: ds.fontSize(16),
-                  fontWeight: '600',
-                  color: glassColors.textPrimary,
+                  fontSize: ds.fontSize(typeScale.body),
+                  fontWeight: weight.semibold,
+                  color: color.ink,
                 }}
               >
                 {item.supplierName}
@@ -553,8 +529,8 @@ export function ReceiveDeliveryScreen() {
               <Text
                 style={{
                   marginTop: 1,
-                  fontSize: ds.fontSize(12),
-                  color: glassColors.textMuted,
+                  fontSize: ds.fontSize(typeScale.secondary),
+                  color: color.ink3,
                 }}
               >
                 {formatRecentOrderDate(item.createdAt)} • {item.itemCount} item
@@ -562,12 +538,12 @@ export function ReceiveDeliveryScreen() {
               </Text>
             </View>
             {openingOrderId === item.id ? (
-              <LoadingIndicator size="small" color={glassColors.accent} />
+              <Loading size="inline" color={color.accent} label="Loading" />
             ) : (
               <Ionicons
                 name="chevron-forward"
                 size={ds.icon(16)}
-                color={glassColors.textMuted}
+                color={color.ink3}
               />
             )}
           </TouchableOpacity>
@@ -577,47 +553,32 @@ export function ReceiveDeliveryScreen() {
   }
 
   return (
-    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: tipsTheme.page }}>
-      <View style={{ flex: 1, paddingHorizontal: glassSpacing.screen }}>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingTop: ds.spacing(2),
-            paddingBottom: ds.spacing(12),
-          }}
-        >
-          {phase.name !== 'done' ? (
-            <TouchableOpacity
-              onPress={handleBack}
-              accessibilityRole="button"
-              accessibilityLabel="Back"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={{ marginRight: ds.spacing(10) }}
-            >
-              <Ionicons name="chevron-back" size={ds.icon(24)} color={glassColors.textPrimary} />
-            </TouchableOpacity>
-          ) : null}
-          <View style={{ flex: 1 }}>
-            <Text
-              numberOfLines={1}
-              style={{
-                fontSize: ds.fontSize(20),
-                fontWeight: '700',
-                color: glassColors.textPrimary,
-              }}
-            >
-              {phase.name === 'receipt' && receiptSupplier
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: color.page }}>
+      <View style={{ flex: 1, paddingHorizontal: space[4] }}>
+        {phase.name === 'done' ? (
+          <ScreenHeader
+            title="Receive delivery"
+            includeSafeArea={false}
+            style={{ paddingHorizontal: 0 }}
+          />
+        ) : (
+          <ScreenHeader
+            mode="pushed"
+            title={
+              phase.name === 'receipt' && receiptSupplier
                 ? receiptSupplier
-                : 'Receive delivery'}
-            </Text>
-            {phase.name === 'receipt' ? (
-              <Text style={{ fontSize: ds.fontSize(12), color: glassColors.textMuted }}>
-                Check the delivery against the order
-              </Text>
-            ) : null}
-          </View>
-        </View>
+                : 'Receive delivery'
+            }
+            subtitle={
+              phase.name === 'receipt'
+                ? 'Check the delivery against the order'
+                : undefined
+            }
+            onBack={handleBack}
+            includeSafeArea={false}
+            style={{ paddingHorizontal: 0 }}
+          />
+        )}
 
         {content}
       </View>

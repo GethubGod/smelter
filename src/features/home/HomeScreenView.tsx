@@ -24,14 +24,15 @@ import {
   AddButton,
   GlassSurface,
   IdentityHeader,
-  LoadingIndicator,
 } from '@/components';
+import { Loading } from '@/components/ui';
 import { colors } from '@/constants';
 import {
   glassColors,
   glassHairlineWidth,
   glassRadii,
 } from '@/theme/design';
+import { color, typeScale } from '@/theme/tokens';
 import {
   CATEGORY_ORDER,
   getCategoryShortLabel,
@@ -126,7 +127,7 @@ const SuggestedItemCard = memo(function SuggestedItemCard({
         <View style={{ flex: 1 }}>
           <Text
             style={{
-              fontSize: ds.fontSize(15),
+              fontSize: ds.fontSize(typeScale.body),
               fontWeight: '600',
               color: glassColors.textPrimary,
             }}
@@ -137,7 +138,7 @@ const SuggestedItemCard = memo(function SuggestedItemCard({
           <Text
             style={{
               marginTop: ds.spacing(4),
-              fontSize: ds.fontSize(12),
+              fontSize: ds.fontSize(typeScale.secondary),
               color: glassColors.textSecondary,
             }}
             numberOfLines={1}
@@ -158,7 +159,7 @@ const SuggestedItemCard = memo(function SuggestedItemCard({
             backgroundColor: glassColors.accent,
           }}
           textStyle={{
-            fontSize: ds.fontSize(13),
+            fontSize: ds.fontSize(typeScale.secondary),
           }}
         />
       </View>
@@ -194,7 +195,7 @@ const BrowsePreviewRow = memo(function BrowsePreviewRow({
       <View style={{ flex: 1, paddingRight: ds.spacing(10) }}>
         <Text
           style={{
-            fontSize: ds.fontSize(14),
+            fontSize: ds.fontSize(typeScale.body),
             fontWeight: '600',
             color: glassColors.textPrimary,
           }}
@@ -205,7 +206,7 @@ const BrowsePreviewRow = memo(function BrowsePreviewRow({
         <Text
           style={{
             marginTop: ds.spacing(2),
-            fontSize: ds.fontSize(12),
+            fontSize: ds.fontSize(typeScale.secondary),
             color: glassColors.textSecondary,
           }}
           numberOfLines={1}
@@ -225,7 +226,7 @@ const BrowsePreviewRow = memo(function BrowsePreviewRow({
           justifyContent: 'center',
         }}
         textStyle={{
-          fontSize: ds.fontSize(12),
+          fontSize: ds.fontSize(typeScale.secondary),
         }}
       />
     </View>
@@ -279,7 +280,7 @@ const QuickActionRow = memo(function QuickActionRow({
       <View style={{ flex: 1, paddingRight: ds.spacing(10) }}>
         <Text
           style={{
-            fontSize: ds.fontSize(15),
+            fontSize: ds.fontSize(typeScale.body),
             fontWeight: '600',
             color: glassColors.textPrimary,
           }}
@@ -289,7 +290,7 @@ const QuickActionRow = memo(function QuickActionRow({
         <Text
           style={{
             marginTop: ds.spacing(4),
-            fontSize: ds.fontSize(12),
+            fontSize: ds.fontSize(typeScale.secondary),
             color: glassColors.textSecondary,
           }}
           numberOfLines={1}
@@ -779,7 +780,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
         edges={['top', 'left', 'right']}
       >
         <View className="flex-1 items-center justify-center">
-          <LoadingIndicator showText text="Loading home..." />
+          <Loading label="Loading home" />
         </View>
       </SafeAreaView>
     );
@@ -838,7 +839,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
               <View className="flex-row items-center justify-between">
                 <Text
                   style={{
-                    fontSize: ds.fontSize(12),
+                    fontSize: ds.fontSize(typeScale.caption),
                     fontWeight: '600',
                     color: glassColors.accent,
                     textTransform: 'uppercase',
@@ -849,7 +850,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
                 </Text>
                 <Text
                   style={{
-                    fontSize: ds.fontSize(11),
+                    fontSize: ds.fontSize(typeScale.caption),
                     color: glassColors.textSecondary,
                   }}
                 >
@@ -860,9 +861,9 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
               <Text
                 style={{
                   marginTop: ds.spacing(6),
-                  fontSize: ds.fontSize(14),
+                  fontSize: ds.fontSize(typeScale.body),
                   color: glassColors.textPrimary,
-                  lineHeight: ds.fontSize(20),
+                  lineHeight: ds.fontSize(typeScale.title),
                 }}
               >
                 {activeReminder.message}
@@ -966,7 +967,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
                       backgroundColor: colors.gray[100],
                       marginRight: ds.spacing(12),
                       borderWidth: glassHairlineWidth,
-                      borderColor: 'rgba(28, 28, 30, 0.08)',
+                      borderColor: color.hairline,
                     }}
                   >
                     <Ionicons
@@ -978,7 +979,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
                   <View style={{ flex: 1, paddingRight: ds.spacing(10) }}>
                     <Text
                       style={{
-                        fontSize: ds.fontSize(19),
+                        fontSize: ds.fontSize(typeScale.title),
                         fontWeight: '700',
                         color: glassColors.textPrimary,
                         letterSpacing: -0.25,
@@ -989,7 +990,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
                     <Text
                       style={{
                         marginTop: ds.spacing(4),
-                        fontSize: ds.fontSize(13),
+                        fontSize: ds.fontSize(typeScale.secondary),
                         color: glassColors.textSecondary,
                       }}
                     >
@@ -1009,16 +1010,11 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
                     flexDirection: 'row',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    shadowColor: 'rgba(15, 23, 42, 0.22)',
-                    shadowOpacity: 0.12,
-                    shadowRadius: 12,
-                    shadowOffset: { width: 0, height: 6 },
-                    elevation: 2,
                   }}
                 >
                   <Text
                     style={{
-                      fontSize: ds.fontSize(14),
+                      fontSize: ds.fontSize(typeScale.body),
                       fontWeight: '700',
                       color: glassColors.textOnPrimary,
                     }}
@@ -1065,13 +1061,13 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
                   borderWidth: glassHairlineWidth,
                   borderColor:
                     browseCategory === null
-                      ? 'rgba(28, 28, 30, 0.18)'
+                      ? color.hairlineStrong
                       : glassColors.cardBorder,
                 }}
               >
                 <Text
                   style={{
-                    fontSize: ds.fontSize(13),
+                    fontSize: ds.fontSize(typeScale.secondary),
                     fontWeight: browseCategory === null ? '700' : '600',
                     color: glassColors.textPrimary,
                   }}
@@ -1094,13 +1090,13 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
                         : colors.gray[100],
                       borderWidth: glassHairlineWidth,
                       borderColor: isSelected
-                        ? 'rgba(28, 28, 30, 0.18)'
+                        ? color.hairlineStrong
                         : glassColors.cardBorder,
                     }}
                   >
                     <Text
                       style={{
-                        fontSize: ds.fontSize(13),
+                        fontSize: ds.fontSize(typeScale.secondary),
                         fontWeight: isSelected ? '700' : '600',
                         color: glassColors.textPrimary,
                       }}
@@ -1124,7 +1120,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
                 >
                   <Text
                     style={{
-                      fontSize: ds.fontSize(13),
+                      fontSize: ds.fontSize(typeScale.secondary),
                       fontWeight: '600',
                       color: glassColors.textPrimary,
                     }}
@@ -1160,7 +1156,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
             >
               <Text
                 style={{
-                  fontSize: ds.fontSize(12),
+                  fontSize: ds.fontSize(typeScale.secondary),
                   color: glassColors.textSecondary,
                 }}
               >

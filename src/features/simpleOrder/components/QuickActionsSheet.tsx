@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetShell } from '@/components/BottomSheetShell';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerSelectionHaptic } from '@/lib/haptics';
-import { glassHairlineWidth, tipsTheme } from '@/theme/design';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 import type { SimpleOrderDensity } from '@/types/settings';
 
 /**
@@ -63,23 +63,23 @@ function ActionRow({
         gap: ds.spacing(11),
         paddingHorizontal: ds.spacing(16),
         paddingVertical: ds.spacing(13),
-        borderBottomWidth: isLast ? 0 : glassHairlineWidth,
-        borderBottomColor: 'rgba(0, 0, 0, 0.05)',
+        borderBottomWidth: isLast ? 0 : 1,
+        borderBottomColor: color.hairline,
       }}
     >
-      <Ionicons name={spec.icon} size={ds.icon(20)} color={tipsTheme.ink} />
+      <Ionicons name={spec.icon} size={ds.icon(20)} color={color.ink} />
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={{ fontSize: ds.fontSize(14.5), fontWeight: '600', color: tipsTheme.ink }}>
+        <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink }}>
           {spec.title}
         </Text>
         {spec.subtitle ? (
-          <Text style={{ fontSize: ds.fontSize(11.5), color: tipsTheme.ink3, marginTop: 1 }}>
+          <Text style={{ fontSize: ds.fontSize(typeScale.caption), color: color.ink3, marginTop: 1 }}>
             {spec.subtitle}
           </Text>
         ) : null}
       </View>
       {spec.chevron ? (
-        <Ionicons name="chevron-forward" size={ds.icon(16)} color={tipsTheme.ink3} />
+        <Ionicons name="chevron-forward" size={ds.icon(16)} color={color.ink3} />
       ) : null}
     </TouchableOpacity>
   );
@@ -149,10 +149,10 @@ export function QuickActionsSheet({
   };
 
   const card = {
-    backgroundColor: tipsTheme.card,
-    borderWidth: glassHairlineWidth,
-    borderColor: tipsTheme.hairline,
-    borderRadius: 18,
+    backgroundColor: color.card,
+    borderWidth: 1,
+    borderColor: color.hairline,
+    borderRadius: radius.card,
     overflow: 'hidden' as const,
   };
 
@@ -162,11 +162,11 @@ export function QuickActionsSheet({
       onClose={onClose}
       bottomPadding={Math.max(insets.bottom, ds.spacing(14))}
     >
-      <Text style={{ fontSize: ds.fontSize(20), fontWeight: '700', color: tipsTheme.ink }}>
+      <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: '700', color: color.ink }}>
         Quick actions
       </Text>
       <Text
-        style={{ fontSize: ds.fontSize(13), color: tipsTheme.ink2, marginBottom: ds.spacing(12) }}
+        style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginBottom: ds.spacing(12) }}
       >
         For this checklist.
       </Text>

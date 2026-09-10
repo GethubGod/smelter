@@ -1,10 +1,112 @@
 import { Redirect, Tabs } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import type { Ionicons } from "@expo/vector-icons";
 import { useOrderStore } from "@/store";
 import { AuthLoadingScreen } from "@/components";
 import { useMyModules, useProtectedAuthGuard } from "@/hooks";
 import { getVisibleEmployeeTabs } from "@/store/moduleStore.helpers";
-import { FloatingPillTabBar } from "@/components/navigation";
+import { TabBar, type TabBarItem } from "@/components/ui";
+import { ImpactFeedbackStyle, triggerImpactHaptic } from "@/lib/haptics";
+import { useSimpleOrderUiStore } from "@/store/simpleOrderUiStore";
+
+/** Label and glyph for each pill tab. */
+const PILL_TAB_META: Record<
+  string,
+  { label: string; icon: keyof typeof Ionicons.glyphMap }
+> = {
+  "simple-order": { label: "Order", icon: "list-outline" },
+  "quick-order": { label: "Advanced", icon: "flash-outline" },
+  cart: { label: "Cart", icon: "bag-handle-outline" },
+  history: { label: "History", icon: "time-outline" },
+  settings: { label: "Settings", icon: "person-circle-outline" },
+};
+
+/** Hidden routes highlight their pill parent (receive lives under Order, …). */
+const ROUTE_PILL_ALIAS: Record<string, string> = {
+  "receive-delivery": "simple-order",
+  profile: "settings",
+  orders: "history",
+  index: "simple-order",
+};
+
+/** Routes where the pill appends the divider + quick-actions dots. */
+const QUICK_ACTION_ROUTES = new Set(["simple-order", "receive-delivery"]);
+
+interface EmployeeTabBarProps extends BottomTabBarProps {
+  /** Visible tab route names, in display order (getVisibleEmployeeTabs). */
+  visibleTabs: string[];
+  cartCount: number;
+}
+
+/**
+ * Maps the navigator state onto the contract TabBar primitive. The layout
+ * configures no bar of its own: the primitive owns every colour, size and
+ * radius, and this adapter owns only the routing and the haptics.
+ */
+function EmployeeTabBar({
+  state,
+  navigation,
+  visibleTabs,
+  cartCount,
+}: EmployeeTabBarProps) {
+  const requestQuickActions = useSimpleOrderUiStore(
+    (uiState) => uiState.requestQuickActions,
+  );
+
+  const currentRouteName = state.routes[state.index]?.name ?? "";
+  const activePillRoute = ROUTE_PILL_ALIAS[currentRouteName] ?? currentRouteName;
+  const showQuickActions = QUICK_ACTION_ROUTES.has(currentRouteName);
+
+  const tabs: TabBarItem[] = visibleTabs.flatMap((routeName) => {
+    const meta = PILL_TAB_META[routeName];
+    if (!meta) return [];
+    return [
+      {
+        name: routeName,
+        label: meta.label,
+        icon: meta.icon,
+        badge: routeName === "cart" ? cartCount : undefined,
+      },
+    ];
+  });
+
+  const handleTabPress = (routeName: string) => {
+    if (routeName !== currentRouteName) {
+      void triggerImpactHaptic(ImpactFeedbackStyle.Light);
+    }
+    const route = state.routes.find((entry) => entry.name === routeName);
+    const event = navigation.emit({
+      type: "tabPress",
+      target: route?.key,
+      canPreventDefault: true,
+    });
+    if (!event.defaultPrevented) {
+      navigation.navigate(routeName as never);
+    }
+  };
+
+  const handleQuickActions = () => {
+    void triggerImpactHaptic(ImpactFeedbackStyle.Light);
+    if (currentRouteName !== "simple-order") {
+      navigation.navigate("simple-order" as never);
+    }
+    requestQuickActions();
+  };
+
+  return (
+    <TabBar
+      tabs={tabs}
+      active={activePillRoute}
+      onPress={handleTabPress}
+      quickActions={
+        showQuickActions
+          ? { onPress: handleQuickActions, accessibilityLabel: "Quick actions" }
+          : undefined
+      }
+    />
+  );
+}
 
 export default function TabsLayout() {
   const cartTotal = useOrderStore((state) =>
@@ -31,16 +133,16 @@ export default function TabsLayout() {
 
   return (
     <>
-      {/* The employee surfaces paint fixed light backgrounds (#F7F5F2 /
-          #F5F5F4) regardless of the stored theme, and expo-status-bar keeps
-          whatever the dark auth screens last set. Dark glyphs are the only
-          readable choice here, so assert them unconditionally — following the
-          theme preference put light glyphs on a light screen. */}
+      {/* The employee surfaces paint the fixed light page token regardless of
+          the stored theme, and expo-status-bar keeps whatever the dark auth
+          screens last set. Dark glyphs are the only readable choice here, so
+          assert them unconditionally — following the theme preference put
+          light glyphs on a light screen. */}
       <StatusBar style="dark" />
       <Tabs
         screenOptions={{ headerShown: false }}
         tabBar={(props) => (
-          <FloatingPillTabBar
+          <EmployeeTabBar
             {...props}
             visibleTabs={visibleTabs}
             cartCount={cartTotal}

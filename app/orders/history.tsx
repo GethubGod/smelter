@@ -14,27 +14,30 @@ import { useShallow } from 'zustand/react/shallow';
 import { useOrderStore, useAuthStore } from '@/store';
 import { supabase } from '@/lib/supabase';
 import { OrderWithDetails, OrderStatus } from '@/types';
-import { statusColors, ORDER_STATUS_LABELS, colors } from '@/constants';
+import { ORDER_STATUS_LABELS } from '@/constants';
+import { Card, Chip, EmptyState, ScreenHeader, StatusPill } from '@/components/ui';
 import { useManagedRefresh } from '@/hooks/useManagedRefresh';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { glassColors, glassRadii, glassSpacing, glassTypography } from '@/theme/design';
+import { color, space, typeScale, weight, type StatusTone } from '@/theme/tokens';
 
 const statuses: (OrderStatus | null)[] = [null, 'submitted', 'fulfilled', 'cancelled'];
 
-// Status emoji mapping
-const STATUS_EMOJI: Record<string, string> = {
-  draft: '📝',
-  submitted: '🟠',
-  processing: '🔵',
-  fulfilled: '🟢',
-  cancelled: '🔴',
+/**
+ * `cancel_requested` is a real order status but not one of the contract's five
+ * pills, so it borrows the submitted tone and keeps its own word.
+ */
+const STATUS_TONE: Record<OrderStatus, StatusTone> = {
+  draft: 'draft',
+  submitted: 'submitted',
+  processing: 'processing',
+  fulfilled: 'fulfilled',
+  cancelled: 'cancelled',
+  cancel_requested: 'submitted',
 };
 
 function OrderListCard({ order }: { order: OrderWithDetails }) {
   const ds = useScaledStyles();
-  const statusStyle = statusColors[order.status] || statusColors.draft;
   const statusLabel = ORDER_STATUS_LABELS[order.status] || order.status;
-  const statusEmoji = STATUS_EMOJI[order.status] || '⚪';
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -56,62 +59,71 @@ function OrderListCard({ order }: { order: OrderWithDetails }) {
   return (
     <TouchableOpacity
       onPress={() => router.push(`/orders/${order.id}`)}
-      className="bg-white"
-      style={{
-        backgroundColor: colors.card,
-        borderRadius: ds.radius(16),
-        paddingHorizontal: ds.spacing(16),
-        paddingVertical: ds.spacing(14),
-        shadowColor: colors.background,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0,
-        shadowRadius: 0,
-        elevation: 0,
-      }}
+      accessibilityRole="button"
+      accessibilityLabel={`Order ${order.order_number}, ${statusLabel}`}
       activeOpacity={0.7}
     >
-      {/* Header Row */}
-      <View className="flex-row items-start justify-between" style={{ marginBottom: ds.spacing(8) }}>
-        <Text className="text-gray-900 font-bold" style={{ fontSize: ds.fontSize(22), flexShrink: 1 }}>
-          Order #{order.order_number}
-        </Text>
+      <Card>
+        {/* Header Row */}
         <View
-          className="flex-row items-center rounded-full"
           style={{
-            backgroundColor: statusStyle.bg,
-            paddingHorizontal: ds.spacing(10),
-            paddingVertical: ds.spacing(4),
-            marginLeft: ds.spacing(8),
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: ds.spacing(space[2]),
+            marginBottom: ds.spacing(space[2]),
           }}
         >
-          <Text className="mr-1">{statusEmoji}</Text>
           <Text
-            className="font-medium"
-            style={{ color: statusStyle.text, fontSize: ds.fontSize(13) }}
+            style={{
+              flexShrink: 1,
+              fontSize: ds.fontSize(typeScale.title),
+              fontWeight: weight.bold,
+              color: color.ink,
+            }}
           >
-            {statusLabel}
+            Order #{order.order_number}
           </Text>
+          <StatusPill status={STATUS_TONE[order.status] ?? 'draft'} label={statusLabel} />
         </View>
-      </View>
 
-      {/* Date Row */}
-      <Text className="text-gray-500" style={{ fontSize: ds.fontSize(14), marginBottom: ds.spacing(8) }}>
-        {formatDate(order.created_at)}
-      </Text>
+        {/* Date Row */}
+        <Text
+          style={{
+            fontSize: ds.fontSize(typeScale.secondary),
+            color: color.ink2,
+            marginBottom: ds.spacing(space[2]),
+          }}
+        >
+          {formatDate(order.created_at)}
+        </Text>
 
-      {/* Location & Items Row */}
-      <View className="flex-row items-center">
-        <Ionicons name="location" size={ds.icon(14)} color={colors.gray[400]} />
-        <Text className="text-gray-600 ml-1" style={{ fontSize: ds.fontSize(14), flexShrink: 1 }}>{locationName}</Text>
-        <Text className="text-gray-400 mx-2">•</Text>
-        <Text className="text-gray-600" style={{ fontSize: ds.fontSize(14) }}>{itemCount} item{itemCount !== 1 ? 's' : ''}</Text>
-        {noteCount > 0 && (
-          <>
-            <Text className="text-gray-400 mx-2">•</Text>
-            <Text className="text-blue-700" style={{ fontSize: ds.fontSize(14) }}>{noteCount} note{noteCount !== 1 ? 's' : ''}</Text>
-          </>
-        )}
-      </View>
+        {/* Location & Items Row */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: ds.spacing(space[1]) }}>
+          <Ionicons name="location" size={ds.icon(14)} color={color.ink3} />
+          <Text
+            style={{
+              flexShrink: 1,
+              fontSize: ds.fontSize(typeScale.secondary),
+              color: color.ink2,
+            }}
+          >
+            {locationName}
+          </Text>
+          <Text style={{ color: color.ink3 }}>•</Text>
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
+            {itemCount} item{itemCount !== 1 ? 's' : ''}
+          </Text>
+          {noteCount > 0 && (
+            <>
+              <Text style={{ color: color.ink3 }}>•</Text>
+              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
+                {noteCount} note{noteCount !== 1 ? 's' : ''}
+              </Text>
+            </>
+          )}
+        </View>
+      </Card>
     </TouchableOpacity>
   );
 }
@@ -201,117 +213,74 @@ export default function OrdersScreen() {
   const backTarget =
     typeof backTo === 'string' && backTo.length > 0 ? (backTo as Href) : null;
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    if (backTarget) {
+      router.replace(backTarget);
+      return;
+    }
+
+    router.replace('/(tabs)/settings');
+  };
+
   const renderItem = ({ item }: { item: OrderWithDetails }) => (
     <OrderListCard order={item} />
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: glassColors.background }} edges={['top', 'left', 'right']}>
-      {/* Header */}
-      <View style={{ 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        paddingHorizontal: glassSpacing.screen, 
-        paddingVertical: ds.spacing(12),
-        backgroundColor: glassColors.background 
-      }}>
-        <View className="flex-row items-center flex-1">
-          <TouchableOpacity
-            onPress={() => {
-              if (router.canGoBack()) {
-                router.back();
-                return;
-              }
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.page }} edges={['top', 'left', 'right']}>
+      <ScreenHeader
+        mode="pushed"
+        title="My orders"
+        onBack={handleBack}
+        includeSafeArea={false}
+      />
 
-              if (backTarget) {
-                router.replace(backTarget);
-                return;
-              }
+      {/* Status filter */}
+      <FlatList
+        horizontal
+        data={statuses}
+        keyExtractor={(item) => item || 'all'}
+        showsHorizontalScrollIndicator={false}
+        style={{ flexGrow: 0 }}
+        contentContainerStyle={{
+          gap: ds.spacing(space[2]),
+          paddingHorizontal: ds.spacing(space[4]),
+          paddingVertical: ds.spacing(space[2]),
+        }}
+        renderItem={({ item: status }) => (
+          <Chip
+            label={status ? ORDER_STATUS_LABELS[status] : 'All'}
+            selected={selectedStatus === status}
+            onPress={() => setSelectedStatus(status)}
+          />
+        )}
+      />
 
-              router.replace('/(tabs)/settings');
-            }}
-            style={{ width: 44, height: 44, borderRadius: glassRadii.round, backgroundColor: glassColors.mediumFill, alignItems: 'center', justifyContent: 'center', marginRight: ds.spacing(12) }}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="arrow-back" size={ds.icon(22)} color={glassColors.textPrimary} />
-          </TouchableOpacity>
-          <Text style={{ fontSize: glassTypography.screenTitle, fontWeight: '700', color: glassColors.textPrimary }}>My Orders</Text>
-        </View>
-      </View>
-
-      {/* Status Filter */}
-      <View className="bg-white border-b border-gray-100">
-        <FlatList
-          horizontal
-          data={statuses}
-          keyExtractor={(item) => item || 'all'}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: ds.spacing(12), paddingVertical: ds.spacing(12) }}
-          renderItem={({ item: status }) => {
-            const isSelected = selectedStatus === status;
-            const label = status ? ORDER_STATUS_LABELS[status] : 'All';
-
-            return (
-              <TouchableOpacity
-                onPress={() => setSelectedStatus(status)}
-                className={`rounded-full ${
-                  isSelected ? 'bg-primary-500' : 'bg-gray-100'
-                }`}
-                style={{
-                  marginRight: ds.spacing(8),
-                  paddingHorizontal: ds.spacing(16),
-                  paddingVertical: ds.spacing(8),
-                }}
-              >
-                <Text
-                  className={`font-medium ${
-                    isSelected ? 'text-white' : 'text-gray-600'
-                  }`}
-                  style={{ fontSize: ds.fontSize(14) }}
-                >
-                  {label}
-                </Text>
-              </TouchableOpacity>
-            );
-          }}
-        />
-      </View>
-
-      {/* Orders List */}
+      {/* Orders list */}
       <FlatList
         data={filteredOrders as OrderWithDetails[]}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: ds.spacing(16), flexGrow: 1 }}
-        ItemSeparatorComponent={() => <View style={{ height: ds.spacing(12) }} />}
+        contentContainerStyle={{ padding: ds.spacing(space[4]), flexGrow: 1 }}
+        ItemSeparatorComponent={() => <View style={{ height: ds.spacing(space[3]) }} />}
         ListEmptyComponent={() => (
-          <View className="flex-1 items-center justify-center py-16">
-            <View
-              className="bg-gray-100 rounded-full items-center justify-center"
-              style={{ width: ds.icon(80), height: ds.icon(80), marginBottom: ds.spacing(16) }}
-            >
-              <Ionicons name="receipt-outline" size={ds.icon(40)} color={colors.gray[400]} />
-            </View>
-            <Text className="text-gray-900 font-semibold" style={{ fontSize: ds.fontSize(18), marginBottom: ds.spacing(4) }}>
-              No orders yet
-            </Text>
-            <Text className="text-gray-500 text-center" style={{ paddingHorizontal: ds.spacing(32), fontSize: ds.fontSize(14) }}>
-              Your submitted orders will appear here
-            </Text>
-            <TouchableOpacity
-              onPress={() => router.push('/quick-order')}
-              className="mt-6 bg-primary-500 rounded-xl"
-              style={{ paddingHorizontal: ds.spacing(24), paddingVertical: ds.spacing(12) }}
-            >
-              <Text className="text-white font-semibold" style={{ fontSize: ds.fontSize(15) }}>Start Ordering</Text>
-            </TouchableOpacity>
-          </View>
+          <EmptyState
+            icon="receipt-outline"
+            title="No orders yet"
+            body="Your submitted orders will appear here."
+            action={{ label: 'Start ordering', onPress: () => router.push('/quick-order') }}
+          />
         )}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={colors.primary[500]}
+            tintColor={color.accent}
           />
         }
       />

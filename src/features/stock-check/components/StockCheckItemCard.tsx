@@ -27,18 +27,9 @@ import {
   triggerNotificationHaptic,
   NotificationFeedbackType,
 } from '@/lib/haptics';
-import {
-  colors,
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-  grayScale,
-} from '@/theme/design';
+import { color, radius, space, typeScale, weight } from '@/theme/tokens';
 import type { StockCheckItem } from '../types';
 import { formatStockDisplay, getStockUnitLabel } from '../utils/stockMath';
-
-/** Vibrant success green for the "checked / done" state on the card chevron. */
-const SUCCESS_GREEN = '#22C55E';
 
 interface StockCheckItemCardProps {
   item: StockCheckItem;
@@ -66,15 +57,20 @@ const SWIPE_MAX_TRANSLATION = 140;
 /** Velocity (px/sec) that on its own commits a swipe even if below distance threshold. */
 const SWIPE_VELOCITY_COMMIT = 850;
 
-const REVEAL_GREEN_BG = 'rgba(34, 197, 94, 0.95)';
-const REVEAL_RED_BG = 'rgba(232, 80, 58, 0.95)';
+/**
+ * The swipe reveals under the card. They are inline confirmation of the state
+ * the swipe is about to write, so they use the reserved status colours rather
+ * than the action accent; no button, chip or title is coloured here.
+ */
+const REVEAL_FULL_BG = color.good;
+const REVEAL_EMPTY_BG = color.alert;
 
 /* ──────────────────────────────────────────────────────────────────────────
  * EditChevron — circular action button on the right edge of every row.
  *
  * Phase-6 success state:
- *   • Idle (item unchecked): grey background + chevron-forward icon.
- *   • Done (item checked):   vibrant green background + checkmark icon,
+ *   • Idle (item unchecked): well background + chevron-forward icon.
+ *   • Done (item checked):   accent background + checkmark icon,
  *     reached via a smooth Reanimated transition (color interpolation +
  *     1.0 → 1.12 → 1.0 scale pop). The transition fires on the false →
  *     true edge of `isChecked`; toggling back the other way reverses
@@ -106,7 +102,7 @@ const EditChevron = memo(function EditChevron({
 }: EditChevronProps) {
   const ds = useScaledStyles();
 
-  /* Steady-state progress: 0 = idle (grey + chevron), 1 = done (green +
+  /* Steady-state progress: 0 = idle (well + chevron), 1 = done (accent +
    * check). Drives the background color interpolation and the icon cross-
    * fade. */
   const progress = useSharedValue(isChecked ? 1 : 0);
@@ -148,7 +144,7 @@ const EditChevron = memo(function EditChevron({
     backgroundColor: interpolateColor(
       progress.value,
       [0, 1],
-      [grayScale[100], SUCCESS_GREEN],
+      [color.well, color.accent],
     ),
     transform: [{ scale: popScale.value }],
   }));
@@ -174,7 +170,7 @@ const EditChevron = memo(function EditChevron({
           {
             width: 36,
             height: 36,
-            borderRadius: glassRadii.round,
+            borderRadius: radius.pill,
             alignItems: 'center',
             justifyContent: 'center',
           },
@@ -185,11 +181,11 @@ const EditChevron = memo(function EditChevron({
           <Ionicons
             name="chevron-forward"
             size={ds.icon(18)}
-            color={glassColors.textPrimary}
+            color={color.ink}
           />
         </Animated.View>
         <Animated.View style={[{ position: 'absolute' }, checkIconStyle]}>
-          <Ionicons name="checkmark" size={ds.icon(20)} color={colors.white} />
+          <Ionicons name="checkmark" size={ds.icon(20)} color={color.onAccent} />
         </Animated.View>
       </Animated.View>
     </TouchableOpacity>
@@ -394,7 +390,7 @@ function StockCheckItemCardImpl({
       )}
       style={{
         position: 'relative',
-        borderRadius: glassRadii.surface,
+        borderRadius: radius.card,
         overflow: 'hidden',
       }}
     >
@@ -408,9 +404,9 @@ function StockCheckItemCardImpl({
             bottom: 0,
             left: 0,
             right: 0,
-            borderRadius: glassRadii.surface,
-            backgroundColor: REVEAL_GREEN_BG,
-            paddingHorizontal: ds.spacing(20),
+            borderRadius: radius.card,
+            backgroundColor: REVEAL_FULL_BG,
+            paddingHorizontal: ds.spacing(space[5]),
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'flex-start',
@@ -422,25 +418,24 @@ function StockCheckItemCardImpl({
           style={{
             width: 36,
             height: 36,
-            borderRadius: glassRadii.round,
-            backgroundColor: 'rgba(255,255,255,0.25)',
+            borderRadius: radius.pill,
+            backgroundColor: color.card,
             alignItems: 'center',
             justifyContent: 'center',
-            marginRight: ds.spacing(12),
+            marginRight: ds.spacing(space[3]),
           }}
         >
           <Ionicons
             name="checkmark"
             size={ds.icon(20)}
-            color={colors.white}
+            color={REVEAL_FULL_BG}
           />
         </View>
         <Text
           style={{
-            color: colors.white,
-            fontSize: ds.fontSize(15),
-            fontWeight: '800',
-            letterSpacing: 0.4,
+            color: color.onAccent,
+            fontSize: ds.fontSize(typeScale.body),
+            fontWeight: weight.bold,
           }}
         >
           Full
@@ -456,9 +451,9 @@ function StockCheckItemCardImpl({
             bottom: 0,
             left: 0,
             right: 0,
-            borderRadius: glassRadii.surface,
-            backgroundColor: REVEAL_RED_BG,
-            paddingHorizontal: ds.spacing(20),
+            borderRadius: radius.card,
+            backgroundColor: REVEAL_EMPTY_BG,
+            paddingHorizontal: ds.spacing(space[5]),
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'flex-end',
@@ -468,11 +463,10 @@ function StockCheckItemCardImpl({
       >
         <Text
           style={{
-            color: colors.white,
-            fontSize: ds.fontSize(15),
-            fontWeight: '800',
-            letterSpacing: 0.4,
-            marginRight: ds.spacing(12),
+            color: color.onAccent,
+            fontSize: ds.fontSize(typeScale.body),
+            fontWeight: weight.bold,
+            marginRight: ds.spacing(space[3]),
           }}
         >
           All out
@@ -481,8 +475,8 @@ function StockCheckItemCardImpl({
           style={{
             width: 36,
             height: 36,
-            borderRadius: glassRadii.round,
-            backgroundColor: 'rgba(255,255,255,0.25)',
+            borderRadius: radius.pill,
+            backgroundColor: color.card,
             alignItems: 'center',
             justifyContent: 'center',
           }}
@@ -490,7 +484,7 @@ function StockCheckItemCardImpl({
           <Ionicons
             name="alert"
             size={ds.icon(20)}
-            color={colors.white}
+            color={REVEAL_EMPTY_BG}
           />
         </View>
       </Animated.View>
@@ -500,10 +494,10 @@ function StockCheckItemCardImpl({
         <Animated.View
           style={[
             {
-              backgroundColor: colors.white,
-              borderRadius: glassRadii.surface,
-              borderWidth: isActive ? 2 : glassHairlineWidth,
-              borderColor: isActive ? glassColors.accent : glassColors.cardBorder,
+              backgroundColor: color.card,
+              borderRadius: radius.card,
+              borderWidth: isActive ? 2 : 1,
+              borderColor: isActive ? color.accent : color.hairline,
             },
             cardAnimatedStyle,
           ]}
@@ -521,8 +515,8 @@ function StockCheckItemCardImpl({
             onPress={handleEdit}
             activeOpacity={0.96}
             style={{
-              paddingHorizontal: ds.spacing(16),
-              paddingVertical: ds.spacing(13),
+              paddingHorizontal: ds.spacing(space[4]),
+              paddingVertical: ds.spacing(space[3] + 1),
               minHeight: ds.spacing(64),
               justifyContent: 'center',
             }}
@@ -536,17 +530,15 @@ function StockCheckItemCardImpl({
               <View
                 style={{
                   flex: 1,
-                  paddingRight: ds.spacing(10),
+                  paddingRight: ds.spacing(space[2] + 2),
                   justifyContent: 'center',
                 }}
               >
                 <Text
                   style={{
-                    fontSize: ds.fontSize(16),
-                    fontWeight: '700',
-                    color: isUnchecked
-                      ? glassColors.textSecondary
-                      : glassColors.textPrimary,
+                    fontSize: ds.fontSize(typeScale.body),
+                    fontWeight: weight.bold,
+                    color: isUnchecked ? color.ink2 : color.ink,
                   }}
                   numberOfLines={1}
                 >
@@ -558,16 +550,14 @@ function StockCheckItemCardImpl({
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  gap: ds.spacing(10),
+                  gap: ds.spacing(space[2] + 2),
                 }}
               >
                 <Text
                   style={{
-                    fontSize: ds.fontSize(18),
-                    fontWeight: '900',
-                    color: isUnchecked
-                      ? glassColors.textMuted
-                      : glassColors.textPrimary,
+                    fontSize: ds.fontSize(typeScale.title),
+                    fontWeight: weight.bold,
+                    color: isUnchecked ? color.ink3 : color.ink,
                   }}
                   numberOfLines={1}
                 >
@@ -584,16 +574,16 @@ function StockCheckItemCardImpl({
             {item.hasNote ? (
               <View
                 style={{
-                  marginTop: ds.spacing(10),
-                  paddingTop: ds.spacing(10),
-                  borderTopWidth: glassHairlineWidth,
-                  borderTopColor: glassColors.divider,
+                  marginTop: ds.spacing(space[2] + 2),
+                  paddingTop: ds.spacing(space[2] + 2),
+                  borderTopWidth: 1,
+                  borderTopColor: color.hairline,
                 }}
               >
                 <Text
                   style={{
-                    fontSize: ds.fontSize(13),
-                    color: glassColors.textSecondary,
+                    fontSize: ds.fontSize(typeScale.secondary),
+                    color: color.ink2,
                     fontStyle: 'italic',
                   }}
                   numberOfLines={3}
