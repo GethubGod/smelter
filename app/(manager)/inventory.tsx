@@ -1540,7 +1540,7 @@ export default function ManagerInventoryScreen() {
 
           <View
             className="flex-row items-center border"
-            style={{ backgroundColor: color.card, borderColor: color.hairline, borderRadius: radius.card, borderRadius: radius.card,
+            style={{ backgroundColor: color.card, borderColor: color.hairline, borderRadius: radius.card,
               paddingHorizontal: ds.spacing(14),
               height: ds.buttonH,
               shadowColor: colors.text,

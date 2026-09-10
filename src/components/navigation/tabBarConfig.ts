@@ -53,7 +53,7 @@ export const tabBarBadgeStyle = {
   backgroundColor: colors.primary,
   color: colors.textOnPrimary,
   fontSize: typeScale.caption,
-  fontWeight: weight.bold as const,
+  fontWeight: weight.bold,
   minWidth: 18,
   height: 18,
   lineHeight: 16,

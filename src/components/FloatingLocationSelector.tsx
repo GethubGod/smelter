@@ -572,7 +572,7 @@ export function FloatingLocationSelector({
               onPress={toggleSelector}
               style={styles.headerButton}
             >
-              <Ionicons name="chevron-down" size={18} color=color.card />
+              <Ionicons name="chevron-down" size={18} color={color.card} />
             </TouchableOpacity>
           </View>
 
@@ -686,7 +686,7 @@ export function FloatingLocationSelector({
                             { backgroundColor: locationTone.dot },
                           ]}
                         >
-                          <Ionicons name="checkmark" size={16} color=color.card />
+                          <Ionicons name="checkmark" size={16} color={color.card} />
                         </View>
                       ) : (
                         <Ionicons

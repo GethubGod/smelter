@@ -192,9 +192,7 @@ export default function ManagerOrdersScreen() {
     return (
       <TouchableOpacity
         className="p-4 mb-3 border"
-        style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline, backgroundColor: colors.card,
-          borderColor: colors.divider,
-          shadowColor: colors.background,
+        style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline,
           shadowOffset: { width: 0, height: 0 },
           shadowOpacity: 0,
           shadowRadius: 0,

@@ -546,7 +546,7 @@ export function QuickOrderReviewQueueScreen() {
 
   const renderOrderItem = (item: ReviewOrderItem) => (
     <View key={item.id} style={[styles.itemRow, { paddingVertical: ds.spacing(8) }]}>
-      <Ionicons name="checkmark-circle-outline" size={20} color=color.good />
+      <Ionicons name="checkmark-circle-outline" size={20} color={color.good} />
       <View style={{ flex: 1, marginLeft: ds.spacing(10) }}>
         <Text style={[styles.itemName, { fontSize: ds.fontSize(typeScale.body) }]}>
           {item.inventory_item?.name || 'Unknown item'}

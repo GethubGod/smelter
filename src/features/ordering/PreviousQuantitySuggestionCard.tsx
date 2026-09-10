@@ -1,6 +1,5 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerSelectionHaptic } from '@/lib/haptics';
 import { colors, quickOrderAccent } from '@/theme/design';
 import type { PreviousQuantitySuggestion } from './quickOrderHistorySuggestions';
@@ -43,11 +42,9 @@ function formatSuggestionHeading(suggestion: PreviousQuantitySuggestion): string
  * All styles are inline to avoid NativeWind / StyleSheet.create conflicts.
  */
 export function PreviousQuantitySuggestionCard({ suggestion, onUse, disabled = false }: PreviousQuantitySuggestionCardProps) {
-  const ds = useScaledStyles();
   const heading = formatSuggestionHeading(suggestion);
   const value = formatSuggestionValue(suggestion);
 
-  const cardRadius = Math.max(radius.card, 16);
 
   return (
     <View
@@ -58,7 +55,7 @@ export function PreviousQuantitySuggestionCard({ suggestion, onUse, disabled = f
         alignItems: 'center',
         justifyContent: 'space-between',
         backgroundColor: colors.white,
-        borderRadius: cardRadius,
+        borderRadius: radius.card,
         minHeight: 74,
         paddingVertical: 13,
         paddingLeft: 18,

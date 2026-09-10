@@ -621,7 +621,7 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
                   onPress={handleCancelExpand}
                   accessibilityLabel="Cancel add item"
                 >
-                  <Ionicons name="close" size={ds.icon(20)} color=color.alert />
+                  <Ionicons name="close" size={ds.icon(20)} color={color.alert} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={{
@@ -688,7 +688,7 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
                   }}
                   accessibilityLabel="Remove from cart"
                 >
-                  <Ionicons name="close" size={ds.icon(20)} color=color.alert />
+                  <Ionicons name="close" size={ds.icon(20)} color={color.alert} />
                 </TouchableOpacity>
               </View>
             )}
