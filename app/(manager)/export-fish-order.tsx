@@ -218,7 +218,7 @@ function FishOrderExportEditor({ order }: { order: FishOrderExport }) {
             ) : (
               <>
                 <View className="flex-row items-center mb-2">
-                  <Text className="mr-2" style={{ fontSize: typeScale.display }}>🐟</Text>
+                  <Text className="mr-2" style={{ fontSize: typeScale.display }}></Text>
                   <Text className="font-bold flex-1" style={{ fontSize: typeScale.title, color: color.ink }}>
                     {legacyItemName}
                   </Text>
@@ -251,7 +251,7 @@ function FishOrderExportEditor({ order }: { order: FishOrderExport }) {
                   elevation: 2 }}
               >
                 {/* Item Info */}
-                <Text className="mr-2" style={{ fontSize: typeScale.title }}>🐟</Text>
+                <Text className="mr-2" style={{ fontSize: typeScale.title }}></Text>
                 <View className="flex-1">
                   <Text className="font-semibold" style={{ color: color.ink }}>{item.itemName}</Text>
                   <Text style={{ fontSize: typeScale.body, color: color.ink2 }}>{item.unit}</Text>

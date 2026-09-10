@@ -196,7 +196,7 @@ async function performSendToIntelligence(
         {
           id: generateId(),
           type: 'ai' as const,
-          text: "No internet — I've saved your order. I'll process it when you're back online.",
+          text: "No internet. I've saved your order. I'll process it when you're back online.",
           timestamp: Date.now(),
         },
       ],

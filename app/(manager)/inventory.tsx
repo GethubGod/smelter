@@ -371,7 +371,7 @@ export default function ManagerInventoryScreen() {
       setAddedKeys((prev) => ({ ...prev, [key]: false }));
     }, 1500);
 
-    showToastMessage(`✓ Added ${item.inventory_item.name} (${quantity} ${item.unit_type})`);
+    showToastMessage(`Added ${item.inventory_item.name} (${quantity} ${item.unit_type})`);
   }, [addToCart, showToastMessage]);
 
   const handleCreateOrderFromReorder = useCallback(() => {
@@ -391,7 +391,7 @@ export default function ManagerInventoryScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
 
-    showToastMessage(`✓ Added ${reorderItems.length} items to cart`);
+    showToastMessage(`Added ${reorderItems.length} items to cart`);
     router.push('/(manager)/cart');
   }, [addToCart, showToastMessage, stockWithStatus]);
 
@@ -557,7 +557,7 @@ export default function ManagerInventoryScreen() {
 
       if (error) throw error;
 
-      showToastMessage('✓ Stock settings updated');
+      showToastMessage('Stock settings updated');
       setShowEditModal(false);
       fetchInventoryStock();
     } catch (err: any) {
@@ -698,7 +698,7 @@ export default function ManagerInventoryScreen() {
         if (updateError) throw updateError;
       }
 
-      showToastMessage('✓ Item moved');
+      showToastMessage('Item moved');
       setShowMoveModal(false);
       setShowEditModal(false);
       fetchInventoryStock();
@@ -738,7 +738,7 @@ export default function ManagerInventoryScreen() {
 
               if (error) throw error;
 
-              showToastMessage('✓ Item deactivated');
+              showToastMessage('Item deactivated');
               setShowEditModal(false);
               fetchInventoryStock();
             } catch (err: any) {
@@ -1162,7 +1162,7 @@ export default function ManagerInventoryScreen() {
                 if (updateError) throw updateError;
               }
 
-              showToastMessage(`✓ Removed ${bulkSelectedCount} item${bulkSelectedCount !== 1 ? 's' : ''}`);
+              showToastMessage(`Removed ${bulkSelectedCount} item${bulkSelectedCount !== 1 ? 's' : ''}`);
               exitBulkMode();
               fetchInventoryStock();
             } catch (err: any) {
@@ -1279,7 +1279,7 @@ export default function ManagerInventoryScreen() {
         }
       }
 
-      showToastMessage(`✓ Moved ${bulkSelectedCount} item${bulkSelectedCount !== 1 ? 's' : ''}`);
+      showToastMessage(`Moved ${bulkSelectedCount} item${bulkSelectedCount !== 1 ? 's' : ''}`);
       setShowBulkMoveModal(false);
       exitBulkMode();
       fetchInventoryStock();
@@ -1329,20 +1329,20 @@ export default function ManagerInventoryScreen() {
   );
 
   const renderEmptyState = useCallback(() => {
-    let icon = '🎉';
+    let icon = '';
     let title = 'All items are well stocked!';
     let subtitle = 'No items need reordering at this time.';
 
     if (debouncedQuery.length > 0) {
-      icon = '🔍';
+      icon = '';
       title = `No items match "${debouncedQuery}"`;
       subtitle = 'Try a different search.';
     } else if (categoryFilter) {
-      icon = '📦';
+      icon = '';
       title = 'No items in this category';
       subtitle = 'Try a different category.';
     } else if (selectedStat !== 'all') {
-      icon = '🎉';
+      icon = '';
       title = 'No items match this filter';
       subtitle = 'Try a different filter.';
     }
