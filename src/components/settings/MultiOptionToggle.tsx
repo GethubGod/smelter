@@ -19,8 +19,8 @@ interface MultiOptionToggleProps<T> {
  * settings use. `Segment` keys on strings, so values round-trip through
  * `String(value)`.
  *
- * A per-option `disabled` is honoured by ignoring the change; `Segment` has no
- * per-option dimming, so the screen's helper text carries that meaning.
+ * A per-option `disabled` reaches `Segment`, so an unavailable option is dimmed
+ * and announced as disabled instead of looking pressable and doing nothing.
  */
 export function MultiOptionToggle<T extends string | number>({
   options,
@@ -29,8 +29,13 @@ export function MultiOptionToggle<T extends string | number>({
   disabled = false,
 }: MultiOptionToggleProps<T>) {
   const segmentOptions = useMemo<SegmentOption<string>[]>(
-    () => options.map((option) => ({ value: String(option.value), label: option.label })),
-    [options],
+    () =>
+      options.map((option) => ({
+        value: String(option.value),
+        label: option.label,
+        disabled: disabled || option.disabled === true,
+      })),
+    [disabled, options],
   );
 
   const handleChange = (next: string) => {

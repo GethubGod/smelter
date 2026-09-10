@@ -23,13 +23,15 @@ import {
   ListRow,
   Loading,
   ScreenHeader,
+  StatusPill,
+  type StatusTone,
 } from '@/components/ui';
 import { useAuthStore } from '@/store';
 import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
 import { useManagedRefresh } from '@/hooks/useManagedRefresh';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
-import { color, radius, size, space, tracking, typeScale, weight } from '@/theme/tokens';
+import { color, radius, size, space, typeScale, weight } from '@/theme/tokens';
 import { ManagedUser, listManagedUsers, setManagedUserSuspended } from '@/services/userManagement';
 import { getModulesForUser, setUserModule, type ModuleKey } from '@/services/userModules';
 import {
@@ -435,13 +437,13 @@ export default function UserManagementScreen() {
 
     const roleLabel = item.role === 'manager' ? 'Manager' : 'Employee';
 
-    // StatusPill covers the five order states only, so account status uses the
-    // same status tokens directly.
-    const status = item.is_suspended
-      ? { label: 'Suspended', background: color.alertBg, text: color.alert }
+    // Account status reuses the contract pill: the same three tones the order
+    // states use, relabelled, so the dot and the word always travel together.
+    const status: { tone: StatusTone; label: string } = item.is_suspended
+      ? { tone: 'cancelled', label: 'Suspended' }
       : inactive
-        ? { label: 'Inactive', background: color.warningBg, text: color.warning }
-        : { label: 'Active', background: color.goodBg, text: color.good };
+        ? { tone: 'submitted', label: 'Inactive' }
+        : { tone: 'fulfilled', label: 'Active' };
 
     return (
       <Card style={{ marginBottom: ds.spacing(space[3]) }}>
@@ -485,27 +487,7 @@ export default function UserManagementScreen() {
             </Text>
           </View>
 
-          <View
-            style={{
-              backgroundColor: status.background,
-              borderRadius: radius.pill,
-              paddingHorizontal: ds.spacing(space[2] + 1),
-              paddingVertical: ds.spacing(space[1] - 1),
-            }}
-          >
-            <Text
-              accessibilityLabel={`Status: ${status.label}`}
-              style={{
-                fontSize: ds.fontSize(typeScale.caption),
-                fontWeight: weight.bold,
-                letterSpacing: tracking.caption,
-                textTransform: 'uppercase',
-                color: status.text,
-              }}
-            >
-              {status.label}
-            </Text>
-          </View>
+          <StatusPill status={status.tone} label={status.label} />
         </View>
 
         {item.role === 'employee' ? (

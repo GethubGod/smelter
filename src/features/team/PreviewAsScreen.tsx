@@ -3,12 +3,23 @@
 // getVisibleEmployeeTabs logic the employee layout uses, a live render that
 // cannot drift. Strictly read-only: this screen never writes anything.
 
-import { useCallback, useState } from 'react';
+// React is imported by name because the jest transform compiles JSX with the
+// classic runtime; the app itself uses the automatic one either way.
+import React, { useCallback, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Button, Card, EmptyState, ListRow, Loading } from '@/components/ui';
+import {
+  Button,
+  Card,
+  EmptyState,
+  ListRow,
+  Loading,
+  TabBar,
+  getTabBarClearance,
+  type TabBarItem,
+} from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { auth, color, radius, size, space, tracking, typeScale, weight } from '@/theme/tokens';
 import { getModulesForUser } from '@/services/userModules';
@@ -34,6 +45,7 @@ const TAB_DESCRIPTIONS: Record<string, string> = {
 
 export default function PreviewAsScreen() {
   const ds = useScaledStyles();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     userId?: string | string[];
     name?: string | string[];
@@ -67,6 +79,14 @@ export default function PreviewAsScreen() {
   );
 
   const tabKeys = modules ? getVisibleEmployeeTabs(modules) : [];
+  // The preview shows the real pill, in the real order, from the same list the
+  // rows above use. It is an illustration, so it takes no touches and is not
+  // announced twice: the rows above already read out every tab.
+  const previewTabs: TabBarItem[] = tabKeys.map((key) => ({
+    name: key,
+    label: EMPLOYEE_TAB_META[key]?.label ?? key,
+    icon: (EMPLOYEE_TAB_META[key]?.icon ?? 'ellipse-outline') as TabBarItem['icon'],
+  }));
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: auth.bg }} edges={['top', 'left', 'right']}>
@@ -107,7 +127,7 @@ export default function PreviewAsScreen() {
           style={{ flex: 1 }}
           contentContainerStyle={{
             padding: ds.spacing(space[4]),
-            paddingBottom: ds.spacing(space[3]),
+            paddingBottom: getTabBarClearance(insets.bottom),
           }}
         >
           <Text
@@ -178,40 +198,14 @@ export default function PreviewAsScreen() {
         </ScrollView>
 
         {/* The real tab list, rendered from the same visible-tab list. */}
-        {modules !== null ? (
+        {modules !== null && previewTabs.length ? (
           <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-around',
-              borderTopWidth: 1,
-              borderTopColor: color.hairline,
-              backgroundColor: color.card,
-              paddingTop: ds.spacing(space[2]),
-              paddingBottom: ds.spacing(space[5]),
-            }}
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
           >
-            {tabKeys.map((key, index) => {
-              const meta = EMPLOYEE_TAB_META[key];
-              const active = index === 0;
-              return (
-                <View key={key} style={{ alignItems: 'center', gap: 2 }}>
-                  <Ionicons
-                    name={(meta?.icon ?? 'ellipse-outline') as keyof typeof Ionicons.glyphMap}
-                    size={ds.icon(size.icon)}
-                    color={active ? color.accent : color.tabInactive}
-                  />
-                  <Text
-                    style={{
-                      fontSize: ds.fontSize(typeScale.caption),
-                      fontWeight: active ? weight.bold : weight.regular,
-                      color: active ? color.accent : color.tabInactive,
-                    }}
-                  >
-                    {meta?.label ?? key}
-                  </Text>
-                </View>
-              );
-            })}
+            <TabBar tabs={previewTabs} active={previewTabs[0].name} onPress={() => undefined} />
           </View>
         ) : null}
       </View>

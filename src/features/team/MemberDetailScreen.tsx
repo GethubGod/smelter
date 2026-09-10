@@ -3,7 +3,7 @@
 // through the manager-gated set_user_default_location RPC.
 
 import { useCallback, useState } from 'react';
-import { Alert, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useShallow } from 'zustand/react/shallow';
@@ -12,6 +12,7 @@ import {
   Button,
   Card,
   EmptyState,
+  Input,
   ListRow,
   Loading,
   ScreenHeader,
@@ -21,7 +22,7 @@ import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
 import { useAuthStore } from '@/store';
 import { triggerNotificationHaptic, NotificationFeedbackType } from '@/lib/haptics';
-import { color, radius, space, typeScale, weight } from '@/theme/tokens';
+import { color, space, typeScale, weight } from '@/theme/tokens';
 import { listManagedUsers, type ManagedUser } from '@/services/userManagement';
 import { getModulesForUser, setUserModule, type ModuleKey } from '@/services/userModules';
 import {
@@ -307,38 +308,21 @@ export default function MemberDetailScreen() {
           <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
             Type a new 4-digit PIN. Tell them in person.
           </Text>
-          <TextInput
+          <Input
             value={resetPin}
             onChangeText={(value) => {
               setResetPin(value.replace(/[^0-9]/g, '').slice(0, 4));
               if (resetError) setResetError(null);
             }}
             accessibilityLabel="New PIN"
+            placeholder="New 4-digit PIN"
             keyboardType="number-pad"
             secureTextEntry
             maxLength={4}
             editable={!resetBusy}
             autoFocus
-            style={{
-              backgroundColor: color.well,
-              borderRadius: radius.control,
-              paddingHorizontal: ds.spacing(space[3] + 2),
-              minHeight: 48,
-              fontSize: ds.fontSize(typeScale.title),
-              fontWeight: weight.bold,
-              letterSpacing: 8,
-              textAlign: 'center',
-              color: color.ink,
-            }}
+            error={resetError ?? undefined}
           />
-          {resetError ? (
-            <Text
-              accessibilityRole="alert"
-              style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.alert }}
-            >
-              {resetError}
-            </Text>
-          ) : null}
           <Button
             label="Reset PIN"
             loading={resetBusy}
