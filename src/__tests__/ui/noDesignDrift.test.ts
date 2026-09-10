@@ -10,8 +10,8 @@
  *   2. `className="bg-gray-50 text-lg rounded-xl"`. The same contract-owned
  *      properties, spelled as NativeWind utilities.
  *
- * Either one lets a sweep burn DRIFT_ALLOWLIST to zero while lint stays green
- * on values that are not in the contract.
+ * Either one lets a sweep report a clean screen while lint stays green on
+ * values that are not in the contract.
  *
  * RuleTester emits its own describe/it blocks, so each run sits at the top
  * level of this file rather than inside one.

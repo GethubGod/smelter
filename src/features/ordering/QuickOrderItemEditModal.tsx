@@ -3,7 +3,6 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   KeyboardEvent,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -13,6 +12,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { FullScreenSheet } from '@/components/ui/FullScreenSheet';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
@@ -53,7 +53,7 @@ type QuickOrderItemEditModalProps = {
 /**
  * Keyboard-safe popup for fixing a single parsed Quick Order item.
  *
- * Renders inside a transparent `Modal` (so it floats above the tab bar, the
+ * Renders inside a transparent `FullScreenSheet` (so it floats above the tab bar, the
  * Order List card and the composer). Layout:
  *   KeyboardAvoidingView (padding on iOS)
  *     → backdrop (tap to dismiss)
@@ -68,9 +68,13 @@ export function QuickOrderItemEditModal(props: QuickOrderItemEditModalProps) {
   const { visible, item } = props;
 
   return (
-    <Modal visible={visible && Boolean(item)} transparent animationType="slide" onRequestClose={props.onClose}>
+    <FullScreenSheet
+      visible={visible && Boolean(item)}
+      presentation="overlay"
+      onClose={props.onClose}
+    >
       {item ? <EditModalBody key={keyForItem(item)} {...props} item={item} /> : null}
-    </Modal>
+    </FullScreenSheet>
   );
 }
 

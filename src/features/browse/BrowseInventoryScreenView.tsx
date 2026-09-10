@@ -9,7 +9,6 @@ import {
   Alert,
   InteractionManager,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -18,6 +17,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { FullScreenSheet } from '@/components/ui/FullScreenSheet';
 import { router } from 'expo-router';
 import { FlashList, FlashListRef } from '@shopify/flash-list';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -799,11 +799,10 @@ export function BrowseInventoryScreenView({
         />
       </View>
 
-      <Modal
+      <FullScreenSheet
         visible={showAddItemModal}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setShowAddItemModal(false)}
+        presentation="overlay"
+        onClose={() => setShowAddItemModal(false)}
       >
         <View style={styles.modalOverlay}>
           <KeyboardAvoidingView
@@ -1144,7 +1143,7 @@ export function BrowseInventoryScreenView({
             </View>
           </KeyboardAvoidingView>
         </View>
-      </Modal>
+      </FullScreenSheet>
     </SafeAreaView>
   );
 }

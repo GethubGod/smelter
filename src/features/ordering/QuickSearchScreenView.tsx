@@ -15,12 +15,12 @@ import {
   InputAccessoryView,
   LayoutAnimation,
   UIManager,
-  Modal,
   ScrollView,
   KeyboardAvoidingView,
   Alert,
   StyleSheet,
 } from "react-native";
+import { FullScreenSheet } from "@/components/ui/FullScreenSheet";
 import { FlashList } from "@shopify/flash-list";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -1292,11 +1292,9 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
       </View>
 
       {/* Quick Create Modal */}
-      <Modal
+      <FullScreenSheet
         visible={showQuickCreate}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowQuickCreate(false)}
+        onClose={() => setShowQuickCreate(false)}
       >
         <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }}>
           <KeyboardAvoidingView
@@ -1538,7 +1536,7 @@ export function QuickSearchScreenView({ mode }: QuickSearchScreenViewProps) {
             </View>
           </KeyboardAvoidingView>
         </SafeAreaView>
-      </Modal>
+      </FullScreenSheet>
 
       {/* Android: Add to Cart button above keyboard */}
       {Platform.OS === "android" &&

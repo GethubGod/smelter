@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
-  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -11,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { FullScreenSheet } from '@/components/ui/FullScreenSheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -694,11 +694,9 @@ export function QuickOrderReviewQueueScreen() {
   };
 
   const renderEditModal = () => (
-    <Modal
+    <FullScreenSheet
       visible={Boolean(editOrder)}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={closeEditModal}
+      onClose={closeEditModal}
     >
       <SafeAreaView style={{ flex: 1, backgroundColor: glassColors.background }}>
         <View style={[styles.modalHeader, { padding: ds.spacing(16) }]}>
@@ -841,7 +839,7 @@ export function QuickOrderReviewQueueScreen() {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    </Modal>
+    </FullScreenSheet>
   );
 
   const renderRejectModal = () => (
