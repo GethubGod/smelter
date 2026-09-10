@@ -220,6 +220,92 @@ describe('stock-check par units', () => {
     expect(formatParSubtitle(item)).toBe('par 8 fillet · 1 case ≈ 10 fillet');
   });
 
+  test('a cached row hydrates with the deficit recomputed, not the stale one', async () => {
+    // The offline cache as the pre-fix build wrote it: 6 cases of salmon
+    // counted, but `orderQuantity` derived against the wheel's unit, so par
+    // was read as 8 cases and 2 cases looked owed.
+    useStockCheckStore.setState({
+      perLocationState: {
+        [LOCATION_ID]: {
+          rows: {
+            [SALMON_ID]: {
+              orderQuantity: 2,
+              checked: true,
+              checkedAt: Date.now(),
+              hasNote: false,
+              noteText: '',
+              unitType: 'pack',
+              stockUnit: 'pack',
+              stockAmount: 6,
+              stockPieces: 0,
+            },
+          },
+          selectedAreaId: null,
+          cachedAt: Date.now(),
+        },
+      },
+    });
+
+    await loadRows([salmonRow()]);
+
+    const item = useStockCheckStore.getState().itemsById[SALMON_ID];
+    expect(item.stockAmount).toBe(6);
+    // 6 cases is 60 fillets against a par of 8 fillets. Before the fix the
+    // cached 2 was copied through and `deriveStatus` turned it into 'low'.
+    expect(item.orderQuantity).toBe(0);
+    expect(item.status).toBe('at_par');
+  });
+
+  test('a genuine shortfall in the cache still hydrates as one', async () => {
+    useStockCheckStore.setState({
+      perLocationState: {
+        [LOCATION_ID]: {
+          rows: {
+            [SALMON_ID]: {
+              orderQuantity: 999,
+              checked: true,
+              checkedAt: Date.now(),
+              hasNote: false,
+              noteText: '',
+              unitType: 'base',
+              stockUnit: 'base',
+              stockAmount: 3,
+              stockPieces: 0,
+            },
+          },
+          selectedAreaId: null,
+          cachedAt: Date.now(),
+        },
+      },
+    });
+
+    await loadRows([salmonRow()]);
+
+    const item = useStockCheckStore.getState().itemsById[SALMON_ID];
+    // 3 fillets against a par of 8 fillets: 5 owed, some stock on hand.
+    expect(item.orderQuantity).toBe(5);
+    expect(item.status).toBe('low');
+  });
+
+  test('marking a row full survives a relaunch as at par', async () => {
+    await loadRows([salmonRow()]);
+    // Count in cases while the row is denominated in fillets.
+    useStockCheckStore.getState().setItemUnitType(SALMON_ID, 'pack');
+    useStockCheckStore.getState().markFull(SALMON_ID);
+    await flushMicrotasks();
+
+    expect(useStockCheckStore.getState().itemsById[SALMON_ID].status).toBe('at_par');
+
+    // Relaunch: same persisted rows, hydrated from scratch.
+    const persisted = useStockCheckStore.getState().perLocationState;
+    useStockCheckStore.setState({ itemsById: {}, areas: [], perLocationState: persisted });
+    await loadRows([salmonRow()]);
+
+    const item = useStockCheckStore.getState().itemsById[SALMON_ID];
+    expect(item.orderQuantity).toBe(0);
+    expect(item.status).toBe('at_par');
+  });
+
   test('a count unit literally named "pack" is still read as the base unit', async () => {
     await loadRows([noriRow()]);
 
