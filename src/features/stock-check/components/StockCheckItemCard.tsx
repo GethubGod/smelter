@@ -58,12 +58,13 @@ const SWIPE_MAX_TRANSLATION = 140;
 const SWIPE_VELOCITY_COMMIT = 850;
 
 /**
- * The swipe reveals under the card. They are inline confirmation of the state
- * the swipe is about to write, so they use the reserved status colours rather
- * than the action accent; no button, chip or title is coloured here.
+ * The swipe reveals under the card. The contract reserves the status colours
+ * (`good`, `warning`, `alert`) for StatusPill and inline validation, so the
+ * reveals use the action accent and neutral ink instead. The icon and the word
+ * carry the meaning; colour alone never does.
  */
-const REVEAL_FULL_BG = color.good;
-const REVEAL_EMPTY_BG = color.alert;
+const REVEAL_FULL_BG = color.accent;
+const REVEAL_EMPTY_BG = color.ink;
 
 /* ──────────────────────────────────────────────────────────────────────────
  * EditChevron — circular action button on the right edge of every row.

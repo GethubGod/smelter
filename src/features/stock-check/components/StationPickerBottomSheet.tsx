@@ -34,6 +34,7 @@ const StationRow = memo(function StationRow({
     <ListRow
       title={option.label}
       last={isLast}
+      selected={isSelected}
       onPress={handlePress}
       accessibilityHint={
         option.badgeCount > 0 ? `${option.badgeCount} unchecked` : undefined

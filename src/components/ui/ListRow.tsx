@@ -17,6 +17,11 @@ export interface ListRowProps {
   /** Last row in a group drops its separator. */
   last?: boolean;
   disabled?: boolean;
+  /**
+   * Marks the row as the chosen one in a picker, so the reader announces
+   * "selected". Additive: rows that are not part of a choice leave it unset.
+   */
+  selected?: boolean;
   accessibilityHint?: string;
   testID?: string;
   style?: StyleProp<ViewStyle>;
@@ -35,6 +40,7 @@ export function ListRow({
   onPress,
   last = false,
   disabled = false,
+  selected,
   accessibilityHint,
   testID,
   style,
@@ -114,7 +120,7 @@ export function ListRow({
       accessibilityRole="button"
       accessibilityLabel={subtitle ? `${title}, ${subtitle}` : title}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled }}
+      accessibilityState={selected === undefined ? { disabled } : { disabled, selected }}
       testID={testID}
     >
       {body}

@@ -1,9 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomSheetShell } from '@/components/BottomSheetShell';
-import { Loading } from '@/components/ui';
+import { Button, Loading, Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerSelectionHaptic } from '@/lib/haptics';
 import { color, radius, typeScale, weight } from '@/theme/tokens';
@@ -26,7 +24,6 @@ interface RecentOrdersSheetProps {
 
 export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) {
   const ds = useScaledStyles();
-  const insets = useSafeAreaInsets();
 
   const [orders, setOrders] = useState<RecentOrder[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -183,46 +180,30 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
   }
 
   return (
-    <BottomSheetShell
+    <Sheet
       visible={visible}
+      title={detailOrder ? detailOrder.supplierName : 'Recent orders'}
       onClose={handleClose}
-      bottomPadding={Math.max(insets.bottom, ds.spacing(12))}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: ds.spacing(10) }}>
-        {detailOrder ? (
-          <TouchableOpacity
+      {detailOrder ? (
+        <View style={{ gap: ds.spacing(8) }}>
+          <Button
+            label="Back to recent orders"
+            variant="secondary"
+            size="small"
+            icon="chevron-back"
             onPress={handleBackToList}
-            accessibilityRole="button"
-            accessibilityLabel="Back to recent orders"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={{ marginRight: ds.spacing(8) }}
-          >
-            <Ionicons name="chevron-back" size={ds.icon(20)} color={color.ink} />
-          </TouchableOpacity>
-        ) : null}
-        <View style={{ flex: 1 }}>
-          <Text
-            style={{
-              fontSize: ds.fontSize(typeScale.title),
-              fontWeight: '700',
-              color: color.ink,
-            }}
-            numberOfLines={1}
-          >
-            {detailOrder ? detailOrder.supplierName : 'Recent orders'}
+          />
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}>
+            {formatRecentOrderDate(detailOrder.createdAt)}
+            {detailOrder.itemCount !== null
+              ? ` • ${detailOrder.itemCount} item${detailOrder.itemCount === 1 ? '' : 's'}`
+              : ''}
           </Text>
-          {detailOrder ? (
-            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}>
-              {formatRecentOrderDate(detailOrder.createdAt)}
-              {detailOrder.itemCount !== null
-                ? ` • ${detailOrder.itemCount} item${detailOrder.itemCount === 1 ? '' : 's'}`
-                : ''}
-            </Text>
-          ) : null}
         </View>
-      </View>
+      ) : null}
 
       {body}
-    </BottomSheetShell>
+    </Sheet>
   );
 }

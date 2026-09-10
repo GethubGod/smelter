@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import * as SMS from 'expo-sms';
-import { GlassSurface } from '@/components';
+import { Card } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import {
   ImpactFeedbackStyle,
@@ -422,14 +422,7 @@ export function DirectSendQueue({ groups, onDone }: DirectSendQueueProps) {
         Supplier {Math.min(progress.position, progress.total)} of {progress.total}
       </Text>
 
-      <GlassSurface
-        intensity="subtle"
-        blurred={false}
-        style={{
-          borderRadius: radius.card,
-          padding: ds.spacing(16),
-        }}
-      >
+      <Card>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text
             style={{
@@ -563,7 +556,7 @@ export function DirectSendQueue({ groups, onDone }: DirectSendQueueProps) {
             isSendingActive,
           )}
         </View>
-      </GlassSurface>
+      </Card>
 
       <View style={{ marginTop: ds.spacing(18) }}>
         {queue.order.map((key) => {

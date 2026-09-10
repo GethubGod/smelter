@@ -1,9 +1,7 @@
 import React, { useCallback } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomSheetShell } from '@/components/BottomSheetShell';
-import { Button } from '@/components/ui';
+import { Button, Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerImpactHaptic } from '@/lib/haptics';
 import { color, radius, typeScale, weight } from '@/theme/tokens';
@@ -43,7 +41,6 @@ export function ConfirmOrderSheet({
   onClose,
 }: ConfirmOrderSheetProps) {
   const ds = useScaledStyles();
-  const insets = useSafeAreaInsets();
 
   const handleClose = useCallback(() => {
     if (isSending) return;
@@ -59,14 +56,7 @@ export function ConfirmOrderSheet({
   const trimmedNote = note.trim();
 
   return (
-    <BottomSheetShell
-      visible={visible}
-      onClose={handleClose}
-      bottomPadding={Math.max(insets.bottom, ds.spacing(14))}
-    >
-      <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: '700', color: color.ink }}>
-        Review order
-      </Text>
+    <Sheet visible={visible} title="Review order" onClose={handleClose}>
       <Text
         style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginBottom: ds.spacing(12) }}
       >
@@ -224,6 +214,6 @@ export function ConfirmOrderSheet({
         fullWidth
         accessibilityHint="Confirms and sends this order"
       />
-    </BottomSheetShell>
+    </Sheet>
   );
 }

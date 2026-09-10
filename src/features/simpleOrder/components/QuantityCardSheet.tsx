@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Sheet } from '@/components/ui';
+import { Segment, Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerImpactHaptic, triggerSelectionHaptic } from '@/lib/haptics';
 import { color, radius, typeScale, weight } from '@/theme/tokens';
@@ -79,6 +79,13 @@ export function QuantityCardSheet({
     setDraft(formatQuantity(usual));
   }, [line]);
 
+  // `Segment` carries the radiogroup role, the labels, the selected state and
+  // the 44pt target that the hand-built control was missing.
+  const unitSegmentOptions = useMemo(
+    () => unitOptions.map((unit) => ({ value: unit, label: unit })),
+    [unitOptions],
+  );
+
   const handleCommit = useCallback(() => {
     if (!line) return;
     void triggerImpactHaptic();
@@ -92,6 +99,10 @@ export function QuantityCardSheet({
       </Sheet>
     );
   }
+
+  // Matching stays case-insensitive, the way the hand-built control compared.
+  const selectedUnit =
+    unitOptions.find((unit) => unit.toLowerCase() === line.unit.toLowerCase()) ?? line.unit;
 
   return (
     <Sheet
@@ -111,52 +122,16 @@ export function QuantityCardSheet({
           : `Counted in ${line.unit}`}
       </Text>
 
-      <View
-        style={{
-          flexDirection: 'row',
-          backgroundColor: color.card,
-          borderWidth: 1,
-          borderColor: color.hairline,
-          borderRadius: radius.pill,
-          padding: 4,
-          marginBottom: ds.spacing(16),
+      <Segment
+        options={unitSegmentOptions}
+        value={selectedUnit}
+        onChange={(unit) => {
+          void triggerSelectionHaptic();
+          onSetUnit(line.key, unit);
         }}
-      >
-        {unitOptions.map((unit) => {
-          const selected = unit.toLowerCase() === line.unit.toLowerCase();
-          return (
-            <TouchableOpacity
-              key={unit}
-              onPress={() => {
-                void triggerSelectionHaptic();
-                onSetUnit(line.key, unit);
-              }}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              accessibilityLabel={`Use ${unit}`}
-              style={{
-                flex: 1,
-                paddingVertical: ds.spacing(9),
-                borderRadius: radius.pill,
-                backgroundColor: selected ? color.accent : 'transparent',
-                alignItems: 'center',
-              }}
-            >
-              <Text
-                numberOfLines={1}
-                style={{
-                  fontSize: ds.fontSize(typeScale.secondary),
-                  fontWeight: selected ? '700' : '600',
-                  color: selected ? color.onAccent : color.ink2,
-                }}
-              >
-                {unit}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+        accessibilityLabel="Unit"
+        style={{ marginBottom: ds.spacing(16) }}
+      />
 
       <View
         style={{
