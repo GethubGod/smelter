@@ -78,10 +78,6 @@ jest.mock('@/lib/supabase', () => ({
   },
   supabaseConfigError: null,
 }));
-jest.mock('@/theme/design', () => ({
-  colors: { background: '#fff', textPrimary: '#111', textMuted: '#666' },
-  authTheme: { background: '#000' },
-}));
 jest.mock('react-native-gesture-handler', () => ({
   GestureHandlerRootView: 'GestureHandlerRootView',
 }));
@@ -336,7 +332,9 @@ describe('suspended routing', () => {
       const component = renderScreen(React.createElement(AuthLayout));
 
       expect(mockRedirect).not.toHaveBeenCalled();
-      expect(component.root.findAllByType('StackScreen' as unknown as React.ElementType).length).toBeGreaterThan(0);
+      // The auth stack registers its routes from the file system, so the
+      // layout renders one bare Stack with no explicit screens.
+      expect(component.root.findAllByType('Stack' as unknown as React.ElementType).length).toBe(1);
 
       renderer.act(() => component.unmount());
     });
