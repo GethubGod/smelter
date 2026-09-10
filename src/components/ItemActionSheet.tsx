@@ -5,15 +5,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radii ,
+import { colors,
   glassColors,
   glassHairlineWidth,
   glassRadii,
 } from '@/theme/design';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { BottomSheetShell } from './BottomSheetShell';
+import { Sheet } from './ui/Sheet';
 import { GlassSurface } from './ui/GlassSurface';
 import { color, typeScale, weight } from '@/theme/tokens';
 
@@ -53,42 +52,26 @@ export function ItemActionSheet({
   showCancelAction = true,
 }: ItemActionSheetProps) {
   const ds = useScaledStyles();
-  const insets = useSafeAreaInsets();
   const hasActions = sections.some((section) => section.items.length > 0);
 
   return (
-    <BottomSheetShell
+    <Sheet
       visible={visible}
+      title={title}
       onClose={onClose}
-      bottomPadding={Math.max(ds.spacing(10), insets.bottom + ds.spacing(8))}
+      primary={
+        showCancelAction
+          ? { label: cancelLabel, onPress: onClose, variant: 'secondary' }
+          : undefined
+      }
     >
-      <View style={{ paddingHorizontal: ds.spacing(6), paddingBottom: ds.spacing(12) }}>
-        <View
+      {subtitle ? (
+        <GlassSurface
+          intensity="subtle"
           style={{
-            flexDirection: 'row',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
+            borderRadius: glassRadii.surface,
           }}
         >
-          <View style={{ flex: 1, paddingRight: ds.spacing(12) }}>
-            <Text
-              style={{
-                fontSize: ds.fontSize(typeScale.title),
-                fontWeight: weight.bold,
-                color: glassColors.textPrimary,
-                letterSpacing: -0.3,
-              }}
-            >
-              {title}
-            </Text>
-            {subtitle ? (
-              <GlassSurface
-                intensity="subtle"
-                style={{
-                  marginTop: ds.spacing(12),
-                  borderRadius: glassRadii.surface,
-                }}
-              >
                 <View
                   style={{
                     flexDirection: 'row',
@@ -133,30 +116,8 @@ export function ItemActionSheet({
                     </Text>
                   </View>
                 </View>
-              </GlassSurface>
-            ) : null}
-          </View>
-
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Close actions"
-            onPress={onClose}
-            activeOpacity={0.8}
-            style={{
-              width: ds.icon(36),
-              height: ds.icon(36),
-              borderRadius: ds.icon(18),
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: glassColors.mediumFill,
-              borderWidth: glassHairlineWidth,
-              borderColor: glassColors.cardBorder,
-            }}
-          >
-            <Ionicons name="close" size={ds.icon(18)} color={glassColors.textPrimary} />
-          </TouchableOpacity>
-        </View>
-      </View>
+        </GlassSurface>
+      ) : null}
 
       <ScrollView
         style={{ maxHeight: ds.spacing(432) }}
@@ -306,38 +267,7 @@ export function ItemActionSheet({
           </GlassSurface>
         )}
 
-        {showCancelAction ? (
-          <GlassSurface
-            intensity="medium"
-            style={{
-              marginTop: ds.spacing(12),
-              borderRadius: radii.submitButton,
-            }}
-          >
-            <TouchableOpacity
-              onPress={onClose}
-              activeOpacity={0.8}
-              style={{
-                minHeight: ds.buttonH,
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingHorizontal: ds.spacing(16),
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: ds.fontSize(typeScale.body),
-                  fontWeight: weight.semibold,
-                  color: colors.textPrimary,
-                  textAlign: 'center',
-                }}
-              >
-                {cancelLabel}
-              </Text>
-            </TouchableOpacity>
-          </GlassSurface>
-        ) : null}
       </ScrollView>
-    </BottomSheetShell>
+    </Sheet>
   );
 }

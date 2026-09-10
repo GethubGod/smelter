@@ -7080,17 +7080,6 @@ const styles = StyleSheet.create({
     fontWeight: weight.bold,
     letterSpacing: 0,
   },
-  missingReviewBackdrop: {
-    flex: 1,
-    justifyContent: "center",
-    padding: 22,
-    backgroundColor: colors.scrimStrong,
-  },
-  missingReviewCard: {
-    backgroundColor: colors.white,
-    borderWidth: glassHairlineWidth,
-    borderColor: glassColors.cardBorder,
-  },
   missingReviewBody: {
     color: color.ink2,
     letterSpacing: 0,

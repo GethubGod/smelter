@@ -6,12 +6,11 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, hairline, radii } from '@/theme/design';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { BottomSheetShell } from '@/components/BottomSheetShell';
+import { Button } from '@/components/ui/Button';
+import { Sheet } from '@/components/ui/Sheet';
 import { typeScale, weight } from '@/theme/tokens';
-import { Loading } from '@/components/ui/Loading';
 
 export interface OrderLaterSupplierOption {
   id: string;
@@ -42,7 +41,6 @@ export function OrderLaterAddToSheet({
   onClose,
 }: OrderLaterAddToSheetProps) {
   const ds = useScaledStyles();
-  const insets = useSafeAreaInsets();
   const [showSupplierPicker, setShowSupplierPicker] = useState(false);
 
   useEffect(() => {
@@ -58,21 +56,22 @@ export function OrderLaterAddToSheet({
   const confirmDisabled = isSubmitting || !selectedSupplierId;
 
   return (
-    <BottomSheetShell
+    <Sheet
       visible={visible}
+      title="Add to Supplier"
       onClose={onClose}
-      bottomPadding={Math.max(ds.spacing(10), insets.bottom + ds.spacing(8))}
+      primary={{
+        label: isSubmitting ? 'Adding...' : 'Add',
+        onPress: onConfirm,
+        loading: isSubmitting,
+        disabled: confirmDisabled,
+      }}
     >
-      <View style={{ paddingHorizontal: ds.spacing(6), paddingBottom: ds.spacing(10) }}>
-        <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.bold, color: colors.textPrimary }}>
-          Add to Supplier
+      {itemName ? (
+        <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: colors.textSecondary }}>
+          {itemName}
         </Text>
-        {itemName ? (
-          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(4), color: colors.textSecondary }}>
-            {itemName}
-          </Text>
-        ) : null}
-      </View>
+      ) : null}
 
       <ScrollView
         style={{ maxHeight: ds.spacing(360) }}
@@ -188,56 +187,7 @@ export function OrderLaterAddToSheet({
         ) : null}
       </ScrollView>
 
-      <View style={{ paddingHorizontal: ds.spacing(6), paddingTop: ds.spacing(10) }}>
-        <View style={{ flexDirection: 'row' }}>
-          <TouchableOpacity
-            onPress={onClose}
-            disabled={isSubmitting}
-            style={{
-              flex: 1,
-              borderRadius: radii.submitButton,
-              borderWidth: hairline,
-              borderColor: colors.glassBorder,
-              backgroundColor: colors.white,
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: ds.buttonH,
-              marginRight: ds.spacing(8),
-            }}
-            activeOpacity={0.8}
-          >
-            <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.semibold, color: colors.textPrimary }}>
-              Cancel
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={onConfirm}
-            disabled={confirmDisabled}
-            style={{
-              flex: 1,
-              borderRadius: radii.submitButton,
-              backgroundColor: confirmDisabled ? colors.primaryLight : colors.primary,
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: ds.buttonH,
-            }}
-            activeOpacity={0.8}
-          >
-            {isSubmitting ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Loading size="inline" color={colors.white} />
-                <Text style={{ fontSize: ds.fontSize(typeScale.title), marginLeft: ds.spacing(8), fontWeight: weight.semibold, color: colors.white }}>
-                  Adding...
-                </Text>
-              </View>
-            ) : (
-              <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.semibold, color: colors.white }}>
-                Add
-              </Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
-    </BottomSheetShell>
+      <Button label="Cancel" variant="secondary" onPress={onClose} disabled={isSubmitting} />
+    </Sheet>
   );
 }

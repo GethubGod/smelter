@@ -22,7 +22,8 @@ import { getCategoryLabel, colors } from '@/constants';
 import { InventoryItem, KNOWN_SUPPLIER_CATEGORIES, OrderWithDetails } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
-import { GlassSurface, ItemActionSheet, LoadingIndicator } from '@/components';
+import { GlassSurface, ItemActionSheet } from '@/components';
+import { Loading } from '@/components/ui';
 import type { ItemActionSheetSection } from '@/components';
 import {
   FulfillmentHeader,
@@ -2581,7 +2582,7 @@ function FulfillmentScreen() {
                     </GlassSurface>
                   ))}
                   <View style={{ alignItems: 'center', paddingTop: ds.spacing(6) }}>
-                    <LoadingIndicator size="small" color={glassColors.accent} />
+                    <Loading size="inline" color={glassColors.accent} label="Loading suppliers" />
                   </View>
                 </View>
               ) : showErrorState ? (
