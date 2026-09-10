@@ -3,7 +3,6 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   ScrollView,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -11,13 +10,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerSelectionHaptic } from '@/lib/haptics';
-import {
-  colors,
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-  grayScale,
-} from '@/theme/design';
+import { Chip } from '@/components/ui';
+import { color, radius, size, space } from '@/theme/tokens';
 
 export interface StorageAreaFilterOption {
   id: string;
@@ -37,7 +31,7 @@ interface FilterPillProps extends StorageAreaFilterOption {
   onSelect: (id: string) => void;
 }
 
-const MORE_BUTTON_SIZE = 40;
+const MORE_BUTTON_SIZE = size.headerCircle;
 
 const FilterPill = memo(function FilterPill({
   id,
@@ -46,65 +40,18 @@ const FilterPill = memo(function FilterPill({
   isSelected,
   onSelect,
 }: FilterPillProps) {
-  const ds = useScaledStyles();
   const handlePress = useCallback(() => {
     void triggerSelectionHaptic();
     onSelect(id);
   }, [id, onSelect]);
 
   return (
-    <TouchableOpacity
-      accessibilityRole="button"
-      accessibilityState={{ selected: isSelected }}
-      accessibilityLabel={`${label}${badgeCount > 0 ? `, ${badgeCount} unchecked` : ''}`}
+    <Chip
+      label={label}
+      selected={isSelected}
+      count={badgeCount > 0 ? badgeCount : undefined}
       onPress={handlePress}
-      activeOpacity={0.85}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: ds.spacing(16),
-        paddingVertical: ds.spacing(9),
-        borderRadius: glassRadii.pill,
-        backgroundColor: isSelected ? colors.black : colors.white,
-        borderWidth: glassHairlineWidth,
-        borderColor: isSelected ? colors.black : glassColors.cardBorder,
-      }}
-    >
-      <Text
-        style={{
-          fontSize: ds.fontSize(14),
-          fontWeight: isSelected ? '700' : '600',
-          color: isSelected ? colors.white : glassColors.textPrimary,
-        }}
-        numberOfLines={1}
-      >
-        {label}
-      </Text>
-      {badgeCount > 0 ? (
-        <View
-          style={{
-            marginLeft: ds.spacing(8),
-            minWidth: 22,
-            height: 22,
-            paddingHorizontal: 7,
-            borderRadius: glassRadii.pill,
-            backgroundColor: isSelected ? grayScale[700] : grayScale[200],
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Text
-            style={{
-              fontSize: ds.fontSize(11),
-              fontWeight: '700',
-              color: isSelected ? colors.white : glassColors.textPrimary,
-            }}
-          >
-            {badgeCount}
-          </Text>
-        </View>
-      ) : null}
-    </TouchableOpacity>
+    />
   );
 });
 
@@ -128,10 +75,10 @@ const MoreButton = memo(function MoreButton({ onPress }: MoreButtonProps) {
       style={{
         width: MORE_BUTTON_SIZE,
         height: MORE_BUTTON_SIZE,
-        borderRadius: glassRadii.round,
-        backgroundColor: colors.white,
-        borderWidth: glassHairlineWidth,
-        borderColor: glassColors.cardBorder,
+        borderRadius: radius.pill,
+        backgroundColor: color.card,
+        borderWidth: 1,
+        borderColor: color.hairlineStrong,
         alignItems: 'center',
         justifyContent: 'center',
       }}
@@ -139,7 +86,7 @@ const MoreButton = memo(function MoreButton({ onPress }: MoreButtonProps) {
       <Ionicons
         name="chevron-down"
         size={ds.icon(18)}
-        color={glassColors.textPrimary}
+        color={color.ink}
       />
     </TouchableOpacity>
   );
@@ -190,14 +137,9 @@ export const StorageAreaFilterBar = memo(function StorageAreaFilterBar({
     [],
   );
 
-  const fadeColors = useMemo(
-    () => [
-      'rgba(247, 245, 242, 0)',
-      'rgba(247, 245, 242, 0.85)',
-      'rgba(247, 245, 242, 1)',
-    ],
-    [],
-  );
+  // The rail fades into the page token at the right edge. `transparent` is a
+  // keyword, not a colour literal, so the ramp needs no off-contract value.
+  const fadeColors = useMemo(() => ['transparent', color.page], []);
 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -210,9 +152,9 @@ export const StorageAreaFilterBar = memo(function StorageAreaFilterBar({
           onScroll={handleScroll}
           scrollEventThrottle={32}
           contentContainerStyle={{
-            gap: ds.spacing(8),
-            paddingVertical: ds.spacing(2),
-            paddingRight: ds.spacing(28),
+            gap: ds.spacing(space[2]),
+            paddingVertical: ds.spacing(space[1] / 2),
+            paddingRight: ds.spacing(space[6] + 4),
           }}
         >
           {options.map((opt) => (
@@ -247,7 +189,7 @@ export const StorageAreaFilterBar = memo(function StorageAreaFilterBar({
         </View>
       </View>
 
-      <View style={{ marginLeft: ds.spacing(8) }}>
+      <View style={{ marginLeft: ds.spacing(space[2]) }}>
         <MoreButton onPress={onPressMore} />
       </View>
     </View>

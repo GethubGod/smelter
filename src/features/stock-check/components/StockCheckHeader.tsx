@@ -8,12 +8,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { GlassSurface } from '@/components/ui';
-import {
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-} from '@/theme/design';
+import { color, radius, size, space, tracking, typeScale, weight } from '@/theme/tokens';
 import { LocationSwitcherDropdown } from './LocationSwitcherDropdown';
 import type { Location } from '@/types';
 
@@ -34,7 +29,7 @@ interface StockCheckHeaderProps {
 
 // Matches the location selector pill's `minHeight` so the two affordances are
 // the same size and sit on a shared baseline.
-const ELLIPSIS_BUTTON_SIZE = 48;
+const ELLIPSIS_BUTTON_SIZE = size.input;
 const CHEVRON_TIMING = { duration: 200, easing: Easing.bezier(0.2, 0, 0.2, 1) };
 
 /**
@@ -99,8 +94,8 @@ export const StockCheckHeader = memo(function StockCheckHeader({
     <View
       style={{
         zIndex: 10,
-        paddingTop: ds.spacing(2),
-        paddingBottom: ds.spacing(12),
+        paddingTop: ds.spacing(space[1] / 2),
+        paddingBottom: ds.spacing(space[3]),
         // `position: relative` is required so the absolutely-positioned
         // dropdown overlay below anchors to THIS container, floating over
         // siblings (progress bar, station rail) instead of pushing them down.
@@ -113,12 +108,15 @@ export const StockCheckHeader = memo(function StockCheckHeader({
           alignItems: 'center',
         }}
       >
-        <GlassSurface
-          intensity="medium"
+        <View
           style={{
             flex: 1,
-            marginRight: ds.spacing(8),
-            borderRadius: glassRadii.pill,
+            marginRight: ds.spacing(space[2]),
+            borderRadius: radius.pill,
+            borderWidth: 1,
+            borderColor: color.hairline,
+            backgroundColor: color.card,
+            overflow: 'hidden',
           }}
         >
           <TouchableOpacity
@@ -132,41 +130,41 @@ export const StockCheckHeader = memo(function StockCheckHeader({
             style={{
               flexDirection: 'row',
               alignItems: 'center',
-              minHeight: 48,
-              paddingHorizontal: ds.spacing(16),
+              minHeight: ELLIPSIS_BUTTON_SIZE,
+              paddingHorizontal: ds.spacing(space[4]),
             }}
           >
             <View
               style={{
                 width: 10,
                 height: 10,
-                borderRadius: glassRadii.round,
-                backgroundColor: glassColors.accent,
-                marginRight: ds.spacing(10),
+                borderRadius: radius.pill,
+                backgroundColor: color.accent,
+                marginRight: ds.spacing(space[2] + 2),
               }}
             />
             <Text
               style={{
                 flex: 1,
-                fontSize: ds.fontSize(16),
-                fontWeight: '700',
-                color: glassColors.textPrimary,
-                letterSpacing: -0.2,
+                fontSize: ds.fontSize(typeScale.body),
+                fontWeight: weight.bold,
+                color: color.ink,
+                letterSpacing: tracking.title,
               }}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
               {locationLabel}
             </Text>
-            <Animated.View style={[{ marginLeft: ds.spacing(8) }, chevronStyle]}>
+            <Animated.View style={[{ marginLeft: ds.spacing(space[2]) }, chevronStyle]}>
               <Ionicons
                 name="chevron-down"
                 size={ds.icon(18)}
-                color={glassColors.textSecondary}
+                color={color.ink2}
               />
             </Animated.View>
           </TouchableOpacity>
-        </GlassSurface>
+        </View>
 
         <TouchableOpacity
           accessibilityRole="button"
@@ -177,18 +175,18 @@ export const StockCheckHeader = memo(function StockCheckHeader({
           style={{
             width: ELLIPSIS_BUTTON_SIZE,
             height: ELLIPSIS_BUTTON_SIZE,
-            borderRadius: glassRadii.round,
+            borderRadius: radius.pill,
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: 'rgba(255, 255, 255, 1)',
-            borderWidth: glassHairlineWidth,
-            borderColor: glassColors.cardBorder,
+            backgroundColor: color.card,
+            borderWidth: 1,
+            borderColor: color.hairline,
           }}
         >
           <Ionicons
             name={moreIconName}
             size={ds.icon(18)}
-            color={glassColors.textSecondary}
+            color={color.ink2}
           />
         </TouchableOpacity>
       </View>
@@ -203,9 +201,9 @@ export const StockCheckHeader = memo(function StockCheckHeader({
         pointerEvents="box-none"
         style={{
           position: 'absolute',
-          top: ds.spacing(2) + 48 + ds.spacing(4),
+          top: ds.spacing(space[1] / 2) + ELLIPSIS_BUTTON_SIZE + ds.spacing(space[1]),
           left: 0,
-          right: ELLIPSIS_BUTTON_SIZE + ds.spacing(8),
+          right: ELLIPSIS_BUTTON_SIZE + ds.spacing(space[2]),
         }}
       >
         <LocationSwitcherDropdown
