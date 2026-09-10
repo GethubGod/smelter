@@ -1,6 +1,7 @@
+import React from 'react';
 import { Alert, Linking, Text, TouchableOpacity, View } from 'react-native';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { auth, space, typeScale } from '@/theme/tokens';
+import { auth, size, space, typeScale } from '@/theme/tokens';
 import { PRIVACY_URL, TERMS_URL } from '../legal';
 
 async function openLegalUrl(url: string) {
@@ -21,6 +22,13 @@ export function LegalFooter() {
     color: auth.dim,
     textDecorationLine: 'underline' as const,
   };
+  // Caption type on its own is a 14pt target. The links carry the full 44pt
+  // height and enough padding either side that the two never share a target.
+  const targetStyle = {
+    minHeight: ds.spacing(size.touchMin),
+    justifyContent: 'center' as const,
+    paddingHorizontal: ds.spacing(space[2]),
+  };
 
   return (
     <View
@@ -28,15 +36,16 @@ export function LegalFooter() {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: ds.spacing(space[4]),
-        gap: ds.spacing(space[2] - 2),
+        paddingVertical: ds.spacing(space[2]),
+        gap: ds.spacing(space[2]),
       }}
     >
       <TouchableOpacity
         accessibilityRole="link"
         accessibilityLabel="Terms of service"
         onPress={() => openLegalUrl(TERMS_URL)}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 6 }}
+        hitSlop={{ top: 6, bottom: 6 }}
+        style={targetStyle}
       >
         <Text style={linkStyle}>Terms</Text>
       </TouchableOpacity>
@@ -45,7 +54,8 @@ export function LegalFooter() {
         accessibilityRole="link"
         accessibilityLabel="Privacy policy"
         onPress={() => openLegalUrl(PRIVACY_URL)}
-        hitSlop={{ top: 10, bottom: 10, left: 6, right: 10 }}
+        hitSlop={{ top: 6, bottom: 6 }}
+        style={targetStyle}
       >
         <Text style={linkStyle}>Privacy policy</Text>
       </TouchableOpacity>

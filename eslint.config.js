@@ -27,9 +27,10 @@ const ROOT_IGNORES = [
  * list, including every new file, still fails outright.
  *
  * The backlog is not hidden. `npm run lint:drift` turns the rule back on for
- * every one of these files and prints the full count. Today that is 3334
- * violations across 157 files. It was 819 across 115 until the rule learned to
- * see numbers passed through the scaling helpers (`ds.fontSize(17)`) and
+ * every one of these files and prints the full count. Today that is 3100
+ * violations across 142 files, after the #33 auth sweep cleared its entries.
+ * It was 819 across 115 until the rule learned to see numbers passed
+ * through the scaling helpers (`ds.fontSize(17)`) and
  * NativeWind utilities (`bg-gray-50`, `text-lg`, `rounded-xl`); those were
  * always drift, they were simply invisible.
  *
