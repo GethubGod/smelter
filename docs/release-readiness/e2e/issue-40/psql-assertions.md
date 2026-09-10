@@ -1343,3 +1343,219 @@ select notification_type, title from public.notifications order by created_at de
  employee_reminder | Order reminder
 (1 row)
 ```
+
+## pr75-88-invite-accept
+
+Run at 2026-09-10T14:04:13Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: the invite deep link was opened while signed out and the
+-- invitee finished onboarding with a 4 digit app PIN.
+select invited_name, used_at is not null as used, used_by is not null as has_user
+  from public.invites order by created_at desc limit 1;
+select u.email, p.full_name, p.role, p.default_location_id
+  from auth.users u join public.profiles p on p.id = u.id
+  where p.full_name = 'PR75 Invitee';
+select li.method, li.secret_hash is not null as has_secret
+  from public.login_identities li
+  join public.profiles p on p.id = li.user_id
+  where p.full_name = 'PR75 Invitee';
+select um.module, um.enabled from public.user_modules um
+  join public.profiles p on p.id = um.user_id
+  where p.full_name = 'PR75 Invitee' order by um.module;
+```
+
+```
+ invited_name | used | has_user 
+--------------+------+----------
+ PR75 Invitee | t    | t
+(1 row)
+
+ERROR:  column p.default_location_id does not exist
+LINE 1: select u.email, p.full_name, p.role, p.default_location_id
+                                             ^
+ERROR:  column li.method does not exist
+LINE 1: select li.method, li.secret_hash is not null as has_secret
+               ^
+ERROR:  column um.module does not exist
+LINE 1: select um.module, um.enabled from public.user_modules um
+               ^
+```
+
+## pr75-89-invite-accept-rows
+
+Run at 2026-09-10T14:04:26Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: rows created by the invite acceptance (see pr75-88 for the invite).
+select p.full_name, p.role, p.provider, p.profile_completed, u.email
+  from auth.users u join public.profiles p on p.id = u.id
+  where p.full_name = 'PR75 Invitee';
+select li.login_name, li.credential_kind, li.secret_hash is not null as has_secret
+  from public.login_identities li
+  join public.profiles p on p.id = li.user_id
+  where p.full_name = 'PR75 Invitee';
+select um.module_key, um.enabled from public.user_modules um
+  join public.profiles p on p.id = um.user_id
+  where p.full_name = 'PR75 Invitee' order by um.module_key;
+```
+
+```
+  full_name   |   role   | provider | profile_completed |                                 email                                 
+--------------+----------+----------+-------------------+-----------------------------------------------------------------------
+ PR75 Invitee | employee | email    | t                 | join-a7da2ddd-5ead-4b66-8106-99d4763c90ee@members.babytunasystems.com
+(1 row)
+
+  login_name  | credential_kind | has_secret 
+--------------+-----------------+------------
+ pr75 invitee | pin             | t
+(1 row)
+
+    module_key     | enabled 
+-------------------+---------
+ ordering_advanced | f
+ ordering_simple   | t
+ stock_check       | t
+ tips              | f
+(4 rows)
+```
+
+## pr75-90-credential-before
+
+Run at 2026-09-10T14:04:36Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: PIN secret fingerprint for PR75 Invitee before the change.
+select li.login_name, li.credential_kind,
+       left(md5(li.secret_hash), 8) as secret_md5, li.updated_at
+  from public.login_identities li
+  join public.profiles p on p.id = li.user_id
+  where p.full_name = 'PR75 Invitee';
+```
+
+```
+  login_name  | credential_kind | secret_md5 |          updated_at           
+--------------+-----------------+------------+-------------------------------
+ pr75 invitee | pin             | 5a8c7be2   | 2026-09-10 14:03:55.877401+00
+(1 row)
+```
+
+## pr75-91-credential-change
+
+Run at 2026-09-10T14:06:24Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: PR75 Invitee changed their app PIN from settings/profile.
+-- Compare with pr75-90-credential-before (secret_md5 5a8c7be2).
+select li.login_name, li.credential_kind,
+       left(md5(li.secret_hash), 8) as secret_md5, li.updated_at
+  from public.login_identities li
+  join public.profiles p on p.id = li.user_id
+  where p.full_name = 'PR75 Invitee';
+```
+
+```
+  login_name  | credential_kind | secret_md5 |          updated_at           
+--------------+-----------------+------------+-------------------------------
+ pr75 invitee | pin             | 97438a0e   | 2026-09-10 14:06:11.172328+00
+(1 row)
+```
+
+## pr75-92-login-after-credential-change
+
+Run at 2026-09-10T14:08:00Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: signed out and signed back in as "PR75 Invitee" with the new PIN.
+select a.outcome, a.method, a.created_at
+  from public.login_auth_attempts a
+  join public.profiles p on p.id = a.user_id
+  where p.full_name = 'PR75 Invitee' order by a.created_at desc limit 5;
+select u.last_sign_in_at is not null as signed_in, u.last_sign_in_at
+  from auth.users u join public.profiles p on p.id = u.id
+  where p.full_name = 'PR75 Invitee';
+```
+
+```
+ERROR:  column a.user_id does not exist
+LINE 3:   join public.profiles p on p.id = a.user_id
+                                           ^
+ signed_in |        last_sign_in_at        
+-----------+-------------------------------
+ t         | 2026-09-10 14:07:43.309551+00
+(1 row)
+```
+
+## pr75-93-login-attempts
+
+Run at 2026-09-10T14:08:12Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: successful sign-in attempts recorded for the new PIN
+-- (see pr75-92 for auth.users.last_sign_in_at).
+select scope, success, attempted_at from public.login_auth_attempts
+  order by attempted_at desc limit 5;
+```
+
+```
+ scope  | success |         attempted_at          
+--------+---------+-------------------------------
+ name   | t       | 2026-09-10 14:07:43.238802+00
+ client | t       | 2026-09-10 14:07:43.238802+00
+ name   | t       | 2026-09-10 02:28:25.400679+00
+ client | t       | 2026-09-10 02:28:25.400679+00
+ name   | t       | 2026-09-09 05:53:30.763303+00
+(5 rows)
+```
+
+## pr75-94-account-deletion-before
+
+Run at 2026-09-10T14:08:20Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: rows for PR75 Invitee before Delete account.
+select (select count(*) from auth.users u join public.profiles p on p.id=u.id where p.full_name='PR75 Invitee') as auth_users,
+       (select count(*) from public.profiles where full_name='PR75 Invitee') as profiles,
+       (select count(*) from public.login_identities li join public.profiles p on p.id=li.user_id where p.full_name='PR75 Invitee') as login_identities,
+       (select count(*) from public.user_modules um join public.profiles p on p.id=um.user_id where p.full_name='PR75 Invitee') as user_modules;
+select invited_name, used_at is not null as used, used_by is not null as has_used_by from public.invites order by created_at desc limit 1;
+```
+
+```
+ auth_users | profiles | login_identities | user_modules 
+------------+----------+------------------+--------------
+          1 |        1 |                1 |            4
+(1 row)
+
+ invited_name | used | has_used_by 
+--------------+------+-------------
+ PR75 Invitee | t    | t
+(1 row)
+```
+
+## pr75-95-account-deletion-after
+
+Run at 2026-09-10T14:10:02Z against `supabase_db_smelter-performance`.
+
+```sql
+-- PR #75 rerun: PR75 Invitee deleted their own account from settings/profile.
+-- Compare with pr75-94-account-deletion-before (1 / 1 / 1 / 4).
+select (select count(*) from public.profiles where full_name='PR75 Invitee') as profiles,
+       (select count(*) from public.login_identities where login_name='pr75 invitee') as login_identities,
+       (select count(*) from auth.users where email like 'join-%@members.babytunasystems.com') as join_auth_users;
+-- The invite keeps used_at so it cannot be reused, but used_by is cleared.
+select invited_name, used_at is not null as used, used_by is not null as has_used_by
+  from public.invites order by created_at desc limit 1;
+```
+
+```
+ profiles | login_identities | join_auth_users 
+----------+------------------+-----------------
+        0 |                0 |               0
+(1 row)
+
+ invited_name | used | has_used_by 
+--------------+------+-------------
+ PR75 Invitee | t    | f
+(1 row)
+```
