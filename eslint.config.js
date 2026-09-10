@@ -32,10 +32,10 @@ module.exports = defineConfig([
    * The design contract, enforced with no exceptions.
    *
    * Sweeps #33 to #37 cleared the pre-contract backlog, so the allowlist that
-   * used to silence this rule, the `lint:drift` report that counted what it
-   * hid, and `eslint.drift.config.js` are all gone. `npm run lint` is the
-   * whole story now. Do not reintroduce an exception list: fix the file, or
-   * add the primitive it is missing to `src/components/ui`.
+   * used to silence this rule, the separate report that counted what it hid,
+   * and that report's config file are all gone. `npm run lint` is the whole
+   * story now. Do not reintroduce an exception list: fix the file, or add the
+   * primitive it is missing to `src/components/ui`.
    */
   {
     files: DRIFT_FILES,
