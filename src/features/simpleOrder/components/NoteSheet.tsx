@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomSheetShell } from '@/components/BottomSheetShell';
+import { KeyboardAvoidingView, Platform, Text, TextInput } from 'react-native';
+import { Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerImpactHaptic } from '@/lib/haptics';
 import { color, radius, typeScale } from '@/theme/tokens';
@@ -20,7 +19,6 @@ interface NoteSheetProps {
 
 export function NoteSheet({ visible, note, onSave, onClose }: NoteSheetProps) {
   const ds = useScaledStyles();
-  const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState(note);
 
   useEffect(() => {
@@ -28,15 +26,19 @@ export function NoteSheet({ visible, note, onSave, onClose }: NoteSheetProps) {
   }, [visible, note]);
 
   return (
-    <BottomSheetShell
+    <Sheet
       visible={visible}
+      title={note.trim() ? 'Edit note' : 'Add note'}
       onClose={onClose}
-      bottomPadding={Math.max(insets.bottom, ds.spacing(14))}
+      primary={{
+        label: draft.trim() ? 'Save note' : note.trim() ? 'Remove note' : 'Save note',
+        onPress: () => {
+          void triggerImpactHaptic();
+          onSave(draft.trim());
+        },
+      }}
     >
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: '700', color: color.ink }}>
-          {note.trim() ? 'Edit note' : 'Add note'}
-        </Text>
         <Text
           style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginBottom: ds.spacing(12) }}
         >
@@ -66,27 +68,7 @@ export function NoteSheet({ visible, note, onSave, onClose }: NoteSheetProps) {
           }}
         />
 
-        <TouchableOpacity
-          onPress={() => {
-            void triggerImpactHaptic();
-            onSave(draft.trim());
-          }}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="Save note"
-          style={{
-            minHeight: 52,
-            borderRadius: radius.pill,
-            backgroundColor: color.accent,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: '700', color: color.onAccent }}>
-            {draft.trim() ? 'Save note' : note.trim() ? 'Remove note' : 'Save note'}
-          </Text>
-        </TouchableOpacity>
       </KeyboardAvoidingView>
-    </BottomSheetShell>
+    </Sheet>
   );
 }

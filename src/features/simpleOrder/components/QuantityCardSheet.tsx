@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomSheetShell } from '@/components/BottomSheetShell';
+import { Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerImpactHaptic, triggerSelectionHaptic } from '@/lib/haptics';
 import { color, radius, typeScale, weight } from '@/theme/tokens';
@@ -42,7 +41,6 @@ export function QuantityCardSheet({
   onClose,
 }: QuantityCardSheetProps) {
   const ds = useScaledStyles();
-  const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState('');
 
   useEffect(() => {
@@ -89,21 +87,22 @@ export function QuantityCardSheet({
 
   if (!line) {
     return (
-      <BottomSheetShell visible={false} onClose={onClose}>
+      <Sheet visible={false} title="" onClose={onClose}>
         <View />
-      </BottomSheetShell>
+      </Sheet>
     );
   }
 
   return (
-    <BottomSheetShell
+    <Sheet
       visible={visible}
+      title={line.itemName}
       onClose={onClose}
-      bottomPadding={Math.max(insets.bottom, ds.spacing(14))}
+      primary={{
+        label: `Set ${formatQuantity(quantity)} ${line.unit}`,
+        onPress: handleCommit,
+      }}
     >
-      <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: '700', color: color.ink }}>
-        {line.itemName}
-      </Text>
       <Text
         style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginBottom: ds.spacing(12) }}
       >
@@ -268,23 +267,6 @@ export function QuantityCardSheet({
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity
-        onPress={handleCommit}
-        activeOpacity={0.85}
-        accessibilityRole="button"
-        accessibilityLabel={`Set ${formatQuantity(quantity)} ${line.unit}`}
-        style={{
-          minHeight: 52,
-          borderRadius: radius.pill,
-          backgroundColor: color.accent,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: '700', color: color.onAccent }}>
-          Set {formatQuantity(quantity)} {line.unit}
-        </Text>
-      </TouchableOpacity>
-    </BottomSheetShell>
+    </Sheet>
   );
 }
