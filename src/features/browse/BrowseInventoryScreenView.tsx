@@ -862,7 +862,7 @@ export function BrowseInventoryScreenView({
                 <View>
                   <Text
                     style={{
-                      fontSize: ds.fontSize(typeScale.secondary),
+                      fontSize: ds.fontSize(typeScale.caption),
                       fontWeight: '700',
                       color: glassColors.textSecondary,
                       textTransform: 'uppercase',
@@ -897,7 +897,7 @@ export function BrowseInventoryScreenView({
                 <View>
                   <Text
                     style={{
-                      fontSize: ds.fontSize(typeScale.secondary),
+                      fontSize: ds.fontSize(typeScale.caption),
                       fontWeight: '700',
                       color: glassColors.textSecondary,
                       textTransform: 'uppercase',
@@ -947,7 +947,7 @@ export function BrowseInventoryScreenView({
                 <View>
                   <Text
                     style={{
-                      fontSize: ds.fontSize(typeScale.secondary),
+                      fontSize: ds.fontSize(typeScale.caption),
                       fontWeight: '700',
                       color: glassColors.textSecondary,
                       textTransform: 'uppercase',
@@ -1000,7 +1000,7 @@ export function BrowseInventoryScreenView({
                   <View style={{ flex: 1 }}>
                     <Text
                       style={{
-                        fontSize: ds.fontSize(typeScale.secondary),
+                        fontSize: ds.fontSize(typeScale.caption),
                         fontWeight: '700',
                         color: glassColors.textSecondary,
                         textTransform: 'uppercase',
@@ -1035,7 +1035,7 @@ export function BrowseInventoryScreenView({
                   <View style={{ flex: 1 }}>
                     <Text
                       style={{
-                        fontSize: ds.fontSize(typeScale.secondary),
+                        fontSize: ds.fontSize(typeScale.caption),
                         fontWeight: '700',
                         color: glassColors.textSecondary,
                         textTransform: 'uppercase',
@@ -1071,7 +1071,7 @@ export function BrowseInventoryScreenView({
                 <View>
                   <Text
                     style={{
-                      fontSize: ds.fontSize(typeScale.secondary),
+                      fontSize: ds.fontSize(typeScale.caption),
                       fontWeight: '700',
                       color: glassColors.textSecondary,
                       textTransform: 'uppercase',

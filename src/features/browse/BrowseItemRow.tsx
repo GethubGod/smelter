@@ -900,7 +900,7 @@ function BrowseItemRowInner({
               <Text
                 style={{
                   marginTop: ds.spacing(10),
-                  fontSize: ds.fontSize(typeScale.caption),
+                  fontSize: ds.fontSize(typeScale.secondary),
                   color: glassColors.textSecondary,
                 }}
               >
