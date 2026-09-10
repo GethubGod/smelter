@@ -65,12 +65,6 @@ const DRIFT_ALLOWLIST = [
   'app/(manager)/manager-settings/export-format.tsx',
   'app/(manager)/manager-settings/profile.tsx',
   'app/(manager)/manager-settings/user-management.tsx',
-  // app/(tabs) (2 files, 45)
-  'app/(tabs)/draft.tsx',
-  'app/(tabs)/quick-order.tsx',
-  // app/orders (2 files, 116)
-  'app/orders/\\[id\\].tsx',
-  'app/orders/history.tsx',
   // app/settings (6 files, 43)
   'app/settings/about-support.tsx',
   'app/settings/display-accessibility.tsx',
@@ -129,10 +123,6 @@ const DRIFT_ALLOWLIST = [
   // src/features/browse (2 files, 37)
   'src/features/browse/BrowseInventoryScreenView.tsx',
   'src/features/browse/BrowseItemRow.tsx',
-  // src/features/cart (3 files, 84)
-  'src/features/cart/CartScreenView.tsx',
-  'src/features/cart/EmptyCartReorderState.tsx',
-  'src/features/cart/OrderSubmissionConfirmationOverlay.tsx',
   // src/features/employeeSettings (2 files, 40)
   'src/features/employeeSettings/EmployeeProfileScreen.tsx',
   'src/features/employeeSettings/EmployeeSettingsScreen.tsx',
@@ -184,42 +174,8 @@ const DRIFT_ALLOWLIST = [
   'src/features/ordering/quickOrderConfig/WeeklyLearningTab.tsx',
   // src/features/settings (1 file, 11)
   'src/features/settings/SupplierContactsScreen.tsx',
-  // src/features/simpleOrder (2 files, 20)
-  'src/features/simpleOrder/HistoryScreen.tsx',
-  'src/features/simpleOrder/SimpleOrderScreen.tsx',
-  // src/features/simpleOrder/components (12 files, 126)
-  'src/features/simpleOrder/components/ChecklistItemRow.tsx',
-  'src/features/simpleOrder/components/ChecklistSettingsSheet.tsx',
-  'src/features/simpleOrder/components/ChecklistToast.tsx',
-  'src/features/simpleOrder/components/ConfirmOrderSheet.tsx',
-  'src/features/simpleOrder/components/DirectSendQueue.tsx',
-  'src/features/simpleOrder/components/NoteSheet.tsx',
-  'src/features/simpleOrder/components/OrderDayReminderSheet.tsx',
-  'src/features/simpleOrder/components/PinnedOrderBar.tsx',
-  'src/features/simpleOrder/components/QuantityCardSheet.tsx',
-  'src/features/simpleOrder/components/QuickActionsSheet.tsx',
-  'src/features/simpleOrder/components/RecentOrdersSheet.tsx',
-  'src/features/simpleOrder/components/VoiceAddSheet.tsx',
-  // src/features/simpleOrder/receiving (1 file, 15)
-  'src/features/simpleOrder/receiving/ReceiveDeliveryScreen.tsx',
   // src/features/smart (1 file, 11)
   'src/features/smart/SmartOrderScreen.tsx',
-  // src/features/stock-check (3 files, 19)
-  'src/features/stock-check/PastChecksScreen.tsx',
-  'src/features/stock-check/StockCheckScreenView.tsx',
-  'src/features/stock-check/StockHomeScreen.tsx',
-  // src/features/stock-check/components (8 files, 57)
-  'src/features/stock-check/components/LocationSwitcherDropdown.tsx',
-  'src/features/stock-check/components/SetStockBottomSheet.tsx',
-  'src/features/stock-check/components/StationCard.tsx',
-  'src/features/stock-check/components/StationPickerBottomSheet.tsx',
-  'src/features/stock-check/components/StockCheckHeader.tsx',
-  'src/features/stock-check/components/StockCheckItemCard.tsx',
-  'src/features/stock-check/components/StockCheckProgressBar.tsx',
-  'src/features/stock-check/components/StorageAreaFilterBar.tsx',
-  // src/features/stock-check/components/wheel-picker (2 files, 3)
-  'src/features/stock-check/components/wheel-picker/WheelPicker.tsx',
-  'src/features/stock-check/components/wheel-picker/WheelPickerGroup.tsx',
   // src/features/team (6 files, 75)
   'src/features/team/DefaultsScreen.tsx',
   'src/features/team/InviteLinkReadyScreen.tsx',
