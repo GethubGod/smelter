@@ -360,9 +360,9 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
                   width: 24,
                   height: 24,
                   borderRadius: glassRadii.round,
-                  backgroundColor: 'rgba(34, 197, 94, 0.18)',
+                  backgroundColor: color.goodBg,
                   borderWidth: 2,
-                  borderColor: 'rgba(34, 197, 94, 0.5)',
+                  borderColor: color.good,
                 }}
               >
                 <Ionicons
@@ -462,7 +462,7 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
                 flexDirection: 'row',
                 borderRadius: glassRadii.button,
                 borderWidth: 1.5,
-                borderColor: 'rgba(0,0,0,0.12)',
+                borderColor: color.hairlineStrong,
                 backgroundColor: color.well,
                 overflow: 'hidden',
               }}
@@ -534,7 +534,7 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
                 borderRadius: glassRadii.stepper,
                 backgroundColor: color.well,
                 borderWidth: 1,
-                borderColor: 'rgba(0,0,0,0.1)',
+                borderColor: color.hairlineStrong,
               }}
             >
               <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: glassColors.textPrimary }}>
@@ -559,7 +559,7 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
                   justifyContent: 'center',
                   backgroundColor: color.well,
                   borderWidth: 1,
-                  borderColor: 'rgba(0,0,0,0.1)',
+                  borderColor: color.hairlineStrong,
                 }}
                 onPress={handleDecrement}
               >
@@ -578,7 +578,7 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
                   fontSize: ds.fontSize(typeScale.title),
                   backgroundColor: color.page,
                   borderWidth: 1,
-                  borderColor: 'rgba(0,0,0,0.08)',
+                  borderColor: color.hairline,
                 }}
                 value={value}
                 onChangeText={onValueChange}
@@ -596,7 +596,7 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
                   justifyContent: 'center',
                   backgroundColor: color.well,
                   borderWidth: 1,
-                  borderColor: 'rgba(0,0,0,0.1)',
+                  borderColor: color.hairlineStrong,
                 }}
                 onPress={handleIncrement}
               >
@@ -614,9 +614,9 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
                     borderRadius: glassRadii.stepper,
                     alignItems: 'center',
                     justifyContent: 'center',
-                    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                    backgroundColor: color.alertBg,
                     borderWidth: 1,
-                    borderColor: 'rgba(239, 68, 68, 0.15)',
+                    borderColor: color.alert,
                   }}
                   onPress={handleCancelExpand}
                   accessibilityLabel="Cancel add item"
@@ -658,9 +658,9 @@ function InventoryItemCardInner({ item, locationId, cartContext, hideCategory }:
                     borderRadius: glassRadii.stepper,
                     alignItems: 'center',
                     justifyContent: 'center',
-                    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                    backgroundColor: color.alertBg,
                     borderWidth: 1,
-                    borderColor: 'rgba(239, 68, 68, 0.15)',
+                    borderColor: color.alert,
                   }}
                   onPress={() => {
                     Alert.alert(

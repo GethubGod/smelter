@@ -3018,7 +3018,7 @@ function FulfillmentConfirmationScreen() {
                         borderRadius: glassRadii.button,
                         backgroundColor: glassColors.dangerSoft,
                         borderWidth: glassHairlineWidth,
-                        borderColor: 'rgba(163, 45, 45, 0.18)',
+                        borderColor: color.alert,
                         paddingHorizontal: ds.spacing(12),
                         paddingVertical: ds.spacing(8),
                       }}
@@ -3580,7 +3580,7 @@ function FulfillmentConfirmationScreen() {
           onRequestClose={closeNoteEditor}
         >
           <Pressable
-            style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.35)', justifyContent: 'flex-end' }}
+            style={{ flex: 1, backgroundColor: color.scrim, justifyContent: 'flex-end' }}
             onPress={closeNoteEditor}
           >
             <Pressable

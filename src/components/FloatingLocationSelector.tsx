@@ -18,7 +18,7 @@ import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerConfirmationHaptic } from '@/lib/haptics';
 import { glassColors, glassHairlineWidth, glassSpacing } from '@/theme/design';
 import type { Location } from '@/types';
-import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { auth, color, radius, typeScale, weight } from '@/theme/tokens';
 
 const CLOSED_HEIGHT = 76;
 const OPEN_HEADER_HEIGHT = 62;
@@ -82,32 +82,32 @@ function getLocationTone(location: Location | null): LocationTone {
   if (kind === 'sushi') {
     return {
       dot: glassColors.accent,
-      halo: 'rgba(232,80,58,0.18)',
-      border: 'rgba(232,80,58,0.42)',
-      selectedBackground: 'rgba(232,80,58,0.16)',
-      selectedBorder: 'rgba(232,80,58,0.38)',
-      surface: 'rgba(232,80,58,0.12)',
+      halo: color.tint,
+      border: color.accent,
+      selectedBackground: color.tint,
+      selectedBorder: color.accent,
+      surface: color.tint,
     };
   }
 
   if (kind === 'poki') {
     return {
       dot: glassColors.successText,
-      halo: 'rgba(34,197,94,0.18)',
-      border: 'rgba(34,197,94,0.38)',
-      selectedBackground: 'rgba(34,197,94,0.14)',
-      selectedBorder: 'rgba(34,197,94,0.36)',
-      surface: 'rgba(34,197,94,0.12)',
+      halo: color.goodBg,
+      border: color.good,
+      selectedBackground: color.goodBg,
+      selectedBorder: color.good,
+      surface: color.goodBg,
     };
   }
 
   return {
     dot: color.card,
-    halo: 'rgba(255,255,255,0.14)',
-    border: 'rgba(255,255,255,0.24)',
-    selectedBackground: 'rgba(255,255,255,0.08)',
-    selectedBorder: 'rgba(255,255,255,0.18)',
-    surface: 'rgba(255,255,255,0.12)',
+    halo: auth.wellBorder,
+    border: auth.wellBorder,
+    selectedBackground: auth.well,
+    selectedBorder: auth.wellBorder,
+    surface: auth.well,
   };
 }
 
@@ -498,7 +498,7 @@ export function FloatingLocationSelector({
                   backgroundColor: selectedLocationTone.surface,
                   borderColor: showConfirmation
                     ? selectedLocationTone.border
-                    : 'rgba(255,255,255,0.06)',
+                    : auth.well,
                   shadowColor: selectedLocationTone.dot,
                   shadowOpacity: showConfirmation ? 0.34 : 0,
                 },
@@ -545,7 +545,7 @@ export function FloatingLocationSelector({
             <Ionicons
               name={isOpen ? 'chevron-down' : 'chevron-up'}
               size={20}
-              color="rgba(255,255,255,0.72)"
+              color={auth.dim}
             />
           </TouchableOpacity>
         </Animated.View>
@@ -581,7 +581,7 @@ export function FloatingLocationSelector({
               <Ionicons
                 name="location-outline"
                 size={22}
-                color="rgba(255,255,255,0.78)"
+                color={auth.dim}
               />
               <Text style={styles.emptyStateTitle}>No locations available</Text>
               <Text style={styles.emptyStateBody}>
@@ -638,7 +638,7 @@ export function FloatingLocationSelector({
                             backgroundColor: locationTone.surface,
                             borderColor: isSelected
                               ? locationTone.border
-                              : 'rgba(255,255,255,0.06)',
+                              : auth.well,
                           },
                           isPendingSelection
                             ? { transform: [{ scale: pendingIndicatorScale }] }
@@ -692,7 +692,7 @@ export function FloatingLocationSelector({
                         <Ionicons
                           name="chevron-forward"
                           size={16}
-                          color="rgba(255,255,255,0.42)"
+                          color={auth.dim}
                         />
                       )}
                     </TouchableOpacity>
@@ -711,9 +711,9 @@ const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     overflow: 'hidden',
-    backgroundColor: 'rgba(24, 24, 27, 0.98)',
+    backgroundColor: color.ink,
     borderWidth: glassHairlineWidth,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: auth.well,
   },
   closedContent: {
     ...StyleSheet.absoluteFillObject,
@@ -755,7 +755,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   closedEyebrow: {
-    color: 'rgba(255,255,255,0.56)',
+    color: auth.dim,
     fontSize: typeScale.caption,
     fontWeight: weight.bold,
     letterSpacing: 0.9,
@@ -774,7 +774,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: auth.well,
     marginRight: 10,
   },
   countPillText: {
@@ -806,7 +806,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: auth.well,
   },
   rowsContent: {
     paddingHorizontal: 4,
@@ -818,9 +818,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: radius.sheet,
     paddingHorizontal: 16,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: auth.well,
     borderWidth: glassHairlineWidth,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: auth.well,
   },
   locationRowSpacing: {
     marginBottom: ROW_GAP,
@@ -853,12 +853,12 @@ const styles = StyleSheet.create({
   },
   locationMeta: {
     marginTop: 4,
-    color: 'rgba(255,255,255,0.56)',
+    color: auth.dim,
     fontSize: typeScale.secondary,
     fontWeight: weight.semibold,
   },
   selectedLocationMeta: {
-    color: 'rgba(255,255,255,0.8)',
+    color: auth.dim,
   },
   selectedIndicator: {
     width: 28,
@@ -881,7 +881,7 @@ const styles = StyleSheet.create({
   },
   emptyStateBody: {
     marginTop: 6,
-    color: 'rgba(255,255,255,0.58)',
+    color: auth.dim,
     fontSize: typeScale.secondary,
     textAlign: 'center',
     lineHeight: 18,

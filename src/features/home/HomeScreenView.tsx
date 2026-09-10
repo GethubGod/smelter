@@ -67,7 +67,7 @@ import {
   HomeSearchCard,
 } from './components/HomeScreenPrimitives';
 import type { HomeScreenMode } from './modes';
-import { typeScale, weight } from '@/theme/tokens';
+import { color, typeScale, weight } from '@/theme/tokens';
 
 const HOME_INSIGHTS_TIMEOUT_MS = 8000;
 const HOME_REMINDER_TIMEOUT_MS = 6000;
@@ -967,7 +967,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
                       backgroundColor: colors.gray[100],
                       marginRight: ds.spacing(12),
                       borderWidth: glassHairlineWidth,
-                      borderColor: 'rgba(28, 28, 30, 0.08)',
+                      borderColor: color.hairline,
                     }}
                   >
                     <Ionicons
@@ -1010,7 +1010,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
                     flexDirection: 'row',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    shadowColor: 'rgba(15, 23, 42, 0.22)',
+                    shadowColor: color.ink,
                     shadowOpacity: 0.12,
                     shadowRadius: 12,
                     shadowOffset: { width: 0, height: 6 },
@@ -1066,7 +1066,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
                   borderWidth: glassHairlineWidth,
                   borderColor:
                     browseCategory === null
-                      ? 'rgba(28, 28, 30, 0.18)'
+                      ? color.ink
                       : glassColors.cardBorder,
                 }}
               >
@@ -1095,7 +1095,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
                         : colors.gray[100],
                       borderWidth: glassHairlineWidth,
                       borderColor: isSelected
-                        ? 'rgba(28, 28, 30, 0.18)'
+                        ? color.ink
                         : glassColors.cardBorder,
                     }}
                   >

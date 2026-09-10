@@ -12,7 +12,7 @@ import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { BrandLogo } from './BrandLogo';
 import { BottomSheetShell } from './BottomSheetShell';
 import { resolveLocationSwitchTarget } from '@/features/cart/locationSwitch';
-import { typeScale, weight } from '@/theme/tokens';
+import { color, typeScale, weight } from '@/theme/tokens';
 
 export interface ConfirmLocationOption {
   id: string;
@@ -252,7 +252,7 @@ export function ConfirmLocationBottomSheet({
                 marginTop: ds.spacing(10),
                 borderRadius: radii.submitButton,
                 borderWidth: 1.5,
-                borderColor: 'rgba(0,0,0,0.15)',
+                borderColor: color.hairlineStrong,
                 backgroundColor: isSubmitting ? colors.background : colors.white,
                 alignItems: 'center',
                 justifyContent: 'center',

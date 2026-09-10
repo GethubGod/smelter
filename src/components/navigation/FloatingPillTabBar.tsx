@@ -185,7 +185,7 @@ export function FloatingPillTabBar({
               style={{
                 width: 1,
                 height: 22,
-                backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                backgroundColor: color.hairline,
                 marginHorizontal: 5,
               }}
             />

@@ -803,14 +803,14 @@ const styles = StyleSheet.create({
     top: 2,
     bottom: 2,
     right: 2,
-    backgroundColor: "rgba(60, 60, 67, 0.12)",
+    backgroundColor: color.well,
     overflow: "hidden",
   },
   scrollbarThumb: {
     position: "absolute",
     left: 0,
     right: 0,
-    backgroundColor: "rgba(60, 60, 67, 0.55)",
+    backgroundColor: color.ink3,
   },
   statusBadge: {
     alignItems: "center",

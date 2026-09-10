@@ -15,7 +15,7 @@ import { colors, radii ,
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { BottomSheetShell } from './BottomSheetShell';
 import { GlassSurface } from './ui/GlassSurface';
-import { typeScale, weight } from '@/theme/tokens';
+import { color, typeScale, weight } from '@/theme/tokens';
 
 export interface ItemActionSheetItem {
   id: string;
@@ -208,7 +208,7 @@ export function ItemActionSheet({
                         style={{
                           borderRadius: glassRadii.button,
                           borderWidth: 1,
-                          borderColor: item.destructive ? 'rgba(239, 68, 68, 0.4)' : glassColors.cardBorder,
+                          borderColor: item.destructive ? color.alert : glassColors.cardBorder,
                           overflow: 'hidden',
                         }}
                       >
@@ -236,7 +236,7 @@ export function ItemActionSheet({
                                 backgroundColor: iconBackground,
                                 borderWidth: glassHairlineWidth,
                                 borderColor: item.destructive
-                                  ? 'rgba(163, 45, 45, 0.12)'
+                                  ? color.alertBg
                                   : glassColors.cardBorder,
                               }}
                             >

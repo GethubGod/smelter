@@ -232,7 +232,7 @@ function ExampleCardShell({
             flexDirection: 'row',
             alignItems: 'center',
             gap: ds.spacing(6),
-            backgroundColor: is_active ? 'rgba(34, 197, 94, 0.12)' : grayScale[100],
+            backgroundColor: is_active ? color.goodBg : grayScale[100],
             borderRadius: glassRadii.pill,
             paddingHorizontal: ds.spacing(10),
             paddingVertical: ds.spacing(5),

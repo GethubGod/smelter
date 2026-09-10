@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     minHeight: 42,
     borderRadius: radius.card,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    backgroundColor: color.card,
   },
   voicePreviewFailed: {
     borderWidth: 1,

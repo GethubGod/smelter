@@ -297,7 +297,7 @@ export function FulfillmentSupplierCard({
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
-                shadowColor: 'rgba(15, 23, 42, 0.22)',
+                shadowColor: color.ink,
                 shadowOpacity: 0.12,
                 shadowRadius: 12,
                 shadowOffset: { width: 0, height: 6 },
