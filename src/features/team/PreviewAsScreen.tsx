@@ -3,7 +3,9 @@
 // getVisibleEmployeeTabs logic the employee layout uses, a live render that
 // cannot drift. Strictly read-only: this screen never writes anything.
 
-import { useCallback, useState } from 'react';
+// React is imported by name because the jest transform compiles JSX with the
+// classic runtime; the app itself uses the automatic one either way.
+import React, { useCallback, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';

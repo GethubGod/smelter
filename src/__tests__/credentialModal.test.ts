@@ -6,6 +6,7 @@ const alert = jest.fn();
 const getUser = jest.fn();
 const signInWithPassword = jest.fn();
 const updateUser = jest.fn();
+const setCredential = jest.fn();
 
 jest.mock('react-native', () => ({
   View: 'View', Text: 'Text', Modal: 'Modal', Pressable: 'Pressable', TextInput: 'TextInput',
@@ -22,7 +23,7 @@ jest.mock('@/components/LoadingIndicator', () => require('./ui/nativeMocks').loa
 jest.mock('@/theme/design', () => ({ colors: { white: '#fff' }, radii: { card: 12 }, hairline: 1, glassHairlineWidth: 1, tipsTheme: {} }));
 jest.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ bottom: 0 }) }));
 jest.mock('@/hooks/useScaledStyles', () => ({ useScaledStyles: () => ({ spacing: (n: number) => n, fontSize: (n: number) => n, icon: (n: number) => n }) }));
-jest.mock('@/services/loginCredentials', () => ({ getMyCredentialKind: (id: string) => credentialKind(id), isValidPin: (value: string) => /^\d{4}$/.test(value), isValidPassword: (value: string) => value.length >= 8, setMyCredential: jest.fn() }));
+jest.mock('@/services/loginCredentials', () => ({ getMyCredentialKind: (id: string) => credentialKind(id), isValidPin: (value: string) => /^\d{4}$/.test(value), isValidPassword: (value: string) => value.length >= 8, setMyCredential: (kind: string, secret: string) => setCredential(kind, secret) }));
 const mockAuthState = { session: { user: { id: 'user-1' } }, isLoading: false };
 jest.mock('@/store/authStore', () => ({ useAuthStore: Object.assign((selector: (state: unknown) => unknown) => selector(mockAuthState), { getState: () => mockAuthState }) }));
 jest.mock('@/lib/supabase', () => ({ supabase: { auth: { getUser } }, createCredentialClient: () => ({ auth: { signInWithPassword, updateUser } }) }));
@@ -116,5 +117,43 @@ it('retains a native modal for the standalone employee credential sheet', async 
   expect(tree.root.findAll((node) => String(node.type) === 'TextInput')).toHaveLength(2);
   await act(async () => host.props.onRequestClose());
   expect(onClose).toHaveBeenCalledTimes(1);
+  await act(async () => tree.unmount());
+});
+
+
+it('refuses to dismiss the sheet while the new PIN is being saved', async () => {
+  credentialKind.mockResolvedValue('pin');
+  let finishSave!: () => void;
+  setCredential.mockReturnValue(new Promise<void>((resolve) => { finishSave = () => resolve(); }));
+  const onClose = jest.fn();
+  let tree!: renderer.ReactTestRenderer;
+  await act(async () => { tree = renderer.create(React.createElement(ChangePasswordModal, { visible: true, onClose })); });
+
+  const fields = tree.root.findAll((node) => String(node.type) === 'TextInput');
+  await act(async () => {
+    fields[0].props.onChangeText('1234');
+    fields[1].props.onChangeText('1234');
+  });
+  const save = tree.root.find((node) => node.props.accessibilityLabel === 'Save PIN' && String(node.type) === 'TouchableOpacity');
+  await act(async () => { save.props.onPress(); });
+  expect(setCredential).toHaveBeenCalledWith('pin', '1234');
+
+  // The shell owns the scrim and the swipe; both land on the same handler.
+  const host = tree.root.find((node) => String(node.type) === 'Modal');
+  await act(async () => { host.props.onRequestClose(); });
+  expect(onClose).not.toHaveBeenCalled();
+
+  await act(async () => { finishSave(); });
+  await act(async () => tree.unmount());
+});
+
+it('keeps the password fields above the keyboard and scrollable', async () => {
+  credentialKind.mockResolvedValue(null);
+  const tree = await openModal();
+  const avoiders = tree.root.findAll((node) => String(node.type) === 'KeyboardAvoidingView');
+  expect(avoiders).toHaveLength(1);
+  const scrollViews = avoiders[0].findAll((node) => String(node.type) === 'ScrollView');
+  expect(scrollViews).toHaveLength(1);
+  expect(scrollViews[0].findAll((node) => String(node.type) === 'TextInput')).toHaveLength(3);
   await act(async () => tree.unmount());
 });
