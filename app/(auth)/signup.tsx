@@ -1,40 +1,25 @@
+// The legacy access-code sign-up, plus the invite-link variant. Under the UI
+// contract it drops the white floating card and wears the same black fields as
+// the rest of auth.
+
 import { useEffect, useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-  ScrollView,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { Link, Redirect, router, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store';
-import { AuthLoadingScreen, AuthLogoHeader, LoadingIndicator } from '@/components';
+import { AuthLoadingScreen, AuthLogoHeader } from '@/components';
+import { Button, Input, Loading, SectionLabel } from '@/components/ui';
 import { useAuthScreenGuard } from '@/hooks';
+import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { validatePassword } from '@/lib';
 import { fetchInvitePreview, type InvitePreview } from '@/services/invites';
-import { colors } from '@/constants';
-import { LegalFooter } from '@/features/auth/components/LegalFooter';
+import { auth, color, radius, size, space, tracking, typeScale, weight } from '@/theme/tokens';
+import { AuthScreenShell } from '@/features/auth/components/AuthScreenShell';
 
 const ACCESS_CODE_REGEX = /^\d{4}$/;
-const AUTH_SCREEN_BACKGROUND = '#000000';
-const AUTH_INPUT_TEXT_STYLE = {
-  flex: 1,
-  marginLeft: 12,
-  fontSize: 16,
-  lineHeight: 20,
-  height: 48,
-  paddingVertical: 0,
-  includeFontPadding: false,
-  textAlignVertical: 'center' as const,
-};
 
 export default function SignUpScreen() {
+  const ds = useScaledStyles();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -46,7 +31,6 @@ export default function SignUpScreen() {
   const [accessCodeError, setAccessCodeError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
-  const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
   // Invite-link mode (babytunasystems://join?token=… → /join → here). The
   // access-code path below stays fully intact and remains the default.
@@ -163,336 +147,345 @@ export default function SignUpScreen() {
     }
   };
 
-  const getInputStyle = (inputName: string) => {
-    const isFocused = focusedInput === inputName;
-    return `flex-row items-center px-4 rounded-xl ${
-      isFocused
-        ? 'bg-white border-2 border-primary-500'
-        : 'bg-gray-100 border-2 border-transparent'
-    }`;
+  const noteStyle = {
+    backgroundColor: auth.well,
+    borderWidth: 1,
+    borderColor: auth.wellBorder,
+    borderRadius: radius.control,
+    paddingHorizontal: ds.spacing(space[3]),
+    paddingVertical: ds.spacing(space[3]),
+    marginBottom: ds.spacing(space[4]),
+  };
+  const noteTitleStyle = {
+    fontSize: ds.fontSize(typeScale.secondary),
+    fontWeight: weight.semibold,
+    color: auth.text,
+  };
+  const noteTextStyle = {
+    fontSize: ds.fontSize(typeScale.secondary),
+    color: auth.dim,
+  };
+  const helperTextStyle = {
+    fontSize: ds.fontSize(typeScale.secondary),
+    color: auth.dim,
+    marginTop: ds.spacing(space[2] - 2),
+  };
+  const errorTextStyle = {
+    fontSize: ds.fontSize(typeScale.secondary),
+    color: color.alert,
+    marginTop: ds.spacing(space[2] - 2),
+  };
+  const linkTextStyle = {
+    fontSize: ds.fontSize(typeScale.secondary),
+    fontWeight: weight.semibold,
+    color: auth.text,
   };
 
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: AUTH_SCREEN_BACKGROUND }}>
-      <StatusBar style="light" />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1, backgroundColor: AUTH_SCREEN_BACKGROUND }}
+  const renderRevealLabel = (
+    label: string,
+    revealed: boolean,
+    onToggle: () => void,
+  ) => (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}
+    >
+      <SectionLabel onDark>{label}</SectionLabel>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={revealed ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+        onPress={onToggle}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <ScrollView
-          style={{ flex: 1, backgroundColor: AUTH_SCREEN_BACKGROUND }}
-          contentContainerStyle={{ paddingVertical: 24 }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+        <Text style={linkTextStyle}>{revealed ? 'Hide' : 'Show'}</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  return (
+    <AuthScreenShell dismissKeyboardOnPress={false}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: ds.spacing(space[6]) }}
+      >
+        <View style={{ alignItems: 'center', marginBottom: ds.spacing(space[6]) }}>
+          <AuthLogoHeader size={64} />
+        </View>
+
+        <Text
+          accessibilityRole="header"
+          style={{
+            fontSize: ds.fontSize(typeScale.display),
+            fontWeight: weight.bold,
+            letterSpacing: tracking.display,
+            color: auth.text,
+            marginBottom: ds.spacing(space[5]),
+          }}
         >
-          <View className="px-6">
-            <View className="items-center pt-2 mb-6">
-              <AuthLogoHeader size={64} />
-            </View>
+          Create Account
+        </Text>
 
-            <View
-              className="bg-white rounded-2xl p-6 border border-gray-100"
-              style={{
-                backgroundColor: colors.card,
-                borderColor: colors.divider,
-                elevation: 0,
-                shadowColor: colors.background,
-                shadowOpacity: 0,
-                shadowRadius: 0,
-                shadowOffset: { width: 0, height: 0 },
-              }}
-            >
-              <Text className="text-2xl font-bold text-gray-900 mb-6 text-center">
-                Create Account
+        {inviteMode ? (
+          inviteChecking ? (
+            <View style={[noteStyle, { flexDirection: 'row', alignItems: 'center' }]}>
+              <Loading size="inline" color={auth.text} label="Checking your invite" />
+              <Text style={[noteTextStyle, { marginLeft: ds.spacing(space[3]) }]}>
+                Checking your invite
               </Text>
-
-              {inviteMode ? (
-                inviteChecking ? (
-                  <View className="mb-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 flex-row items-center">
-                    <LoadingIndicator size="small" />
-                    <Text className="ml-3 text-sm text-gray-600">Checking your invite…</Text>
-                  </View>
-                ) : invitePreview ? (
-                  <View className="mb-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-                    <View className="flex-row items-center mb-1">
-                      <Ionicons name="mail-open-outline" size={16} color={colors.primary[500]} />
-                      <Text className="ml-2 text-sm font-semibold text-gray-800">
-                        {invitePreview.invitedName
-                          ? `You're invited, ${invitePreview.invitedName}`
-                          : "You're invited"}
-                      </Text>
-                    </View>
-                    <Text className="text-xs text-gray-500">
-                      {invitePreview.role
-                        ? `This link signs you up as ${invitePreview.role}. No access code needed.`
-                        : 'No access code needed — this link is yours.'}
-                    </Text>
-                  </View>
-                ) : (
-                  <View className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-                    <View className="flex-row items-center mb-1">
-                      <Ionicons name="alert-circle" size={16} color={colors.error} />
-                      <Text className="ml-2 text-sm font-semibold text-red-700">
-                        Invite link problem
-                      </Text>
-                    </View>
-                    <Text className="text-xs text-red-600 mb-2">
-                      {inviteError ?? 'This invite link is not valid. Ask your manager for a new one.'}
-                    </Text>
-                    <TouchableOpacity onPress={() => setInviteDismissed(true)}>
-                      <Text className="text-xs font-bold text-primary-500">
-                        Use an access code instead
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                )
-              ) : null}
-
-              <View className="mb-4">
-                <Text className="text-sm font-medium text-gray-700 mb-2">Full Name</Text>
-                <View className={getInputStyle('name')} style={{ height: 48 }}>
-                  <Ionicons
-                    name="person-outline"
-                    size={20}
-                    color={focusedInput === 'name' ? colors.primary[500] : colors.gray[400]}
-                  />
-                  <TextInput
-                    className="text-gray-900"
-                    style={AUTH_INPUT_TEXT_STYLE}
-                    placeholder="Enter your name"
-                    placeholderTextColor={colors.gray[400]}
-                    value={name}
-                    onChangeText={setName}
-                    autoComplete="name"
-                    onFocus={() => setFocusedInput('name')}
-                    onBlur={() => setFocusedInput(null)}
-                  />
-                </View>
-              </View>
-
-              <View className="mb-4">
-                <Text className="text-sm font-medium text-gray-700 mb-2">Email</Text>
-                <View className={getInputStyle('email')} style={{ height: 48 }}>
-                  <Ionicons
-                    name="mail-outline"
-                    size={20}
-                    color={focusedInput === 'email' ? colors.primary[500] : colors.gray[400]}
-                  />
-                  <TextInput
-                    className="text-gray-900"
-                    style={AUTH_INPUT_TEXT_STYLE}
-                    placeholder="Enter your email"
-                    placeholderTextColor={colors.gray[400]}
-                    value={email}
-                    onChangeText={setEmail}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    autoComplete="email"
-                    onFocus={() => setFocusedInput('email')}
-                    onBlur={() => setFocusedInput(null)}
-                  />
-                </View>
-              </View>
-
-              <View className="mb-3">
-                <Text className="text-sm font-medium text-gray-700 mb-2">Password</Text>
-                <View className={getInputStyle('password')} style={{ height: 48 }}>
-                  <Ionicons
-                    name="lock-closed-outline"
-                    size={20}
-                    color={focusedInput === 'password' ? colors.primary[500] : colors.gray[400]}
-                  />
-                  <TextInput
-                    className="text-gray-900"
-                    style={AUTH_INPUT_TEXT_STYLE}
-                    placeholder="Create a password"
-                    placeholderTextColor={colors.gray[400]}
-                    value={password}
-                    onChangeText={(value) => {
-                      setPassword(value);
-                      if (passwordError) setPasswordError(null);
-                      if (confirmPasswordError && value === confirmPassword) {
-                        setConfirmPasswordError(null);
-                      }
-                    }}
-                    secureTextEntry={!showPassword}
-                    autoComplete="password-new"
-                    onFocus={() => setFocusedInput('password')}
-                    onBlur={() => setFocusedInput(null)}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <Ionicons
-                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                      size={20}
-                      color={colors.gray[400]}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View className="mb-4 rounded-xl border border-gray-200 bg-gray-50 px-3 py-3">
-                <Text className="text-sm font-semibold text-gray-800 mb-2">Password requirements</Text>
-                {passwordValidation.checks.map((check) => {
-                  const isNeutral = isPasswordEmpty;
-                  const isMet = !isNeutral && check.ok;
-                  const iconName = isNeutral
-                    ? 'ellipse-outline'
-                    : isMet
-                      ? 'checkmark-circle'
-                      : 'close-circle';
-                  const iconColor = isNeutral ? colors.gray[400] : isMet ? colors.success : colors.error;
-                  const textColor = isNeutral ? 'text-gray-500' : isMet ? 'text-green-700' : 'text-red-600';
-
-                  return (
-                    <View key={check.key} className="flex-row items-center py-1">
-                      <Ionicons name={iconName} size={15} color={iconColor} />
-                      <Text className={`ml-2 text-xs ${textColor}`}>{check.label}</Text>
-                    </View>
-                  );
-                })}
-                {passwordError ? (
-                  <Text className="text-xs text-red-600 mt-2">{passwordError}</Text>
-                ) : null}
-              </View>
-
-              <View className="mb-4">
-                <Text className="text-sm font-medium text-gray-700 mb-2">Confirm Password</Text>
-                <View className={getInputStyle('confirmPassword')} style={{ height: 48 }}>
-                  <Ionicons
-                    name="shield-checkmark-outline"
-                    size={20}
-                    color={focusedInput === 'confirmPassword' ? colors.primary[500] : colors.gray[400]}
-                  />
-                  <TextInput
-                    className="text-gray-900"
-                    style={AUTH_INPUT_TEXT_STYLE}
-                    placeholder="Re-enter your password"
-                    placeholderTextColor={colors.gray[400]}
-                    value={confirmPassword}
-                    onChangeText={(value) => {
-                      setConfirmPassword(value);
-                      if (confirmPasswordError) setConfirmPasswordError(null);
-                    }}
-                    secureTextEntry={!showConfirmPassword}
-                    autoComplete="password-new"
-                    onFocus={() => setFocusedInput('confirmPassword')}
-                    onBlur={() => setFocusedInput(null)}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <Ionicons
-                      name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
-                      size={20}
-                      color={colors.gray[400]}
-                    />
-                  </TouchableOpacity>
-                </View>
-
-                {confirmPassword.length === 0 ? (
-                  <Text className="text-xs text-gray-500 mt-1.5 ml-1">Re-enter password to confirm.</Text>
-                ) : passwordsMatch ? (
-                  <View className="mt-1.5 ml-1 flex-row items-center">
-                    <Ionicons name="checkmark-circle" size={14} color={colors.success} />
-                    <Text className="text-xs text-green-700 ml-1">Passwords match</Text>
-                  </View>
-                ) : (
-                  <View className="mt-1.5 ml-1 flex-row items-center">
-                    <Ionicons name="close-circle" size={14} color={colors.error} />
-                    <Text className="text-xs text-red-600 ml-1">Passwords do not match</Text>
-                  </View>
-                )}
-
-                {confirmPasswordError ? (
-                  <Text className="text-xs text-red-600 mt-1.5 ml-1">{confirmPasswordError}</Text>
-                ) : null}
-              </View>
-
-              {inviteMode ? null : (
-              <View className="mb-6">
-                <Text className="text-sm font-medium text-gray-700 mb-3">Access Code</Text>
-                <View className={getInputStyle('accessCode')} style={{ height: 48 }}>
-                  <Ionicons
-                    name="key-outline"
-                    size={20}
-                    color={focusedInput === 'accessCode' ? colors.primary[500] : colors.gray[400]}
-                  />
-                  <TextInput
-                    className="text-gray-900"
-                    style={AUTH_INPUT_TEXT_STYLE}
-                    placeholder="Enter 4-digit code"
-                    placeholderTextColor={colors.gray[400]}
-                    value={accessCode}
-                    onChangeText={(value) => {
-                      setAccessCode(sanitizeAccessCode(value));
-                      if (accessCodeError) {
-                        setAccessCodeError(null);
-                      }
-                    }}
-                    secureTextEntry={!showAccessCode}
-                    keyboardType="number-pad"
-                    maxLength={4}
-                    onFocus={() => setFocusedInput('accessCode')}
-                    onBlur={() => {
-                      setFocusedInput(null);
-                      if (accessCode.length > 0 && !ACCESS_CODE_REGEX.test(accessCode)) {
-                        setAccessCodeError('Access code must be exactly 4 digits.');
-                      }
-                    }}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowAccessCode(!showAccessCode)}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <Ionicons
-                      name={showAccessCode ? 'eye-off-outline' : 'eye-outline'}
-                      size={20}
-                      color={colors.gray[400]}
-                    />
-                  </TouchableOpacity>
-                </View>
-                <Text className="text-xs text-gray-400 mt-1.5 ml-1">
-                  Enter the 4-digit code provided by your manager.
-                </Text>
-                {accessCodeError ? (
-                  <Text className="text-xs text-red-500 mt-1.5 ml-1">{accessCodeError}</Text>
-                ) : null}
-              </View>
-              )}
-
-              <TouchableOpacity
-                className={`rounded-xl items-center justify-center ${
-                  canCreateAccount ? 'bg-primary-500' : 'bg-gray-300'
-                }`}
-                style={{ height: 52 }}
-                onPress={handleSignUp}
-                disabled={!canCreateAccount}
-                activeOpacity={canCreateAccount ? 0.8 : 1}
+            </View>
+          ) : invitePreview ? (
+            <View style={noteStyle}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: ds.spacing(space[2]),
+                  marginBottom: ds.spacing(space[1]),
+                }}
               >
-                {isLoading ? (
-                  <LoadingIndicator size="small" />
-                ) : (
-                  <Text className="text-white font-bold text-lg">Create Account</Text>
-                )}
+                <Ionicons
+                  name="mail-open-outline"
+                  size={ds.icon(size.icon)}
+                  color={color.accent}
+                />
+                <Text style={noteTitleStyle}>
+                  {invitePreview.invitedName
+                    ? `You're invited, ${invitePreview.invitedName}`
+                    : "You're invited"}
+                </Text>
+              </View>
+              <Text style={noteTextStyle}>
+                {invitePreview.role
+                  ? `This link signs you up as ${invitePreview.role}. No access code needed.`
+                  : 'No access code needed. This link is yours.'}
+              </Text>
+            </View>
+          ) : (
+            <View style={noteStyle}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: ds.spacing(space[2]),
+                  marginBottom: ds.spacing(space[1]),
+                }}
+              >
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={ds.icon(size.icon)}
+                  color={color.alert}
+                />
+                <Text style={noteTitleStyle}>Invite link problem</Text>
+              </View>
+              <Text style={noteTextStyle}>
+                {inviteError ?? 'This invite link is not valid. Ask your manager for a new one.'}
+              </Text>
+              <TouchableOpacity
+                accessibilityRole="button"
+                onPress={() => setInviteDismissed(true)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={{ marginTop: ds.spacing(space[2]) }}
+              >
+                <Text style={linkTextStyle}>Use an access code instead</Text>
               </TouchableOpacity>
             </View>
+          )
+        ) : null}
 
-            <View className="flex-row justify-center mt-6">
-              <Text className="text-gray-300 text-base">Already have an account? </Text>
-              <Link href="/(auth)/login" asChild>
-                <TouchableOpacity>
-                  <Text className="text-primary-500 font-bold text-base">Sign In</Text>
-                </TouchableOpacity>
-              </Link>
-            </View>
+        <Input
+          label="Full name"
+          onDark
+          value={name}
+          onChangeText={setName}
+          placeholder="Enter your name"
+          autoComplete="name"
+        />
+
+        <Input
+          label="Email"
+          onDark
+          value={email}
+          onChangeText={setEmail}
+          placeholder="Enter your email"
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="email-address"
+          textContentType="emailAddress"
+          autoComplete="email"
+        />
+
+        {renderRevealLabel('Password', showPassword, () => setShowPassword(!showPassword))}
+        <Input
+          onDark
+          accessibilityLabel="Password"
+          value={password}
+          onChangeText={(value) => {
+            setPassword(value);
+            if (passwordError) setPasswordError(null);
+            if (confirmPasswordError && value === confirmPassword) {
+              setConfirmPasswordError(null);
+            }
+          }}
+          placeholder="Create a password"
+          secureTextEntry={!showPassword}
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="password-new"
+        />
+
+        <View style={[noteStyle, { marginTop: ds.spacing(space[3]) }]}>
+          <Text style={[noteTitleStyle, { marginBottom: ds.spacing(space[2]) }]}>
+            Password requirements
+          </Text>
+          {passwordValidation.checks.map((check) => {
+            const isNeutral = isPasswordEmpty;
+            const isMet = !isNeutral && check.ok;
+            const iconName = isNeutral
+              ? 'ellipse-outline'
+              : isMet
+                ? 'checkmark-circle'
+                : 'close-circle';
+            const iconColor = isNeutral ? auth.dim : isMet ? color.good : color.alert;
+            const textColor = isNeutral ? auth.dim : isMet ? color.good : color.alert;
+
+            return (
+              <View
+                key={check.key}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: ds.spacing(space[2]),
+                  paddingVertical: ds.spacing(space[1] / 2),
+                }}
+              >
+                <Ionicons name={iconName} size={ds.icon(size.icon)} color={iconColor} />
+                <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: textColor }}>
+                  {check.label}
+                </Text>
+              </View>
+            );
+          })}
+          {passwordError ? <Text style={errorTextStyle}>{passwordError}</Text> : null}
+        </View>
+
+        {renderRevealLabel('Confirm password', showConfirmPassword, () =>
+          setShowConfirmPassword(!showConfirmPassword),
+        )}
+        <Input
+          onDark
+          accessibilityLabel="Confirm password"
+          value={confirmPassword}
+          onChangeText={(value) => {
+            setConfirmPassword(value);
+            if (confirmPasswordError) setConfirmPasswordError(null);
+          }}
+          placeholder="Re-enter your password"
+          secureTextEntry={!showConfirmPassword}
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="password-new"
+        />
+
+        {confirmPassword.length === 0 ? (
+          <Text style={helperTextStyle}>Re-enter password to confirm.</Text>
+        ) : (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: ds.spacing(space[2]),
+              marginTop: ds.spacing(space[2] - 2),
+            }}
+          >
+            <Ionicons
+              name={passwordsMatch ? 'checkmark-circle' : 'close-circle'}
+              size={ds.icon(size.icon)}
+              color={passwordsMatch ? color.good : color.alert}
+            />
+            <Text
+              style={{
+                fontSize: ds.fontSize(typeScale.secondary),
+                color: passwordsMatch ? color.good : color.alert,
+              }}
+            >
+              {passwordsMatch ? 'Passwords match' : 'Passwords do not match'}
+            </Text>
           </View>
-        </ScrollView>
-        <LegalFooter />
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        )}
+
+        {confirmPasswordError ? (
+          <Text style={errorTextStyle}>{confirmPasswordError}</Text>
+        ) : null}
+
+        {inviteMode ? null : (
+          <>
+            {renderRevealLabel('Access code', showAccessCode, () =>
+              setShowAccessCode(!showAccessCode),
+            )}
+            <Input
+              onDark
+              accessibilityLabel="Access code"
+              value={accessCode}
+              onChangeText={(value) => {
+                setAccessCode(sanitizeAccessCode(value));
+                if (accessCodeError) {
+                  setAccessCodeError(null);
+                }
+              }}
+              placeholder="Enter 4-digit code"
+              secureTextEntry={!showAccessCode}
+              keyboardType="number-pad"
+              maxLength={4}
+              onBlur={() => {
+                if (accessCode.length > 0 && !ACCESS_CODE_REGEX.test(accessCode)) {
+                  setAccessCodeError('Access code must be exactly 4 digits.');
+                }
+              }}
+            />
+            {accessCodeError ? (
+              <Text style={errorTextStyle}>{accessCodeError}</Text>
+            ) : (
+              <Text style={helperTextStyle}>
+                Enter the 4-digit code provided by your manager.
+              </Text>
+            )}
+          </>
+        )}
+
+        <Button
+          label="Create Account"
+          onPress={handleSignUp}
+          loading={isLoading}
+          disabled={!canCreateAccount}
+          style={{ marginTop: ds.spacing(space[6]) }}
+        />
+
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: ds.spacing(space[1]),
+            marginTop: ds.spacing(space[6]),
+          }}
+        >
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: auth.dim }}>
+            Already have an account?
+          </Text>
+          <Link href="/(auth)/login" asChild>
+            <TouchableOpacity
+              accessibilityRole="link"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={linkTextStyle}>Sign In</Text>
+            </TouchableOpacity>
+          </Link>
+        </View>
+      </ScrollView>
+    </AuthScreenShell>
   );
 }
