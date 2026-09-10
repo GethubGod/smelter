@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, Linking } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { GlassSurface } from '@/components';
+import { View, Alert, Linking } from 'react-native';
+import { Button, Card, EmptyState, SectionLabel } from '@/components/ui';
 import { useSettingsStore } from '@/store';
-import { colors } from '@/constants';
 import { Reminder } from '@/types/settings';
 import {
   ReminderListItem,
@@ -13,10 +11,9 @@ import {
   SettingsScreenLayout,
   SettingsSectionLabel,
   TimePickerRow,
-  settingsIconPalettes,
 } from '@/components/settings';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { glassColors, glassHairlineWidth, glassRadii } from '@/theme/design';
+import { space } from '@/theme/tokens';
 
 import {
   requestNotificationPermissions,
@@ -134,73 +131,53 @@ function RemindersSection({
     <View>
       <SettingToggle
         icon="alarm"
-        iconColor={settingsIconPalettes.reminders.icon}
-        iconBgColor={settingsIconPalettes.reminders.background}
         title="Reminders"
         subtitle="Get reminded to place orders"
         value={reminders.enabled}
         onValueChange={handleReminderMasterToggle}
+        showBorder={reminders.enabled}
       />
 
       {reminders.enabled && (
         <>
-          <View style={{ paddingHorizontal: ds.spacing(16), paddingTop: ds.spacing(12), paddingBottom: ds.spacing(8) }}>
-            <Text style={{ fontSize: ds.fontSize(15), fontWeight: '600', color: glassColors.textPrimary }}>
-              Quick Reminders
-            </Text>
-          </View>
+          <SectionLabel>Quick reminders</SectionLabel>
 
           <SettingToggle
-            title="No Order Today"
+            title="No order today"
             subtitle="Remind at 3 PM if no order placed"
             value={reminders.noOrderTodayReminder}
             onValueChange={handleNoOrderTodayToggle}
           />
 
           <SettingToggle
-            title="Before Closing"
+            title="Before closing"
             subtitle="30 minutes before store closes"
             value={reminders.beforeClosingReminder}
             onValueChange={handleBeforeClosingToggle}
+            showBorder={false}
           />
 
           {reminders.beforeClosingReminder && (
-            <View style={{ paddingHorizontal: ds.spacing(16), paddingBottom: ds.spacing(8) }}>
-              <GlassSurface
-                intensity="medium"
-                blurred={false}
-                style={{ paddingHorizontal: ds.spacing(14), borderRadius: glassRadii.surface }}
-              >
+            <View style={{ paddingBottom: ds.spacing(space[3]) }}>
+              <Card flush style={{ paddingHorizontal: ds.spacing(space[3] + 2) }}>
                 <TimePickerRow
-                  title="Closing Time"
+                  title="Closing time"
                   value={reminders.closingTime}
                   onTimeChange={handleClosingTimeChange}
                 />
-              </GlassSurface>
+              </Card>
             </View>
           )}
 
-          <View
-            style={{
-              height: glassHairlineWidth,
-              backgroundColor: glassColors.divider,
-              marginHorizontal: ds.spacing(16),
-              marginVertical: ds.spacing(8),
-            }}
-          />
-
-          <View style={{ paddingHorizontal: ds.spacing(16), paddingTop: ds.spacing(12), paddingBottom: ds.spacing(8) }}>
-            <Text style={{ fontSize: ds.fontSize(15), fontWeight: '600', color: glassColors.textPrimary }}>
-              Custom Reminders
-            </Text>
-          </View>
+          <SectionLabel>Custom reminders</SectionLabel>
 
           {reminders.reminders.length === 0 ? (
-            <View style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(16) }}>
-              <Text style={{ fontSize: ds.fontSize(14), color: glassColors.textSecondary, textAlign: 'center' }}>
-                No custom reminders yet
-              </Text>
-            </View>
+            <EmptyState
+              icon="alarm-outline"
+              title="No custom reminders yet"
+              body="Add one to be reminded at a time that suits the shift."
+              compact
+            />
           ) : (
             reminders.reminders.map((reminder) => (
               <ReminderListItem
@@ -213,27 +190,13 @@ function RemindersSection({
             ))
           )}
 
-          <TouchableOpacity
+          <Button
+            variant="secondary"
+            icon="add"
+            label="Add reminder"
             onPress={onAddReminder}
-            style={{
-              marginHorizontal: ds.spacing(16),
-              marginVertical: ds.spacing(12),
-              minHeight: Math.max(48, ds.buttonH),
-              borderRadius: glassRadii.surface,
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'row',
-              backgroundColor: glassColors.mediumFill,
-              borderWidth: glassHairlineWidth,
-              borderColor: glassColors.cardBorder,
-            }}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="add" size={ds.icon(20)} color={colors.primary[500]} />
-            <Text style={{ marginLeft: ds.spacing(8), fontSize: ds.fontSize(15), color: glassColors.accent, fontWeight: '600' }}>
-              Add Reminder
-            </Text>
-          </TouchableOpacity>
+            style={{ marginVertical: ds.spacing(space[3]) }}
+          />
         </>
       )}
     </View>
@@ -241,7 +204,6 @@ function RemindersSection({
 }
 
 export default function RemindersSettingsScreen() {
-  const ds = useScaledStyles();
   const { addReminder, updateReminder } = useSettingsStore();
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
@@ -266,29 +228,18 @@ export default function RemindersSettingsScreen() {
 
   return (
     <SettingsScreenLayout title="Reminders">
+      <SettingsSectionLabel label="Control panel" />
       <SettingsGroup>
-        <SettingsSectionLabel
-          label="Control Panel"
-        />
-        <View
-          style={{
-            height: glassHairlineWidth,
-            backgroundColor: glassColors.divider,
-            marginHorizontal: ds.spacing(16),
+        <RemindersSection
+          onAddReminder={() => {
+            setEditingReminder(null);
+            setShowReminderModal(true);
+          }}
+          onEditReminder={(reminder) => {
+            setEditingReminder(reminder);
+            setShowReminderModal(true);
           }}
         />
-        <View style={{ paddingTop: ds.spacing(4) }}>
-          <RemindersSection
-            onAddReminder={() => {
-              setEditingReminder(null);
-              setShowReminderModal(true);
-            }}
-            onEditReminder={(reminder) => {
-              setEditingReminder(reminder);
-              setShowReminderModal(true);
-            }}
-          />
-        </View>
       </SettingsGroup>
 
       <ReminderModal

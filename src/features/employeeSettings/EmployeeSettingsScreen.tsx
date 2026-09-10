@@ -15,7 +15,8 @@ import {
   type RecurringReminderRule,
 } from '@/services/employeeReminders';
 import { useAuthStore, useSettingsStore } from '@/store';
-import { glassHairlineWidth, radii, tipsTheme } from '@/theme/design';
+import { Button, Card, ScreenHeader } from '@/components/ui';
+import { color, radius, space, typeScale, weight } from '@/theme/tokens';
 import { ChecklistSettingsSheet } from '@/features/simpleOrder/components/ChecklistSettingsSheet';
 import { OrderDayReminderSheet } from '@/features/simpleOrder/components/OrderDayReminderSheet';
 import {
@@ -114,21 +115,18 @@ export function EmployeeSettingsScreen() {
   const bottomPadding = getFloatingPillClearance(insets.bottom) + ds.spacing(24);
 
   return (
-    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: tipsTheme.page }}>
+    <SafeAreaView edges={['left', 'right']} style={{ flex: 1, backgroundColor: color.page }}>
+      <ScreenHeader title="Settings" />
+
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{
-          paddingHorizontal: ds.spacing(18),
+          paddingHorizontal: ds.spacing(space[4]),
           paddingBottom: bottomPadding,
+          gap: ds.spacing(space[3]),
         }}
         showsVerticalScrollIndicator={false}
       >
-        <View style={{ paddingTop: ds.spacing(2), paddingBottom: ds.spacing(10) }}>
-          <Text style={{ fontSize: ds.fontSize(24), fontWeight: '700', color: tipsTheme.ink }}>
-            Settings
-          </Text>
-        </View>
-
         {/* Profile card */}
         <TouchableOpacity
           onPress={() =>
@@ -137,47 +135,50 @@ export function EmployeeSettingsScreen() {
           activeOpacity={0.8}
           accessibilityRole="button"
           accessibilityLabel="Open your profile"
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: ds.spacing(13),
-            backgroundColor: tipsTheme.card,
-            borderWidth: glassHairlineWidth,
-            borderColor: tipsTheme.hairline,
-            borderRadius: 18,
-            padding: ds.spacing(16),
-            marginBottom: ds.spacing(10),
-          }}
         >
-          <View
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: radii.circle,
-              backgroundColor: tipsTheme.tint,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text style={{ fontSize: ds.fontSize(18), fontWeight: '700', color: tipsTheme.accent }}>
-              {initial}
-            </Text>
-          </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text
-              numberOfLines={1}
-              style={{ fontSize: ds.fontSize(16), fontWeight: '700', color: tipsTheme.ink }}
-            >
-              {displayName}
-            </Text>
-            <Text style={{ fontSize: ds.fontSize(12.5), color: tipsTheme.ink2, marginTop: 1 }}>
-              {locationLabel ? `${locationLabel} · ${roleLabel}` : roleLabel}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={ds.icon(16)} color={tipsTheme.ink3} />
+          <Card>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: ds.spacing(space[3]) }}>
+              <View
+                style={{
+                  width: ds.icon(48),
+                  height: ds.icon(48),
+                  borderRadius: radius.pill,
+                  backgroundColor: color.tint,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: ds.fontSize(typeScale.title),
+                    fontWeight: weight.bold,
+                    color: color.accent,
+                  }}
+                >
+                  {initial}
+                </Text>
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    fontSize: ds.fontSize(typeScale.body),
+                    fontWeight: weight.semibold,
+                    color: color.ink,
+                  }}
+                >
+                  {displayName}
+                </Text>
+                <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
+                  {locationLabel ? `${locationLabel} · ${roleLabel}` : roleLabel}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={ds.icon(16)} color={color.ink3} />
+            </View>
+          </Card>
         </TouchableOpacity>
 
-        <SettingsCard style={{ marginBottom: ds.spacing(10) }}>
+        <SettingsCard>
           <SettingsCardRow
             icon={reminderRule && reminderRule.enabled !== false ? 'notifications' : 'notifications-outline'}
             title="Order reminders"
@@ -196,7 +197,7 @@ export function EmployeeSettingsScreen() {
         </SettingsCard>
 
         {modules.stock_check ? (
-          <SettingsCard style={{ marginBottom: ds.spacing(10) }}>
+          <SettingsCard>
             <SettingsCardRow
               icon="clipboard-outline"
               title="Stock settings"
@@ -211,7 +212,7 @@ export function EmployeeSettingsScreen() {
           </SettingsCard>
         ) : null}
 
-        <SettingsCard style={{ marginBottom: ds.spacing(10) }}>
+        <SettingsCard>
           <SettingsCardRow
             icon="help-circle-outline"
             title="Contact support"
@@ -223,11 +224,11 @@ export function EmployeeSettingsScreen() {
             title="About and legal"
             onPress={() => setAboutVisible(true)}
             rightElement={
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: ds.spacing(5) }}>
-                <Text style={{ fontSize: ds.fontSize(12), color: tipsTheme.ink3 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: ds.spacing(space[1] + 1) }}>
+                <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}>
                   v{appVersion}
                 </Text>
-                <Ionicons name="chevron-forward" size={ds.icon(16)} color={tipsTheme.ink3} />
+                <Ionicons name="chevron-forward" size={ds.icon(16)} color={color.ink3} />
               </View>
             }
             isLast
@@ -235,7 +236,7 @@ export function EmployeeSettingsScreen() {
         </SettingsCard>
 
         {isManager ? (
-          <SettingsCard style={{ marginBottom: ds.spacing(10) }}>
+          <SettingsCard>
             <SettingsCardRow
               icon="swap-horizontal"
               title="Switch to Manager view"
@@ -246,18 +247,13 @@ export function EmployeeSettingsScreen() {
           </SettingsCard>
         ) : null}
 
-        <TouchableOpacity
+        <Button
+          variant="secondary"
+          label="Sign out"
+          loading={isSigningOut}
           onPress={requestSignOut}
-          disabled={isSigningOut}
-          activeOpacity={0.75}
-          accessibilityRole="button"
-          accessibilityLabel="Sign out"
-          style={{ alignItems: 'center', paddingVertical: ds.spacing(18) }}
-        >
-          <Text style={{ fontSize: ds.fontSize(14), fontWeight: '700', color: tipsTheme.accent }}>
-            {isSigningOut ? 'Signing out…' : 'Sign out'}
-          </Text>
-        </TouchableOpacity>
+          style={{ marginTop: ds.spacing(space[2]) }}
+        />
       </ScrollView>
 
       <OrderDayReminderSheet

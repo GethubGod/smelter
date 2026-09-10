@@ -2,15 +2,16 @@ import React from 'react';
 import { View, Text, Alert } from 'react-native';
 import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
-import { BrandLogo, GlassSurface } from '@/components';
+import { BrandLogo } from '@/components';
+import { ListRow } from '@/components/ui';
 import {
+  SettingsGroup,
   SettingsRow,
   SettingsScreenLayout,
   SettingsSectionLabel,
-  settingsIconPalettes,
 } from '@/components/settings';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { glassColors, glassRadii, glassSpacing } from '@/theme/design';
+import { color, space, typeScale } from '@/theme/tokens';
 
 const APPSTORE_COMPLIANCE_LINKS = {
   support: 'https://smelterpos.com/support',
@@ -36,30 +37,19 @@ function AboutSection() {
   };
 
   return (
-    <GlassSurface
-      intensity="subtle"
-      blurred={false}
-      style={{ marginHorizontal: glassSpacing.screen, borderRadius: glassRadii.surface }}
-    >
-      <View
-        className="flex-row justify-between items-center"
-        style={{
-          paddingHorizontal: ds.spacing(16),
-          paddingVertical: ds.spacing(14),
-          minHeight: Math.max(ds.rowH, 56),
-          borderBottomWidth: 1,
-          borderBottomColor: glassColors.divider,
-        }}
-      >
-        <Text style={{ fontSize: ds.fontSize(16), color: glassColors.textPrimary }}>App Version</Text>
-        <Text style={{ fontSize: ds.fontSize(16), color: glassColors.textSecondary }}>{appVersion}</Text>
-      </View>
+    <SettingsGroup>
+      <ListRow
+        title="App version"
+        right={
+          <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>
+            {appVersion}
+          </Text>
+        }
+      />
 
       <SettingsRow
         icon="mail-outline"
-        iconColor={settingsIconPalettes.profile.icon}
-        iconBgColor={settingsIconPalettes.profile.background}
-        title="Contact Support"
+        title="Contact support"
         subtitle="Get help with the app"
         onPress={() => {
           void openExternalUrl(APPSTORE_COMPLIANCE_LINKS.support);
@@ -68,9 +58,7 @@ function AboutSection() {
 
       <SettingsRow
         icon="chatbubble-outline"
-        iconColor={settingsIconPalettes.reminders.icon}
-        iconBgColor={settingsIconPalettes.reminders.background}
-        title="Send Feedback"
+        title="Send feedback"
         subtitle="Tell us what you think"
         onPress={() => {
           void openExternalUrl(APPSTORE_COMPLIANCE_LINKS.contact);
@@ -79,36 +67,34 @@ function AboutSection() {
 
       <SettingsRow
         icon="shield-outline"
-        iconColor={settingsIconPalettes.neutral.icon}
-        iconBgColor={settingsIconPalettes.neutral.background}
-        title="Privacy Policy"
+        title="Privacy policy"
         onPress={() => {
           void openExternalUrl(APPSTORE_COMPLIANCE_LINKS.privacy);
         }}
         showBorder={false}
       />
-    </GlassSurface>
+    </SettingsGroup>
   );
 }
 
 export default function AboutSupportSettingsScreen() {
   const ds = useScaledStyles();
   return (
-    <SettingsScreenLayout title="About & Support">
-      <SettingsSectionLabel
-        label="Support"
-        description="View app details, get support, and read our policies."
-      />
+    <SettingsScreenLayout
+      title="About and support"
+      subtitle="App details, support, and our policies."
+    >
+      <SettingsSectionLabel label="Support" />
       <AboutSection />
       <View
-        className="items-center"
         style={{
-          paddingHorizontal: ds.spacing(24),
-          paddingTop: ds.spacing(24),
-          paddingBottom: ds.spacing(40),
+          alignItems: 'center',
+          paddingHorizontal: ds.spacing(space[6]),
+          paddingTop: ds.spacing(space[6]),
+          paddingBottom: ds.spacing(space[8]),
         }}
       >
-          <BrandLogo variant="footer" size={40} />
+        <BrandLogo variant="footer" size={40} />
       </View>
     </SettingsScreenLayout>
   );

@@ -1,48 +1,27 @@
-// Shared building blocks for the Team screens (tips colorway).
+// Shared building blocks for the Team screens, composed from the UI contract
+// primitives (docs/mockups/ui-contract/index.html).
 
 import type { ReactNode } from 'react';
-import { Switch, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, Switch, Text, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Card, ListRow, SectionLabel, Segment } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { glassHairlineWidth, radii, tipsTheme } from '@/theme/design';
+import { color, radius, size, space, typeScale, weight } from '@/theme/tokens';
 import type { InviteLocationGroup } from '@/services/invites';
 import { LOCATION_GROUP_LABELS } from '../invitePreview';
 
-/** White card with the tips hairline border. */
-export function TeamCard({ children, style }: { children: ReactNode; style?: object }) {
+/** The contract card. Rows carry their own padding, so it groups them flush. */
+export function TeamCard({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
   return (
-    <View
-      style={{
-        backgroundColor: tipsTheme.card,
-        borderWidth: glassHairlineWidth,
-        borderColor: tipsTheme.hairline,
-        borderRadius: 19,
-        ...style,
-      }}
-    >
+    <Card flush style={style}>
       {children}
-    </View>
+    </Card>
   );
 }
 
 /** Uppercase section label ("WORKS AT · CHANGE ANYTIME"). */
 export function TeamSectionLabel({ label }: { label: string }) {
-  const ds = useScaledStyles();
-  return (
-    <Text
-      style={{
-        fontSize: ds.fontSize(11.5),
-        fontWeight: '700',
-        letterSpacing: 0.6,
-        textTransform: 'uppercase',
-        color: tipsTheme.ink2,
-        marginTop: ds.spacing(13),
-        marginBottom: ds.spacing(6),
-      }}
-    >
-      {label}
-    </Text>
-  );
+  return <SectionLabel>{label}</SectionLabel>;
 }
 
 interface WorksAtSegmentedProps {
@@ -53,48 +32,24 @@ interface WorksAtSegmentedProps {
 
 const GROUPS: InviteLocationGroup[] = ['sushi', 'poki', 'both'];
 
-/** Sushi / Poki & Pho / Both segmented control (accent-filled selection). */
+const GROUP_OPTIONS = GROUPS.map((group) => ({
+  value: group,
+  label: LOCATION_GROUP_LABELS[group],
+}));
+
+/** Sushi / Poki & Pho / Both. The contract `Segment`. */
 export function WorksAtSegmented({ value, onChange, disabled = false }: WorksAtSegmentedProps) {
-  const ds = useScaledStyles();
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        backgroundColor: tipsTheme.well,
-        borderRadius: radii.pill,
-        padding: 3,
-        opacity: disabled ? 0.6 : 1,
+    <Segment
+      options={GROUP_OPTIONS}
+      value={value}
+      onChange={(next) => {
+        if (disabled) return;
+        onChange(next);
       }}
-    >
-      {GROUPS.map((group) => {
-        const selected = group === value;
-        return (
-          <TouchableOpacity
-            key={group}
-            onPress={() => onChange(group)}
-            disabled={disabled}
-            activeOpacity={0.82}
-            style={{
-              flex: 1,
-              paddingVertical: ds.spacing(8),
-              borderRadius: radii.pill,
-              alignItems: 'center',
-              backgroundColor: selected ? tipsTheme.accent : 'transparent',
-            }}
-          >
-            <Text
-              style={{
-                fontSize: ds.fontSize(12),
-                fontWeight: selected ? '700' : '600',
-                color: selected ? '#FFFFFF' : tipsTheme.ink2,
-              }}
-            >
-              {LOCATION_GROUP_LABELS[group]}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
+      accessibilityLabel="Works at"
+      style={{ opacity: disabled ? 0.6 : 1 }}
+    />
   );
 }
 
@@ -117,45 +72,27 @@ export function ModuleToggleRow({
   showBorder = true,
 }: ModuleToggleRowProps) {
   const ds = useScaledStyles();
+  const switchScale = ds.isLarge ? 1.15 : ds.isCompact ? 0.95 : 1;
+
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: ds.spacing(8),
-        borderBottomWidth: showBorder ? glassHairlineWidth : 0,
-        borderBottomColor: tipsTheme.hairline,
-      }}
-    >
-      <Text
-        style={{
-          fontSize: ds.fontSize(13.5),
-          fontWeight: '600',
-          color: tipsTheme.ink,
-        }}
-      >
-        {label}
-      </Text>
-      {tag ? (
-        <Text
-          style={{
-            fontSize: ds.fontSize(9.5),
-            fontWeight: '700',
-            color: tipsTheme.ink3,
-            marginLeft: ds.spacing(6),
-          }}
-        >
-          {tag}
-        </Text>
-      ) : null}
-      <View style={{ flex: 1 }} />
-      <Switch
-        value={value}
-        disabled={disabled}
-        onValueChange={onChange}
-        trackColor={{ false: tipsTheme.disabled, true: tipsTheme.accent }}
-      />
-    </View>
+    <ListRow
+      title={label}
+      subtitle={tag}
+      disabled={disabled}
+      last={!showBorder}
+      right={
+        <Switch
+          value={value}
+          disabled={disabled}
+          onValueChange={onChange}
+          accessibilityLabel={label}
+          trackColor={{ false: color.well, true: color.accent }}
+          thumbColor={Platform.OS === 'android' ? color.card : undefined}
+          ios_backgroundColor={color.well}
+          style={{ transform: [{ scaleX: switchScale }, { scaleY: switchScale }] }}
+        />
+      }
+    />
   );
 }
 
@@ -168,40 +105,56 @@ interface TeamRowProps {
   icon?: keyof typeof Ionicons.glyphMap;
 }
 
-/** Roster row: avatar initial (or icon), name, summary, chevron. */
+/**
+ * Roster row: avatar initial (or icon), name, summary, chevron.
+ *
+ * `ListRow` takes an icon name, not an avatar, so the left tile is built from
+ * tokens here. Pending invites keep the muted well fill, which `Card` (white
+ * only) cannot carry.
+ */
 export function TeamRow({ initial, title, subtitle, onPress, muted = false, icon }: TeamRowProps) {
   const ds = useScaledStyles();
+  const avatar = Math.max(size.touchMin, ds.icon(36));
+
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.82}
+      accessibilityRole="button"
+      accessibilityLabel={`${title}, ${subtitle}`}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        gap: ds.spacing(10),
-        backgroundColor: muted ? tipsTheme.well : tipsTheme.card,
-        borderWidth: glassHairlineWidth,
-        borderColor: muted ? 'transparent' : tipsTheme.hairline,
-        borderRadius: 17,
-        paddingHorizontal: ds.spacing(13),
-        paddingVertical: ds.spacing(11),
-        marginBottom: ds.spacing(8),
+        gap: ds.spacing(space[3]),
+        backgroundColor: muted ? color.well : color.card,
+        borderWidth: 1,
+        borderColor: muted ? color.well : color.hairline,
+        borderRadius: radius.card,
+        paddingHorizontal: ds.spacing(space[3] + 2),
+        paddingVertical: ds.spacing(space[3]),
+        marginBottom: ds.spacing(space[2]),
       }}
     >
       <View
         style={{
-          width: ds.icon(36),
-          height: ds.icon(36),
-          borderRadius: radii.circle,
+          width: avatar,
+          height: avatar,
+          borderRadius: radius.pill,
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: muted ? tipsTheme.card : tipsTheme.tint,
+          backgroundColor: muted ? color.card : color.tint,
         }}
       >
         {icon ? (
-          <Ionicons name={icon} size={ds.icon(17)} color={tipsTheme.ink} />
+          <Ionicons name={icon} size={ds.icon(size.icon)} color={color.ink2} />
         ) : (
-          <Text style={{ fontSize: ds.fontSize(14), fontWeight: '700', color: tipsTheme.accent }}>
+          <Text
+            style={{
+              fontSize: ds.fontSize(typeScale.body),
+              fontWeight: weight.bold,
+              color: color.accent,
+            }}
+          >
             {initial}
           </Text>
         )}
@@ -209,18 +162,22 @@ export function TeamRow({ initial, title, subtitle, onPress, muted = false, icon
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text
           numberOfLines={1}
-          style={{ fontSize: ds.fontSize(13.5), fontWeight: '700', color: tipsTheme.ink }}
+          style={{
+            fontSize: ds.fontSize(typeScale.body),
+            fontWeight: weight.semibold,
+            color: color.ink,
+          }}
         >
           {title}
         </Text>
         <Text
           numberOfLines={1}
-          style={{ fontSize: ds.fontSize(11.5), color: tipsTheme.ink2, marginTop: 1 }}
+          style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}
         >
           {subtitle}
         </Text>
       </View>
-      <Ionicons name="chevron-forward" size={ds.icon(16)} color={tipsTheme.ink3} />
+      <Ionicons name="chevron-forward" size={ds.icon(size.icon)} color={color.ink3} />
     </TouchableOpacity>
   );
 }

@@ -8,12 +8,13 @@ const share = jest.fn(async (_input: { message: string }) => undefined);
 const replace = jest.fn();
 jest.mock('expo-router', () => ({ useLocalSearchParams: () => params, router: { replace } }));
 jest.mock('react-native', () => ({ View: 'View', Text: 'Text', TouchableOpacity: 'TouchableOpacity', Linking: { openURL }, Platform: { OS: 'ios' }, Share: { share } }));
-jest.mock('react-native-safe-area-context', () => ({ SafeAreaView: 'SafeAreaView' }));
+jest.mock('react-native-safe-area-context', () => ({ SafeAreaView: 'SafeAreaView', useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) }));
 jest.mock('@expo/vector-icons', () => ({ Ionicons: 'Ionicons' }));
+/* The primitives reach the one designated spinner host; a factory may only require. */
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+jest.mock('@/components/LoadingIndicator', () => require('./ui/nativeMocks').loadingIndicator());
 jest.mock('expo-clipboard', () => ({ setStringAsync: copy }));
-jest.mock('@/components', () => ({ StackScreenHeader: 'StackScreenHeader' }));
 jest.mock('@/components/ManagerScaleContainer', () => ({ ManagerScaleContainer: 'ManagerScaleContainer' }));
-jest.mock('@/components/EmptyStateCard', () => ({ EmptyStateCard: 'EmptyStateCard' }));
 jest.mock('@/hooks/useScaledStyles', () => ({ useScaledStyles: () => ({ spacing: (n: number) => n, icon: (n: number) => n, fontSize: (n: number) => n, buttonH: 44 }) }));
 jest.mock('@/theme/design', () => ({ glassHairlineWidth: 1, radii: {}, tipsTheme: {} }));
 jest.mock('@/lib/haptics', () => ({ triggerNotificationHaptic: jest.fn(), NotificationFeedbackType: {} }));
@@ -38,7 +39,7 @@ async function renderScreen() {
 it.each(['', 'not a URL', 'https://example.com/join/token'])('does not claim an invalid invitation is ready: %s', async (joinUrl) => {
   if (joinUrl) params = { joinUrl };
   const tree = await renderScreen();
-  expect(tree.root.findAll((node) => String(node.type) === 'EmptyStateCard')).toHaveLength(1);
+  expect(JSON.stringify(tree.toJSON())).toContain('No invitation link to share');
   expect(JSON.stringify(tree.toJSON())).not.toContain('expires in 7 days');
   expect(JSON.stringify(tree.toJSON())).not.toContain('Send via Messages');
   expect(copy).not.toHaveBeenCalled();
@@ -60,7 +61,7 @@ it.each([
 ])('rejects a URL outside the generated invitation contract: %s', async (joinUrl) => {
   params = { joinUrl, expiryLabel: '7 days', group: 'both' };
   const tree = await renderScreen();
-  expect(tree.root.findAll((node) => String(node.type) === 'EmptyStateCard')).toHaveLength(1);
+  expect(JSON.stringify(tree.toJSON())).toContain('No invitation link to share');
   expect(JSON.stringify(tree.toJSON())).not.toContain('Send via Messages');
   await act(async () => tree.unmount());
 });
@@ -95,7 +96,7 @@ it.each([{}, { expiryLabel: 'forever', group: 'administrator' }])('does not inve
 
 it('returns an invalid-link screen to Team without copy or send actions', async () => {
   const tree = await renderScreen();
-  await act(async () => tree.root.find((node) => String(node.type) === 'EmptyStateCard').props.onPressAction());
+  await act(async () => findAction(tree, 'Back to Team').props.onPress());
   expect(replace).toHaveBeenCalledWith('/(manager)/manager-settings/team');
   expect(copy).not.toHaveBeenCalled();
   expect(openURL).not.toHaveBeenCalled();

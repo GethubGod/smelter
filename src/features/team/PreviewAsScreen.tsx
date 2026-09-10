@@ -1,15 +1,16 @@
 // Preview as <Name>: renders the employee tab/module state for the target
 // user, driven by their live get_effective_modules result through the SAME
-// getVisibleEmployeeTabs logic the employee layout uses — a live render that
+// getVisibleEmployeeTabs logic the employee layout uses, a live render that
 // cannot drift. Strictly read-only: this screen never writes anything.
 
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Button, Card, EmptyState, ListRow, Loading } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { glassHairlineWidth, radii, tipsTheme } from '@/theme/design';
+import { auth, color, radius, size, space, tracking, typeScale, weight } from '@/theme/tokens';
 import { getModulesForUser } from '@/services/userModules';
 import {
   getVisibleEmployeeTabs,
@@ -24,11 +25,11 @@ function param(value: string | string[] | undefined): string {
 }
 
 const TAB_DESCRIPTIONS: Record<string, string> = {
-  'simple-order': 'Order — the daily checklist with usual amounts',
-  'quick-order': 'Advanced — free-form ordering with the parser',
-  cart: 'Cart — items staged before sending',
-  history: 'History — past sent orders with one-tap reorder',
-  settings: 'Settings — profile, reminders, and sign out',
+  'simple-order': 'Order: the daily checklist with usual amounts',
+  'quick-order': 'Advanced: free-form ordering with the parser',
+  cart: 'Cart: items staged before sending',
+  history: 'History: past sent orders with one-tap reorder',
+  settings: 'Settings: profile, reminders, and sign out',
 };
 
 export default function PreviewAsScreen() {
@@ -68,95 +69,107 @@ export default function PreviewAsScreen() {
   const tabKeys = modules ? getVisibleEmployeeTabs(modules) : [];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: tipsTheme.ink }} edges={['top', 'left', 'right']}>
-      {/* Dark exit bar — the only chrome that is not part of the preview. */}
+    <SafeAreaView style={{ flex: 1, backgroundColor: auth.bg }} edges={['top', 'left', 'right']}>
+      {/* Dark exit bar: the only chrome that is not part of the preview. */}
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          gap: ds.spacing(8),
-          paddingHorizontal: ds.spacing(15),
-          paddingVertical: ds.spacing(11),
-          backgroundColor: tipsTheme.ink,
+          gap: ds.spacing(space[2]),
+          paddingHorizontal: ds.spacing(space[4]),
+          paddingVertical: ds.spacing(space[2]),
+          backgroundColor: auth.bg,
         }}
       >
-        <Ionicons name="eye-outline" size={ds.icon(16)} color="#FFFFFF" />
-        <Text style={{ flex: 1, fontSize: ds.fontSize(12), fontWeight: '700', color: '#FFFFFF' }}>
-          Viewing as {firstName} · {LOCATION_GROUP_LABELS[group]}
-        </Text>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          activeOpacity={0.82}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        <Ionicons name="eye-outline" size={ds.icon(size.icon)} color={auth.text} />
+        <Text
           style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.2)',
-            borderRadius: radii.pill,
-            paddingHorizontal: ds.spacing(12),
-            paddingVertical: ds.spacing(4),
+            flex: 1,
+            fontSize: ds.fontSize(typeScale.secondary),
+            fontWeight: weight.semibold,
+            color: auth.text,
           }}
         >
-          <Text style={{ fontSize: ds.fontSize(11), fontWeight: '700', color: '#FFFFFF' }}>Exit</Text>
-        </TouchableOpacity>
+          Viewing as {firstName} · {LOCATION_GROUP_LABELS[group]}
+        </Text>
+        <Button
+          variant="secondary"
+          size="small"
+          onDark
+          label="Exit"
+          accessibilityHint="Leaves the preview"
+          onPress={() => router.back()}
+        />
       </View>
 
-      <View style={{ flex: 1, backgroundColor: tipsTheme.page }}>
+      <View style={{ flex: 1, backgroundColor: color.page }}>
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ padding: ds.spacing(20), paddingBottom: ds.spacing(12) }}
+          contentContainerStyle={{
+            padding: ds.spacing(space[4]),
+            paddingBottom: ds.spacing(space[3]),
+          }}
         >
-          <Text style={{ fontSize: ds.fontSize(19), fontWeight: '700', color: tipsTheme.ink }}>
+          <Text
+            accessibilityRole="header"
+            style={{
+              fontSize: ds.fontSize(typeScale.title),
+              fontWeight: weight.bold,
+              letterSpacing: tracking.title,
+              color: color.ink,
+            }}
+          >
             {`What ${firstName} sees`}
           </Text>
-          <Text style={{ fontSize: ds.fontSize(11.5), color: tipsTheme.ink2, marginBottom: ds.spacing(12) }}>
+          <Text
+            style={{
+              fontSize: ds.fontSize(typeScale.secondary),
+              color: color.ink2,
+              marginBottom: ds.spacing(space[3]),
+            }}
+          >
             Live from their current settings. Nothing here changes their data.
           </Text>
 
           {error ? (
-            <View style={{ backgroundColor: tipsTheme.tint, borderRadius: 13, padding: ds.spacing(12) }}>
-              <Text style={{ fontSize: ds.fontSize(12.5), color: tipsTheme.alert }}>{error}</Text>
-              <TouchableOpacity onPress={() => void load()} style={{ marginTop: ds.spacing(6) }}>
-                <Text style={{ fontSize: ds.fontSize(12.5), fontWeight: '700', color: tipsTheme.alert }}>
-                  Retry
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <EmptyState
+              icon="alert-circle-outline"
+              tone="alert"
+              title="Unable to load their settings"
+              body={error}
+              action={{ label: 'Retry', onPress: () => void load() }}
+              compact
+            />
           ) : modules === null ? (
-            <View style={{ paddingVertical: ds.spacing(30), alignItems: 'center' }}>
-              <ActivityIndicator size="small" color={tipsTheme.accent} />
+            <View style={{ paddingVertical: ds.spacing(space[8]) }}>
+              <Loading size="inline" label="Loading their settings" style={{ alignItems: 'center' }} />
             </View>
           ) : (
             <>
-              {tabKeys.map((key) => (
-                <View
-                  key={key}
-                  style={{
-                    backgroundColor: tipsTheme.card,
-                    borderWidth: glassHairlineWidth,
-                    borderColor: tipsTheme.hairline,
-                    borderRadius: 17,
-                    paddingHorizontal: ds.spacing(13),
-                    paddingVertical: ds.spacing(11),
-                    marginBottom: ds.spacing(8),
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: ds.spacing(10),
-                  }}
-                >
-                  <Ionicons
-                    name={(EMPLOYEE_TAB_META[key]?.icon ?? 'ellipse-outline') as keyof typeof Ionicons.glyphMap}
-                    size={ds.icon(18)}
-                    color={tipsTheme.accent}
+              <Card flush style={{ paddingHorizontal: ds.spacing(space[3] + 2) }}>
+                {tabKeys.map((key, index) => (
+                  <ListRow
+                    key={key}
+                    icon={
+                      (EMPLOYEE_TAB_META[key]?.icon ?? 'ellipse-outline') as keyof typeof Ionicons.glyphMap
+                    }
+                    title={TAB_DESCRIPTIONS[key] ?? EMPLOYEE_TAB_META[key]?.label ?? key}
+                    last={index === tabKeys.length - 1}
                   />
-                  <Text style={{ flex: 1, fontSize: ds.fontSize(12.5), color: tipsTheme.ink }}>
-                    {TAB_DESCRIPTIONS[key] ?? EMPLOYEE_TAB_META[key]?.label ?? key}
-                  </Text>
-                </View>
-              ))}
+                ))}
+              </Card>
 
               {modules.stock_check ? (
-                <View style={{ backgroundColor: tipsTheme.well, borderRadius: 13, padding: ds.spacing(11) }}>
-                  <Text style={{ fontSize: ds.fontSize(11.5), color: tipsTheme.ink2 }}>
-                    Stock check is on — it opens from inside the app, not as a tab.
+                <View
+                  style={{
+                    backgroundColor: color.well,
+                    borderRadius: radius.card,
+                    padding: ds.spacing(space[3]),
+                    marginTop: ds.spacing(space[3]),
+                  }}
+                >
+                  <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
+                    Stock check is on. It opens from inside the app, not as a tab.
                   </Text>
                 </View>
               ) : null}
@@ -164,17 +177,17 @@ export default function PreviewAsScreen() {
           )}
         </ScrollView>
 
-        {/* The real tab bar, rendered from the same visible-tab list. */}
+        {/* The real tab list, rendered from the same visible-tab list. */}
         {modules !== null ? (
           <View
             style={{
               flexDirection: 'row',
               justifyContent: 'space-around',
-              borderTopWidth: glassHairlineWidth,
-              borderTopColor: tipsTheme.hairline,
-              backgroundColor: tipsTheme.card,
-              paddingTop: ds.spacing(8),
-              paddingBottom: ds.spacing(18),
+              borderTopWidth: 1,
+              borderTopColor: color.hairline,
+              backgroundColor: color.card,
+              paddingTop: ds.spacing(space[2]),
+              paddingBottom: ds.spacing(space[5]),
             }}
           >
             {tabKeys.map((key, index) => {
@@ -184,14 +197,14 @@ export default function PreviewAsScreen() {
                 <View key={key} style={{ alignItems: 'center', gap: 2 }}>
                   <Ionicons
                     name={(meta?.icon ?? 'ellipse-outline') as keyof typeof Ionicons.glyphMap}
-                    size={ds.icon(19)}
-                    color={active ? tipsTheme.accent : tipsTheme.ink3}
+                    size={ds.icon(size.icon)}
+                    color={active ? color.accent : color.tabInactive}
                   />
                   <Text
                     style={{
-                      fontSize: ds.fontSize(9.5),
-                      fontWeight: active ? '700' : '500',
-                      color: active ? tipsTheme.accent : tipsTheme.ink3,
+                      fontSize: ds.fontSize(typeScale.caption),
+                      fontWeight: active ? weight.bold : weight.regular,
+                      color: active ? color.accent : color.tabInactive,
                     }}
                   >
                     {meta?.label ?? key}

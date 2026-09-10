@@ -16,6 +16,9 @@ jest.mock('react-native', () => ({
   PanResponder: { create: () => ({ panHandlers: {} }) },
 }));
 jest.mock('@expo/vector-icons', () => ({ Ionicons: 'Ionicons' }));
+/* The primitives reach the one designated spinner host; a factory may only require. */
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+jest.mock('@/components/LoadingIndicator', () => require('./ui/nativeMocks').loadingIndicator());
 jest.mock('@/theme/design', () => ({ colors: { white: '#fff' }, radii: { card: 12 }, hairline: 1, glassHairlineWidth: 1, tipsTheme: {} }));
 jest.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ bottom: 0 }) }));
 jest.mock('@/hooks/useScaledStyles', () => ({ useScaledStyles: () => ({ spacing: (n: number) => n, fontSize: (n: number) => n, icon: (n: number) => n }) }));
