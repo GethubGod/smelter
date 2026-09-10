@@ -31,6 +31,7 @@ import {
   glassSpacing,
   glassTabBarHeight,
 } from '@/theme/design';
+import { typeScale } from '@/theme/tokens';
 import { useOrderingCartActions } from '@/hooks/useOrderingCartActions';
 import { useManagedRefresh } from '@/hooks/useManagedRefresh';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
@@ -76,7 +77,7 @@ const SuggestionRow = memo(function SuggestionRow({
       <View style={{ flex: 1, paddingRight: ds.spacing(12) }}>
         <Text
           style={{
-            fontSize: ds.fontSize(15),
+            fontSize: ds.fontSize(typeScale.body),
             fontWeight: '600',
             color: glassColors.textPrimary,
           }}
@@ -87,7 +88,7 @@ const SuggestionRow = memo(function SuggestionRow({
         <Text
           style={{
             marginTop: ds.spacing(4),
-            fontSize: ds.fontSize(12),
+            fontSize: ds.fontSize(typeScale.secondary),
             color: glassColors.textSecondary,
           }}
           numberOfLines={1}
@@ -119,7 +120,7 @@ const SuggestionRow = memo(function SuggestionRow({
             style={{
               minWidth: ds.spacing(30),
               textAlign: 'center',
-              fontSize: ds.fontSize(16),
+              fontSize: ds.fontSize(typeScale.body),
               fontWeight: '700',
               color: glassColors.textPrimary,
               marginHorizontal: ds.spacing(10),
@@ -149,7 +150,7 @@ const SuggestionRow = memo(function SuggestionRow({
         <Text
           style={{
             marginTop: ds.spacing(6),
-            fontSize: ds.fontSize(11),
+            fontSize: ds.fontSize(typeScale.caption),
             color: glassColors.textSecondary,
           }}
         >
@@ -191,7 +192,7 @@ const RecentOrderCard = memo(function RecentOrderCard({
         <View style={{ flex: 1, paddingRight: ds.spacing(10) }}>
           <Text
             style={{
-              fontSize: ds.fontSize(15),
+              fontSize: ds.fontSize(typeScale.body),
               fontWeight: '600',
               color: glassColors.textPrimary,
             }}
@@ -201,7 +202,7 @@ const RecentOrderCard = memo(function RecentOrderCard({
           <Text
             style={{
               marginTop: ds.spacing(4),
-              fontSize: ds.fontSize(12),
+              fontSize: ds.fontSize(typeScale.secondary),
               color: glassColors.textSecondary,
             }}
             numberOfLines={1}
@@ -225,7 +226,7 @@ const RecentOrderCard = memo(function RecentOrderCard({
           >
             <Text
               style={{
-                fontSize: ds.fontSize(13),
+                fontSize: ds.fontSize(typeScale.secondary),
                 fontWeight: '600',
                 color: glassColors.textPrimary,
               }}
@@ -444,7 +445,7 @@ export function SmartOrderScreen({
             <View style={{ flex: 1 }}>
               <Text
                 style={{
-                  fontSize: ds.fontSize(16),
+                  fontSize: ds.fontSize(typeScale.body),
                   fontWeight: '600',
                   color: glassColors.textPrimary,
                 }}
@@ -454,7 +455,7 @@ export function SmartOrderScreen({
               <Text
                 style={{
                   marginTop: ds.spacing(4),
-                  fontSize: ds.fontSize(12),
+                  fontSize: ds.fontSize(typeScale.secondary),
                   color: glassColors.textSecondary,
                 }}
               >
@@ -578,7 +579,7 @@ export function SmartOrderScreen({
             <View style={{ flex: 1 }}>
               <Text
                 style={{
-                  fontSize: ds.fontSize(16),
+                  fontSize: ds.fontSize(typeScale.body),
                   fontWeight: '600',
                   color: glassColors.textPrimary,
                 }}
@@ -588,7 +589,7 @@ export function SmartOrderScreen({
               <Text
                 style={{
                   marginTop: ds.spacing(4),
-                  fontSize: ds.fontSize(12),
+                  fontSize: ds.fontSize(typeScale.secondary),
                   color: glassColors.textSecondary,
                 }}
               >

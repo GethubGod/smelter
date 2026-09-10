@@ -42,6 +42,7 @@ import {
   glassRadii,
   glassSpacing,
 } from '@/theme/design';
+import { color, radius, typeScale } from '@/theme/tokens';
 import { useOrderingCartActions } from '@/hooks/useOrderingCartActions';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { useResolvedActiveLocation } from '@/hooks/useResolvedActiveLocation';
@@ -737,7 +738,7 @@ export function BrowseInventoryScreenView({
                 style={{
                   flex: 1,
                   marginLeft: ds.spacing(12),
-                  fontSize: ds.fontSize(16),
+                  fontSize: ds.fontSize(typeScale.body),
                   // Explicit tracking: without it the field can pick up the
                   // wide letterSpacing of the PIN inputs and render the
                   // placeholder as "S e a r c h  i n v e n t o r y . . .".
@@ -832,7 +833,7 @@ export function BrowseInventoryScreenView({
               >
                 <Text
                   style={{
-                    fontSize: ds.fontSize(18),
+                    fontSize: ds.fontSize(typeScale.title),
                     fontWeight: '700',
                     color: glassColors.textPrimary,
                   }}
@@ -862,7 +863,7 @@ export function BrowseInventoryScreenView({
                 <View>
                   <Text
                     style={{
-                      fontSize: ds.fontSize(12),
+                      fontSize: ds.fontSize(typeScale.secondary),
                       fontWeight: '700',
                       color: glassColors.textSecondary,
                       textTransform: 'uppercase',
@@ -887,7 +888,7 @@ export function BrowseInventoryScreenView({
                       placeholder="Example: Salmon belly"
                       placeholderTextColor={glassColors.textSecondary}
                       style={{
-                        fontSize: ds.fontSize(14),
+                        fontSize: ds.fontSize(typeScale.body),
                         color: glassColors.textPrimary,
                       }}
                     />
@@ -897,7 +898,7 @@ export function BrowseInventoryScreenView({
                 <View>
                   <Text
                     style={{
-                      fontSize: ds.fontSize(12),
+                      fontSize: ds.fontSize(typeScale.secondary),
                       fontWeight: '700',
                       color: glassColors.textSecondary,
                       textTransform: 'uppercase',
@@ -929,7 +930,7 @@ export function BrowseInventoryScreenView({
                         >
                           <Text
                             style={{
-                              fontSize: ds.fontSize(13),
+                              fontSize: ds.fontSize(typeScale.secondary),
                               fontWeight: isSelected ? '700' : '600',
                               color: isSelected
                                 ? glassColors.accent
@@ -947,7 +948,7 @@ export function BrowseInventoryScreenView({
                 <View>
                   <Text
                     style={{
-                      fontSize: ds.fontSize(12),
+                      fontSize: ds.fontSize(typeScale.secondary),
                       fontWeight: '700',
                       color: glassColors.textSecondary,
                       textTransform: 'uppercase',
@@ -980,7 +981,7 @@ export function BrowseInventoryScreenView({
                           >
                             <Text
                               style={{
-                                fontSize: ds.fontSize(14),
+                                fontSize: ds.fontSize(typeScale.body),
                                 fontWeight: isSelected ? '700' : '600',
                                 color: isSelected
                                   ? glassColors.accent
@@ -1000,7 +1001,7 @@ export function BrowseInventoryScreenView({
                   <View style={{ flex: 1 }}>
                     <Text
                       style={{
-                        fontSize: ds.fontSize(12),
+                        fontSize: ds.fontSize(typeScale.secondary),
                         fontWeight: '700',
                         color: glassColors.textSecondary,
                         textTransform: 'uppercase',
@@ -1025,7 +1026,7 @@ export function BrowseInventoryScreenView({
                         placeholder="lb"
                         placeholderTextColor={glassColors.textSecondary}
                         style={{
-                          fontSize: ds.fontSize(14),
+                          fontSize: ds.fontSize(typeScale.body),
                           color: glassColors.textPrimary,
                         }}
                       />
@@ -1035,7 +1036,7 @@ export function BrowseInventoryScreenView({
                   <View style={{ flex: 1 }}>
                     <Text
                       style={{
-                        fontSize: ds.fontSize(12),
+                        fontSize: ds.fontSize(typeScale.secondary),
                         fontWeight: '700',
                         color: glassColors.textSecondary,
                         textTransform: 'uppercase',
@@ -1060,7 +1061,7 @@ export function BrowseInventoryScreenView({
                         placeholder="case"
                         placeholderTextColor={glassColors.textSecondary}
                         style={{
-                          fontSize: ds.fontSize(14),
+                          fontSize: ds.fontSize(typeScale.body),
                           color: glassColors.textPrimary,
                         }}
                       />
@@ -1071,7 +1072,7 @@ export function BrowseInventoryScreenView({
                 <View>
                   <Text
                     style={{
-                      fontSize: ds.fontSize(12),
+                      fontSize: ds.fontSize(typeScale.secondary),
                       fontWeight: '700',
                       color: glassColors.textSecondary,
                       textTransform: 'uppercase',
@@ -1097,7 +1098,7 @@ export function BrowseInventoryScreenView({
                       placeholderTextColor={glassColors.textSecondary}
                       keyboardType="decimal-pad"
                       style={{
-                        fontSize: ds.fontSize(14),
+                        fontSize: ds.fontSize(typeScale.body),
                         color: glassColors.textPrimary,
                       }}
                     />
@@ -1151,15 +1152,15 @@ export function BrowseInventoryScreenView({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.4)',
+    backgroundColor: color.scrim,
     justifyContent: 'flex-end',
   },
   modalKeyboardAvoider: {
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: radius.sheet,
+    borderTopRightRadius: radius.sheet,
     maxHeight: '88%',
     overflow: 'hidden',
   },
