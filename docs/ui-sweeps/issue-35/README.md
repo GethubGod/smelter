@@ -79,3 +79,18 @@ Net effect: no reliable, current-code screenshot was captured before the
 device had to be vacated. A retry should get a clean Debug build on a
 free device/lock, sign in as the manager account above, and capture the
 "After" files listed in the table.
+
+
+## After captures (finisher, 2026-09-11)
+
+Seven screens captured on the primary simulator from a Debug build of 32a0148 before the finisher was cut off; the remaining manager routes are covered by the #49 verifier's full route pass on the Release build of the integration head (docs/release-readiness/e2e/routes-2.3/), which includes this branch's code.
+
+| Screen | After |
+|---|---|
+| fulfillment-send-all | after/after-fulfillment-send-all.png |
+| fulfillment | after/after-fulfillment.png |
+| home | after/after-home.png |
+| inventory-list | after/after-inventory-list.png |
+| quick-order-empty | after/after-quick-order-empty.png |
+| quick-order-item-sheet | after/after-quick-order-item-sheet.png |
+| quick-order-parsed | after/after-quick-order-parsed.png |
