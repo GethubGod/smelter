@@ -54,8 +54,8 @@ export function Sheet({
       visible={visible}
       presentation={presentation}
       onClose={onClose}
-      bottomPadding={Math.max(insets.bottom, ds.spacing(space[3] + 2))}
       dismissible={dismissible}
+      bottomPadding={Math.max(insets.bottom, ds.spacing(space[3] + 2))}
     >
       <View testID={testID} style={{ gap: ds.spacing(space[3]) }}>
         <Text

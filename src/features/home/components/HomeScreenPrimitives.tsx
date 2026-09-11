@@ -9,8 +9,10 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { GlassSurface } from '@/components';
-import { Loading } from '@/components/ui';
+import {
+  GlassSurface,
+  LoadingIndicator,
+} from '@/components';
 import {
   getFloatingPillClearance,
   getTabBarBottomInset,
@@ -280,7 +282,7 @@ export const HomeModuleLoading = memo(function HomeModuleLoading({
         justifyContent: 'center',
       }}
     >
-      <Loading label={text} />
+      <LoadingIndicator showText text={text} />
     </View>
   );
 });

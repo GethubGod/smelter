@@ -24,14 +24,15 @@ import {
   AddButton,
   GlassSurface,
   IdentityHeader,
+  LoadingIndicator,
 } from '@/components';
-import { Loading } from '@/components/ui';
 import { colors } from '@/constants';
 import {
   glassColors,
   glassHairlineWidth,
   glassRadii,
 } from '@/theme/design';
+import { color, typeScale, weight } from '@/theme/tokens';
 import {
   CATEGORY_ORDER,
   getCategoryShortLabel,
@@ -67,7 +68,6 @@ import {
   HomeSearchCard,
 } from './components/HomeScreenPrimitives';
 import type { HomeScreenMode } from './modes';
-import { color, typeScale, weight } from '@/theme/tokens';
 
 const HOME_INSIGHTS_TIMEOUT_MS = 8000;
 const HOME_REMINDER_TIMEOUT_MS = 6000;
@@ -780,7 +780,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
         edges={['top', 'left', 'right']}
       >
         <View className="flex-1 items-center justify-center">
-          <Loading label="Loading home" />
+          <LoadingIndicator showText text="Loading home..." />
         </View>
       </SafeAreaView>
     );
@@ -839,7 +839,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
               <View className="flex-row items-center justify-between">
                 <Text
                   style={{
-                    fontSize: ds.fontSize(typeScale.secondary),
+                    fontSize: ds.fontSize(typeScale.caption),
                     fontWeight: weight.semibold,
                     color: glassColors.accent,
                     textTransform: 'uppercase',
@@ -1010,11 +1010,6 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
                     flexDirection: 'row',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    shadowColor: color.ink,
-                    shadowOpacity: 0.12,
-                    shadowRadius: 12,
-                    shadowOffset: { width: 0, height: 6 },
-                    elevation: 2,
                   }}
                 >
                   <Text
@@ -1066,7 +1061,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
                   borderWidth: glassHairlineWidth,
                   borderColor:
                     browseCategory === null
-                      ? color.ink
+                      ? color.hairlineStrong
                       : glassColors.cardBorder,
                 }}
               >
@@ -1095,7 +1090,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
                         : colors.gray[100],
                       borderWidth: glassHairlineWidth,
                       borderColor: isSelected
-                        ? color.ink
+                        ? color.hairlineStrong
                         : glassColors.cardBorder,
                     }}
                   >
