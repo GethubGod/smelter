@@ -78,7 +78,12 @@ jest.mock('@/lib/supabase', () => ({
   },
   supabaseConfigError: null,
 }));
+// The #33 sweep routes app/suspended.tsx through the @/components/ui barrel,
+// which reads glass, radii and the glass* aliases at module scope. Spread the
+// real tokens so the barrel loads, and keep the two overrides this suite
+// asserts on.
 jest.mock('@/theme/design', () => ({
+  ...jest.requireActual<typeof import('@/theme/design')>('@/theme/design'),
   colors: { background: '#fff', textPrimary: '#111', textMuted: '#666' },
   authTheme: { background: '#000' },
 }));
@@ -97,6 +102,12 @@ jest.mock('react-native', () => ({
   TouchableOpacity: 'TouchableOpacity',
   Alert: { alert: jest.fn() },
   Platform: { OS: 'ios', select: (options: { default: unknown }) => options.default },
+  // The @/components/ui barrel reaches design.ts through Sheet.
+  StyleSheet: {
+    hairlineWidth: 1,
+    create: <T,>(styles: T) => styles,
+    flatten: <T,>(styles: T) => styles,
+  },
   LogBox: { ignoreLogs: jest.fn() },
   Appearance: { setColorScheme: jest.fn() },
   AppState: {
@@ -109,6 +120,18 @@ jest.mock('@expo/vector-icons', () => ({ Ionicons: 'Ionicons' }));
 jest.mock('@/constants', () => ({
   colors: { background: '#fff', errorBg: '#fee', error: '#c00', text: '#111' },
 }));
+// The screen now composes the contract primitives (EmptyState, Button). They
+// read the display store through useScaledStyles and pull in the single
+// ActivityIndicator host, neither of which this stubbed react-native supports.
+jest.mock('@/hooks/useScaledStyles', () => ({
+  useScaledStyles: () => ({
+    spacing: (value: number) => value,
+    fontSize: (value: number) => value,
+    radius: (value: number) => value,
+    icon: (value: number) => value,
+  }),
+}));
+jest.mock('@/components/LoadingIndicator', () => ({ LoadingIndicator: 'LoadingIndicator' }));
 
 // eslint-disable-next-line import/first -- the mocked stores above must be initialized before the real screens load
 import Index from '../../app/index';
@@ -318,7 +341,10 @@ describe('suspended routing', () => {
       const component = renderScreen(React.createElement(AuthLayout));
 
       expect(mockRedirect).not.toHaveBeenCalled();
-      expect(component.root.findAllByType('StackScreen' as unknown as React.ElementType).length).toBeGreaterThan(0);
+      // The #33 sweep collapsed the nine per-screen backgrounds into one
+      // contentStyle on the stack, so the group renders a bare Stack. The
+      // assertion is still that the group renders instead of redirecting.
+      expect(component.root.findAllByType('Stack' as unknown as React.ElementType).length).toBeGreaterThan(0);
 
       renderer.act(() => component.unmount());
     });

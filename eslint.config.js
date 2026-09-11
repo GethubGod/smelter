@@ -27,8 +27,8 @@ const ROOT_IGNORES = [
  * list, including every new file, still fails outright.
  *
  * The backlog is not hidden. `npm run lint:drift` turns the rule back on for
- * every one of these files and prints the full count. Today that is 2467
- * violations across 88 files. It was 819 across 115 until the rule learned to
+ * every one of these files and prints the full count. Today that is 2301
+ * violations across 74 files. It was 819 across 115 until the rule learned to
  * see numbers passed through the scaling helpers (`ds.fontSize(17)`) and
  * NativeWind utilities (`bg-gray-50`, `text-lg`, `rounded-xl`); those were
  * always drift, they were simply invisible.
@@ -39,12 +39,8 @@ const ROOT_IGNORES = [
  * add to it.
  */
 const DRIFT_ALLOWLIST = [
-  // app (2 files, 9)
+  // app (1 file, 2)
   'app/_layout.tsx',
-  'app/suspended.tsx',
-  // app/(auth) (2 files, 101)
-  'app/(auth)/login.tsx',
-  'app/(auth)/signup.tsx',
   // app/(manager) (12 files, 1253)
   'app/(manager)/employee-reminders-delivery.tsx',
   'app/(manager)/employee-reminders-recurring.tsx',
@@ -82,19 +78,6 @@ const DRIFT_ALLOWLIST = [
   'src/components/tuna-specialist/ConversationHistory.tsx',
   'src/components/tuna-specialist/DebugPanel.tsx',
   'src/components/tuna-specialist/SoundVisualizer.tsx',
-  // src/features/auth (7 files, 48)
-  'src/features/auth/InviteHelloScreen.tsx',
-  'src/features/auth/NameSignInScreen.tsx',
-  'src/features/auth/ReadyScreen.tsx',
-  'src/features/auth/SecureAppScreen.tsx',
-  'src/features/auth/SecurePasswordScreen.tsx',
-  'src/features/auth/SecurePinScreen.tsx',
-  'src/features/auth/WelcomeScreen.tsx',
-  // src/features/auth/components (4 files, 10)
-  'src/features/auth/components/AuthPrimaryButton.tsx',
-  'src/features/auth/components/LegalFooter.tsx',
-  'src/features/auth/components/PinPad.tsx',
-  'src/features/auth/components/StepProgress.tsx',
   // src/features/browse (2 files, 37)
   'src/features/browse/BrowseInventoryScreenView.tsx',
   'src/features/browse/BrowseItemRow.tsx',

@@ -4,21 +4,23 @@
 import { useEffect, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import { AuthLoadingScreen, LoadingIndicator } from '@/components';
+import { AuthLoadingScreen } from '@/components';
+import { Button, Loading } from '@/components/ui';
 import { useAuthScreenGuard } from '@/hooks';
+import { useScaledStyles } from '@/hooks/useScaledStyles';
 import {
   describeInviteFailure,
   fetchInvitePreview,
   getInviteFailureReason,
 } from '@/services/invites';
-import { authTheme } from '@/theme/design';
-import { AuthPrimaryButton } from './components/AuthPrimaryButton';
+import { auth, size, space, tracking, typeScale, weight } from '@/theme/tokens';
 import { AuthScreenShell } from './components/AuthScreenShell';
 import { StepProgress } from './components/StepProgress';
 import { useOnboardingStore } from './onboardingStore';
 
 export default function InviteHelloScreen() {
   const router = useRouter();
+  const ds = useScaledStyles();
   const guard = useAuthScreenGuard();
   const params = useLocalSearchParams<{ token?: string | string[] }>();
   const token = (Array.isArray(params.token) ? params.token[0] : params.token)?.trim() ?? '';
@@ -58,41 +60,45 @@ export default function InviteHelloScreen() {
     };
   }, [token, setInvite]);
 
-  if (guard.isChecking) return <AuthLoadingScreen />;
+  if (guard.isChecking) return <AuthLoadingScreen onDark />;
   if (guard.authenticatedRedirectTo) return <Redirect href={guard.authenticatedRedirectTo} />;
+
+  const titleStyle = {
+    fontWeight: weight.bold,
+    color: auth.text,
+    textAlign: 'center' as const,
+  };
 
   return (
     <AuthScreenShell>
       <StepProgress step={1} />
       <View style={{ flex: 1, justifyContent: 'center' }}>
         {status === 'loading' ? (
-          <View style={{ alignItems: 'center' }}>
-            <LoadingIndicator size="large" />
-          </View>
+          <Loading label="Checking your invite" />
         ) : status === 'error' ? (
           <>
             <Text
+              accessibilityRole="header"
               style={{
-                fontSize: 21,
-                fontWeight: '700',
-                color: authTheme.text,
-                textAlign: 'center',
-                marginBottom: 8,
+                ...titleStyle,
+                fontSize: ds.fontSize(typeScale.title),
+                letterSpacing: tracking.title,
+                marginBottom: ds.spacing(space[2]),
               }}
             >
               {"This invite won't work"}
             </Text>
             <Text
               style={{
-                fontSize: 13,
-                color: authTheme.textDim,
+                fontSize: ds.fontSize(typeScale.secondary),
+                color: auth.dim,
                 textAlign: 'center',
-                marginBottom: 24,
+                marginBottom: ds.spacing(space[6]),
               }}
             >
               {errorMessage}
             </Text>
-            <AuthPrimaryButton
+            <Button
               label="Back to start"
               onPress={() =>
                 router.replace('/(auth)/welcome' as Parameters<typeof router.replace>[0])
@@ -102,17 +108,17 @@ export default function InviteHelloScreen() {
         ) : (
           <>
             <Text
+              accessibilityRole="header"
               style={{
-                fontSize: 31,
-                fontWeight: '700',
-                color: authTheme.text,
-                textAlign: 'center',
-                marginBottom: 26,
+                ...titleStyle,
+                fontSize: ds.fontSize(typeScale.display),
+                letterSpacing: tracking.display,
+                marginBottom: ds.spacing(space[6]),
               }}
             >
               Hello, {invitedName ?? 'there'}
             </Text>
-            <AuthPrimaryButton
+            <Button
               label="Continue"
               onPress={() => router.push('/(auth)/secure' as Parameters<typeof router.push>[0])}
             />
@@ -121,10 +127,17 @@ export default function InviteHelloScreen() {
       </View>
       {status === 'error' ? (
         <TouchableOpacity
+          accessibilityRole="button"
           onPress={() => router.replace('/(auth)/welcome' as Parameters<typeof router.replace>[0])}
-          style={{ alignItems: 'center', marginBottom: 6 }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={{
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: ds.spacing(size.touchMin),
+            marginBottom: ds.spacing(space[2] - 2),
+          }}
         >
-          <Text style={{ fontSize: 12, color: authTheme.textFaint }}>
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: auth.dim }}>
             Ask the manager for a new link if this keeps happening
           </Text>
         </TouchableOpacity>

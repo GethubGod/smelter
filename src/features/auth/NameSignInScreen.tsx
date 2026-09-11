@@ -4,31 +4,25 @@
 // through the small link at the bottom (standing roadmap rule).
 
 import { useState } from 'react';
-import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { Link, Redirect } from 'expo-router';
 import { AuthLoadingScreen } from '@/components';
+import { Button, Input } from '@/components/ui';
 import { useAuthScreenGuard } from '@/hooks';
+import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { getLoginFailureCode, signInWithName } from '@/services/loginCredentials';
-import { authTheme } from '@/theme/design';
-import { AuthPrimaryButton } from './components/AuthPrimaryButton';
+import { auth, size, space, tracking, typeScale, weight } from '@/theme/tokens';
 import { AuthScreenShell } from './components/AuthScreenShell';
 
-const FIELD_LABEL_STYLE = {
-  fontSize: 11,
-  fontWeight: '600' as const,
-  letterSpacing: 0.5,
-  color: 'rgba(255, 255, 255, 0.5)',
-  marginBottom: 6,
-};
-
 export default function NameSignInScreen() {
+  const ds = useScaledStyles();
   const guard = useAuthScreenGuard();
   const [name, setName] = useState('');
   const [secret, setSecret] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (guard.isChecking) return <AuthLoadingScreen />;
+  if (guard.isChecking) return <AuthLoadingScreen onDark />;
   if (guard.authenticatedRedirectTo) return <Redirect href={guard.authenticatedRedirectTo} />;
 
   const canSubmit = name.trim().length > 0 && secret.length > 0 && !submitting;
@@ -55,49 +49,46 @@ export default function NameSignInScreen() {
 
   return (
     <AuthScreenShell>
-      <View style={{ flex: 1, justifyContent: 'center' }}>
-        <Text style={{ fontSize: 23, fontWeight: '700', color: authTheme.text, marginBottom: 20 }}>
+      <View style={{ flex: 1, paddingTop: ds.spacing(space[8]) }}>
+        <Text
+          accessibilityRole="header"
+          style={{
+            fontSize: ds.fontSize(typeScale.display),
+            fontWeight: weight.bold,
+            letterSpacing: tracking.display,
+            color: auth.text,
+            marginBottom: ds.spacing(space[5]),
+          }}
+        >
           Sign in
         </Text>
 
-        <Text style={FIELD_LABEL_STYLE}>NAME</Text>
-        <TextInput
+        <Input
+          label="Name"
+          onDark
           value={name}
           onChangeText={(value) => {
             setName(value);
             if (error) setError(null);
           }}
           placeholder="Your name"
-          placeholderTextColor="rgba(255, 255, 255, 0.4)"
           textContentType="username"
           autoComplete="username"
           autoCapitalize="words"
           autoCorrect={false}
           returnKeyType="next"
           editable={!submitting}
-          style={{
-            backgroundColor: authTheme.well,
-            borderWidth: 1,
-            borderColor: authTheme.wellBorder,
-            borderRadius: 13,
-            paddingHorizontal: 13,
-            height: 48,
-            fontSize: 15,
-            fontWeight: '600',
-            color: authTheme.text,
-            marginBottom: 13,
-          }}
         />
 
-        <Text style={FIELD_LABEL_STYLE}>PIN OR PASSWORD</Text>
-        <TextInput
+        <Input
+          label="PIN or password"
+          onDark
           value={secret}
           onChangeText={(value) => {
             setSecret(value);
             if (error) setError(null);
           }}
           placeholder="••••"
-          placeholderTextColor="rgba(255, 255, 255, 0.4)"
           secureTextEntry
           textContentType="password"
           autoComplete="password"
@@ -106,47 +97,43 @@ export default function NameSignInScreen() {
           returnKeyType="go"
           onSubmitEditing={handleSignIn}
           editable={!submitting}
-          style={{
-            backgroundColor: authTheme.well,
-            borderWidth: 1,
-            borderColor: authTheme.wellBorder,
-            borderRadius: 13,
-            paddingHorizontal: 13,
-            height: 48,
-            fontSize: 16,
-            letterSpacing: 3,
-            color: authTheme.text,
-            marginBottom: error ? 8 : 16,
-          }}
+          error={error ?? undefined}
         />
 
-        {error ? (
-          <Text style={{ fontSize: 12, color: authTheme.accent, marginBottom: 10 }}>{error}</Text>
-        ) : null}
-
-        <AuthPrimaryButton
+        <Button
           label="Sign in"
           onPress={handleSignIn}
           loading={submitting}
           disabled={!canSubmit}
+          style={{ marginTop: ds.spacing(space[5]) }}
         />
 
         <Text
           style={{
-            fontSize: 12,
-            color: authTheme.textFaint,
+            fontSize: ds.fontSize(typeScale.secondary),
+            color: auth.dim,
             textAlign: 'center',
-            marginTop: 13,
+            marginTop: ds.spacing(space[4]),
           }}
         >
           Forgot it? Ask the manager for a reset
         </Text>
       </View>
 
-      <View style={{ alignItems: 'center', marginBottom: 6 }}>
+      <View style={{ alignItems: 'center', marginBottom: ds.spacing(space[2] - 2) }}>
         <Link href="/(auth)/signup" asChild>
-          <TouchableOpacity hitSlop={{ top: 8, bottom: 8, left: 20, right: 20 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: authTheme.textDim }}>
+          <TouchableOpacity
+            accessibilityRole="link"
+            hitSlop={{ top: 10, bottom: 10, left: 20, right: 20 }}
+            style={{ justifyContent: 'center', minHeight: ds.spacing(size.touchMin) }}
+          >
+            <Text
+              style={{
+                fontSize: ds.fontSize(typeScale.secondary),
+                fontWeight: weight.semibold,
+                color: auth.dim,
+              }}
+            >
               Have a sign-up code instead?
             </Text>
           </TouchableOpacity>
