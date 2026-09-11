@@ -981,8 +981,9 @@ export const useStockCheckStore = create<StockCheckState>()(
 
 // The launch drain runs from the gate, not from `onRehydrateStorage` directly,
 // so it waits for the auth store to report a restored session. Registered at
-// module load: expo-router pulls every route in at startup, so this module is
-// evaluated before the first screen renders.
+// module load, which happens either when a stock route is navigated to or,
+// on a launch that never opens one, when the gate imports this module on the
+// restored-session notification (issue #74).
 registerStockQueueDrain(() => {
   void useStockCheckStore.getState().syncPendingOps();
 });
