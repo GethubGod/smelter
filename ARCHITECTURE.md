@@ -122,7 +122,6 @@ src/store/
 │   ├── pastOrderHelpers.ts   # Past-order normalization, sync queue, cache
 │   ├── supplierDraftHelpers.ts # Supplier drafts, order-later queue
 │   └── index.ts              # Barrel
-├── draftStore.ts             # Quick-order drafts per location
 ├── displayStore.ts           # UI/scale/haptic preferences
 ├── settingsStore.ts          # App settings, notifications, reminders
 ├── fulfillmentStore.ts       # Fulfillment checked items

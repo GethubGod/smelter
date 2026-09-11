@@ -3,20 +3,14 @@
 // link. Employee invites only — manager invites stay on the web dashboard.
 
 import { useEffect, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { StackScreenHeader } from '@/components';
 import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
+import { Button, Chip, Input, ScreenHeader } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { glassHairlineWidth, radii, tipsTheme } from '@/theme/design';
+import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
+import { color, space, typeScale } from '@/theme/tokens';
 import { createInvite, type InviteLocationGroup } from '@/services/invites';
 import {
   getBuiltInEmployeeDefaults,
@@ -44,6 +38,7 @@ const EXPIRY_OPTIONS: { hours: number; label: string }[] = [
 
 export default function InviteScreen() {
   const ds = useScaledStyles();
+  const { backTo } = useSettingsNavigationContext();
   const [name, setName] = useState('');
   const [group, setGroup] = useState<InviteLocationGroup>('sushi');
   const [defaultToggles, setDefaultToggles] = useState<EmployeeInviteDefaults>(
@@ -79,6 +74,14 @@ export default function InviteScreen() {
   );
 
   const canSubmit = name.trim().length > 0 && !busy;
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace(backTo);
+  };
 
   const handleCreate = async () => {
     if (!canSubmit) return;
@@ -118,48 +121,42 @@ export default function InviteScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: tipsTheme.page }} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.page }} edges={['left', 'right']}>
       <ManagerScaleContainer>
-        <View style={{ backgroundColor: tipsTheme.page }}>
-          <StackScreenHeader title="Invite someone" subtitle="They set up their own app from the link" />
-        </View>
+        <ScreenHeader
+          mode="pushed"
+          title="Invite someone"
+          subtitle="They set up their own app from the link"
+          onBack={handleBack}
+        />
 
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{
-            paddingHorizontal: ds.spacing(20),
-            paddingBottom: ds.spacing(28),
+            paddingHorizontal: ds.spacing(space[4]),
+            paddingBottom: ds.spacing(space[8]),
           }}
           keyboardShouldPersistTaps="handled"
         >
           <TeamSectionLabel label="Name" />
-          <TextInput
+          <Input
             value={name}
             onChangeText={(value) => {
               setName(value);
               if (error) setError(null);
             }}
             placeholder="First name, like on the schedule"
-            placeholderTextColor={tipsTheme.ink3}
+            accessibilityLabel="Name"
             autoCapitalize="words"
             autoCorrect={false}
             editable={!busy}
-            style={{
-              backgroundColor: tipsTheme.well,
-              borderRadius: 12,
-              paddingHorizontal: ds.spacing(13),
-              minHeight: Math.max(44, ds.buttonH - ds.spacing(8)),
-              fontSize: ds.fontSize(14),
-              fontWeight: '600',
-              color: tipsTheme.ink,
-            }}
           />
 
           <TeamSectionLabel label="Works at" />
           <WorksAtSegmented value={group} onChange={setGroup} disabled={busy} />
 
           <TeamSectionLabel label={`What ${name.trim() || 'they'} can use`} />
-          <TeamCard style={{ paddingHorizontal: ds.spacing(13) }}>
+          <TeamCard style={{ paddingHorizontal: ds.spacing(space[3] + 2) }}>
             {TOGGLE_ROWS.map((row, index) => (
               <ModuleToggleRow
                 key={row.key}
@@ -173,77 +170,44 @@ export default function InviteScreen() {
             ))}
           </TeamCard>
 
-          <View style={{ height: ds.spacing(9) }} />
+          <View style={{ height: ds.spacing(space[2]) }} />
           <InvitePreviewCard model={preview} />
 
           <TeamSectionLabel label="Link expires in" />
-          <View style={{ flexDirection: 'row', gap: ds.spacing(8) }}>
-            {EXPIRY_OPTIONS.map((option) => {
-              const selected = option.hours === expiresInHours;
-              return (
-                <TouchableOpacity
-                  key={option.hours}
-                  onPress={() => setExpiresInHours(option.hours)}
-                  disabled={busy}
-                  activeOpacity={0.82}
-                  style={{
-                    flex: 1,
-                    borderRadius: radii.pill,
-                    borderWidth: selected ? 1.5 : glassHairlineWidth,
-                    borderColor: selected ? tipsTheme.accent : tipsTheme.hairline,
-                    backgroundColor: selected ? tipsTheme.tint : tipsTheme.card,
-                    paddingVertical: ds.spacing(7),
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: ds.fontSize(11.5),
-                      fontWeight: '700',
-                      color: selected ? tipsTheme.accent : tipsTheme.ink2,
-                    }}
-                  >
-                    {option.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: ds.spacing(space[2]) }}>
+            {EXPIRY_OPTIONS.map((option) => (
+              <Chip
+                key={option.hours}
+                label={option.label}
+                selected={option.hours === expiresInHours}
+                onPress={() => {
+                  if (busy) return;
+                  setExpiresInHours(option.hours);
+                }}
+              />
+            ))}
           </View>
 
           {error ? (
             <Text
+              accessibilityRole="alert"
               style={{
-                fontSize: ds.fontSize(12.5),
-                color: tipsTheme.alert,
-                marginTop: ds.spacing(12),
+                marginTop: ds.spacing(space[3]),
+                fontSize: ds.fontSize(typeScale.secondary),
+                color: color.alert,
               }}
             >
               {error}
             </Text>
           ) : null}
 
-          <TouchableOpacity
-            onPress={handleCreate}
+          <Button
+            label="Create link"
+            onPress={() => void handleCreate()}
+            loading={busy}
             disabled={!canSubmit}
-            activeOpacity={0.82}
-            style={{
-              marginTop: ds.spacing(16),
-              backgroundColor: tipsTheme.accent,
-              borderRadius: radii.pill,
-              minHeight: Math.max(48, ds.buttonH),
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: canSubmit ? 1 : 0.5,
-            }}
-          >
-            {busy ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Text style={{ fontSize: ds.fontSize(14.5), fontWeight: '700', color: '#FFFFFF' }}>
-                Create link
-              </Text>
-            )}
-          </TouchableOpacity>
+            style={{ marginTop: ds.spacing(space[4]) }}
+          />
         </ScrollView>
       </ManagerScaleContainer>
     </SafeAreaView>

@@ -1,5 +1,4 @@
 import React from 'react';
-import { View } from 'react-native';
 import { router } from 'expo-router';
 import { useSettingsStore } from '@/store';
 import {
@@ -8,12 +7,11 @@ import {
   SettingsRow,
   SettingsScreenLayout,
   SettingsSectionLabel,
-  settingsIconPalettes,
 } from '@/components/settings';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { buildSettingsHref } from '@/lib/settingsNavigation';
 import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
-import { glassColors, glassHairlineWidth } from '@/theme/design';
+import { space } from '@/theme/tokens';
 
 function StockWarningsSection() {
   const { stockSettings, setStockSettings } = useSettingsStore();
@@ -21,8 +19,6 @@ function StockWarningsSection() {
   return (
     <SettingToggle
       icon="warning-outline"
-      iconColor={settingsIconPalettes.danger.icon}
-      iconBgColor={settingsIconPalettes.danger.background}
       title="Flag unusual quantities"
       subtitle="Highlight suspiciously high stock counts in confirmation"
       value={stockSettings.flagUnusualQuantities}
@@ -38,8 +34,6 @@ function StockPreferencesSection() {
   return (
     <SettingToggle
       icon="notifications-outline"
-      iconColor={settingsIconPalettes.users.icon}
-      iconBgColor={settingsIconPalettes.users.background}
       title="Resume reminders"
       subtitle="Send a local reminder after pausing stock count"
       value={stockSettings.resumeReminders}
@@ -63,50 +57,25 @@ export default function StockSettingsScreen() {
   };
 
   return (
-    <SettingsScreenLayout title="Stock Settings">
+    <SettingsScreenLayout title="Stock settings">
       <SettingsGroup>
         <SettingsRow
           icon="clipboard-outline"
-          iconColor={settingsIconPalettes.stock.icon}
-          iconBgColor={settingsIconPalettes.stock.background}
           title="Stock"
           subtitle="Count and update inventory by station"
           onPress={openStockCheck}
+          showBorder={false}
         />
       </SettingsGroup>
 
-      <SettingsGroup style={{ marginTop: ds.spacing(12) }}>
-        <SettingsSectionLabel
-          label="Stock Warnings"
-          description="Control how unusual stock counts are flagged during confirmation."
-        />
-        <View
-          style={{
-            height: glassHairlineWidth,
-            backgroundColor: glassColors.divider,
-            marginHorizontal: ds.spacing(16),
-          }}
-        />
-        <View style={{ paddingTop: ds.spacing(4) }}>
-          <StockWarningsSection />
-        </View>
+      <SettingsSectionLabel label="Stock warnings" />
+      <SettingsGroup>
+        <StockWarningsSection />
       </SettingsGroup>
 
-      <SettingsGroup style={{ marginTop: ds.spacing(12) }}>
-        <SettingsSectionLabel
-          label="Preferences"
-          description="Tune resume behavior when a stock count is paused."
-        />
-        <View
-          style={{
-            height: glassHairlineWidth,
-            backgroundColor: glassColors.divider,
-            marginHorizontal: ds.spacing(16),
-          }}
-        />
-        <View style={{ paddingTop: ds.spacing(4) }}>
-          <StockPreferencesSection />
-        </View>
+      <SettingsSectionLabel label="Preferences" />
+      <SettingsGroup style={{ marginBottom: ds.spacing(space[3]) }}>
+        <StockPreferencesSection />
       </SettingsGroup>
     </SettingsScreenLayout>
   );

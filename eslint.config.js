@@ -27,8 +27,8 @@ const ROOT_IGNORES = [
  * list, including every new file, still fails outright.
  *
  * The backlog is not hidden. `npm run lint:drift` turns the rule back on for
- * every one of these files and prints the full count. Today that is 3334
- * violations across 157 files. It was 819 across 115 until the rule learned to
+ * every one of these files and prints the full count. Today that is 2467
+ * violations across 88 files. It was 819 across 115 until the rule learned to
  * see numbers passed through the scaling helpers (`ds.fontSize(17)`) and
  * NativeWind utilities (`bg-gray-50`, `text-lg`, `rounded-xl`); those were
  * always drift, they were simply invisible.
@@ -39,15 +39,13 @@ const ROOT_IGNORES = [
  * add to it.
  */
 const DRIFT_ALLOWLIST = [
-  'src/features/inventory/ManagerInventoryRow.tsx',
   // app (2 files, 9)
   'app/_layout.tsx',
   'app/suspended.tsx',
-  // app/(auth) (3 files, 125)
-  'app/(auth)/complete-profile.tsx',
+  // app/(auth) (2 files, 101)
   'app/(auth)/login.tsx',
   'app/(auth)/signup.tsx',
-  // app/(manager) (12 files, 1289)
+  // app/(manager) (12 files, 1253)
   'app/(manager)/employee-reminders-delivery.tsx',
   'app/(manager)/employee-reminders-recurring.tsx',
   'app/(manager)/employee-reminders-settings.tsx',
@@ -60,18 +58,6 @@ const DRIFT_ALLOWLIST = [
   'app/(manager)/inventory.tsx',
   'app/(manager)/orders.tsx',
   'app/(manager)/profile.tsx',
-  // app/(manager)/manager-settings (4 files, 70)
-  'app/(manager)/manager-settings/access-codes.tsx',
-  'app/(manager)/manager-settings/export-format.tsx',
-  'app/(manager)/manager-settings/profile.tsx',
-  'app/(manager)/manager-settings/user-management.tsx',
-  // app/settings (6 files, 43)
-  'app/settings/about-support.tsx',
-  'app/settings/display-accessibility.tsx',
-  'app/settings/notifications-debug.tsx',
-  'app/settings/notifications.tsx',
-  'app/settings/profile.tsx',
-  'app/settings/reminders.tsx',
   // src/components (15 files, 163)
   'src/components/BrowseCategoryScroller.tsx',
   'src/components/CategoryFilter.tsx',
@@ -90,19 +76,8 @@ const DRIFT_ALLOWLIST = [
   'src/components/StatusFilter.tsx',
   // src/components/navigation (3 files, 13)
   'src/components/navigation/FloatingPillTabBar.tsx',
-  'src/components/navigation/tabBarConfig.ts',
   'src/components/navigation/TabButton.tsx',
-  // src/components/settings (10 files, 74)
-  'src/components/settings/ChangeCredentialSheet.tsx',
-  'src/components/settings/ChangePasswordModal.tsx',
-  'src/components/settings/ExpandableSection.tsx',
-  'src/components/settings/MultiOptionToggle.tsx',
-  'src/components/settings/ReminderListItem.tsx',
-  'src/components/settings/ReminderModal.tsx',
-  'src/components/settings/SettingsRow.tsx',
-  'src/components/settings/SettingsScreenLayout.tsx',
-  'src/components/settings/SettingToggle.tsx',
-  'src/components/settings/TimePickerRow.tsx',
+  'src/components/navigation/tabBarConfig.ts',
   // src/components/tuna-specialist (3 files, 29)
   'src/components/tuna-specialist/ConversationHistory.tsx',
   'src/components/tuna-specialist/DebugPanel.tsx',
@@ -123,12 +98,6 @@ const DRIFT_ALLOWLIST = [
   // src/features/browse (2 files, 37)
   'src/features/browse/BrowseInventoryScreenView.tsx',
   'src/features/browse/BrowseItemRow.tsx',
-  // src/features/employeeSettings (2 files, 40)
-  'src/features/employeeSettings/EmployeeProfileScreen.tsx',
-  'src/features/employeeSettings/EmployeeSettingsScreen.tsx',
-  // src/features/employeeSettings/components (2 files, 9)
-  'src/features/employeeSettings/components/AboutLegalSheet.tsx',
-  'src/features/employeeSettings/components/SettingsCardRow.tsx',
   // src/features/fulfillment/components (12 files, 121)
   'src/features/fulfillment/components/FulfillmentConfirmItemRow.tsx',
   'src/features/fulfillment/components/FulfillmentExpandedSupplierItems.tsx',
@@ -136,14 +105,16 @@ const DRIFT_ALLOWLIST = [
   'src/features/fulfillment/components/FulfillmentOrderLaterCard.tsx',
   'src/features/fulfillment/components/FulfillmentReminderBanner.tsx',
   'src/features/fulfillment/components/FulfillmentSupplierCard.tsx',
-  'src/features/fulfillment/components/FulfillmentSuppliersCard.tsx',
   'src/features/fulfillment/components/FulfillmentSupplierSectionLabel.tsx',
+  'src/features/fulfillment/components/FulfillmentSuppliersCard.tsx',
   'src/features/fulfillment/components/OrderLaterAddToSheet.tsx',
   'src/features/fulfillment/components/OrderLaterScheduleModal.tsx',
   'src/features/fulfillment/components/QuantityExportSelector.tsx',
   'src/features/fulfillment/components/SupplierPickerBottomSheet.tsx',
   // src/features/fulfillment/sendAll (1 file, 25)
   'src/features/fulfillment/sendAll/SendAllScreen.tsx',
+  // src/features/inventory (1 file, 36)
+  'src/features/inventory/ManagerInventoryRow.tsx',
   // src/features/ordering (17 files, 501)
   'src/features/ordering/ComposerSuggestionPills.tsx',
   'src/features/ordering/NeedsInputActionButtons.tsx',
@@ -172,16 +143,6 @@ const DRIFT_ALLOWLIST = [
   'src/features/settings/SupplierContactsScreen.tsx',
   // src/features/smart (1 file, 11)
   'src/features/smart/SmartOrderScreen.tsx',
-  // src/features/team (6 files, 75)
-  'src/features/team/DefaultsScreen.tsx',
-  'src/features/team/InviteLinkReadyScreen.tsx',
-  'src/features/team/InviteScreen.tsx',
-  'src/features/team/MemberDetailScreen.tsx',
-  'src/features/team/PreviewAsScreen.tsx',
-  'src/features/team/TeamScreen.tsx',
-  // src/features/team/components (2 files, 17)
-  'src/features/team/components/InvitePreviewCard.tsx',
-  'src/features/team/components/TeamUI.tsx',
 ];
 
 module.exports = defineConfig([
