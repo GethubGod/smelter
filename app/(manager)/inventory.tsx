@@ -6,13 +6,13 @@ import {
   TouchableOpacity,
   TextInput,
   RefreshControl,
-  Modal,
   ScrollView,
   Alert,
   Platform,
   KeyboardAvoidingView,
   Animated,
 } from 'react-native';
+import { FullScreenSheet } from '@/components/ui/FullScreenSheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -1803,11 +1803,9 @@ export default function ManagerInventoryScreen() {
       )}
 
       {/* Edit Item Modal */}
-      <Modal
+      <FullScreenSheet
         visible={showEditModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowEditModal(false)}
+        onClose={() => setShowEditModal(false)}
       >
         <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }}>
           <View className="px-4 py-4 border-b flex-row items-center justify-between" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
@@ -1940,14 +1938,12 @@ export default function ManagerInventoryScreen() {
             </TouchableOpacity>
           </View>
         </SafeAreaView>
-      </Modal>
+      </FullScreenSheet>
 
       {/* Move Item Modal */}
-      <Modal
+      <FullScreenSheet
         visible={showMoveModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowMoveModal(false)}
+        onClose={() => setShowMoveModal(false)}
       >
         <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }}>
           <View className="px-4 py-4 border-b flex-row items-center justify-between" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
@@ -2108,14 +2104,12 @@ export default function ManagerInventoryScreen() {
             </TouchableOpacity>
           </View>
         </SafeAreaView>
-      </Modal>
+      </FullScreenSheet>
 
       {/* Bulk Move Modal */}
-      <Modal
+      <FullScreenSheet
         visible={showBulkMoveModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowBulkMoveModal(false)}
+        onClose={() => setShowBulkMoveModal(false)}
       >
         <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }}>
           <View className="px-4 py-4 border-b flex-row items-center justify-between" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
@@ -2208,7 +2202,7 @@ export default function ManagerInventoryScreen() {
             </TouchableOpacity>
           </View>
         </SafeAreaView>
-      </Modal>
+      </FullScreenSheet>
 
       {/* Count Unit Picker */}
       <Sheet
@@ -2344,11 +2338,9 @@ export default function ManagerInventoryScreen() {
       </Sheet>
 
       {/* Add Item Modal */}
-      <Modal
+      <FullScreenSheet
         visible={showAddModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => {
+        onClose={() => {
           setShowAddModal(false);
           setAddStep('select');
         }}
@@ -2669,7 +2661,7 @@ export default function ManagerInventoryScreen() {
             </View>
           </KeyboardAvoidingView>
         </SafeAreaView>
-      </Modal>
+      </FullScreenSheet>
 
       {/* Add Item Unit Picker */}
       <Sheet
@@ -2716,11 +2708,9 @@ export default function ManagerInventoryScreen() {
       </Sheet>
 
       {/* Bulk Add Modal */}
-      <Modal
+      <FullScreenSheet
         visible={showBulkAddModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowBulkAddModal(false)}
+        onClose={() => setShowBulkAddModal(false)}
       >
         <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }}>
           <KeyboardAvoidingView
@@ -2865,7 +2855,7 @@ export default function ManagerInventoryScreen() {
             </View>
           </KeyboardAvoidingView>
         </SafeAreaView>
-      </Modal>
+      </FullScreenSheet>
     </SafeAreaView>
   );
 }

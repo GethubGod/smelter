@@ -189,9 +189,9 @@ const noDesignDrift = {
       fontWeight:
         'fontWeight "{{value}}". The contract keeps 400, 600 and 700 only; use weight from @/theme/tokens.',
       host:
-        '<{{name}}> is hosted once, in {{host}}. Use the {{primitive}} primitive from @/components/ui.',
+        '<{{name}}> is hosted only through the primitives in @/components/ui. {{guidance}}',
       hostImport:
-        '{{name}} is hosted once, in {{host}}. Use the {{primitive}} primitive from @/components/ui.',
+        '{{name}} is hosted only through the primitives in @/components/ui. {{guidance}}',
       scaledFontSize:
         'Numeric font size {{value}} through {{helper}}(). Scaling an arbitrary number is still an arbitrary number; pass typeScale from @/theme/tokens.',
       scaledRadius:
@@ -213,8 +213,12 @@ const noDesignDrift = {
         messageId,
         data:
           name === 'Modal'
-            ? { name, host: 'BottomSheetShell', primitive: 'Sheet' }
-            : { name, host: 'LoadingIndicator', primitive: 'Loading' },
+            ? {
+                name,
+                guidance:
+                  'Use Sheet for a fixed-height sheet, or FullScreenSheet for a scrolling full-screen or keyboard-aware form.',
+              }
+            : { name, guidance: 'Use the Loading primitive.' },
       });
     }
 

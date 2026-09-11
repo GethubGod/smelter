@@ -16,6 +16,7 @@ import { useInventorySubscription, useOrderSubscription } from "@/hooks";
 import { supabase, supabaseConfigError } from "@/lib/supabase";
 import { refreshCurrentDevicePushTokenIfStale } from "@/services/notificationService";
 import { colors } from "@/theme/design";
+import { typeScale } from "@/theme/tokens";
 import "../global.css";
 
 LogBox.ignoreLogs([
@@ -131,7 +132,7 @@ export default function RootLayout() {
         <StatusBar style={statusBarStyle} />
         <Text
           style={{
-            fontSize: 22,
+            fontSize: typeScale.display,
             fontWeight: "700",
             color: colors.textPrimary,
             marginBottom: 10,
@@ -139,7 +140,7 @@ export default function RootLayout() {
         >
           App Configuration Required
         </Text>
-        <Text style={{ fontSize: 15, color: colors.textMuted, lineHeight: 22 }}>
+        <Text style={{ fontSize: typeScale.body, color: colors.textMuted, lineHeight: 22 }}>
           {__DEV__
             ? `${supabaseConfigError}. Add these values to your Expo environment and restart the app.`
             : "This build is missing required configuration. Please reinstall the app or contact support."}

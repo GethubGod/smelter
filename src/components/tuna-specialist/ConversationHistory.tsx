@@ -2,10 +2,10 @@ import React from 'react';
 import {
   View,
   Text,
-  Modal,
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { FullScreenSheet } from '@/components/ui/FullScreenSheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { ConversationMessage } from '@/store/tunaSpecialistStore';
@@ -37,11 +37,9 @@ export function ConversationHistory({
   const insets = useSafeAreaInsets();
 
   return (
-    <Modal
+    <FullScreenSheet
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
+      onClose={onClose}
     >
       <View
         style={{
@@ -190,6 +188,6 @@ export function ConversationHistory({
           })}
         </ScrollView>
       </View>
-    </Modal>
+    </FullScreenSheet>
   );
 }
