@@ -9,9 +9,19 @@
  * next stock screen to open, and `syncError` briefly held a message about
  * being signed out that had nothing to do with connectivity.
  *
- * This module is the join between the two events. It holds no imports on
- * purpose: the auth store and the stock-check store both call into it, and
+ * This module is the join between the two events. It holds no static imports
+ * on purpose: the auth store and the stock-check store both call into it, and
  * neither has to learn about the other.
+ *
+ * The gate also owns loading the stock-check store. Only the three stock
+ * routes import that module, and expo-router loads a route's module when the
+ * route is first navigated to, so on a launch that lands anywhere else (the
+ * checklist, for instance) nothing evaluated the store, nothing registered a
+ * drain, and the restored-session notification arrived at an empty gate. The
+ * queued count then waited for a stock screen to open. When a session is
+ * reported and no drain is registered, the gate now imports the store itself;
+ * that import both registers the drain and starts zustand's rehydrate, so the
+ * two notifications it is waiting on are the ones it just set in motion.
  *
  * Semantics:
  *  - the drain fires once both the queue is in memory and the auth store has
@@ -30,6 +40,25 @@ let queueRehydrated = false;
 let authSessionRestored = false;
 let drainedForCurrentSession = false;
 let sessionUserId: string | null = null;
+let storeLoadStarted = false;
+
+/**
+ * Pulls in the stock-check store so it registers its drain and rehydrates the
+ * persisted queue. Dynamic on purpose: a static import here would be a cycle
+ * (the store imports this module) and would drag the stock feature into the
+ * auth store's graph. Idempotent, and a no-op once a drain is registered,
+ * which is the normal case when a stock screen has already been opened.
+ */
+function ensureStockCheckStoreLoaded(): void {
+  if (drain || storeLoadStarted) return;
+  storeLoadStarted = true;
+  void import('./useStockCheckStore').catch((error: unknown) => {
+    // Leave the gate re-armed: a later session report (token refresh, account
+    // switch) gets another attempt, and opening a stock screen still works.
+    storeLoadStarted = false;
+    console.warn('Stock-check store failed to load for the launch drain.', error);
+  });
+}
 
 function maybeDrain(): void {
   if (!drain) return;
@@ -46,6 +75,7 @@ function maybeDrain(): void {
  */
 export function registerStockQueueDrain(fn: DrainFn): void {
   drain = fn;
+  storeLoadStarted = true;
   maybeDrain();
 }
 
@@ -73,6 +103,12 @@ export function notifyAuthSessionRestored(userId: string): void {
   sessionUserId = userId;
   authSessionRestored = true;
   maybeDrain();
+  // Nothing may have loaded the stock-check store yet (launch on any screen
+  // other than the three stock routes). Load it now so a queue persisted
+  // before a force quit drains at launch instead of waiting for a stock
+  // screen. Suspended sessions never reach here: the auth store does not
+  // report them, so their queue stays put.
+  ensureStockCheckStoreLoaded();
 }
 
 /**
@@ -98,8 +134,10 @@ export function getStockQueueOwnerId(): string | null {
 
 /**
  * Test seam: clears the launch flags so a cold start can be replayed. The
- * registered drain is left alone, because registration happens once when the
- * stock-check store module loads and cannot be replayed.
+ * registered drain and the store-load flag are left alone, because the store
+ * module loads once per process and cannot be unloaded. A test that needs a
+ * process where the store has never loaded resets the module registry
+ * instead (see `stockCheckLaunchDrain.test.ts`).
  */
 export function __resetStockQueueDrainGate(): void {
   queueRehydrated = false;
