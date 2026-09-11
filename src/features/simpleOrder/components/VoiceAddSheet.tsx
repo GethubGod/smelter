@@ -119,7 +119,7 @@ export function VoiceAddSheet({
     const { uri, durationMs } = await stopRecorder();
     if (!uri || isQuickOrderVoiceTooShort(durationMs)) {
       await cleanupQuickOrderVoiceFile(uri);
-      setErrorMessage('That was too short — hold on a moment longer and try again.');
+      setErrorMessage('That was too short. Hold on a moment longer and try again.');
       setPhase('error');
       stoppingRef.current = false;
       return;
@@ -229,7 +229,7 @@ export function VoiceAddSheet({
             textAlign: 'center',
           }}
         >
-          Say what you need — “two cases of salmon, a bag of rice”
+          Say what you need: “two cases of salmon, a bag of rice”
         </Text>
         <View
           style={{
@@ -383,7 +383,7 @@ export function VoiceAddSheet({
               </Text>
               {addition.spokenUnit ? (
                 <Text style={{ fontSize: ds.fontSize(typeScale.caption), color: color.warning }}>
-                  Heard “{addition.spokenUnit}” — this item orders in {addition.unit}
+                  Heard “{addition.spokenUnit}”, this item orders in {addition.unit}
                 </Text>
               ) : null}
             </View>

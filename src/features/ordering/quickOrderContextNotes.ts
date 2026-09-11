@@ -182,7 +182,7 @@ export function buildQuickOrderContextNotes(
     if (unit.toLowerCase() === "cs" && /\bbox(?:es)?\b/i.test(original)) {
       add(`Counted “box” as case`, "unit");
     } else if (update.unit_inferred && unit && itemName) {
-      add(`No unit entered — counted ${itemName} in ${unit}`, "unit");
+      add(`No unit entered, counted ${itemName} in ${unit}`, "unit");
     }
   }
 

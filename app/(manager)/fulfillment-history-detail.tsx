@@ -134,7 +134,7 @@ function FulfillmentHistoryDetailScreen() {
       if (orderError) throw orderError;
 
       const orderId = orderData?.id;
-      if (!orderId) throw new Error('Failed to create reorder — no order ID returned.');
+      if (!orderId) throw new Error('Failed to create reorder. No order ID returned.');
 
       // Build order items from past order items
       const orderItemRows = validItems.map((item) => ({

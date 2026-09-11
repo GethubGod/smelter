@@ -46,7 +46,7 @@ describe("buildQuickOrderContextNotes", () => {
         ],
       }),
     ).toEqual([
-      { category: "unit", text: "No unit entered — counted Salmon in cs" },
+      { category: "unit", text: "No unit entered, counted Salmon in cs" },
     ]);
   });
 

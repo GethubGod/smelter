@@ -108,7 +108,7 @@ describe('useInventoryStore.fetchItems', () => {
   test('captures non-auth inventory errors without rejecting', async () => {
     listInventoryMock.mockResolvedValue({
       data: null,
-      error: 'Network error — please check your connection.',
+      error: 'Network error. Please check your connection.',
     });
     const fallbackQuery = createInventoryQueryResult({
       data: null,
@@ -120,7 +120,7 @@ describe('useInventoryStore.fetchItems', () => {
 
     expect(signOutMock).not.toHaveBeenCalled();
     expect(useInventoryStore.getState().error).toBe(
-      'Network error — please check your connection.'
+      'Network error. Please check your connection.'
     );
     expect(useInventoryStore.getState().isLoading).toBe(false);
   });

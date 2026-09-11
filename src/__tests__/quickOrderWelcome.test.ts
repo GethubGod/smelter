@@ -8,9 +8,9 @@ import {
 
 describe("quickOrderWelcome", () => {
   test("uses the exact onboarding copy", () => {
-    expect(QUICK_ORDER_WELCOME_TEXT).toContain("Welcome to Quick Order 👋");
+    expect(QUICK_ORDER_WELCOME_TEXT).toContain("Welcome to Quick Order");
     expect(QUICK_ORDER_WELCOME_TEXT).toContain(
-      "Type your order the way you normally would — no special format needed.",
+      "Type your order the way you normally would. No special format needed.",
     );
     expect(QUICK_ORDER_WELCOME_TEXT).toContain(
       "I'll learn your usual ordering patterns",
