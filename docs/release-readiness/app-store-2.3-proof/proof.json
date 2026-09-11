@@ -1,0 +1,1177 @@
+{
+  "build": {
+    "summary": "Final verification of the App Store 2.3 integration head on the signed Release simulator build against a disposable local full stack. Every card carries the screenshot or the psql or lint proof behind its verdict.",
+    "integration_sha": "54f4912",
+    "branch": "issue/49-release-proof",
+    "date": "2026-09-10",
+    "sim": "Smelter Release QA iPhone 17 Pro Max, iOS 26.2, UDID EF05F833-2AC4-4383-8688-36C51B956BCF",
+    "facts": [
+      [
+        "Integration head",
+        "54f4912 (integration/app-store-2.3), proof branch issue/49-release-proof cut from it"
+      ],
+      [
+        "Simulator",
+        "EF05F833-2AC4-4383-8688-36C51B956BCF, driven only through scripts/sim.sh (simctl by UDID, AXe 1.8.0 for taps and describe-ui)"
+      ],
+      [
+        "Local stack",
+        "FULL_STACK_PORT_BASE=54620: API http://127.0.0.1:54621, database 54622, containers supabase_*_agent-a65bc65c005581c1d, 30 migrations applied on the baseline"
+      ],
+      [
+        "Fixtures",
+        "scripts/release-readiness/setup-local-issue-40.sh and setup-local-issue-69.sh (seed-local-mobile-e2e.sql, seed-local-quick-order-catalog.sql), PINs 1111 / 2222 / 3333"
+      ],
+      [
+        "Build",
+        "xcodebuild -workspace ios/Babytuna.xcworkspace -scheme Babytuna -configuration Release -sdk iphonesimulator from this worktree at 15:03 local on 2026-09-10 (after the 14:55 cut from 54f4912; this branch adds only docs), ad hoc signed, after npm ci, the four space-in-path quoting patches and pod install with LANG=en_US.UTF-8. The resumed verifier confirmed the installed bundle on the device matches this artifact by sha256 and reused it instead of rebuilding."
+      ],
+      [
+        "App identity",
+        "CFBundleDisplayName Smelter, CFBundleIdentifier com.babytuna.systems, CFBundleShortVersionString 2.3, CFBundleVersion 21, DTSDKName iphonesimulator26.2"
+      ],
+      [
+        "Embedded resources",
+        "scripts/verify-ios-release.py: PASS, Smelter identity, embedded JavaScript, valid update manifest and 43 bundled assets; EXConstants.bundle/app.config present; AppIcon60x60@2x.png is the silver Smelter mark"
+      ],
+      [
+        "Bundle",
+        "main.jsbundle sha256 de2ce880052a30ffc60c16d03e5f4463e0c9a7f222814744e36a864b9c3a381b, carries http://127.0.0.1:54621; scripts/prepare-ios-simulator-qa.py set EXUpdatesCheckOnLaunch NEVER on the simulator artifact only"
+      ],
+      [
+        "Verifier sessions",
+        "The first verifier session captured 00 to 74-10, 62-*, 70-*, 73-* and the route pass, then stopped on a rate limit. The resumed session reseeded the fixture, re-drove #74 (74-11 to 74-15), reran the drift probe and all checks, and wrote this page."
+      ]
+    ],
+    "prs": [
+      "#75 perf: ten repeated-request and rendering paths, persisted-write fix",
+      "#54 (#32) primitives, token consolidation, drift lint rule",
+      "#77 (#73 par units, #74 owner-scoped queue drain after auth restore, #59 complete-profile removed)",
+      "#78 (#70) send hardening against rehydrated carts with unresolved units",
+      "#76 (#61 draft route and store removed, #62 suspended users routed to app/suspended.tsx and kept signed in)",
+      "#79 (#36) settings and team sweep",
+      "#80 (#34) employee sweep",
+      "#83 (#33) auth sweep",
+      "#84 (#35) manager operations sweep",
+      "#82 (#38) copy sweep",
+      "#81 (#37) duplicated routes merged, drift zero, allowlist mechanism and lint:drift deleted"
+    ]
+  },
+  "issues": [
+    {
+      "number": 73,
+      "title": "Stock check reads par_level in pack units",
+      "fixed_in": "PR #77",
+      "verdict": "PASS",
+      "summary": "Sheet reads par 8 fillet; 6 case counted leaves 0 to order; stock_updates.new_quantity 60.",
+      "steps": [
+        "Signed in as E2E Employee (PIN 2222), opened Stock check, Open Fixture Freezer stock check.",
+        "Tapped Set stock for Fixture Salmon and read the subtitle.",
+        "Set the wheels to 6 case, tapped Done.",
+        "Queried stock_updates and area_items."
+      ],
+      "before": [
+        [
+          "e2e/issue-69/22-rerun-set-stock-6-case.png",
+          "Issue evidence: sheet at 6 case read par 8 case and NEED TO ORDER 2"
+        ],
+        [
+          "e2e/issue-69/23-rerun-salmon-counted.png",
+          "Issue evidence: 1 to order after counting 52 fillets over par"
+        ]
+      ],
+      "after": [
+        [
+          "app-store-2.3-proof/img/73-03-salmon-sheet-default.png",
+          "Sheet subtitle: par 8 fillet, 1 case is about 10 fillet"
+        ],
+        [
+          "app-store-2.3-proof/img/73-04-salmon-sheet-6-case.png",
+          "Wheels at 6 case"
+        ],
+        [
+          "app-store-2.3-proof/img/73-05-salmon-counted.png",
+          "1 of 2 checked, 0 to order"
+        ]
+      ],
+      "proof": [
+        {
+          "title": "Screen text (describe-ui)",
+          "text": "StaticText | par 8 fillet · 1 case ≈ 10 fillet\nStaticText | 0 to order\nButton | Edit stock for Fixture Salmon, current stock 6 case"
+        },
+        {
+          "title": "psql 73-01-salmon-6-case-write",
+          "text": "## 73-01-salmon-6-case-write\n\nRun at 2026-09-10T22:49:14Z against `supabase_db_agent-a65bc65c005581c1d` (FULL_STACK_PORT_BASE=54620).\n\n```sql\nselect area_item_id, new_quantity, previous_quantity, update_method, entry_mode, stock_check_session_id is not null as has_session, created_at\nfrom public.stock_updates order by created_at;\nselect ai.id, ii.name, ai.current_quantity, ai.unit_type, ai.par_level from public.area_items ai join public.inventory_items ii on ii.id = ai.inventory_item_id where ai.id = '48000000-0000-4000-8000-000000000001';\nselect id, status, items_checked, items_total from public.stock_check_sessions;\n```\n\n```\n             area_item_id             | new_quantity | previous_quantity |    update_method    | entry_mode | has_session |          created_at           \n--------------------------------------+--------------+-------------------+---------------------+------------+-------------+-------------------------------\n 48000000-0000-4000-8000-000000000001 |           60 |                 3 | stock_check_numeric | numeric    | t           | 2026-09-10 22:49:09.416566+00\n(1 row)\n\n                  id                  |      name      | current_quantity | unit_type | par_level \n--------------------------------------+----------------+------------------+-----------+-----------\n 48000000-0000-4000-8000-000000000001 | Fixture Salmon |               60 | fillet    |         8\n(1 row)\n\n                  id                  |   status    | items_checked | items_total \n--------------------------------------+-------------+---------------+-------------\n 0677ee87-be5c-4d33-a035-d3ff9b91db7b | in_progress |             1 |           3\n(1 row)\n```"
+        }
+      ]
+    },
+    {
+      "number": 74,
+      "title": "Stock-check queue drain at launch waits for the next stock screen",
+      "fixed_in": "PR #77 (owner-scoped drain after auth restore)",
+      "verdict": "FAIL",
+      "summary": "Queued offline count stays pending for 60 s after relaunch on the checklist and lands only when Stock check opens. Reproduced three times.",
+      "steps": [
+        "Counted an item online so a session existed (stock_updates row written).",
+        "docker stop supabase_kong_agent-a65bc65c005581c1d, counted again; the op was accepted and queued (pendingOps 1).",
+        "docker start the gateway, waited for /rest/v1/ 200, force quit and relaunched; stayed on the Checklist.",
+        "Queried stock_updates at 10 s, 30 s and 60 s and read the persisted queue from AsyncStorage.",
+        "Opened Stock check and queried again."
+      ],
+      "before": [
+        [
+          "e2e/issue-69/24-rerun-rice-offline-entry.png",
+          "Issue evidence: offline count entered"
+        ],
+        [
+          "e2e/issue-69/25-rerun-rice-offline-saved.png",
+          "Issue evidence: accepted with nothing written"
+        ],
+        [
+          "e2e/issue-69/26-rerun-after-reconnect.png",
+          "Issue evidence: flushed only on reopening the screen"
+        ]
+      ],
+      "after": [
+        [
+          "app-store-2.3-proof/img/74-12-resume-offline-nori-recounted.png",
+          "Offline recount of Fixture Nori accepted (3 case)"
+        ],
+        [
+          "app-store-2.3-proof/img/74-13-resume-relaunch-first-screen.png",
+          "Relaunch lands on the Checklist"
+        ],
+        [
+          "app-store-2.3-proof/img/74-14-resume-first-screen-after-60s.png",
+          "Still on the Checklist at 60 s: no row"
+        ],
+        [
+          "app-store-2.3-proof/img/74-15-resume-stock-screen-opened.png",
+          "Stock check opened: the row lands"
+        ],
+        [
+          "app-store-2.3-proof/img/74-04-still-on-first-screen-60s.png",
+          "First verifier run: same result at 60 s"
+        ],
+        [
+          "app-store-2.3-proof/img/74-09-second-relaunch-after-90s.png",
+          "First verifier second run: same result at 90 s"
+        ]
+      ],
+      "proof": [
+        {
+          "title": "Persisted queue (AsyncStorage stock-check-store-v1) at 10 s and 60 s after relaunch",
+          "text": "stock-check-store-v1 | pendingOps: 1 | syncError: None | lastSyncAt: 2026-09-11T03:12:04.074Z\n  op: {\"id\": \"stock-check-op-1789096340507-2\", \"kind\": \"count\", \"ownerUserId\": \"5c0f052e-3021-4560-aa89-b85b44f773f2\", \"areaItemId\": \"48000000-0000-4000-8000-000000000003\", \"quantity\": 150, \"createdAt\": \"2026-09-11T03:12:20.507Z\"}\n\nafter opening Stock check:\nstock-check-store-v1 | pendingOps: 0 | syncError: None | lastSyncAt: 2026-09-11T03:13:33.007Z"
+        },
+        {
+          "title": "psql 74-15-resume-60s-after-relaunch-no-stock-screen",
+          "text": "## 74-15-resume-60s-after-relaunch-no-stock-screen\n\nRun at 2026-09-11T03:13:32Z against `supabase_db_agent-a65bc65c005581c1d` (FULL_STACK_PORT_BASE=54620).\n\n```sql\nselect area_item_id, new_quantity, created_at from public.stock_updates order by created_at desc limit 3;\n```\n\n```\n             area_item_id             | new_quantity |          created_at           \n--------------------------------------+--------------+-------------------------------\n 48000000-0000-4000-8000-000000000003 |          100 | 2026-09-11 03:12:04.052385+00\n 48000000-0000-4000-8000-000000000003 |           50 | 2026-09-10 22:57:24.397431+00\n 48000000-0000-4000-8000-000000000002 |            4 | 2026-09-10 22:53:03.915502+00\n(3 rows)\n```"
+        },
+        {
+          "title": "psql 74-16-resume-after-opening-stock-screen",
+          "text": "## 74-16-resume-after-opening-stock-screen\n\nRun at 2026-09-11T03:13:41Z against `supabase_db_agent-a65bc65c005581c1d` (FULL_STACK_PORT_BASE=54620).\n\n```sql\nselect area_item_id, new_quantity, previous_quantity, created_at from public.stock_updates order by created_at desc limit 3;\n```\n\n```\n             area_item_id             | new_quantity | previous_quantity |          created_at           \n--------------------------------------+--------------+-------------------+-------------------------------\n 48000000-0000-4000-8000-000000000003 |          150 |               100 | 2026-09-11 03:13:32.988687+00\n 48000000-0000-4000-8000-000000000003 |           50 |                20 | 2026-09-10 22:57:24.397431+00\n 48000000-0000-4000-8000-000000000002 |            4 |                10 | 2026-09-10 22:53:03.915502+00\n(3 rows)\n```"
+        },
+        {
+          "title": "First verifier runs",
+          "text": "## 74-04-recheck-60s-after-relaunch\n\nRun at 2026-09-10T22:52:44Z against `supabase_db_agent-a65bc65c005581c1d` (FULL_STACK_PORT_BASE=54620).\n\n```sql\nselect area_item_id, new_quantity, created_at from public.stock_updates order by created_at;\n```\n\n```\n             area_item_id             | new_quantity |          created_at           \n--------------------------------------+--------------+-------------------------------\n 48000000-0000-4000-8000-000000000001 |           60 | 2026-09-10 22:49:09.416566+00\n(1 row)\n```\n\n## 74-05-after-opening-stock-screen\n\nRun at 2026-09-10T22:53:10Z against `supabase_db_agent-a65bc65c005581c1d` (FULL_STACK_PORT_BASE=54620).\n\n```sql\nselect area_item_id, new_quantity, previous_quantity, created_at from public.stock_updates order by created_at;\nselect ai.id, ii.name, ai.current_quantity from public.area_items ai join public.inventory_items ii on ii.id = ai.inventory_item_id where ai.area_id = '47000000-0000-4000-8000-000000000001' order by ai.shelf_sort_order;\n```\n\n```\n             area_item_id             | new_quantity | previous_quantity |          created_at           \n--------------------------------------+--------------+-------------------+-------------------------------\n 48000000-0000-4000-8000-000000000001 |           60 |                 3 | 2026-09-10 22:49:09.416566+00\n 48000000-0000-4000-8000-000000000002 |            4 |                10 | 2026-09-10 22:53:03.915502+00\n(2 rows)\n\n                  id                  |      name      | current_quantity \n--------------------------------------+----------------+------------------\n 48000000-0000-4000-8000-000000000001 | Fixture Salmon |               60\n 48000000-0000-4000-8000-000000000002 | Fixture Rice   |                4\n(2 rows)\n```\n\n## 74-06-second-run-90s-after-relaunch-no-stock-screen\n\nRun at 2026-09-10T22:56:51Z against `supabase_db_agent-a65bc65c005581c1d` (FULL_STACK_PORT_BASE=54620).\n\n```sql\nselect area_item_id, new_quantity, previous_quantity, created_at from public.stock_updates order by created_at;\n```\n\n```\n             area_item_id             | new_quantity | previous_quantity |          created_at           \n--------------------------------------+--------------+-------------------+-------------------------------\n 48000000-0000-4000-8000-000000000001 |           60 |                 3 | 2026-09-10 22:49:09.416566+00\n 48000000-0000-4000-8000-000000000002 |            4 |                10 | 2026-09-10 22:53:03.915502+00\n(2 rows)\n```"
+        }
+      ],
+      "notes": [
+        "What passes: the spurious auth error is gone (syncError stays null) and the queued op is stamped with its owner. What fails: the drain does not run at launch.",
+        "Pointer, not a diagnosis: registerStockQueueDrain and notifyStockQueueRehydrated are called from src/features/stock-check/useStockCheckStore.ts at module load. Outside src/features/stock-check only app/(tabs)/stock-check.tsx, stock-check-list.tsx and past-checks.tsx import that module (the other importers pull LocationSwitcherDropdown only), so on a launch that lands on the checklist the store module never evaluates, the gate never has a drain registered, and notifyAuthSessionRestored from authStore.ts has nothing to fire. src/__tests__ import the store directly, which is why the unit tests pass."
+      ]
+    },
+    {
+      "number": 70,
+      "title": "Advanced ordering error boundary after a rehydrated unfixed cart",
+      "fixed_in": "PR #78",
+      "verdict": "PASS",
+      "summary": "Second send after a force quit with an unresolved unit in the cart added the item; no error boundary.",
+      "steps": [
+        "Signed in as E2E Manager, opened Advanced ordering, sent 3 fixture salmon (parser asked for a unit, Order list 2 · 1 to fix).",
+        "Force quit, relaunched, reopened Advanced ordering: the cart rehydrated in the same state.",
+        "Tapped the composer, typed 4 packs of fixture nori, tapped Send."
+      ],
+      "before": [
+        [
+          "e2e/issue-40/09-quick-order-error-boundary.png",
+          "Issue evidence: Advanced ordering unavailable"
+        ]
+      ],
+      "after": [
+        [
+          "app-store-2.3-proof/img/70-01-sent-unresolved-unit.png",
+          "First send: Add a unit for Fixture Salmon"
+        ],
+        [
+          "app-store-2.3-proof/img/70-02-rehydrated-cart.png",
+          "After relaunch: cart rehydrated with the unresolved line"
+        ],
+        [
+          "app-store-2.3-proof/img/70-03-second-send-after-rehydrate.png",
+          "Second send: Added 4 packs of Fixture Nori"
+        ]
+      ],
+      "proof": [
+        {
+          "title": "Screen text after the second send (describe-ui)",
+          "text": "StaticText | 3 fixture salmon\nStaticText | Add a unit for Fixture Salmon. Available units: fillet or case.\nStaticText | 4 packs of fixture nori\nStaticText | Added 4 packs of Fixture Nori.\nStaticText | Order list\nButton | Choose unit for Fixture Salmon\n(no \"Advanced ordering unavailable\" node)"
+        }
+      ],
+      "notes": [
+        "The orchestrator expected an inline error for the unresolved line; what the build does is keep that line inline with its Add a unit message and parse the new message normally. Either way the boundary is not hit."
+      ]
+    },
+    {
+      "number": 59,
+      "title": "(auth)/complete-profile unreachable",
+      "fixed_in": "PR #77 (route removed)",
+      "verdict": "PASS",
+      "summary": "The route file is gone and the deep link no longer resolves, signed out and signed in.",
+      "steps": [
+        "Deep linked babytunasystems:///(auth)/complete-profile signed out and as E2E Employee.",
+        "git ls-files app src for complete-profile."
+      ],
+      "before": [
+        [
+          "e2e/issue-39/33-auth-complete-profile.png",
+          "Issue evidence: bare email sign-in landed on the checklist"
+        ],
+        [
+          "e2e/issue-39/35-auth-complete-profile-deeplink.png",
+          "Issue evidence: deep link redirected home"
+        ]
+      ],
+      "after": [
+        [
+          "e2e/routes-2.3/auth-complete-profile-removed.png",
+          "Signed out: Unmatched Route"
+        ],
+        [
+          "e2e/routes-2.3/emp-removed-auth-complete-profile.png",
+          "Signed in: Unmatched Route"
+        ]
+      ],
+      "proof": [
+        {
+          "title": "Repository",
+          "text": "$ git ls-files app src | grep -i complete-profile\n(no output)\n$ grep -rn \"complete-profile\" app src --include=*.ts --include=*.tsx | grep -v __tests__\n(no output)"
+        }
+      ]
+    },
+    {
+      "number": 61,
+      "title": "(tabs)/draft orphaned",
+      "fixed_in": "PR #76 (route and store removed)",
+      "verdict": "PASS",
+      "summary": "The route file and useDraftStore are gone; the deep link no longer resolves.",
+      "steps": [
+        "Deep linked babytunasystems:///(tabs)/draft as E2E Employee.",
+        "git ls-files and grep for the draft route and store."
+      ],
+      "before": [
+        [
+          "e2e/issue-39/18-tabs-draft.png",
+          "Issue evidence: permanent empty state"
+        ],
+        [
+          "e2e/issue-39/25-draft-cta-repro.png",
+          "Issue evidence: only the CTA worked"
+        ]
+      ],
+      "after": [
+        [
+          "e2e/routes-2.3/emp-removed-tabs-draft.png",
+          "Unmatched Route"
+        ]
+      ],
+      "proof": [
+        {
+          "title": "Repository",
+          "text": "$ git ls-files app src | grep -iE \"draft\"\nsrc/__tests__/supplierDraftHelpers.test.ts\nsrc/store/helpers/supplierDraftHelpers.ts   (fulfillment supplier drafts, unrelated)\n$ grep -rn useDraftStore app src\n(no output)"
+        }
+      ]
+    },
+    {
+      "number": 62,
+      "title": "app/suspended.tsx unreachable; suspension signs the user out",
+      "fixed_in": "PR #76",
+      "verdict": "PASS",
+      "summary": "A suspended stored session relaunches into Account Suspended and keeps its session; sign-in as a suspended user is refused inline.",
+      "steps": [
+        "Signed in as E2E Employee, then set profiles.is_suspended = true with psql.",
+        "Force quit and relaunched with the session stored.",
+        "Tapped Sign Out on the suspended screen.",
+        "Signed in again as E2E Employee / 2222.",
+        "Reset is_suspended = false."
+      ],
+      "before": [
+        [
+          "e2e/issue-39/40-suspended-relaunch.png",
+          "Issue evidence: relaunch signed the user out to Welcome"
+        ],
+        [
+          "e2e/issue-39/41-suspended-signin-attempt.png",
+          "Issue evidence: inline refusal"
+        ]
+      ],
+      "after": [
+        [
+          "app-store-2.3-proof/img/62-01-relaunch-suspended.png",
+          "Relaunch: Account Suspended with Sign Out (a session is required to reach this screen)"
+        ],
+        [
+          "app-store-2.3-proof/img/62-02-after-sign-out.png",
+          "Sign Out from the suspended screen returns to sign-in"
+        ],
+        [
+          "app-store-2.3-proof/img/62-03-sign-in-refused.png",
+          "Sign-in as the suspended user: This account is suspended. Ask the manager"
+        ],
+        [
+          "e2e/routes-2.3/auth-suspended-no-session.png",
+          "No session: /suspended redirects to Welcome"
+        ]
+      ],
+      "proof": [
+        {
+          "title": "psql 62-01-suspend-employee",
+          "text": "## 62-01-suspend-employee\n\nRun at 2026-09-10T22:57:34Z against `supabase_db_agent-a65bc65c005581c1d` (FULL_STACK_PORT_BASE=54620).\n\n```sql\nupdate public.profiles set is_suspended = true, suspended_at = now() where id = '5c0f052e-3021-4560-aa89-b85b44f773f2';\nselect id, email, is_suspended, suspended_at from public.profiles where id = '5c0f052e-3021-4560-aa89-b85b44f773f2';\n```\n\n```\nUPDATE 1\n                  id                  |           email           | is_suspended |         suspended_at          \n--------------------------------------+---------------------------+--------------+-------------------------------\n 5c0f052e-3021-4560-aa89-b85b44f773f2 | e2e.employee@smelter.test | t            | 2026-09-10 22:57:34.373964+00\n(1 row)\n```"
+        },
+        {
+          "title": "psql 62-02-unsuspend-employee",
+          "text": "## 62-02-unsuspend-employee\n\nRun at 2026-09-10T22:58:12Z against `supabase_db_agent-a65bc65c005581c1d` (FULL_STACK_PORT_BASE=54620).\n\n```sql\nupdate public.profiles set is_suspended = false, suspended_at = null where id = '5c0f052e-3021-4560-aa89-b85b44f773f2';\nselect id, email, is_suspended from public.profiles where id = '5c0f052e-3021-4560-aa89-b85b44f773f2';\n```\n\n```\nUPDATE 1\n                  id                  |           email           | is_suspended \n--------------------------------------+---------------------------+--------------\n 5c0f052e-3021-4560-aa89-b85b44f773f2 | e2e.employee@smelter.test | f\n(1 row)\n```"
+        },
+        {
+          "title": "Screen text (describe-ui)",
+          "text": "Heading | Account Suspended\nStaticText | Your account has been suspended. Contact your manager.\nButton | Sign Out\n\nsign-in: StaticText | This account is suspended. Ask the manager"
+        }
+      ]
+    },
+    {
+      "number": 32,
+      "title": "Primitives, tokens, drift lint rule",
+      "fixed_in": "PR #54, finished by #81",
+      "verdict": "PASS",
+      "summary": "smelter/no-design-drift runs at error severity inside npm run lint with no allowlist; a probe with a hex literal fails lint.",
+      "steps": [
+        "Wrote app/__drift_probe/probe.tsx with backgroundColor #ff0000 and borderRadius 13.",
+        "npx eslint app/__drift_probe/probe.tsx, then deleted the file.",
+        "grep eslint.config.js and package.json for the allowlist mechanism."
+      ],
+      "before": [],
+      "after": [],
+      "proof": [
+        {
+          "title": "Probe (resumed session)",
+          "text": "\napp/__drift_probe/probe.tsx\n  3:42  error  Hex colour \"#ff0000\". Import a colour from @/theme/tokens instead                     smelter/no-design-drift\n  3:53  error  Numeric borderRadius 13. Use radius from @/theme/tokens (pill, card, control, sheet)  smelter/no-design-drift\n\n✖ 2 problems (2 errors, 0 warnings)\n\neslint exit 1\n"
+        },
+        {
+          "title": "Mechanism",
+          "text": "$ grep -n 'DRIFT_ALLOWLIST\\|lint:drift\\|no-design-drift' eslint.config.js package.json\neslint.config.js:7:} = require('./eslint-rules/no-design-drift');\neslint.config.js:45:      'smelter/no-design-drift': 'error',\n$ ls eslint.drift.config.js\nNo such file or directory\n$ npm run lint\nexit 0"
+        }
+      ]
+    },
+    {
+      "number": 33,
+      "title": "Auth screens on the contract",
+      "fixed_in": "PR #83",
+      "verdict": "PASS",
+      "summary": "Welcome, sign-in, login, signup, secure, secure-pin rendered on the black auth surface with contract type and controls; drift zero in app/(auth).",
+      "steps": [
+        "Deep linked every auth route signed out, and the invite flow (join, invite-hello, secure, secure-pin) with a real token.",
+        "Compared against docs/mockups/ui-contract/index.html section 5 (auth surfaces stay black, one style)."
+      ],
+      "before": [
+        [
+          "e2e/03-sign-in-screen.png",
+          "September 5 sign-in"
+        ],
+        [
+          "e2e/issue-39/30-auth-legacy-login.png",
+          "September 5 legacy login"
+        ],
+        [
+          "e2e/root-legacy-signup.png",
+          "September 5 signup"
+        ],
+        [
+          "e2e/issue-39/02-auth-secure.png",
+          "September 5 secure chooser"
+        ]
+      ],
+      "after": [
+        [
+          "e2e/routes-2.3/auth-welcome.png",
+          "Welcome"
+        ],
+        [
+          "e2e/routes-2.3/auth-sign-in.png",
+          "Sign in"
+        ],
+        [
+          "e2e/routes-2.3/auth-login.png",
+          "Login"
+        ],
+        [
+          "e2e/routes-2.3/auth-signup.png",
+          "Signup"
+        ],
+        [
+          "e2e/routes-2.3/auth-secure.png",
+          "Secure"
+        ],
+        [
+          "e2e/routes-2.3/auth-secure-pin-entry.png",
+          "Secure PIN"
+        ]
+      ],
+      "proof": [
+        {
+          "title": "Lint",
+          "text": "npm run lint exit 0 with smelter/no-design-drift at error severity on app/(auth)/** and src/features/auth/**."
+        }
+      ]
+    },
+    {
+      "number": 34,
+      "title": "Employee screens on the contract",
+      "fixed_in": "PR #80",
+      "verdict": "PASS",
+      "summary": "Checklist, stock, past checks, history, orders, receive delivery, cart rendered with the floating pill TabBar and contract primitives; drift zero in app/(tabs).",
+      "steps": [
+        "Deep linked every (tabs) and settings route as E2E Employee.",
+        "Compared against the contract reference screens (section 5)."
+      ],
+      "before": [
+        [
+          "e2e/27-employee-checklist.png",
+          "September 5 checklist"
+        ],
+        [
+          "e2e/root-stock-home.png",
+          "September 5 stock home"
+        ],
+        [
+          "e2e/root-stock-list.png",
+          "September 5 stock list"
+        ],
+        [
+          "e2e/root-past-checks.png",
+          "September 5 past checks"
+        ],
+        [
+          "e2e/18-manager-receive-empty.png",
+          "September 5 receive delivery"
+        ]
+      ],
+      "after": [
+        [
+          "e2e/routes-2.3/emp-tabs-index.png",
+          "Checklist"
+        ],
+        [
+          "e2e/routes-2.3/emp-tabs-stock-check.png",
+          "Stock home"
+        ],
+        [
+          "e2e/routes-2.3/emp-tabs-stock-check-list.png",
+          "Stock list"
+        ],
+        [
+          "e2e/routes-2.3/emp-tabs-past-checks.png",
+          "Past checks"
+        ],
+        [
+          "e2e/routes-2.3/emp-tabs-receive-delivery.png",
+          "Receive delivery"
+        ],
+        [
+          "e2e/routes-2.3/emp-tabs-cart.png",
+          "Cart"
+        ],
+        [
+          "e2e/routes-2.3/emp-tabs-history.png",
+          "Past orders"
+        ]
+      ],
+      "proof": [
+        {
+          "title": "Lint",
+          "text": "npm run lint exit 0 with smelter/no-design-drift at error severity on app/(tabs)/** and the employee feature folders."
+        }
+      ]
+    },
+    {
+      "number": 35,
+      "title": "Manager operations screens on the contract",
+      "fixed_in": "PR #84",
+      "verdict": "PASS",
+      "summary": "Home, fulfillment, orders, inventory, browse, quick order, confirmation, export rendered with contract Button variants; drift zero in app/(manager).",
+      "steps": [
+        "Deep linked every (manager) route as E2E Manager, including Send All, confirmation and export with a valid payload."
+      ],
+      "before": [
+        [
+          "e2e/20-manager-home.png",
+          "September 5 manager home"
+        ],
+        [
+          "e2e/22-manager-fulfillment.png",
+          "September 5 fulfillment"
+        ],
+        [
+          "e2e/root-manager-inventory.png",
+          "September 5 inventory"
+        ],
+        [
+          "e2e/root-manager-browse.png",
+          "September 5 browse"
+        ],
+        [
+          "e2e/issue-39/50-manager-quick-order.png",
+          "September 5 quick order"
+        ],
+        [
+          "e2e/issue-39/58-manager-fulfillment-confirmation.png",
+          "September 5 confirmation"
+        ]
+      ],
+      "after": [
+        [
+          "e2e/routes-2.3/mgr-index.png",
+          "Manager home"
+        ],
+        [
+          "e2e/routes-2.3/mgr-fulfillment.png",
+          "Fulfillment"
+        ],
+        [
+          "e2e/routes-2.3/mgr-inventory.png",
+          "Inventory"
+        ],
+        [
+          "e2e/routes-2.3/mgr-browse.png",
+          "Browse"
+        ],
+        [
+          "e2e/routes-2.3/mgr-quick-order.png",
+          "Quick order"
+        ],
+        [
+          "e2e/routes-2.3/mgr-fulfillment-confirmation.png",
+          "Confirmation"
+        ],
+        [
+          "e2e/routes-2.3/mgr-orders.png",
+          "Orders"
+        ]
+      ],
+      "proof": [
+        {
+          "title": "Lint",
+          "text": "npm run lint exit 0 with smelter/no-design-drift at error severity on app/(manager)/** and the ordering, fulfillment and inventory feature folders."
+        }
+      ],
+      "notes": [
+        "Two P1s from the Sol review of #84 were deferred to NEEDS-DAVID (legacy theme module still imported by 73 files; not flagged by the literal-only drift rule)."
+      ]
+    },
+    {
+      "number": 36,
+      "title": "Settings and team screens on the contract",
+      "fixed_in": "PR #79",
+      "verdict": "PASS",
+      "summary": "Both profiles, notifications, reminders, display, stock settings, quick search, about, team, invite, link, member, preview, defaults, access codes, supplier contacts, export format, quick order config, user management rendered on the contract.",
+      "steps": [
+        "Deep linked every app/settings route as E2E Employee and every manager-settings route as E2E Manager."
+      ],
+      "before": [
+        [
+          "e2e/root-manager-team.png",
+          "September 5 team"
+        ],
+        [
+          "e2e/root-notifications.png",
+          "September 5 notifications"
+        ],
+        [
+          "e2e/root-manager-supplier-contacts.png",
+          "September 5 supplier contacts"
+        ],
+        [
+          "e2e/root-manager-team-invite.png",
+          "September 5 invite"
+        ],
+        [
+          "e2e/root-reminders.png",
+          "September 5 reminders"
+        ]
+      ],
+      "after": [
+        [
+          "e2e/routes-2.3/mgr-settings-team.png",
+          "Team"
+        ],
+        [
+          "e2e/routes-2.3/emp-settings-notifications.png",
+          "Notifications"
+        ],
+        [
+          "e2e/routes-2.3/mgr-settings-supplier-contacts.png",
+          "Supplier contacts"
+        ],
+        [
+          "e2e/routes-2.3/mgr-settings-team-invite.png",
+          "Invite"
+        ],
+        [
+          "e2e/routes-2.3/emp-settings-reminders.png",
+          "Reminders"
+        ],
+        [
+          "e2e/routes-2.3/mgr-settings-profile.png",
+          "Manager profile"
+        ]
+      ],
+      "proof": [
+        {
+          "title": "Lint",
+          "text": "npm run lint exit 0 with smelter/no-design-drift at error severity on app/settings/**, app/(manager)/manager-settings/** and the settings and team feature folders."
+        }
+      ]
+    },
+    {
+      "number": 37,
+      "title": "Duplicated (tabs) and (manager) route files merged",
+      "fixed_in": "PR #81",
+      "verdict": "PASS",
+      "summary": "All twelve deep links still resolve; the pairs with identical behaviour are one-line wrappers; drift zero with the allowlist deleted.",
+      "steps": [
+        "Deep linked all twelve routes for the matching role.",
+        "wc -l on the twelve route files."
+      ],
+      "before": [],
+      "after": [
+        [
+          "e2e/routes-2.3/emp-tabs-cart.png",
+          "(tabs)/cart"
+        ],
+        [
+          "e2e/routes-2.3/mgr-cart.png",
+          "(manager)/cart"
+        ],
+        [
+          "e2e/routes-2.3/emp-tabs-index.png",
+          "(tabs)/index"
+        ],
+        [
+          "e2e/routes-2.3/mgr-index.png",
+          "(manager)/index"
+        ],
+        [
+          "e2e/routes-2.3/emp-tabs-orders.png",
+          "(tabs)/orders"
+        ],
+        [
+          "e2e/routes-2.3/mgr-orders.png",
+          "(manager)/orders"
+        ],
+        [
+          "e2e/routes-2.3/emp-tabs-profile.png",
+          "(tabs)/profile"
+        ],
+        [
+          "e2e/routes-2.3/mgr-profile.png",
+          "(manager)/profile"
+        ],
+        [
+          "e2e/routes-2.3/emp-tabs-quick-order.png",
+          "(tabs)/quick-order"
+        ],
+        [
+          "e2e/routes-2.3/mgr-quick-order.png",
+          "(manager)/quick-order"
+        ],
+        [
+          "e2e/routes-2.3/emp-tabs-voice.png",
+          "(tabs)/voice"
+        ],
+        [
+          "e2e/routes-2.3/mgr-voice.png",
+          "(manager)/voice"
+        ]
+      ],
+      "proof": [
+        {
+          "title": "Route files",
+          "text": "$ wc -l app/(tabs)/{cart,index,orders,profile,quick-order,voice}.tsx app/(manager)/{cart,index,orders,profile,quick-order,voice}.tsx\n 7 (tabs)/cart 7 (manager)/cart | 28 (tabs)/index 6 (manager)/index | 1 (tabs)/orders 389 (manager)/orders | 6 (tabs)/profile 148 (manager)/profile | 9 (tabs)/quick-order 9 (manager)/quick-order | 9 (tabs)/voice 9 (manager)/voice\ncart, quick-order and voice are thin wrappers over one feature screen; index, orders and profile differ by role and stay separate, as the PR states."
+        }
+      ]
+    },
+    {
+      "number": 38,
+      "title": "Copy sweep for em-dashes and emoji",
+      "fixed_in": "PR #82",
+      "verdict": "PARTIAL",
+      "summary": "No user-facing em-dashes remain (30 hits are all comments or console strings). Category icon emoji remain by the stated carve-out in PR #82 and need a decision.",
+      "steps": [
+        "grep app and src (non-test) for U+2014 and emoji code points, excluding comment lines.",
+        "Classified every remaining hit."
+      ],
+      "before": [],
+      "after": [
+        [
+          "e2e/routes-2.3/mgr-quick-order.png",
+          "Quick Order welcome card copy"
+        ],
+        [
+          "e2e/routes-2.3/emp-settings-profile.png",
+          "Employee profile copy"
+        ],
+        [
+          "e2e/routes-2.3/mgr-inventory.png",
+          "Inventory: category emoji still rendered"
+        ]
+      ],
+      "proof": [
+        {
+          "title": "grep",
+          "text": "$ grep -rn -P '\\x{2014}' app src --include=*.ts --include=*.tsx | grep -v __tests__ | grep -vE ':\\s*(//|\\*|/\\*)' | wc -l\n30   all inside {/* */} JSX comments, // comments, or two console.log/console.warn strings (fulfillment-confirmation.tsx:2630, services/employeeReminders.ts:287)\n$ grep -rn -P '[\\x{1F300}-\\x{1FAFF}\\x{2600}-\\x{27BF}]' app src ... | wc -l\n42   all in CATEGORY_EMOJI / ADD_EMOJIS maps and their render sites in app/(manager)/inventory.tsx, src/features/ordering/QuickSearchScreenView.tsx, src/features/inventory/ManagerInventoryRow.tsx, plus two station icons in src/services/seedStations.ts"
+        }
+      ],
+      "notes": [
+        "PR #82 states the carve-out: the category emoji are the only icon for those categories and removing them is a restyle decision. That is a David decision, so this card is PARTIAL rather than PASS or FAIL."
+      ]
+    }
+  ],
+  "drift": {
+    "before": "3266 violations across 156 files at the start of the sweeps (orchestrator figure; PR #54 recorded 3334 across 157 when the rule was widened, 819 across 115 before that), all hidden from npm run lint by DRIFT_ALLOWLIST and surfaced only by npm run lint:drift.",
+    "after": "0. npm run lint exits 0 with smelter/no-design-drift at error severity on all of app/** and src/**, no allowlist.",
+    "mechanism": "DRIFT_ALLOWLIST, eslint.drift.config.js and the lint:drift script were deleted in #81 (a search for DRIFT_ALLOWLIST or lint:drift in eslint.config.js and package.json finds nothing). Exemptions that remain by design: src/theme/**, src/components/ui/**, the two modal and spinner hosts, src/__tests__/**.",
+    "probe": "Temporary file app/__drift_probe/probe.tsx containing backgroundColor: '#ff0000' and borderRadius: 13, run with npx eslint, then deleted:\n\n/Users/david/Babytuna Systems/smelter/.claude/worktrees/agent-a65bc65c005581c1d/app/__drift_probe/probe.tsx\n  3:42  error  Hex colour \"#ff0000\". Import a colour from @/theme/tokens instead                     smelter/no-design-drift\n  3:53  error  Numeric borderRadius 13. Use radius from @/theme/tokens (pill, card, control, sheet)  smelter/no-design-drift\n\n✖ 2 problems (2 errors, 0 warnings)\n\neslint exit 1\n"
+  },
+  "route_note": "93 captures in docs/release-readiness/e2e/routes-2.3 from three deep-link sweeps (signed out, E2E Employee, E2E Manager) plus the invite, fulfillment and #62 flows. Every one of the 70 live routes has at least one capture from this build; Partial means the default state rendered and nothing more is claimed. (auth)/ready advanced before its capture and (auth)/secure-password was not re-driven; both keep their #39 evidence. Status counts are in the table.",
+  "route_sheet": [
+    {
+      "path": "e2e/routes-2.3/auth-complete-profile-removed.png",
+      "caption": "auth-complete-profile-removed"
+    },
+    {
+      "path": "e2e/routes-2.3/auth-join-missing-token.png",
+      "caption": "auth-join-missing-token"
+    },
+    {
+      "path": "e2e/routes-2.3/auth-join-valid-token-invite-hello.png",
+      "caption": "auth-join-valid-token-invite-hello"
+    },
+    {
+      "path": "e2e/routes-2.3/auth-login.png",
+      "caption": "auth-login"
+    },
+    {
+      "path": "e2e/routes-2.3/auth-ready-entered-app-profile.png",
+      "caption": "auth-ready-entered-app-profile"
+    },
+    {
+      "path": "e2e/routes-2.3/auth-ready-entered-app.png",
+      "caption": "auth-ready-entered-app"
+    },
+    {
+      "path": "e2e/routes-2.3/auth-ready.png",
+      "caption": "auth-ready"
+    },
+    {
+      "path": "e2e/routes-2.3/auth-root-index.png",
+      "caption": "auth-root-index"
+    },
+    {
+      "path": "e2e/routes-2.3/auth-secure-no-invite.png",
+      "caption": "auth-secure-no-invite"
+    },
+    {
+      "path": "e2e/routes-2.3/auth-secure-pin-confirm.png",
+      "caption": "auth-secure-pin-confirm"
+    },
+    {
+      "path": "e2e/routes-2.3/auth-secure-pin-entry.png",
+      "caption": "auth-secure-pin-entry"
+    },
+    {
+      "path": "e2e/routes-2.3/auth-secure.png",
+      "caption": "auth-secure"
+    },
+    {
+      "path": "e2e/routes-2.3/auth-sign-in.png",
+      "caption": "auth-sign-in"
+    },
+    {
+      "path": "e2e/routes-2.3/auth-signup.png",
+      "caption": "auth-signup"
+    },
+    {
+      "path": "e2e/routes-2.3/auth-suspended-no-session.png",
+      "caption": "auth-suspended-no-session"
+    },
+    {
+      "path": "e2e/routes-2.3/auth-welcome.png",
+      "caption": "auth-welcome"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-manager-guard-fulfillment.png",
+      "caption": "emp-manager-guard-fulfillment"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-orders-history.png",
+      "caption": "emp-orders-history"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-orders-id.png",
+      "caption": "emp-orders-id"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-removed-auth-complete-profile.png",
+      "caption": "emp-removed-auth-complete-profile"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-removed-tabs-draft.png",
+      "caption": "emp-removed-tabs-draft"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-root-index.png",
+      "caption": "emp-root-index"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-root-inventory-browse.png",
+      "caption": "emp-root-inventory-browse"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-settings-about-support.png",
+      "caption": "emp-settings-about-support"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-settings-display-accessibility.png",
+      "caption": "emp-settings-display-accessibility"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-settings-notifications-debug.png",
+      "caption": "emp-settings-notifications-debug"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-settings-notifications.png",
+      "caption": "emp-settings-notifications"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-settings-profile.png",
+      "caption": "emp-settings-profile"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-settings-quick-search.png",
+      "caption": "emp-settings-quick-search"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-settings-reminders.png",
+      "caption": "emp-settings-reminders"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-settings-stock-settings.png",
+      "caption": "emp-settings-stock-settings"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-suspended-with-active-session.png",
+      "caption": "emp-suspended-with-active-session"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-tabs-cart.png",
+      "caption": "emp-tabs-cart"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-tabs-history.png",
+      "caption": "emp-tabs-history"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-tabs-index.png",
+      "caption": "emp-tabs-index"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-tabs-inventory-browse.png",
+      "caption": "emp-tabs-inventory-browse"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-tabs-orders.png",
+      "caption": "emp-tabs-orders"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-tabs-past-checks.png",
+      "caption": "emp-tabs-past-checks"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-tabs-profile.png",
+      "caption": "emp-tabs-profile"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-tabs-quick-order.png",
+      "caption": "emp-tabs-quick-order"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-tabs-receive-delivery.png",
+      "caption": "emp-tabs-receive-delivery"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-tabs-settings.png",
+      "caption": "emp-tabs-settings"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-tabs-simple-order.png",
+      "caption": "emp-tabs-simple-order"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-tabs-stock-check-list.png",
+      "caption": "emp-tabs-stock-check-list"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-tabs-stock-check.png",
+      "caption": "emp-tabs-stock-check"
+    },
+    {
+      "path": "e2e/routes-2.3/emp-tabs-voice.png",
+      "caption": "emp-tabs-voice"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-browse.png",
+      "caption": "mgr-browse"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-cart.png",
+      "caption": "mgr-cart"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-employee-reminders-delivery.png",
+      "caption": "mgr-employee-reminders-delivery"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-employee-reminders-recurring.png",
+      "caption": "mgr-employee-reminders-recurring"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-employee-reminders-settings.png",
+      "caption": "mgr-employee-reminders-settings"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-employee-reminders.png",
+      "caption": "mgr-employee-reminders"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-export-fish-order-missing.png",
+      "caption": "mgr-export-fish-order-missing"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-export-fish-order-valid.png",
+      "caption": "mgr-export-fish-order-valid"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-fulfillment-confirmation-after-finalize.png",
+      "caption": "mgr-fulfillment-confirmation-after-finalize"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-fulfillment-confirmation.png",
+      "caption": "mgr-fulfillment-confirmation"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-fulfillment-history-detail.png",
+      "caption": "mgr-fulfillment-history-detail"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-fulfillment-history.png",
+      "caption": "mgr-fulfillment-history"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-fulfillment-send-all-after-copy.png",
+      "caption": "mgr-fulfillment-send-all-after-copy"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-fulfillment-send-all.png",
+      "caption": "mgr-fulfillment-send-all"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-fulfillment.png",
+      "caption": "mgr-fulfillment"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-index.png",
+      "caption": "mgr-index"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-inventory.png",
+      "caption": "mgr-inventory"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-orders-id.png",
+      "caption": "mgr-orders-id"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-orders-pending.png",
+      "caption": "mgr-orders-pending"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-orders.png",
+      "caption": "mgr-orders"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-past-orders-index.png",
+      "caption": "mgr-past-orders-index"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-profile.png",
+      "caption": "mgr-profile"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-quick-order.png",
+      "caption": "mgr-quick-order"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-root-index.png",
+      "caption": "mgr-root-index"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-settings-access-codes.png",
+      "caption": "mgr-settings-access-codes"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-settings-export-format.png",
+      "caption": "mgr-settings-export-format"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-settings-profile.png",
+      "caption": "mgr-settings-profile"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-settings-quick-order-config.png",
+      "caption": "mgr-settings-quick-order-config"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-settings-supplier-contacts.png",
+      "caption": "mgr-settings-supplier-contacts"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-settings-team-defaults.png",
+      "caption": "mgr-settings-team-defaults"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-settings-team-invite-link-missing.png",
+      "caption": "mgr-settings-team-invite-link-missing"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-settings-team-invite-link.png",
+      "caption": "mgr-settings-team-invite-link"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-settings-team-invite.png",
+      "caption": "mgr-settings-team-invite"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-settings-team-member.png",
+      "caption": "mgr-settings-team-member"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-settings-team-preview.png",
+      "caption": "mgr-settings-team-preview"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-settings-team.png",
+      "caption": "mgr-settings-team"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-settings-user-management.png",
+      "caption": "mgr-settings-user-management"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-tabs-cart.png",
+      "caption": "mgr-tabs-cart"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-tabs-history.png",
+      "caption": "mgr-tabs-history"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-tabs-inventory-browse.png",
+      "caption": "mgr-tabs-inventory-browse"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-tabs-profile.png",
+      "caption": "mgr-tabs-profile"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-tabs-quick-order.png",
+      "caption": "mgr-tabs-quick-order"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-tabs-receive-delivery.png",
+      "caption": "mgr-tabs-receive-delivery"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-tabs-settings.png",
+      "caption": "mgr-tabs-settings"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-tabs-simple-order.png",
+      "caption": "mgr-tabs-simple-order"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-tabs-stock-check.png",
+      "caption": "mgr-tabs-stock-check"
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-voice.png",
+      "caption": "mgr-voice"
+    }
+  ],
+  "commands": [
+    {
+      "command": "npm run typecheck",
+      "result": "PASS",
+      "detail": "tsc --noEmit exit 0 (resumed session, 2026-09-11)."
+    },
+    {
+      "command": "npm run lint",
+      "result": "PASS",
+      "detail": "eslint . --max-warnings 0 exit 0; smelter/no-design-drift at error severity, no allowlist."
+    },
+    {
+      "command": "npm run test:ci",
+      "result": "PASS",
+      "detail": "jest --runInBand --watchman=false: 89 suites passed, 1 skipped; 1247 tests passed, 1 skipped; exit 0."
+    },
+    {
+      "command": "npm run verify:submit-order-rpc",
+      "result": "PASS",
+      "detail": "Against http://127.0.0.1:54621 with the local publishable key from .env.local: submit_order_rpc 8-parameter contract resolved and rejected the unauthenticated probe (401, 42501). Exit 0. Does not verify order submission."
+    },
+    {
+      "command": "npx eslint app/__drift_probe/probe.tsx (temporary probe)",
+      "result": "PASS",
+      "detail": "2 smelter/no-design-drift errors (hex colour, numeric borderRadius), exit 1 as required; the probe was deleted and git status is clean under app/."
+    },
+    {
+      "command": "FULL_STACK_PORT_BASE=54620 scripts/local-db/full-stack.sh up",
+      "result": "PASS",
+      "detail": "PASS: schema loaded (30 migrations). /rest/v1/ returned 200 with the local publishable key. Brought down at the end of the pass."
+    },
+    {
+      "command": "FULL_STACK_PORT_BASE=54620 scripts/release-readiness/setup-local-issue-40.sh; setup-local-issue-69.sh",
+      "result": "PASS",
+      "detail": "PASS: issue #40 fixture ready; PASS: issue #69 fixture ready, rerun before the resumed #74 check. manager c49977c9, employee 5c0f052e, employee two 634a23a3; four area_items rows confirmed (psql 00b-fixture-reseed-before-resume)."
+    },
+    {
+      "command": "xcodebuild ... -configuration Release -sdk iphonesimulator build",
+      "result": "PASS",
+      "detail": "exit 0 at 15:03 local on 2026-09-10 from this worktree. scripts/verify-ios-release.py PASS (43 bundled assets). scripts/prepare-ios-simulator-qa.py PASS. Installed bundle sha256 de2ce880 matched on the device before the resumed run."
+    },
+    {
+      "command": "docker stop / start supabase_kong_agent-a65bc65c005581c1d",
+      "result": "PASS",
+      "detail": "Offline steps for #74; /rest/v1/ returned 200 again at 03:12:28Z before the relaunch."
+    }
+  ],
+  "needs_david": "# NEEDS-DAVID (App Store 2.3, updated 2026-09-10 by the orchestrator)\n\nItems only David can decide or run. Each has a recommended default.\n\n## #47 production build, TestFlight, device session\n- Prepared, not run: docs/release/production-build.md (eas build and eas submit commands, archive checks) and docs/release/device-session.md (tap-by-tap script) are written by the #49 verifier. David runs the EAS production build and submit.\n\n## The 27 CONFIRM items for App Store Connect\n- docs/release/app-store-connect.md, section \"Every CONFIRM in one list\". #47 depends on them.\n\n## #41 recognition audit\n- No production manager credential exists in repo fixtures, `eas env:list --environment production` (only EXPO_PUBLIC_SUPABASE_URL, _ANON_KEY, _PUBLISHABLE_KEY), or the gitignored .env (URL and anon key only).\n- The audit test (src/__tests__/quickOrderInventoryAudit.test.ts) accepts only a publishable key (sees zero rows under RLS) or SUPABASE_SERVICE_ROLE_KEY (forbidden by decision).\n- Needs: a manager sign-in path in the audit (email + password env) and a production manager credential from David. Issue stays open.\n\n## Branch cleanup candidates (list only, never deleted)\nMerged issue/* branches (PR merged): issue/39-e2e-unexercised-routes (#64), issue/40-e2e-mutations (#71), issue/41-recognition-audit (#66), issue/42-delete-cap-tests (#51), issue/43-lint-warnings-zero (#55), issue/44-npm-audit-mitigations (#56), issue/45-push-token-ownership (#52), issue/48-app-store-metadata (#53), issue/57-agents-sim-udid (#58), issue/60-send-all-params (#68), issue/63-local-service-role-grants (#65), issue/69-stock-count-persistence (#72). That is 12 (the audit said 13; main is the 13th merged ref).\nMerged worktree-agent-* branches (no PR, fully contained in origin/main): a150b1288d97dfe69, a38bd304d03312798, a435d3a57e1a702d9, a47d23a5e5a33db74, a6631a0d491399755, a6f435030f056b4a5, a76e7e61d2b3beef8, a7a8ff6087fa45247, a7dd68c5aa431b847, a84a350a8bd3bfed3, a9d910f9e9e877e1d, aaf060bbad27fa15a, acddc5b5f05ece8cc (13).\nExcluded: this session's worker branches (worktree-agent-a283a281d875b650e, a2d2d2da61d897b8d, a892664a2b6ae35c2, ade16153dd8754d14), issue/32-ui-primitives (#54 open), perf/ten-high-impact-improvements (#75 open), integration/app-store-2.3.\nCommand per branch: git branch -d <name> (falls back to -D only for squash-merged ones after confirming the PR shows merged).\n\n## 27 CONFIRM items\ndocs/release/app-store-connect.md, section \"Every CONFIRM in one list\" (line 473).\n\n## Stock RPCs and suspended accounts (from Sol's #76 review)\n- startOrResumeStockCheck, recordStockCheckCount and completeStockCheck are SECURITY DEFINER and check only for an authenticated owner, not profiles.is_suspended (supabase/migrations/20260812170000_stock_check_v2.sql). The app side is fixed in #76 (suspended sessions no longer trigger the queue drain), but a suspended account with a valid JWT could still call the RPCs directly.\n- Recommended default: a follow-up migration that raises when the caller's profile is suspended, after 2.3 ships. Not done in this milestone because migrations need David's go.\n\n## Legacy theme module still imported (from Sol's #35 and #37 reviews)\n- After all four sweeps and #37, 73 files under app/ and src/ still import @/theme/design or src/constants/theme (the deprecated token set), including BottomSheetShell. The drift rule does not flag identifier imports, only literals. Deleting design.ts was planned \"when the last import goes\"; it did not go in 2.3.\n- Recommended default: open a 2.4 issue \"Migrate the remaining design.ts importers to src/theme/tokens and delete the shim\", Sonnet, mechanical, one PR per area.\n\n## #67 local baseline grants\n- Deferred past 2.3 by decision. Issue stays open.\n"
+}

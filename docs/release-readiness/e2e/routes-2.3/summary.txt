@@ -1,0 +1,489 @@
+== auth-welcome  <- babytunasystems:///(auth)/welcome
+Detected file type 'PNG' from extension
+Wrote screenshot to: /Users/david/Babytuna Systems/smelter/.claude/worktrees/agent-a65bc65c005581c1d/docs/release-readiness/e2e/routes-2.3/auth-welcome.png
+Application | Smelter |  | c=(220,478) w=440 h=956
+Button | I have an invite link |  | c=(220,487) w=408 h=50
+Button | Sign in |  | c=(220,549) w=408 h=50
+Link | Terms of service |  | c=(165,892) w=48.33332824707031 h=44
+== auth-sign-in  <- babytunasystems:///(auth)/sign-in
+Detected file type 'PNG' from extension
+Wrote screenshot to: /Users/david/Babytuna Systems/smelter/.claude/worktrees/agent-a65bc65c005581c1d/docs/release-readiness/e2e/routes-2.3/auth-sign-in.png
+Application | Smelter |  | c=(220,478) w=440 h=956
+Heading | Sign in |  | c=(220,126) w=408 h=33.66667175292969
+Heading | Sign in |  | c=(220,126) w=408 h=33.66667175292969
+Heading | NAME |  | c=(220,180) w=408 h=13.333335876464844
+== auth-login  <- babytunasystems:///(auth)/login
+Detected file type 'PNG' from extension
+Wrote screenshot to: /Users/david/Babytuna Systems/smelter/.claude/worktrees/agent-a65bc65c005581c1d/docs/release-readiness/e2e/routes-2.3/auth-login.png
+Application | Smelter |  | c=(220,478) w=440 h=956
+Heading | Welcome Back |  | c=(220,182) w=408 h=33.66667175292969
+Heading | Welcome Back |  | c=(220,182) w=408 h=33.66667175292969
+Heading | EMAIL |  | c=(220,236) w=408 h=13.333328247070312
+== auth-signup  <- babytunasystems:///(auth)/signup
+Detected file type 'PNG' from extension
+Wrote screenshot to: /Users/david/Babytuna Systems/smelter/.claude/worktrees/agent-a65bc65c005581c1d/docs/release-readiness/e2e/routes-2.3/auth-signup.png
+Application | Smelter |  | c=(220,478) w=440 h=956
+Heading | Create Account |  | c=(220,182) w=408 h=33.66667175292969
+Heading | Create Account |  | c=(220,182) w=408 h=33.66667175292969
+Heading | FULL NAME |  | c=(220,236) w=408 h=13.333328247070312
+== auth-join-missing-token  <- babytunasystems:///join
+Detected file type 'PNG' from extension
+Wrote screenshot to: /Users/david/Babytuna Systems/smelter/.claude/worktrees/agent-a65bc65c005581c1d/docs/release-readiness/e2e/routes-2.3/auth-join-missing-token.png
+Application | Smelter |  | c=(220,478) w=440 h=956
+Button | I have an invite link |  | c=(220,487) w=408 h=50
+Button | Sign in |  | c=(220,549) w=408 h=50
+Link | Terms of service |  | c=(165,892) w=48.33332824707031 h=44
+== auth-suspended-no-session  <- babytunasystems:///suspended
+Detected file type 'PNG' from extension
+Wrote screenshot to: /Users/david/Babytuna Systems/smelter/.claude/worktrees/agent-a65bc65c005581c1d/docs/release-readiness/e2e/routes-2.3/auth-suspended-no-session.png
+Application | Smelter |  | c=(220,478) w=440 h=956
+Heading | Welcome Back |  | c=(220,182) w=408 h=33.66667175292969
+Heading | Welcome Back |  | c=(220,182) w=408 h=33.66667175292969
+Heading | EMAIL |  | c=(220,236) w=408 h=13.333328247070312
+== auth-complete-profile-removed  <- babytunasystems:///(auth)/complete-profile
+Detected file type 'PNG' from extension
+Wrote screenshot to: /Users/david/Babytuna Systems/smelter/.claude/worktrees/agent-a65bc65c005581c1d/docs/release-readiness/e2e/routes-2.3/auth-complete-profile-removed.png
+Application | Smelter |  | c=(220,478) w=440 h=956
+Heading | Unmatched Route |  | c=(220,491) w=392 h=112.00003051757812
+Heading | Unmatched Route |  | c=(220,491) w=392 h=112.00003051757812
+Heading | Page could not be found. |  | c=(220,572) w=342.66668701171875 h=40.6666259765625
+== auth-secure-no-invite  <- babytunasystems:///(auth)/secure
+Detected file type 'PNG' from extension
+Wrote screenshot to: /Users/david/Babytuna Systems/smelter/.claude/worktrees/agent-a65bc65c005581c1d/docs/release-readiness/e2e/routes-2.3/auth-secure-no-invite.png
+Application | Smelter |  | c=(220,478) w=440 h=956
+Button | I have an invite link |  | c=(220,487) w=408 h=50
+Button | Sign in |  | c=(220,549) w=408 h=50
+Link | Terms of service |  | c=(165,892) w=48.33332824707031 h=44
+== auth-root-index  <- babytunasystems:///
+Detected file type 'PNG' from extension
+Wrote screenshot to: /Users/david/Babytuna Systems/smelter/.claude/worktrees/agent-a65bc65c005581c1d/docs/release-readiness/e2e/routes-2.3/auth-root-index.png
+Application | Smelter |  | c=(220,478) w=440 h=956
+Button | I have an invite link |  | c=(220,487) w=408 h=50
+Button | Sign in |  | c=(220,549) w=408 h=50
+Link | Terms of service |  | c=(165,892) w=48.33332824707031 h=44
+== emp-tabs-index  <- babytunasystems:///(tabs)
+Heading | Checklist |  | c=(142,84) w=249.66665649414062 h=33.666664123535156
+Heading | Checklist |  | c=(142,84) w=249.66665649414062 h=33.666664123535156
+Button | Location: Fixture Sushi. Change location |  | c=(350,84) w=142.33334350585938 h=31.666664123535156
+StaticText | FISH & SEAFOOD |  | c=(220,142) w=404 h=14.333343505859375
+StaticText | FISH & SEAFOOD |  | c=(220,142) w=404 h=14.333343505859375
+== emp-tabs-simple-order  <- babytunasystems:///(tabs)/simple-order
+Heading | Checklist |  | c=(142,84) w=249.66665649414062 h=33.666664123535156
+Heading | Checklist |  | c=(142,84) w=249.66665649414062 h=33.666664123535156
+Button | Location: Fixture Sushi. Change location |  | c=(350,84) w=142.33334350585938 h=31.666664123535156
+StaticText | FISH & SEAFOOD |  | c=(220,142) w=404 h=14.333343505859375
+StaticText | FISH & SEAFOOD |  | c=(220,142) w=404 h=14.333343505859375
+== emp-tabs-quick-order  <- babytunasystems:///(tabs)/quick-order
+Heading | Advanced ordering |  | c=(220,82) w=408 h=33.666664123535156
+Heading | Advanced ordering |  | c=(220,82) w=408 h=33.666664123535156
+StaticText | Welcome to Quick Order |  | c=(208,349) w=332.33331298828125 h=18
+StaticText | Welcome to Quick Order |  | c=(208,349) w=332.33331298828125 h=18
+StaticText | Type your order the way you normally would. No special format needed. |  | c=(208,392) w=332.33331298828125 h=44
+== emp-tabs-cart  <- babytunasystems:///(tabs)/cart
+StaticText | Cart |  | c=(143,92) w=255.66665649414062 h=33.66666793823242
+StaticText | Cart |  | c=(143,92) w=255.66665649414062 h=33.66666793823242
+GenericElement | , My Orders |  | c=(353,102) w=138.33334350585938 h=54
+StaticText | 0 items |  | c=(143,120) w=255.66665649414062 h=15.666664123535156
+StaticText | 0 items |  | c=(143,120) w=255.66665649414062 h=15.666664123535156
+== emp-tabs-history  <- babytunasystems:///(tabs)/history
+Heading | Past orders |  | c=(220,82) w=404 h=33.66666793823242
+Heading | Past orders |  | c=(220,82) w=404 h=33.66666793823242
+StaticText |  |  | c=(220,169) w=24 h=24.666671752929688
+StaticText |  |  | c=(220,169) w=24 h=24.666671752929688
+Heading | No sent orders yet |  | c=(219,214) w=131.66665649414062 h=18
+== emp-tabs-settings  <- babytunasystems:///(tabs)/settings
+Heading | Settings |  | c=(220,82) w=408 h=33.666664123535156
+Heading | Settings |  | c=(220,82) w=408 h=33.666664123535156
+Button | Open your profile |  | c=(220,146) w=408 h=74.00000762939453
+Button | Order reminders, Not set |  | c=(220,223) w=378 h=54.666656494140625
+Button | Checklist display, Comfortable · categories on |  | c=(220,278) w=378 h=53.66667175292969
+== emp-tabs-stock-check  <- babytunasystems:///(tabs)/stock-check
+Button | Active location Fixture Sushi. Tap to change. |  | c=(192,93) w=350 h=48
+Button | View past checks |  | c=(400,93) w=48 h=48
+StaticText | 0 checked |  | c=(70,152) w=75.66666412353516 h=18
+StaticText | 0 checked |  | c=(70,152) w=75.66666412353516 h=18
+StaticText | 3 unchecked |  | c=(365,152) w=82.66665649414062 h=15.666656494140625
+== emp-tabs-stock-check-list  <- babytunasystems:///(tabs)/stock-check-list
+Button | Active location Fixture Sushi. Tap to change. |  | c=(192,93) w=350 h=48
+Button | More options |  | c=(400,93) w=48 h=48
+StaticText | 0 of 2 checked |  | c=(86,152) w=107.33332824707031 h=18
+StaticText | 0 to order |  | c=(375,152) w=64 h=15.666671752929688
+Button | Continue later |  | c=(87,219) w=142.3333282470703 h=34
+== emp-tabs-past-checks  <- babytunasystems:///(tabs)/past-checks
+Button | Back to stock check |  | c=(38,92) w=44 h=44
+Heading | Past checks |  | c=(248,92) w=352 h=24
+Heading | Past checks |  | c=(248,92) w=352 h=24
+StaticText |  |  | c=(220,183) w=24 h=24.666656494140625
+StaticText |  |  | c=(220,183) w=24 h=24.666656494140625
+== emp-tabs-receive-delivery  <- babytunasystems:///(tabs)/receive-delivery
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | Receive delivery |  | c=(248,88) w=352 h=24
+Heading | Receive delivery |  | c=(248,88) w=352 h=24
+StaticText |  |  | c=(220,179) w=24 h=24.666656494140625
+StaticText |  |  | c=(220,179) w=24 h=24.666656494140625
+== emp-tabs-orders  <- babytunasystems:///(tabs)/orders
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | My orders |  | c=(248,88) w=352 h=24
+Heading | My orders |  | c=(248,88) w=352 h=24
+Button | All |  | c=(38,144) w=44.33333206176758 h=32
+Button | Submitted |  | c=(115,144) w=93.99999237060547 h=32
+== emp-tabs-profile  <- babytunasystems:///(tabs)/profile
+Button | Back to settings |  | c=(38,88) w=44 h=44
+Heading | Profile |  | c=(248,88) w=352 h=24
+Heading | Profile |  | c=(248,88) w=352 h=24
+StaticText | E |  | c=(219,167) w=16.666656494140625 h=33.66667175292969
+StaticText | E |  | c=(219,167) w=16.666656494140625 h=33.66667175292969
+== emp-tabs-inventory-browse  <- babytunasystems:///(tabs)/inventory-browse?category=fish&focusSearch=1
+GenericElement |  |  | c=(43,89) w=47.33332824707031 h=47.33332824707031
+GenericElement | Fixture Sushi,  |  | c=(219,90) w=279.33331298828125 h=48
+GenericElement |  |  | c=(396,90) w=48 h=48
+StaticText |  |  | c=(51,149) w=22 h=22.666656494140625
+StaticText |  |  | c=(51,149) w=22 h=22.666656494140625
+== emp-tabs-voice  <- babytunasystems:///(tabs)/voice
+Heading | Checklist |  | c=(142,84) w=249.66665649414062 h=33.666664123535156
+Heading | Checklist |  | c=(142,84) w=249.66665649414062 h=33.666664123535156
+Button | Location: Fixture Sushi. Change location |  | c=(350,84) w=142.33334350585938 h=31.666664123535156
+StaticText | FISH & SEAFOOD |  | c=(220,142) w=404 h=14.333343505859375
+StaticText | FISH & SEAFOOD |  | c=(220,142) w=404 h=14.333343505859375
+== emp-root-inventory-browse  <- babytunasystems:///inventory-browse?category=fish
+GenericElement |  |  | c=(43,89) w=47.33332824707031 h=47.33332824707031
+GenericElement | Fixture Sushi,  |  | c=(219,90) w=279.33331298828125 h=48
+GenericElement |  |  | c=(396,90) w=48 h=48
+StaticText |  |  | c=(51,149) w=22 h=22.666656494140625
+StaticText |  |  | c=(51,149) w=22 h=22.666656494140625
+== emp-orders-history  <- babytunasystems:///orders/history
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | My orders |  | c=(248,88) w=352 h=24
+Heading | My orders |  | c=(248,88) w=352 h=24
+Button | All |  | c=(38,144) w=44.33333206176758 h=32
+Button | Submitted |  | c=(115,144) w=93.99999237060547 h=32
+== emp-orders-id  <- babytunasystems:///orders/4b000000-0000-4000-8000-000000000001
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | Order #1 |  | c=(248,88) w=352 h=24
+Heading | Order #1 |  | c=(248,88) w=352 h=24
+Heading | STATUS |  | c=(77,139) w=93.33333587646484 h=13.333335876464844
+Heading | STATUS |  | c=(77,139) w=93.33333587646484 h=13.333335876464844
+== emp-settings-about-support  <- babytunasystems:///settings/about-support
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | About and support |  | c=(248,79) w=352 h=24
+Heading | About and support |  | c=(248,79) w=352 h=24
+StaticText | App details, support, and our policies. |  | c=(248,101) w=352 h=15.666664123535156
+StaticText | App details, support, and our policies. |  | c=(248,101) w=352 h=15.666664123535156
+== emp-settings-display-accessibility  <- babytunasystems:///settings/display-accessibility
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | Display |  | c=(248,88) w=352 h=24
+Heading | Display |  | c=(248,88) w=352 h=24
+StaticText | Live preview |  | c=(220,142) w=378 h=18
+StaticText | Live preview |  | c=(220,142) w=378 h=18
+== emp-settings-notifications  <- babytunasystems:///settings/notifications
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | Notifications |  | c=(248,88) w=352 h=24
+Heading | Notifications |  | c=(248,88) w=352 h=24
+Heading | DELIVERY |  | c=(220,136) w=408 h=13.333328247070312
+Heading | DELIVERY |  | c=(220,136) w=408 h=13.333328247070312
+== emp-settings-notifications-debug  <- babytunasystems:///settings/notifications-debug
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | Notifications |  | c=(248,88) w=352 h=24
+Heading | Notifications |  | c=(248,88) w=352 h=24
+Heading | DELIVERY |  | c=(220,136) w=408 h=13.333328247070312
+Heading | DELIVERY |  | c=(220,136) w=408 h=13.333328247070312
+== emp-settings-profile  <- babytunasystems:///settings/profile
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | Profile |  | c=(248,88) w=352 h=24
+Heading | Profile |  | c=(248,88) w=352 h=24
+Button | Change profile photo |  | c=(220,165) w=374 h=88
+Heading | ACCOUNT DETAILS |  | c=(220,226) w=408 h=13.333328247070312
+== emp-settings-quick-search  <- babytunasystems:///settings/quick-search
+GenericElement |  |  | c=(42,92) w=43.333335876464844 h=43.333335876464844
+GenericElement | Fixture Sushi,  |  | c=(285,92) w=155.99998474121094 h=44
+GenericElement |  |  | c=(398,92) w=44 h=44
+TextField |  | Type item name... | c=(234,160) w=341.33331298828125 h=48
+StaticText |  |  | c=(44,160) w=20 h=20.666656494140625
+== emp-settings-reminders  <- babytunasystems:///settings/reminders
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | Reminders |  | c=(248,88) w=352 h=24
+Heading | Reminders |  | c=(248,88) w=352 h=24
+Heading | CONTROL PANEL |  | c=(220,136) w=408 h=13.333328247070312
+Heading | CONTROL PANEL |  | c=(220,136) w=408 h=13.333328247070312
+== emp-settings-stock-settings  <- babytunasystems:///settings/stock-settings
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | Stock settings |  | c=(248,88) w=352 h=24
+Heading | Stock settings |  | c=(248,88) w=352 h=24
+Button | Stock, Count and update inventory by station |  | c=(220,147) w=374 h=53.66667175292969
+Heading | STOCK WARNINGS |  | c=(220,192) w=408 h=13.333328247070312
+== emp-manager-guard-fulfillment  <- babytunasystems:///(manager)/fulfillment
+Heading | Settings |  | c=(220,82) w=408 h=33.666664123535156
+Heading | Settings |  | c=(220,82) w=408 h=33.666664123535156
+Button | Open your profile |  | c=(220,146) w=408 h=74.00000762939453
+Button | Order reminders, Not set |  | c=(220,223) w=378 h=54.666656494140625
+Button | Checklist display, Comfortable · categories on |  | c=(220,278) w=378 h=53.66667175292969
+== emp-removed-tabs-draft  <- babytunasystems:///(tabs)/draft
+Heading | Unmatched Route |  | c=(220,491) w=392 h=112.00003051757812
+Heading | Unmatched Route |  | c=(220,491) w=392 h=112.00003051757812
+Heading | Page could not be found. |  | c=(220,572) w=342.66668701171875 h=40.6666259765625
+Heading | Page could not be found. |  | c=(220,572) w=342.66668701171875 h=40.6666259765625
+Link | babytunasystems://draft |  | c=(220,614) w=156.99998474121094 h=20
+== emp-removed-auth-complete-profile  <- babytunasystems:///(auth)/complete-profile
+Heading | Unmatched Route |  | c=(220,491) w=392 h=112.00003051757812
+Heading | Unmatched Route |  | c=(220,491) w=392 h=112.00003051757812
+Heading | Page could not be found. |  | c=(220,572) w=342.66668701171875 h=40.6666259765625
+Heading | Page could not be found. |  | c=(220,572) w=342.66668701171875 h=40.6666259765625
+Link | babytunasystems://complete-profile |  | c=(219,614) w=233.33331298828125 h=20
+== emp-suspended-with-active-session  <- babytunasystems:///suspended
+Heading | Checklist |  | c=(142,84) w=249.66665649414062 h=33.66666793823242
+Heading | Checklist |  | c=(142,84) w=249.66665649414062 h=33.66666793823242
+Button | Location: Fixture Sushi. Change location |  | c=(350,84) w=142.33334350585938 h=31.666667938232422
+StaticText | FISH & SEAFOOD |  | c=(220,142) w=404 h=14.333328247070312
+StaticText | FISH & SEAFOOD |  | c=(220,142) w=404 h=14.333328247070312
+== emp-root-index  <- babytunasystems:///
+Heading | Checklist |  | c=(142,84) w=249.66665649414062 h=33.66666793823242
+Heading | Checklist |  | c=(142,84) w=249.66665649414062 h=33.66666793823242
+Button | Location: Fixture Sushi. Change location |  | c=(350,84) w=142.33334350585938 h=31.666664123535156
+StaticText | FISH & SEAFOOD |  | c=(220,142) w=404 h=14.333328247070312
+StaticText | FISH & SEAFOOD |  | c=(220,142) w=404 h=14.333328247070312
+== mgr-index  <- babytunasystems:///(manager)
+StaticText | Good afternoon |  | c=(186,89) w=332 h=38.33333206176758
+StaticText | Good afternoon |  | c=(186,89) w=332 h=38.33333206176758
+GenericElement |  |  | c=(394,100) w=52 h=52
+StaticText | Thursday, Sep 10 |  | c=(186,123) w=332 h=18.000003814697266
+StaticText | Thursday, Sep 10 |  | c=(186,123) w=332 h=18.000003814697266
+== mgr-browse  <- babytunasystems:///(manager)/browse?category=fish
+GenericElement |  |  | c=(43,89) w=47.33332824707031 h=47.33332824707031
+GenericElement | Fixture Sushi,  |  | c=(219,90) w=279.33331298828125 h=48
+GenericElement |  |  | c=(396,90) w=48 h=48
+StaticText |  |  | c=(51,149) w=22 h=22.666656494140625
+StaticText |  |  | c=(51,149) w=22 h=22.666656494140625
+== mgr-cart  <- babytunasystems:///(manager)/cart
+Button | Go back |  | c=(36,100) w=40 h=40
+StaticText | Cart |  | c=(242,90) w=340 h=33.66666793823242
+StaticText | Cart |  | c=(242,90) w=340 h=33.66666793823242
+StaticText | 0 items |  | c=(242,119) w=340 h=15.666667938232422
+StaticText | 0 items |  | c=(242,119) w=340 h=15.666667938232422
+== mgr-employee-reminders  <- babytunasystems:///(manager)/employee-reminders
+GenericElement |  |  | c=(38,96) w=44 h=44
+StaticText | Employee Reminders |  | c=(226,87) w=316 h=24
+StaticText | Employee Reminders |  | c=(226,87) w=316 h=24
+GenericElement |  |  | c=(404,96) w=40 h=40
+StaticText | Send and track reminders by employee |  | c=(226,109) w=316 h=15.666667938232422
+== mgr-employee-reminders-delivery  <- babytunasystems:///(manager)/employee-reminders-delivery
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | Delivery Status |  | c=(248,79) w=352 h=24
+Heading | Delivery Status |  | c=(248,79) w=352 h=24
+StaticText | Push and in-app reminder delivery history |  | c=(248,101) w=352 h=15.666667938232422
+StaticText | Push and in-app reminder delivery history |  | c=(248,101) w=352 h=15.666667938232422
+== mgr-employee-reminders-recurring  <- babytunasystems:///(manager)/employee-reminders-recurring
+GenericElement |  |  | c=(38,96) w=44 h=44
+StaticText | Recurring Reminders |  | c=(225,87) w=314 h=24
+StaticText | Recurring Reminders |  | c=(225,87) w=314 h=24
+GenericElement |  |  | c=(403,96) w=42 h=42
+StaticText | Schedule reminders that run automatically |  | c=(225,109) w=314 h=15.666667938232422
+== mgr-employee-reminders-settings  <- babytunasystems:///(manager)/employee-reminders-settings
+GenericElement |  |  | c=(38,96) w=44 h=44
+StaticText | Reminder Settings |  | c=(183,87) w=231.33334350585938 h=24
+StaticText | Reminder Settings |  | c=(183,87) w=231.33334350585938 h=24
+StaticText | Configure overdue and reminder limits |  | c=(183,109) w=231.33334350585938 h=15.666667938232422
+StaticText | Configure overdue and reminder limits |  | c=(183,109) w=231.33334350585938 h=15.666667938232422
+== mgr-export-fish-order-missing  <- babytunasystems:///(manager)/export-fish-order
+Heading | Fish Order |  | c=(220,81) w=83.00001525878906 h=20.333335876464844
+Heading | Fish Order |  | c=(220,81) w=83.00001525878906 h=20.333335876464844
+StaticText |  |  | c=(220,150) w=18 h=18.666667938232422
+StaticText |  |  | c=(220,150) w=18 h=18.666667938232422
+StaticText | No fish order to export |  | c=(219,189) w=161.3333282470703 h=18
+== mgr-export-fish-order-valid  <- babytunasystems:///(manager)/export-fish-order?locationName=Fixture%20Sushi&locationShortCode=SU&fishItems=%5B%7B%22itemId%22%3A%2246000000-0000-4000-8000-000000000001%22%2C%22itemName%22%3A%22Fixture%20Salmon%22%2C%22quantity%22%3A2%2C%22unit%22%3A%22case%22%7D%5D
+Heading | Confirm Order |  | c=(220,81) w=114.33332824707031 h=20.333335876464844
+Heading | Confirm Order |  | c=(220,81) w=114.33332824707031 h=20.333335876464844
+StaticText | SU |  | c=(48,149) w=20 h=17
+StaticText | SU |  | c=(48,149) w=20 h=17
+StaticText | Fixture Sushi |  | c=(242,148) w=332.6666564941406 h=24
+== mgr-fulfillment  <- babytunasystems:///(manager)/fulfillment
+StaticText | Fulfillment |  | c=(145,98) w=250 h=33.666664123535156
+StaticText | Fulfillment |  | c=(145,98) w=250 h=33.666664123535156
+GenericElement | , History |  | c=(350,98) w=137.33331298828125 h=48
+StaticText |  |  | c=(44,167) w=16 h=16.666671752929688
+StaticText |  |  | c=(44,167) w=16 h=16.666671752929688
+== mgr-fulfillment-history  <- babytunasystems:///(manager)/fulfillment-history
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | Past Orders |  | c=(248,79) w=352 h=24
+Heading | Past Orders |  | c=(248,79) w=352 h=24
+StaticText | 0 orders |  | c=(248,101) w=352 h=15.666667938232422
+StaticText | 0 orders |  | c=(248,101) w=352 h=15.666667938232422
+== mgr-inventory  <- babytunasystems:///(manager)/inventory
+GenericElement |  |  | c=(30,92) w=44 h=44
+GenericElement |  |  | c=(205,92) w=44 h=44
+GenericElement | , All Locations,  |  | c=(307,92) w=145 h=44
+GenericElement |  |  | c=(410,92) w=44 h=44
+StaticText | Inventory |  | c=(100,92) w=89.66667175292969 h=24
+== mgr-settings-access-codes  <- babytunasystems:///(manager)/manager-settings/access-codes
+Button | Back |  | c=(38,94) w=44 h=44
+Heading | Access codes |  | c=(248,78) w=352 h=24
+Heading | Access codes |  | c=(248,78) w=352 h=24
+StaticText | Manager-only sign-up access for employees and managers. |  | c=(248,107) w=352 h=31.333335876464844
+StaticText | Manager-only sign-up access for employees and managers. |  | c=(248,107) w=352 h=31.333335876464844
+== mgr-settings-export-format  <- babytunasystems:///(manager)/manager-settings/export-format
+Button | Back |  | c=(38,94) w=44 h=44
+Heading | Export format |  | c=(209,78) w=274 h=24
+Heading | Export format |  | c=(209,78) w=274 h=24
+Button | Reset |  | c=(391,83) w=66 h=34
+StaticText | The supplier message template used across the manager workflow. |  | c=(209,107) w=274 h=31.333335876464844
+== mgr-settings-profile  <- babytunasystems:///(manager)/manager-settings/profile
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | Profile |  | c=(248,79) w=352 h=24
+Heading | Profile |  | c=(248,79) w=352 h=24
+StaticText | Your name, photo, sign-in details, and account. |  | c=(248,101) w=352 h=15.666664123535156
+StaticText | Your name, photo, sign-in details, and account. |  | c=(248,101) w=352 h=15.666664123535156
+== mgr-settings-quick-order-config  <- babytunasystems:///(manager)/manager-settings/quick-order-config
+GenericElement |  |  | c=(42,97) w=44 h=44
+StaticText | Quick Order |  | c=(248,88) w=344 h=40.66666793823242
+StaticText | Quick Order |  | c=(248,88) w=344 h=40.66666793823242
+StaticText | Aliases, examples, and weekly learning |  | c=(248,119) w=344 h=14.333332061767578
+StaticText | Aliases, examples, and weekly learning |  | c=(248,119) w=344 h=14.333332061767578
+== mgr-settings-supplier-contacts  <- babytunasystems:///(manager)/manager-settings/supplier-contacts
+GenericElement |  |  | c=(42,97) w=44 h=44
+StaticText | Supplier Contacts |  | c=(248,88) w=344 h=40.66666793823242
+StaticText | Supplier Contacts |  | c=(248,88) w=344 h=40.66666793823242
+StaticText | Phone numbers and send channels used by Rapid Send All. |  | c=(248,119) w=344 h=14.333332061767578
+StaticText | Phone numbers and send channels used by Rapid Send All. |  | c=(248,119) w=344 h=14.333332061767578
+== mgr-settings-team-defaults  <- babytunasystems:///(manager)/manager-settings/team-defaults
+Button | Back |  | c=(38,94) w=44 h=44
+Heading | New employee defaults |  | c=(248,78) w=352 h=24
+Heading | New employee defaults |  | c=(248,78) w=352 h=24
+StaticText | Every new invite starts with these. You can still change any person la |  | c=(248,107) w=352 h=31.333335876464844
+StaticText | Every new invite starts with these. You can still change any person la |  | c=(248,107) w=352 h=31.333335876464844
+== mgr-settings-team-invite  <- babytunasystems:///(manager)/manager-settings/team-invite
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | Invite someone |  | c=(248,79) w=352 h=24
+Heading | Invite someone |  | c=(248,79) w=352 h=24
+StaticText | They set up their own app from the link |  | c=(248,101) w=352 h=15.666664123535156
+StaticText | They set up their own app from the link |  | c=(248,101) w=352 h=15.666664123535156
+== mgr-settings-team-invite-link-missing  <- babytunasystems:///(manager)/manager-settings/team-invite-link
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | Invitation unavailable |  | c=(248,88) w=352 h=24
+Heading | Invitation unavailable |  | c=(248,88) w=352 h=24
+StaticText |  |  | c=(220,195) w=24 h=24.666656494140625
+StaticText |  |  | c=(220,195) w=24 h=24.666656494140625
+== mgr-settings-team-member  <- babytunasystems:///(manager)/manager-settings/team-member?userId=5c0f052e-3021-4560-aa89-b85b44f773f2
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | E2E Employee |  | c=(248,79) w=352 h=24
+Heading | E2E Employee |  | c=(248,79) w=352 h=24
+StaticText | Signs in with a PIN |  | c=(248,101) w=352 h=15.666664123535156
+StaticText | Signs in with a PIN |  | c=(248,101) w=352 h=15.666664123535156
+== mgr-settings-team-preview  <- babytunasystems:///(manager)/manager-settings/team-preview?userId=5c0f052e-3021-4560-aa89-b85b44f773f2&name=E2E%20Employee
+StaticText |  |  | c=(26,87) w=20 h=20.666671752929688
+StaticText |  |  | c=(26,87) w=20 h=20.666671752929688
+Button | Exit |  | c=(397,87) w=53.666656494140625 h=34
+StaticText | Viewing as E2E · Both |  | c=(203,86) w=318.3333435058594 h=15.666664123535156
+StaticText | Viewing as E2E · Both |  | c=(203,86) w=318.3333435058594 h=15.666664123535156
+== mgr-settings-team  <- babytunasystems:///(manager)/manager-settings/team
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | Team |  | c=(199,79) w=254 h=24
+Heading | Team |  | c=(199,79) w=254 h=24
+Button | Invite |  | c=(381,83) w=86 h=34
+StaticText | Invites, features, and sign-in resets |  | c=(199,101) w=254 h=15.666664123535156
+== mgr-settings-user-management  <- babytunasystems:///(manager)/manager-settings/user-management
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | User management |  | c=(248,79) w=352 h=24
+Heading | User management |  | c=(248,79) w=352 h=24
+StaticText | Manager-only account oversight |  | c=(248,101) w=352 h=15.666664123535156
+StaticText | Manager-only account oversight |  | c=(248,101) w=352 h=15.666664123535156
+== mgr-orders  <- babytunasystems:///(manager)/orders
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | Orders |  | c=(90,88) w=37 h=24
+Heading | Orders |  | c=(90,88) w=37 h=24
+GenericElement | , Pending Review |  | c=(195,88) w=148.66668701171875 h=31
+GenericElement | , All Locations,  |  | c=(350,88) w=147.66665649414062 h=31
+== mgr-orders-pending  <- babytunasystems:///(manager)/orders/pending
+GenericElement |  |  | c=(42,97) w=44 h=44
+StaticText | Pending Review |  | c=(248,88) w=344 h=40.66666793823242
+StaticText | Pending Review |  | c=(248,88) w=344 h=40.66666793823242
+StaticText | Quick Order safety queue |  | c=(248,119) w=344 h=14.333332061767578
+StaticText | Quick Order safety queue |  | c=(248,119) w=344 h=14.333332061767578
+== mgr-past-orders-index  <- babytunasystems:///(manager)/past-orders
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | Past Orders |  | c=(248,79) w=352 h=24
+Heading | Past Orders |  | c=(248,79) w=352 h=24
+StaticText | 0 orders |  | c=(248,101) w=352 h=15.666667938232422
+StaticText | 0 orders |  | c=(248,101) w=352 h=15.666667938232422
+== mgr-profile  <- babytunasystems:///(manager)/profile
+StaticText | Settings |  | c=(183,94) w=327.3333435058594 h=33.66666793823242
+StaticText | Settings |  | c=(183,94) w=327.3333435058594 h=33.66666793823242
+StaticText | Manager |  | c=(383,94) w=48 h=13.333332061767578
+StaticText | Manager |  | c=(383,94) w=48 h=13.333332061767578
+Button | Profile, Manage account details and locations |  | c=(220,155) w=374 h=53.66667175292969
+== mgr-quick-order  <- babytunasystems:///(manager)/quick-order
+StaticText | Welcome to Quick Order |  | c=(208,240) w=332.33331298828125 h=18
+StaticText | Welcome to Quick Order |  | c=(208,240) w=332.33331298828125 h=18
+StaticText | Type your order the way you normally would. No special format needed. |  | c=(208,283) w=332.33331298828125 h=44
+StaticText | Type your order the way you normally would. No special format needed. |  | c=(208,283) w=332.33331298828125 h=44
+StaticText | If anything is unclear, I'll ask a quick follow-up. As you use Quick O |  | c=(208,359) w=332.33331298828125 h=88
+== mgr-voice  <- babytunasystems:///(manager)/voice
+StaticText | Good afternoon |  | c=(186,89) w=332 h=38.33333206176758
+StaticText | Good afternoon |  | c=(186,89) w=332 h=38.33333206176758
+GenericElement |  |  | c=(394,100) w=52 h=52
+StaticText | Thursday, Sep 10 |  | c=(186,123) w=332 h=18.000003814697266
+StaticText | Thursday, Sep 10 |  | c=(186,123) w=332 h=18.000003814697266
+== mgr-orders-id  <- babytunasystems:///orders/4b000000-0000-4000-8000-000000000001
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | Order #1 |  | c=(248,88) w=352 h=24
+Heading | Order #1 |  | c=(248,88) w=352 h=24
+Heading | STATUS |  | c=(77,139) w=93.33333587646484 h=13.333335876464844
+Heading | STATUS |  | c=(77,139) w=93.33333587646484 h=13.333335876464844
+== mgr-tabs-simple-order  <- babytunasystems:///(tabs)/simple-order
+Heading | Checklist |  | c=(142,84) w=249.66665649414062 h=33.66666793823242
+Heading | Checklist |  | c=(142,84) w=249.66665649414062 h=33.66666793823242
+Button | Location: Fixture Sushi. Change location |  | c=(350,84) w=142.33334350585938 h=31.666664123535156
+StaticText |  |  | c=(220,167) w=24 h=24.666671752929688
+StaticText |  |  | c=(220,167) w=24 h=24.666671752929688
+== mgr-tabs-quick-order  <- babytunasystems:///(tabs)/quick-order
+Heading | Advanced ordering |  | c=(220,82) w=408 h=33.666664123535156
+Heading | Advanced ordering |  | c=(220,82) w=408 h=33.666664123535156
+StaticText | Welcome to Quick Order |  | c=(208,349) w=332.33331298828125 h=18
+StaticText | Welcome to Quick Order |  | c=(208,349) w=332.33331298828125 h=18
+StaticText | Type your order the way you normally would. No special format needed. |  | c=(208,392) w=332.33331298828125 h=44
+== mgr-tabs-cart  <- babytunasystems:///(tabs)/cart
+StaticText | Cart |  | c=(143,92) w=255.66665649414062 h=33.66666793823242
+StaticText | Cart |  | c=(143,92) w=255.66665649414062 h=33.66666793823242
+GenericElement | , My Orders |  | c=(353,102) w=138.33334350585938 h=54
+StaticText | 0 items |  | c=(143,120) w=255.66665649414062 h=15.666664123535156
+StaticText | 0 items |  | c=(143,120) w=255.66665649414062 h=15.666664123535156
+== mgr-tabs-history  <- babytunasystems:///(tabs)/history
+Heading | Past orders |  | c=(220,82) w=404 h=33.66666793823242
+Heading | Past orders |  | c=(220,82) w=404 h=33.66666793823242
+StaticText |  |  | c=(220,169) w=24 h=24.666671752929688
+StaticText |  |  | c=(220,169) w=24 h=24.666671752929688
+Heading | No sent orders yet |  | c=(219,214) w=131.66665649414062 h=18
+== mgr-tabs-settings  <- babytunasystems:///(tabs)/settings
+Heading | Settings |  | c=(220,82) w=408 h=33.666664123535156
+Heading | Settings |  | c=(220,82) w=408 h=33.666664123535156
+Button | Open your profile |  | c=(220,146) w=408 h=74.00000762939453
+Button | Order reminders, Not set |  | c=(220,223) w=378 h=54.666656494140625
+Button | Checklist display, Comfortable · categories on |  | c=(220,278) w=378 h=53.66667175292969
+== mgr-tabs-stock-check  <- babytunasystems:///(tabs)/stock-check
+Button | Active location Fixture Sushi. Tap to change. |  | c=(192,93) w=350 h=48
+Button | View past checks |  | c=(400,93) w=48 h=48
+StaticText | 3 checked |  | c=(70,152) w=75.33333587646484 h=18
+StaticText | 3 checked |  | c=(70,152) w=75.33333587646484 h=18
+StaticText | 0 unchecked |  | c=(365,152) w=83 h=15.666656494140625
+== mgr-tabs-receive-delivery  <- babytunasystems:///(tabs)/receive-delivery
+Button | Back |  | c=(38,88) w=44 h=44
+Heading | Receive delivery |  | c=(248,88) w=352 h=24
+Heading | Receive delivery |  | c=(248,88) w=352 h=24
+StaticText |  |  | c=(220,179) w=24 h=24.666656494140625
+StaticText |  |  | c=(220,179) w=24 h=24.666656494140625
+== mgr-tabs-profile  <- babytunasystems:///(tabs)/profile
+Button | Back to settings |  | c=(38,88) w=44 h=44
+Heading | Profile |  | c=(248,88) w=352 h=24
+Heading | Profile |  | c=(248,88) w=352 h=24
+StaticText | E |  | c=(219,167) w=16.666656494140625 h=33.66667175292969
+StaticText | E |  | c=(219,167) w=16.666656494140625 h=33.66667175292969
+== mgr-tabs-inventory-browse  <- babytunasystems:///(tabs)/inventory-browse?category=fish
+GenericElement |  |  | c=(43,89) w=47.33332824707031 h=47.33332824707031
+GenericElement | Fixture Sushi,  |  | c=(219,90) w=279.33331298828125 h=48
+GenericElement |  |  | c=(396,90) w=48 h=48
+StaticText |  |  | c=(51,149) w=22 h=22.666656494140625
+StaticText |  |  | c=(51,149) w=22 h=22.666656494140625
+== mgr-root-index  <- babytunasystems:///
+Heading | Checklist |  | c=(142,84) w=249.66665649414062 h=33.66666793823242
+Heading | Checklist |  | c=(142,84) w=249.66665649414062 h=33.66666793823242
+Button | Location: Fixture Sushi. Change location |  | c=(350,84) w=142.33334350585938 h=31.666664123535156
+StaticText |  |  | c=(220,167) w=24 h=24.666671752929688
+StaticText |  |  | c=(220,167) w=24 h=24.666671752929688

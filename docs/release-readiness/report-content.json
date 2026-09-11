@@ -1,30 +1,38 @@
 {
-  "date": "September 5, 2026",
-  "summary": "Mobile-only audit, repairs and release validation. Records verified behavior, remaining submission requirements and decisions made without stopping for product questions. All runtime business data in this report comes from a disposable local test backend.",
-  "branch": "codex/production-readiness",
-  "base": "cf30d6bc641cd22830420cfd6d431c11d5e3c02f",
-  "tested_commit": "6faf9db",
+  "date": "September 10, 2026",
+  "summary": "App Store 2.3 route pass on the signed Release simulator build of integration sha 54f4912 (PRs #75, #54, #77, #78, #76, #79, #80, #83, #84, #82, #81) against a disposable local full stack on FULL_STACK_PORT_BASE=54620, layered on the September 5 audit below. Per-issue verdicts with screenshots and psql assertions are on the proof page app-store-2.3-proof/index.html. All runtime business data comes from the local fixture.",
+  "branch": "issue/49-release-proof, cut from integration/app-store-2.3",
+  "base": "54f4912ebb6947235b9079ef5a65bb3ed2cef91d",
+  "tested_commit": "54f4912",
   "verdict": "Not ready for App Store submission",
-  "verdict_detail": "Confirmed mobile defects were repaired and the signed simulator Release build was exercised. Production configuration, remaining end-to-end mutations, distribution signing and physical-device services still require validation. This report cannot certify approval or claim every feature passed.",
+  "verdict_detail": "Every live route rendered on the 2.3 build for the roles that can reach it, and #73, #70, #59, #61 and #62 pass with evidence. #74 still fails: an offline stock count queued before a force quit sits in the persisted queue after relaunch until a stock screen opens (reproduced twice by the verifier). The production archive and TestFlight submission (#47) have not been run, and the NEEDS-DAVID list in docs/launch-plan/NEEDS-DAVID.md is open.",
   "facts": [
     {
-      "value": "1,031",
-      "label": "Automated tests passed; 14 skipped"
+      "value": "1,247",
+      "label": "Automated tests passed on 54f4912; 1 skipped"
     },
     {
-      "value": "0 errors",
-      "label": "TypeScript and ESLint; 90 lint warnings remain"
+      "value": "0 errors, 0 warnings",
+      "label": "TypeScript and ESLint with smelter/no-design-drift at error severity"
     },
     {
-      "value": "29 migrations",
+      "value": "30 migrations",
       "label": "Complete disposable local schema verified"
     },
     {
-      "value": "72 routes",
-      "label": "Mobile route coverage tracked individually"
+      "value": "70 routes",
+      "label": "Live screen routes, all captured on the 2.3 build"
     }
   ],
   "blockers": [
+    {
+      "title": "Offline stock counts still wait for a stock screen after relaunch (#74)",
+      "detail": "On the 2.3 build a count queued while the gateway was down stays in the persisted queue for at least 60 seconds after a force quit and relaunch on the checklist, with syncError null, and lands only when Stock check opens. The launch drain in src/features/stock-check/queueDrainGate.ts is registered by useStockCheckStore.ts, which only the three stock routes import, so it never registers on the first screen. Evidence: app-store-2.3-proof/img/74-13 to 74-15 and psql sections 74-13 to 74-16."
+    },
+    {
+      "title": "Production archive and TestFlight not run (#47)",
+      "detail": "docs/release/production-build.md and docs/release/device-session.md are written; eas build and eas submit need David."
+    },
     {
       "title": "Approve the prepared EAS production API-key correction",
       "detail": "Read-only EAS inspection found only a legacy anon key. Non-mutating invalid-JSON probes returned 401 Unauthorized for both production login-with-name and accept-invite with that key. The active project publishable key returns 400 Invalid request body, proving it reaches validation. Adding EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY is prepared, but automatic approval review rejected this persistent remote configuration change without explicit authorization. No EAS value was changed."
@@ -43,7 +51,7 @@
     },
     {
       "title": "Prove shared-device push isolation",
-      "detail": "Logout clears local notifications and deactivates the departing user\u2019s current token when online. Offline logout cannot guarantee server token removal. Verify the server\u2019s device ownership behavior and push delivery after user switching on a physical device before release."
+      "detail": "Logout clears local notifications and deactivates the departing user’s current token when online. Offline logout cannot guarantee server token removal. Verify the server’s device ownership behavior and push delivery after user switching on a physical device before release."
     },
     {
       "title": "Exercise hardware and external services",
@@ -52,10 +60,6 @@
     {
       "title": "Residual dependency advisories",
       "detail": "After compatible updates, npm audit remains red: 29 affected package entries, 8 high and 21 moderate, zero critical. Four underlying advisories concern image-size, decode-uri-component and uuid. Detailed caller analysis is in dependency-audit.md; no unproven upgrade was forced to make the count green."
-    },
-    {
-      "title": "Stock counts never reach the database (#69)",
-      "detail": "On the signed Release build against the local stack, saving a stock count writes nothing: stock_updates and stock_check_sessions stay empty, area_items.current_quantity and storage_areas.last_checked_at are untouched, and no queue flushes when connectivity returns. The count exists only in AsyncStorage on the device, so a manager never sees it and it is lost with the app container. Two of the ten mutations in issue #40 fail on this."
     }
   ],
   "changes": [
@@ -152,145 +156,240 @@
     {
       "command": "npm run typecheck",
       "status": "Pass",
-      "detail": "Latest recorded TypeScript check exited 0. See logs/typecheck-final.log."
+      "detail": "2.3 pass on 54f4912: tsc --noEmit exit 0."
     },
     {
       "command": "npm run lint",
       "status": "Pass",
-      "detail": "Exit 0, zero errors and 90 warnings. This is not a warning-free codebase. See logs/lint-final.log."
+      "detail": "2.3 pass on 54f4912: eslint . --max-warnings 0 exit 0, no allowlist, drift rule at error severity. A temporary probe file with a hex literal and a numeric borderRadius produced 2 errors and exit 1, then was deleted."
     },
     {
       "command": "npm run test:ci",
       "status": "Pass",
-      "detail": "Final integrated run: 67 passed suites, 1 skipped suite; 1,031 passed tests and 14 skipped. Exit 0. See logs/tests-final.log."
-    },
-    {
-      "command": "node --test scripts/tests/verify-submit-order-rpc.test.cjs",
-      "status": "Pass",
-      "detail": "Eight harness cases pass, covering gateway rejection, invalid responses and actual RPC permission errors."
+      "detail": "2.3 pass on 54f4912: 89 suites passed, 1 skipped; 1,247 tests passed, 1 skipped; exit 0."
     },
     {
       "command": "npm run verify:submit-order-rpc",
       "status": "Pass",
-      "detail": "Local API resolved the complete function signature and returned function permission error 42501. This proves resolution and unauthorized access rejection, not a successful order submission."
+      "detail": "2.3 pass against http://127.0.0.1:54621: submit_order_rpc 8-parameter contract resolved and rejected the unauthenticated probe (401, 42501). Exit 0. Does not verify order submission."
+    },
+    {
+      "command": "FULL_STACK_PORT_BASE=54620 scripts/local-db/full-stack.sh up",
+      "status": "Pass",
+      "detail": "PASS: schema loaded (30 migrations). /rest/v1/ returned 200 with the local publishable key."
+    },
+    {
+      "command": "scripts/release-readiness/setup-local-issue-40.sh and setup-local-issue-69.sh",
+      "status": "Pass",
+      "detail": "Both fixtures ready and reseeded before the resumed run; the four area_items rows, three e2e profiles and two orders confirmed with psql (00-baseline-before-sim-run, 00b-fixture-reseed-before-resume)."
+    },
+    {
+      "command": "xcodebuild -workspace ios/Babytuna.xcworkspace -scheme Babytuna -configuration Release -sdk iphonesimulator",
+      "status": "Pass",
+      "detail": "Exit 0 from this worktree after the four space-in-path quoting patches. scripts/verify-ios-release.py PASS (43 bundled assets), scripts/prepare-ios-simulator-qa.py pointed the artifact at http://127.0.0.1:54621. Installed bundle: Smelter 2.3 (21), main.jsbundle sha256 de2ce880."
+    },
+    {
+      "command": "Route pass on EF05F833-2AC4-4383-8688-36C51B956BCF",
+      "status": "Review",
+      "detail": "93 captures in e2e/routes-2.3 covering all 70 live routes for the roles that can reach them. Pass and Partial statuses are in the route inventory below; Partial means the default state rendered and nothing more is claimed."
+    },
+    {
+      "command": "Issue proof on EF05F833-2AC4-4383-8688-36C51B956BCF",
+      "status": "Review",
+      "detail": "#73, #70, #59, #61, #62 PASS; #74 FAIL (queue drains only when a stock screen opens; 74-13 to 74-16 in app-store-2.3-proof/psql-assertions.md); #38 partial by the stated category-emoji carve-out. See app-store-2.3-proof/index.html."
+    },
+    {
+      "command": "npm run typecheck",
+      "status": "Pass",
+      "detail": "Latest recorded TypeScript check exited 0. See logs/typecheck-final.log. (September 5 pass.)"
+    },
+    {
+      "command": "npm run lint",
+      "status": "Pass",
+      "detail": "Exit 0, zero errors and 90 warnings. This is not a warning-free codebase. See logs/lint-final.log. (September 5 pass.)"
+    },
+    {
+      "command": "npm run test:ci",
+      "status": "Pass",
+      "detail": "Final integrated run: 67 passed suites, 1 skipped suite; 1,031 passed tests and 14 skipped. Exit 0. See logs/tests-final.log. (September 5 pass.)"
+    },
+    {
+      "command": "node --test scripts/tests/verify-submit-order-rpc.test.cjs",
+      "status": "Pass",
+      "detail": "Eight harness cases pass, covering gateway rejection, invalid responses and actual RPC permission errors. (September 5 pass.)"
+    },
+    {
+      "command": "npm run verify:submit-order-rpc",
+      "status": "Pass",
+      "detail": "Local API resolved the complete function signature and returned function permission error 42501. This proves resolution and unauthorized access rejection, not a successful order submission. (September 5 pass.)"
     },
     {
       "command": "npm run audit:quick-order-recognition",
       "status": "Partial",
-      "detail": "Anonymous local run fails correctly with no visible inventory. Authorized local fixture audit passes against four items. Production catalogue recognition is not established by this fixture."
+      "detail": "Anonymous local run fails correctly with no visible inventory. Authorized local fixture audit passes against four items. Production catalogue recognition is not established by this fixture. (September 5 pass.)"
     },
     {
       "command": "scripts/local-db/verify-migrations.sh --keep",
       "status": "Pass",
-      "detail": "All 29 migration steps passed against an isolated disposable database. No remote migration was applied."
+      "detail": "All 29 migration steps passed against an isolated disposable database. No remote migration was applied. (September 5 pass.)"
     },
     {
       "command": "docker exec -i verify-migrations-47072-27912 psql -U postgres -d postgres -v ON_ERROR_STOP=1 < scripts/local-db/onboarding_auth_fixture.sql",
       "status": "Pass",
-      "detail": "Six rollback fixtures passed: onboarding_auth, employee_app, phase5a_checklist, phase6b_screenshot_import, phase6c_holiday_templates and kitchen_requests. The initial screenshot-import grant failure and corrected rerun are both preserved. The same command was run for employee_app_fixture.sql, phase5a_checklist_fixture.sql, phase6b_screenshot_import_fixture.sql, phase6c_holiday_templates_fixture.sql and kitchen_requests_fixture.sql."
+      "detail": "Six rollback fixtures passed: onboarding_auth, employee_app, phase5a_checklist, phase6b_screenshot_import, phase6c_holiday_templates and kitchen_requests. The initial screenshot-import grant failure and corrected rerun are both preserved. The same command was run for employee_app_fixture.sql, phase5a_checklist_fixture.sql, phase6b_screenshot_import_fixture.sql, phase6c_holiday_templates_fixture.sql and kitchen_requests_fixture.sql. (September 5 pass.)"
     },
     {
       "command": "npm audit --json",
       "status": "Fail",
-      "detail": "User authorized sending dependency names/versions to npm. Remaining 29 affected entries: 8 high, 21 moderate, zero critical. Reachability assessment recorded in dependency-audit.md."
+      "detail": "User authorized sending dependency names/versions to npm. Remaining 29 affected entries: 8 high, 21 moderate, zero critical. Reachability assessment recorded in dependency-audit.md. (September 5 pass.)"
     },
     {
       "command": "plutil -lint + native/Expo asset and manifest comparisons",
       "status": "Pass",
-      "detail": "Native property lists parse; Expo and native privacy dictionaries agree; native icon/splash bytes equal supplied assets. App icon is 1024 by 1024 with no alpha."
+      "detail": "Native property lists parse; Expo and native privacy dictionaries agree; native icon/splash bytes equal supplied assets. App icon is 1024 by 1024 with no alpha. (September 5 pass.)"
     },
     {
       "command": "xcodebuild -workspace ios/Babytuna.xcworkspace -scheme Babytuna -configuration Release -sdk iphonesimulator -destination \"id=$(scripts/sim.sh udid)\" -derivedDataPath /private/tmp/smelter-release-derived CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=YES build",
       "status": "Pass",
-      "detail": "Release build with local simulator ad-hoc signing exits 0. Resource validator checks JavaScript, manifest and all 43 referenced assets. Manager signs in through the actual app and reaches the checklist; the local login function records the request. The earlier unsigned Secure Store entitlement failure is resolved. This is not an App Store distribution archive."
+      "detail": "Release build with local simulator ad-hoc signing exits 0. Resource validator checks JavaScript, manifest and all 43 referenced assets. Manager signs in through the actual app and reaches the checklist; the local login function records the request. The earlier unsigned Secure Store entitlement failure is resolved. This is not an App Store distribution archive. (September 5 pass.)"
     },
     {
       "command": "Supabase security advisors (read-only)",
       "status": "Review",
-      "detail": "Zero errors, 34 warnings and 6 informational findings. Reviewed service-only RLS tables and selected function authorization definitions. This is not a complete production penetration test."
+      "detail": "Zero errors, 34 warnings and 6 informational findings. Reviewed service-only RLS tables and selected function authorization definitions. This is not a complete production penetration test. (September 5 pass.)"
     },
     {
       "command": "npm run test:ci -- --runTestsByPath src/__tests__/changePassword.test.ts src/__tests__/credentialModal.test.ts",
       "status": "Pass",
-      "detail": "11 tests passed. Two new tests failed against the original shared-client implementation, reproducing session restoration and a password update after logout began. Added checks for dismissed forms and same-user session replacement."
+      "detail": "11 tests passed. Two new tests failed against the original shared-client implementation, reproducing session restoration and a password update after logout began. Added checks for dismissed forms and same-user session replacement. (September 5 pass.)"
     },
     {
       "command": "FULL_STACK_PORT_BASE=54520 scripts/local-db/full-stack.sh load",
       "status": "Pass",
-      "detail": "Applied the two missing existing migrations to the disposable local stack after verifying both were absent. The complete local schema now matches the 29-migration verifier. No production data changed."
+      "detail": "Applied the two missing existing migrations to the disposable local stack after verifying both were absent. The complete local schema now matches the 29-migration verifier. No production data changed. (September 5 pass.)"
     },
     {
       "command": "npm run test:ci -- --runTestsByPath src/__tests__/storeSessionIsolation.test.ts src/__tests__/authStore.signOut.test.ts src/__tests__/orderStoreFulfillment.test.ts",
       "status": "Pass",
-      "detail": "25 tests passed. Deferred tests reproduce account-switch response leaks, old sync continuation, new queue additions, same-ID replacement edits and duplicate stock sync attempts. Already-issued server requests remain bound to their original request; client guards cannot undo them."
+      "detail": "25 tests passed. Deferred tests reproduce account-switch response leaks, old sync continuation, new queue additions, same-ID replacement edits and duplicate stock sync attempts. Already-issued server requests remain bound to their original request; client guards cannot undo them. (September 5 pass.)"
     },
     {
       "command": "scripts/sim.sh input + actual local login-with-name request",
       "status": "Pass",
-      "detail": "Manager name/PIN sign-in succeeds on dedicated simulator EF05F833-2AC4-4383-8688-36C51B956BCF with the configured publishable key. Authenticated checklist and native Save Password prompt shown. Broader workflows recorded in the route matrix as testing proceeds."
+      "detail": "Manager name/PIN sign-in succeeds on dedicated simulator EF05F833-2AC4-4383-8688-36C51B956BCF with the configured publishable key. Authenticated checklist and native Save Password prompt shown. Broader workflows recorded in the route matrix as testing proceeds. (September 5 pass.)"
     },
     {
       "command": "Read-only production configuration aggregates",
       "status": "Pass",
-      "detail": "240 active inventory items, 42 personalization rules, 12 reorder rules. Counts confirm records exist; no catalogue names or rule contents were exported and no recognition/correctness claim follows from counts."
+      "detail": "240 active inventory items, 42 personalization rules, 12 reorder rules. Counts confirm records exist; no catalogue names or rule contents were exported and no recognition/correctness claim follows from counts. (September 5 pass.)"
     },
     {
       "command": "Production auth validation with malformed JSON only",
       "status": "Fail",
-      "detail": "EAS legacy key: 401 Unauthorized for login-with-name and accept-invite. Verified publishable key: 400 Invalid request body for both. The reviewed handlers reject these requests before database access. Full login/onboarding production mutations were not attempted."
+      "detail": "EAS legacy key: 401 Unauthorized for login-with-name and accept-invite. Verified publishable key: 400 Invalid request body for both. The reviewed handlers reject these requests before database access. Full login/onboarding production mutations were not attempted. (September 5 pass.)"
     },
     {
       "command": "node --test scripts/tests/verify-production-env.test.cjs",
       "status": "Pass",
-      "detail": "Eight cases cover expected HTTPS project, loopback/wrong host/path rejection, missing/legacy/server-only key format and redacted failure messages. Actual cloud build has not run."
+      "detail": "Eight cases cover expected HTTPS project, loopback/wrong host/path rejection, missing/legacy/server-only key format and redacted failure messages. Actual cloud build has not run. (September 5 pass.)"
     },
     {
       "command": "Local HTML report browser preview",
       "status": "Pass",
-      "detail": "Report opened on loopback port 8094 in a background in-app browser. Desktop layout, gallery and click-to-enlarge screenshot dialog visually inspected. All screenshot pixels are embedded; no external image requests are needed."
+      "detail": "Report opened on loopback port 8094 in a background in-app browser. Desktop layout, gallery and click-to-enlarge screenshot dialog visually inspected. All screenshot pixels are embedded; no external image requests are needed. (September 5 pass.)"
     },
     {
       "command": "Public support/privacy URL lookup",
       "status": "Blocked",
-      "detail": "The web tool refused to open smelterpos.com/support and smelterpos.com/privacy. No availability conclusion follows. Links still need independent verification before submission."
+      "detail": "The web tool refused to open smelterpos.com/support and smelterpos.com/privacy. No availability conclusion follows. Links still need independent verification before submission. (September 5 pass.)"
     },
     {
       "command": "npm run test:ci -- --runTestsByPath src/__tests__/fishOrderExport.test.ts --silent",
       "status": "Pass",
-      "detail": "16 focused tests pass after reproducing missing/malformed data failures. Native invalid and valid local-payload screens also verified; no external share sent."
+      "detail": "16 focused tests pass after reproducing missing/malformed data failures. Native invalid and valid local-payload screens also verified; no external share sent. (September 5 pass.)"
     },
     {
       "command": "npm run test:ci -- --runTestsByPath src/__tests__/inviteLinkReady.test.ts src/__tests__/inviteJoin.test.ts --silent",
       "status": "Pass",
-      "detail": "Two suites / 30 tests pass after reproducing the false link-ready state. Native verification of the final rebuilt screen is recorded with its screenshot."
+      "detail": "Two suites / 30 tests pass after reproducing the false link-ready state. Native verification of the final rebuilt screen is recorded with its screenshot. (September 5 pass.)"
     },
     {
       "command": "Native credential offline/recovery test through scripts/sim.sh",
       "status": "Pass",
-      "detail": "Stopped only supabase_kong_production-readiness, observed readable metadata connection error, restored the container in finally, reopened PIN form, then cancelled. No credential changed."
+      "detail": "Stopped only supabase_kong_production-readiness, observed readable metadata connection error, restored the container in finally, reopened PIN form, then cancelled. No credential changed. (September 5 pass.)"
     },
     {
       "command": "Native legacy sign-in accessibility tree through scripts/sim.sh input describe-ui",
       "status": "Pass",
-      "detail": "Reproduced one grouped form before the fix. Final rebuilt screen exposes individual Email and Password text fields, Show password, Forgot password, Sign in and Sign Up actions. Evidence: root-legacy-login-fixed-ui.json."
+      "detail": "Reproduced one grouped form before the fix. Final rebuilt screen exposes individual Email and Password text fields, Show password, Forgot password, Sign in and Sign Up actions. Evidence: root-legacy-login-fixed-ui.json. (September 5 pass.)"
     },
     {
       "command": "FULL_STACK_PORT_BASE=54520 scripts/local-db/full-stack.sh up",
       "status": "Pass",
-      "detail": "Local full stack booted for the issue #40 mutation pass. API 127.0.0.1:54521, database 54522. The service_role grants from issue #63 had to be applied by hand before any edge function worked."
+      "detail": "Local full stack booted for the issue #40 mutation pass. API 127.0.0.1:54521, database 54522. The service_role grants from issue #63 had to be applied by hand before any edge function worked. (September 5 pass.)"
     },
     {
       "command": "scripts/release-readiness/setup-local-issue-40.sh",
       "status": "Pass",
-      "detail": "Seeded the disposable issue #40 fixture: three auth users through the local GoTrue admin API, both release-readiness SQL fixtures, and known sign-in PINs. Loopback only, decision 3."
+      "detail": "Seeded the disposable issue #40 fixture: three auth users through the local GoTrue admin API, both release-readiness SQL fixtures, and known sign-in PINs. Loopback only, decision 3. (September 5 pass.)"
     },
     {
       "command": "Mutation pass on EF05F833-2AC4-4383-8688-36C51B956BCF",
       "status": "Review",
-      "detail": "Ten mutations from issue #40 driven on a Release simulator build of origin/main. Eight pass with a matching database row. Stock count save and stock count offline sync fail with no database write at all (#69). Every screenshot and psql assertion is in docs/release-readiness/e2e/issue-40."
+      "detail": "Ten mutations from issue #40 driven on a Release simulator build of origin/main. Eight pass with a matching database row. Stock count save and stock count offline sync fail with no database write at all (#69). Every screenshot and psql assertion is in docs/release-readiness/e2e/issue-40. (September 5 pass.)"
     }
   ],
   "screenshots": [
+    {
+      "path": "app-store-2.3-proof/img/62-01-relaunch-suspended.png",
+      "title": "Suspended session relaunch (#62)",
+      "caption": "A suspended employee relaunches into Account Suspended with Sign Out instead of being signed out."
+    },
+    {
+      "path": "app-store-2.3-proof/img/73-03-salmon-sheet-default.png",
+      "title": "Par in the count unit (#73)",
+      "caption": "The Set Stock sheet reads par 8 fillet, 1 case is about 10 fillet."
+    },
+    {
+      "path": "app-store-2.3-proof/img/73-05-salmon-counted.png",
+      "title": "Six cases counted (#73)",
+      "caption": "1 of 2 checked and 0 to order after counting 6 case; stock_updates.new_quantity 60."
+    },
+    {
+      "path": "app-store-2.3-proof/img/70-03-second-send-after-rehydrate.png",
+      "title": "Send after a rehydrated cart (#70)",
+      "caption": "Added 4 packs of Fixture Nori with an unresolved Fixture Salmon line still in the cart; no error boundary."
+    },
+    {
+      "path": "app-store-2.3-proof/img/74-14-resume-first-screen-after-60s.png",
+      "title": "Relaunch first screen at 60 s (#74)",
+      "caption": "Checklist after the relaunch; the queued Nori count is still pending in AsyncStorage and absent from stock_updates."
+    },
+    {
+      "path": "app-store-2.3-proof/img/74-15-resume-stock-screen-opened.png",
+      "title": "Stock screen opened (#74)",
+      "caption": "The queued count landed only after Stock check opened (stock_updates 150 at 03:13:32Z)."
+    },
+    {
+      "path": "e2e/routes-2.3/auth-sign-in.png",
+      "title": "Sign in (#33)",
+      "caption": "Auth surface on the contract: black, one style."
+    },
+    {
+      "path": "e2e/routes-2.3/emp-tabs-index.png",
+      "title": "Employee checklist (#34)",
+      "caption": "Checklist on the contract with the floating pill tab bar."
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-index.png",
+      "title": "Manager home (#35)",
+      "caption": "Manager home on the contract."
+    },
+    {
+      "path": "e2e/routes-2.3/mgr-settings-team.png",
+      "title": "Team (#36)",
+      "caption": "Team settings on the contract."
+    },
     {
       "path": "e2e/root-final-welcome.png",
       "title": "Final signed Release welcome",
@@ -525,7 +624,7 @@
       "confirm": "Approve EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY in EAS production, then run a production-configured build."
     }
   ],
-  "handoff": "All changes are local to the codex/production-readiness worktree. No push, pull request, deployment, remote database write or App Store upload occurred. Main-checkout signing and lockfile changes belonging to another workstream were left untouched. Detailed audit notes and raw check logs accompany this report. Test runners and this task\u2019s local backend are stopped at handoff; the dedicated simulator is left on welcome. Restart the preserved local backend with FULL_STACK_PORT_BASE=54520 scripts/local-db/full-stack.sh up after approving local test writes. No other simulator or project service was stopped.",
+  "handoff": "The 2.3 pass lives on issue/49-release-proof: the proof page and captures under docs/release-readiness/app-store-2.3-proof, the route captures under docs/release-readiness/e2e/routes-2.3, this report, and the #47 documents under docs/release. No merge, deployment, remote database write, eas build or App Store upload occurred. All changes are local to the codex/production-readiness worktree. No push, pull request, deployment, remote database write or App Store upload occurred. Main-checkout signing and lockfile changes belonging to another workstream were left untouched. Detailed audit notes and raw check logs accompany this report. Test runners and this task’s local backend are stopped at handoff; the dedicated simulator is left on welcome. Restart the preserved local backend with FULL_STACK_PORT_BASE=54520 scripts/local-db/full-stack.sh up after approving local test writes. No other simulator or project service was stopped.",
   "files": [
     ".env.example",
     "app.json",
@@ -538,17 +637,23 @@
     "app/settings/profile.tsx",
     "docs/legal/PRIVACY.md",
     "docs/legal/TERMS.md",
+    "docs/release-readiness/app-store-2.3-proof/index.html",
+    "docs/release-readiness/app-store-2.3-proof/proof.json",
+    "docs/release-readiness/app-store-2.3-proof/psql-assertions.md",
     "docs/release-readiness/code-audit.md",
     "docs/release-readiness/dependency-audit.md",
     "docs/release-readiness/e2e/",
     "docs/release-readiness/e2e/issue-40/",
     "docs/release-readiness/e2e/issue-40/psql-assertions.md",
+    "docs/release-readiness/e2e/routes-2.3/",
     "docs/release-readiness/index.html",
     "docs/release-readiness/logs/",
     "docs/release-readiness/mutation-pass-issue-40.md",
     "docs/release-readiness/native-audit.md",
     "docs/release-readiness/report-content.json",
     "docs/release-readiness/route-inventory.json",
+    "docs/release/device-session.md",
+    "docs/release/production-build.md",
     "eas.json",
     "ios/Babytuna/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png",
     "ios/Babytuna/Images.xcassets/SplashScreenLegacy.imageset/image.png",
@@ -642,6 +747,71 @@
     }
   ],
   "mutations": [
+    {
+      "mutation": "Stock count online (2.3)",
+      "route": "(tabs)/stock-check-list",
+      "driven": "Set Fixture Salmon to 6 case in the Set Stock sheet; later edited Fixture Nori online.",
+      "screenshots": [
+        "app-store-2.3-proof/img/73-04-salmon-sheet-6-case.png",
+        "app-store-2.3-proof/img/73-05-salmon-counted.png",
+        "app-store-2.3-proof/img/74-11-resume-online-nori-counted.png"
+      ],
+      "assertion": "app-store-2.3-proof 73-01-salmon-6-case-write, 74-11-resume-online-count-written",
+      "result": "Pass",
+      "detail": "stock_updates rows new_quantity 60 (Salmon, par 8 fillet) and 100 (Nori) with a stock_check_sessions row."
+    },
+    {
+      "mutation": "Stock count offline then relaunch (2.3)",
+      "route": "(tabs)/stock-check-list with the local gateway stopped",
+      "driven": "Stopped Kong, counted, restarted Kong, force quit, relaunched, stayed on the checklist for 60 s, then opened Stock check. Run twice by the first verifier and once more on the reseeded fixture.",
+      "screenshots": [
+        "app-store-2.3-proof/img/74-12-resume-offline-nori-recounted.png",
+        "app-store-2.3-proof/img/74-14-resume-first-screen-after-60s.png",
+        "app-store-2.3-proof/img/74-15-resume-stock-screen-opened.png"
+      ],
+      "assertion": "app-store-2.3-proof 74-13 to 74-16",
+      "result": "Fail",
+      "detail": "The queued op stayed in AsyncStorage (pendingOps 1, syncError null) through 60 s on the first screen and wrote only when the stock screen opened. Issue #74 is not fixed on this build."
+    },
+    {
+      "mutation": "Advanced ordering send after rehydrate (2.3)",
+      "route": "(manager)/quick-order",
+      "driven": "Sent 3 fixture salmon (unit needed), force quit, relaunched, sent 4 packs of fixture nori.",
+      "screenshots": [
+        "app-store-2.3-proof/img/70-01-sent-unresolved-unit.png",
+        "app-store-2.3-proof/img/70-02-rehydrated-cart.png",
+        "app-store-2.3-proof/img/70-03-second-send-after-rehydrate.png"
+      ],
+      "assertion": "screen text: Added 4 packs of Fixture Nori.",
+      "result": "Pass",
+      "detail": "No error boundary; the unresolved line keeps its inline Add a unit message and the new line is added (#70)."
+    },
+    {
+      "mutation": "Invite create and accept (2.3)",
+      "route": "(manager)/manager-settings/team-invite then join, invite-hello, secure, secure-pin",
+      "driven": "Created an invite for Route Proof, opened the link with its token, set a PIN.",
+      "screenshots": [
+        "e2e/routes-2.3/mgr-settings-team-invite-link.png",
+        "e2e/routes-2.3/auth-join-valid-token-invite-hello.png",
+        "e2e/routes-2.3/auth-secure-pin-confirm.png"
+      ],
+      "assertion": "app-store-2.3-proof inv-02-invite-state-check",
+      "result": "Pass",
+      "detail": "invites.used_at set, profile Route Proof created with profile_completed true and a pin login identity."
+    },
+    {
+      "mutation": "Fulfillment Send All and finalize (2.3)",
+      "route": "(manager)/fulfillment-send-all, (manager)/fulfillment-confirmation",
+      "driven": "Send All for the one ready supplier, then finalize from the confirmation screen.",
+      "screenshots": [
+        "e2e/routes-2.3/mgr-fulfillment-send-all.png",
+        "e2e/routes-2.3/mgr-fulfillment-confirmation.png",
+        "e2e/routes-2.3/mgr-fulfillment-confirmation-after-finalize.png"
+      ],
+      "assertion": "app-store-2.3-proof ful-03-finalize",
+      "result": "Pass",
+      "detail": "past_orders row 8cfb818b share_method share; order_items pending to sent."
+    },
     {
       "mutation": "Quick Order send",
       "route": "(manager)/quick-order then the Confirm Location sheet",

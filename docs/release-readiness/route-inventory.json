@@ -1,22 +1,11 @@
 [
   {
-    "file": "app/(auth)/complete-profile.tsx",
-    "route": "(auth)/complete-profile",
-    "status": "Blocked",
-    "evidence": [
-      "e2e/issue-39/33-auth-complete-profile.png",
-      "e2e/issue-39/34-auth-complete-profile-forced.png",
-      "e2e/issue-39/35-auth-complete-profile-deeplink.png",
-      "Not reachable at runtime. A fresh email/password account signs straight into the checklist, and forcing profiles.profile_completed = false plus full_name = null in the loopback database is repaired back to completed on the next launch, so the screen never renders. Direct deep link redirects home. Tracked as issue #59."
-    ]
-  },
-  {
     "file": "app/(auth)/invite-hello.tsx",
     "route": "(auth)/invite-hello",
     "status": "Pass",
     "evidence": [
-      "e2e/issue-39/01-auth-invite-hello.png",
-      "babytunasystems://join?token=<invite> renders 'Hello, Route Audit Tester' with Step 1 of 2 and a working Continue button against a real invite row in the loopback database."
+      "e2e/routes-2.3/auth-join-valid-token-invite-hello.png",
+      "A valid token from the local invites table opened Hello, Route Proof (Step 1 of 2); the flow continued to PIN setup and invites.used_at was set (psql inv-02-invite-state-check)."
     ]
   },
   {
@@ -24,27 +13,28 @@
     "route": "(auth)/login",
     "status": "Partial",
     "evidence": [
-      "e2e/root-legacy-login-fixed.png",
-      "Before fix accessibility grouped the whole form. Final native tree exposes Email/Password fields, Show password, Forgot password, Sign in and Sign Up separately. Legacy authentication/reset mutations remain unverified."
+      "e2e/routes-2.3/auth-login.png",
+      "app-store-2.3-proof/img/62-02-after-sign-out.png",
+      "Welcome Back email and password form rendered; this pass signed in through (auth)/sign-in."
     ]
   },
   {
     "file": "app/(auth)/ready.tsx",
     "route": "(auth)/ready",
-    "status": "Pass",
+    "status": "Partial",
     "evidence": [
+      "e2e/routes-2.3/auth-ready-entered-app-profile.png",
       "e2e/issue-39/05-auth-ready.png",
-      "e2e/issue-39/71-auth-ready-pin.png",
-      "Reached twice by completing the invited onboarding flow: once with a password ('Your Sushi order list is ready') and once with a PIN ('Your Poki & Pho order list is ready'). 'See today's list' entered the app."
+      "The ready screen advanced before a capture landed: auth-ready.png and auth-ready-entered-app.png show the PIN entry that precedes it, auth-ready-entered-app-profile.png the profile the invited user reached. Screen-level evidence is the #39 capture."
     ]
   },
   {
     "file": "app/(auth)/secure-password.tsx",
     "route": "(auth)/secure-password",
-    "status": "Pass",
+    "status": "Partial",
     "evidence": [
       "e2e/issue-39/04-auth-secure-password.png",
-      "Password entered and submitted. accept-invite consumed the token, a login_identities row was written with credential_kind = password, and the session landed on Ready."
+      "Not re-driven in the 2.3 pass (the PIN path was taken at Step 2). The #39 capture stands; #83 swept it with the same primitives as secure-pin."
     ]
   },
   {
@@ -52,9 +42,9 @@
     "route": "(auth)/secure-pin",
     "status": "Pass",
     "evidence": [
-      "e2e/issue-39/69-auth-secure-pin-entry.png",
-      "e2e/issue-39/70-auth-secure-pin-entered.png",
-      "Four digit entry plus the confirm step. A login_identities row was written with credential_kind = pin and the session landed on Ready."
+      "e2e/routes-2.3/auth-secure-pin-entry.png",
+      "e2e/routes-2.3/auth-secure-pin-confirm.png",
+      "PIN entered and confirmed for the invited Route Proof user; login_identities row with credential_kind pin (psql inv-02-invite-state-check)."
     ]
   },
   {
@@ -62,18 +52,20 @@
     "route": "(auth)/secure",
     "status": "Pass",
     "evidence": [
-      "e2e/issue-39/02-auth-secure.png",
-      "Step 2 of 2 with both option cards. Both cards navigate. Deep linking without an invite token redirects to welcome, as the source intends."
+      "e2e/routes-2.3/auth-secure.png",
+      "e2e/routes-2.3/auth-secure-no-invite.png",
+      "Step 2 of 2 chooser rendered inside the invite flow; with no invite in progress the deep link falls back to Welcome."
     ]
   },
   {
     "file": "app/(auth)/sign-in.tsx",
     "route": "(auth)/sign-in",
-    "status": "Partial",
+    "status": "Pass",
     "evidence": [
-      "e2e/07-manager-login-result.png",
-      "e2e/27-employee-checklist.png",
-      "Manager and employee name/PIN sign-in succeeded on local backend. Recovery and all failure modes not exhausted."
+      "e2e/routes-2.3/auth-sign-in.png",
+      "app-store-2.3-proof/img/01-signin-employee-filled.png",
+      "app-store-2.3-proof/img/62-03-sign-in-refused.png",
+      "Manager and employee signed in by name and PIN; a suspended employee gets the inline refusal (#62)."
     ]
   },
   {
@@ -81,17 +73,18 @@
     "route": "(auth)/signup",
     "status": "Partial",
     "evidence": [
-      "e2e/root-legacy-signup.png",
-      "Legacy account creation form renders. No account created and no invitation accepted."
+      "e2e/routes-2.3/auth-signup.png",
+      "Create Account form rendered signed out."
     ]
   },
   {
     "file": "app/(auth)/welcome.tsx",
     "route": "(auth)/welcome",
-    "status": "Partial",
+    "status": "Pass",
     "evidence": [
-      "e2e/root-final-welcome.png",
-      "Final Release sign-out returns to branded welcome with readable legal links. Invitation acceptance remains unverified."
+      "e2e/routes-2.3/auth-welcome.png",
+      "app-store-2.3-proof/img/03-signed-out.png",
+      "Rendered signed out and reached again after Sign Out from the manager settings screen."
     ]
   },
   {
@@ -99,8 +92,8 @@
     "route": "(manager)/browse",
     "status": "Partial",
     "evidence": [
-      "e2e/root-manager-browse.png",
-      "Four seeded inventory items, units and categories render. No add action performed."
+      "e2e/routes-2.3/mgr-browse.png",
+      "Browse rendered with the fish category filter."
     ]
   },
   {
@@ -108,8 +101,8 @@
     "route": "(manager)/cart",
     "status": "Partial",
     "evidence": [
-      "e2e/root-manager-cart-explicit.png",
-      "Explicit manager route renders the empty cart. Sending remains unverified."
+      "e2e/routes-2.3/mgr-cart.png",
+      "Manager cart rendered."
     ]
   },
   {
@@ -117,8 +110,8 @@
     "route": "(manager)/employee-reminders-delivery",
     "status": "Partial",
     "evidence": [
-      "e2e/root-manager-employee-reminders-delivery.png",
-      "Empty delivery history renders. Actual push delivery unverified."
+      "e2e/routes-2.3/mgr-employee-reminders-delivery.png",
+      "Delivery Status rendered."
     ]
   },
   {
@@ -126,8 +119,8 @@
     "route": "(manager)/employee-reminders-recurring",
     "status": "Partial",
     "evidence": [
-      "e2e/root-manager-employee-reminders-recurring.png",
-      "Empty rules screen renders. No rule created."
+      "e2e/routes-2.3/mgr-employee-reminders-recurring.png",
+      "Recurring Reminders rendered."
     ]
   },
   {
@@ -135,8 +128,8 @@
     "route": "(manager)/employee-reminders-settings",
     "status": "Partial",
     "evidence": [
-      "e2e/root-manager-employee-reminders-settings.png",
-      "Three configuration fields render. No save attempted."
+      "e2e/routes-2.3/mgr-employee-reminders-settings.png",
+      "Reminder Settings rendered."
     ]
   },
   {
@@ -144,17 +137,18 @@
     "route": "(manager)/employee-reminders",
     "status": "Partial",
     "evidence": [
-      "e2e/root-manager-employee-reminders.png",
-      "Two local employees and reminder states render. No reminder sent."
+      "e2e/routes-2.3/mgr-employee-reminders.png",
+      "Employee Reminders rendered with the three fixture users."
     ]
   },
   {
     "file": "app/(manager)/export-fish-order.tsx",
     "route": "(manager)/export-fish-order",
-    "status": "Partial",
+    "status": "Pass",
     "evidence": [
-      "e2e/root-export-invalid-fixed.png",
-      "Missing order details now show honest error and no Copy/Share. Valid local fixture payload renders in root-export-valid-fixture.png; no external share performed. 16 focused regression tests pass."
+      "e2e/routes-2.3/mgr-export-fish-order-missing.png",
+      "e2e/routes-2.3/mgr-export-fish-order-valid.png",
+      "Missing params show the Fish Order empty state; a valid payload renders Confirm Order for SU with Fixture Salmon."
     ]
   },
   {
@@ -162,8 +156,9 @@
     "route": "(manager)/fulfillment-confirmation",
     "status": "Pass",
     "evidence": [
-      "e2e/issue-39/58-manager-fulfillment-confirmation.png",
-      "Opened from Fulfillment with a real submitted order. Review Order, message preview and per item unit selectors all rendered. Share finalized the supplier order and wrote a past_orders row."
+      "e2e/routes-2.3/mgr-fulfillment-confirmation.png",
+      "e2e/routes-2.3/mgr-fulfillment-confirmation-after-finalize.png",
+      "Review Order for Local QA Supplier, finalized: past_orders row 8cfb818b with share_method share and every order_items row moved to sent (psql ful-03-finalize)."
     ]
   },
   {
@@ -171,8 +166,8 @@
     "route": "(manager)/fulfillment-history-detail",
     "status": "Pass",
     "evidence": [
-      "e2e/issue-39/64-manager-fulfillment-history-detail.png",
-      "Deep linked with ?id=<past_orders.id> produced by the Send flow. Summary, item lines and the sent message rendered from the database."
+      "e2e/routes-2.3/mgr-fulfillment-history-detail.png",
+      "Opened the past order written by this pass (Local QA Supplier, 4:19:13 PM)."
     ]
   },
   {
@@ -180,20 +175,18 @@
     "route": "(manager)/fulfillment-history",
     "status": "Partial",
     "evidence": [
-      "e2e/24-manager-fulfillment-history-empty.png",
-      "Empty history rendered; populated history and detail unverified."
+      "e2e/routes-2.3/mgr-fulfillment-history.png",
+      "Past Orders list rendered."
     ]
   },
   {
     "file": "app/(manager)/fulfillment-send-all.tsx",
     "route": "(manager)/fulfillment-send-all",
-    "status": "Fail",
+    "status": "Pass",
     "evidence": [
-      "e2e/issue-39/61-fulfillment-before-sendall.png",
-      "e2e/issue-39/62-sendall-empty-bug.png",
-      "e2e/issue-39/66-fulfillment-second-order.png",
-      "e2e/issue-39/67-manager-send-all-repro2.png",
-      "The route renders, but with one supplier ready the screen shows 'Nothing left to send'. Reproduced twice from the in-app Send All button and once by deep link. Tracked as issue #60."
+      "e2e/routes-2.3/mgr-fulfillment-send-all.png",
+      "e2e/routes-2.3/mgr-fulfillment-send-all-after-copy.png",
+      "Send All listed Supplier 1 of 1 and reached Send All complete; both captures show the completed state. The #60 empty state did not reproduce on this build."
     ]
   },
   {
@@ -201,19 +194,18 @@
     "route": "(manager)/fulfillment",
     "status": "Partial",
     "evidence": [
-      "e2e/22-manager-fulfillment.png",
-      "e2e/23-manager-fulfillment-expanded.png",
-      "Pending groups and expanded items rendered. Supplier fixture unresolved; sending not exercised.",
-      "e2e/root-employee-manager-guard.png confirms employee deep-link guard."
+      "e2e/routes-2.3/mgr-fulfillment.png",
+      "Fulfillment rendered with the Suppliers and History segments."
     ]
   },
   {
     "file": "app/(manager)/index.tsx",
     "route": "(manager)/index",
-    "status": "Partial",
+    "status": "Pass",
     "evidence": [
-      "e2e/20-manager-home.png",
-      "Manager home rendered with local fixtures."
+      "e2e/routes-2.3/mgr-index.png",
+      "app-store-2.3-proof/img/02-signed-in-manager.png",
+      "Manager home rendered after sign-in and on every return during the pass."
     ]
   },
   {
@@ -221,8 +213,8 @@
     "route": "(manager)/inventory",
     "status": "Partial",
     "evidence": [
-      "e2e/root-manager-inventory.png",
-      "Four local inventory items and freshness counts render. No counts changed."
+      "e2e/routes-2.3/mgr-inventory.png",
+      "Inventory rendered with All Locations."
     ]
   },
   {
@@ -230,8 +222,8 @@
     "route": "(manager)/manager-settings/access-codes",
     "status": "Partial",
     "evidence": [
-      "e2e/root-manager-manager-settings-access-codes.png",
-      "Masked access-code fields render. No secret changed."
+      "e2e/routes-2.3/mgr-settings-access-codes.png",
+      "Access codes rendered."
     ]
   },
   {
@@ -239,8 +231,8 @@
     "route": "(manager)/manager-settings/export-format",
     "status": "Partial",
     "evidence": [
-      "e2e/root-manager-export-format-active.png",
-      "Rendered with manager view active and local fixture data. Read-only checks; no configuration, access or business record changes."
+      "e2e/routes-2.3/mgr-settings-export-format.png",
+      "Export format rendered."
     ]
   },
   {
@@ -248,10 +240,8 @@
     "route": "(manager)/manager-settings/profile",
     "status": "Partial",
     "evidence": [
-      "e2e/root-manager-profile-active.png",
-      "Rendered with manager view active and local fixture data. Read-only checks; no configuration, access or business record changes.",
-      "e2e/root-manager-credential-final.png",
-      "Original credential modal failure retested successfully on final build. No credential submitted."
+      "e2e/routes-2.3/mgr-settings-profile.png",
+      "Manager profile rendered."
     ]
   },
   {
@@ -259,8 +249,8 @@
     "route": "(manager)/manager-settings/quick-order-config",
     "status": "Partial",
     "evidence": [
-      "e2e/root-manager-quick-order-config-active.png",
-      "Rendered with manager view active and local fixture data. Read-only checks; no configuration, access or business record changes."
+      "e2e/routes-2.3/mgr-settings-quick-order-config.png",
+      "Quick Order config rendered."
     ]
   },
   {
@@ -268,8 +258,8 @@
     "route": "(manager)/manager-settings/supplier-contacts",
     "status": "Partial",
     "evidence": [
-      "e2e/root-manager-supplier-contacts-active.png",
-      "Rendered with manager view active and local fixture data. Read-only checks; no configuration, access or business record changes."
+      "e2e/routes-2.3/mgr-settings-supplier-contacts.png",
+      "Supplier Contacts rendered."
     ]
   },
   {
@@ -277,26 +267,28 @@
     "route": "(manager)/manager-settings/team-defaults",
     "status": "Partial",
     "evidence": [
-      "e2e/root-manager-team-defaults-active.png",
-      "Rendered with manager view active and local fixture data. Read-only checks; no configuration, access or business record changes."
+      "e2e/routes-2.3/mgr-settings-team-defaults.png",
+      "New employee defaults rendered."
     ]
   },
   {
     "file": "app/(manager)/manager-settings/team-invite-link.tsx",
     "route": "(manager)/manager-settings/team-invite-link",
-    "status": "Partial",
+    "status": "Pass",
     "evidence": [
-      "e2e/root-invite-invalid-fixed.png",
-      "Native missing-parameter state repaired; no Copy/Send. Back to Team verified. Valid link behavior covered by focused tests; actual creation, delivery and acceptance remain unverified."
+      "e2e/routes-2.3/mgr-settings-team-invite-link.png",
+      "e2e/routes-2.3/mgr-settings-team-invite-link-missing.png",
+      "Link ready with a real token after creating the invite; the deep link without a token shows Invitation unavailable."
     ]
   },
   {
     "file": "app/(manager)/manager-settings/team-invite.tsx",
     "route": "(manager)/manager-settings/team-invite",
-    "status": "Partial",
+    "status": "Pass",
     "evidence": [
-      "e2e/root-manager-team-invite.png",
-      "Invitation form renders with current choices. No invitation created."
+      "e2e/routes-2.3/mgr-settings-team-invite.png",
+      "e2e/routes-2.3/mgr-settings-team-invite-link.png",
+      "Created an invite for Route Proof: invites row 43da3c6a, later accepted (psql inv-02-invite-state-check)."
     ]
   },
   {
@@ -304,8 +296,8 @@
     "route": "(manager)/manager-settings/team-member",
     "status": "Partial",
     "evidence": [
-      "e2e/root-manager-team-member.png",
-      "Existing local employee details and module states render. No changes or reset attempted."
+      "e2e/routes-2.3/mgr-settings-team-member.png",
+      "E2E Employee member screen rendered."
     ]
   },
   {
@@ -313,8 +305,8 @@
     "route": "(manager)/manager-settings/team-preview",
     "status": "Partial",
     "evidence": [
-      "e2e/root-manager-team-preview.png",
-      "Read-only preview renders current local employee modules."
+      "e2e/routes-2.3/mgr-settings-team-preview.png",
+      "Preview as E2E Employee rendered with its Exit control."
     ]
   },
   {
@@ -322,8 +314,8 @@
     "route": "(manager)/manager-settings/team",
     "status": "Partial",
     "evidence": [
-      "e2e/root-manager-team-active.png",
-      "Rendered with manager view active and local fixture data. Read-only checks; no configuration, access or business record changes."
+      "e2e/routes-2.3/mgr-settings-team.png",
+      "Team rendered with the three fixture users and defaults row."
     ]
   },
   {
@@ -331,17 +323,8 @@
     "route": "(manager)/manager-settings/user-management",
     "status": "Partial",
     "evidence": [
-      "e2e/root-manager-user-management-active.png",
-      "Rendered with manager view active and local fixture data. Read-only checks; no configuration, access or business record changes."
-    ]
-  },
-  {
-    "file": "app/(manager)/orders/pending.tsx",
-    "route": "(manager)/orders/pending",
-    "status": "Partial",
-    "evidence": [
-      "e2e/root-manager-orders-pending.png",
-      "Empty pending review queue renders."
+      "e2e/routes-2.3/mgr-settings-user-management.png",
+      "User management rendered."
     ]
   },
   {
@@ -349,8 +332,17 @@
     "route": "(manager)/orders",
     "status": "Partial",
     "evidence": [
-      "e2e/root-manager-orders-explicit.png",
-      "Explicit manager route renders three local orders with status counts. Canonical /orders screenshot is employee My Orders and is not manager evidence. No status changed."
+      "e2e/routes-2.3/mgr-orders.png",
+      "Orders rendered."
+    ]
+  },
+  {
+    "file": "app/(manager)/orders/pending.tsx",
+    "route": "(manager)/orders/pending",
+    "status": "Partial",
+    "evidence": [
+      "e2e/routes-2.3/mgr-orders-pending.png",
+      "Pending Review rendered."
     ]
   },
   {
@@ -358,7 +350,8 @@
     "route": "(manager)/past-orders/[id]",
     "status": "Shared implementation",
     "evidence": [
-      "Source alias of app/(manager)/fulfillment-history-detail.tsx. This alias deep link was not independently exercised."
+      "e2e/routes-2.3/mgr-fulfillment-history-detail.png",
+      "Wraps the fulfillment history detail screen exercised above."
     ]
   },
   {
@@ -366,16 +359,17 @@
     "route": "(manager)/past-orders/index",
     "status": "Shared implementation",
     "evidence": [
-      "Source alias of app/(manager)/fulfillment-history.tsx. This alias deep link was not independently exercised."
+      "e2e/routes-2.3/mgr-past-orders-index.png",
+      "Wraps the Past Orders list; rendered by deep link."
     ]
   },
   {
     "file": "app/(manager)/profile.tsx",
     "route": "(manager)/profile",
-    "status": "Partial",
+    "status": "Pass",
     "evidence": [
-      "e2e/19-manager-settings.png",
-      "Settings overview rendered."
+      "e2e/routes-2.3/mgr-profile.png",
+      "Manager settings rendered; Sign Out driven through its confirm alert to the Welcome screen."
     ]
   },
   {
@@ -383,19 +377,20 @@
     "route": "(manager)/quick-order",
     "status": "Pass",
     "evidence": [
-      "e2e/issue-39/50-manager-quick-order.png",
-      "e2e/issue-39/54-manager-quick-order-parsed.png",
-      "e2e/issue-39/56-manager-order-submitted.png",
-      "Typed order parsed into Fixture Salmon and Fixture Rice, confirmed and submitted. A new orders row with status submitted appeared in the loopback database."
+      "e2e/routes-2.3/mgr-quick-order.png",
+      "app-store-2.3-proof/img/70-01-sent-unresolved-unit.png",
+      "app-store-2.3-proof/img/70-02-rehydrated-cart.png",
+      "app-store-2.3-proof/img/70-03-second-send-after-rehydrate.png",
+      "Advanced ordering: sends before and after a force quit with an unresolved unit in the cart, no error boundary (#70)."
     ]
   },
   {
     "file": "app/(manager)/voice.tsx",
     "route": "(manager)/voice",
-    "status": "Pass",
+    "status": "Partial",
     "evidence": [
-      "e2e/issue-39/51-manager-voice-redirect.png",
-      "SMART_ORDER_ENABLED is false, so the route redirects to manager home. Confirmed at runtime from a manager session."
+      "e2e/routes-2.3/mgr-voice.png",
+      "Voice flags are off in .env.local; the route redirects to manager home."
     ]
   },
   {
@@ -403,8 +398,9 @@
     "route": "(tabs)/cart",
     "status": "Partial",
     "evidence": [
-      "e2e/12-manager-cart-empty.png",
-      "Empty cart rendered in shared ordering flow. Populated cart checkout not verified."
+      "e2e/routes-2.3/emp-tabs-cart.png",
+      "e2e/routes-2.3/mgr-tabs-cart.png",
+      "Cart rendered for both roles."
     ]
   },
   {
@@ -412,8 +408,9 @@
     "route": "(tabs)/history",
     "status": "Partial",
     "evidence": [
-      "e2e/13-manager-history-empty.png",
-      "Empty checklist history rendered. Reorder not verified."
+      "e2e/routes-2.3/emp-tabs-history.png",
+      "e2e/routes-2.3/mgr-tabs-history.png",
+      "Past orders rendered for both roles."
     ]
   },
   {
@@ -421,18 +418,20 @@
     "route": "(tabs)/index",
     "status": "Pass",
     "evidence": [
-      "e2e/issue-39/07a-tabs-settings-before.png",
-      "e2e/issue-39/07b-tabs-index-deeplink.png",
-      "From Settings, deep linking /(tabs) forwarded to the first visible pill tab (the Order checklist)."
+      "e2e/routes-2.3/emp-tabs-index.png",
+      "e2e/routes-2.3/mgr-root-index.png",
+      "app-store-2.3-proof/img/74-13-resume-relaunch-first-screen.png",
+      "Checklist is the employee first screen and the relaunch landing screen used by the #74 check."
     ]
   },
   {
     "file": "app/(tabs)/inventory-browse.tsx",
     "route": "(tabs)/inventory-browse",
-    "status": "Pass",
+    "status": "Partial",
     "evidence": [
-      "e2e/issue-39/26-tabs-inventory-browse.png",
-      "Deep linked with ?category=fish&focusSearch=1. Location header, category rail and the fixture catalogue rendered. Not gated by any module."
+      "e2e/routes-2.3/emp-tabs-inventory-browse.png",
+      "e2e/routes-2.3/mgr-tabs-inventory-browse.png",
+      "Browse rendered for both roles with the fish filter."
     ]
   },
   {
@@ -440,7 +439,8 @@
     "route": "(tabs)/orders",
     "status": "Shared implementation",
     "evidence": [
-      "Source alias of app/orders/history.tsx. This alias deep link was not independently exercised."
+      "e2e/routes-2.3/emp-tabs-orders.png",
+      "Wraps My orders; rendered by deep link."
     ]
   },
   {
@@ -448,26 +448,28 @@
     "route": "(tabs)/past-checks",
     "status": "Partial",
     "evidence": [
-      "e2e/root-past-checks.png",
-      "Empty completed-check history rendered."
+      "e2e/routes-2.3/emp-tabs-past-checks.png",
+      "Past checks rendered."
     ]
   },
   {
     "file": "app/(tabs)/profile.tsx",
     "route": "(tabs)/profile",
-    "status": "Pass",
+    "status": "Partial",
     "evidence": [
-      "e2e/issue-39/09-tabs-profile.png",
-      "Name, email, location, Change PIN or password, Privacy choices and Delete account all rendered for an employee session."
+      "e2e/routes-2.3/emp-tabs-profile.png",
+      "e2e/routes-2.3/mgr-tabs-profile.png",
+      "Profile rendered for both roles."
     ]
   },
   {
     "file": "app/(tabs)/quick-order.tsx",
     "route": "(tabs)/quick-order",
-    "status": "Blocked",
+    "status": "Partial",
     "evidence": [
-      "e2e/21-manager-quick-order-filled.png",
-      "Text entry retained. Send blocked by automatic approval review; local parser catalog fixture also needs qo_items."
+      "e2e/routes-2.3/emp-tabs-quick-order.png",
+      "e2e/routes-2.3/mgr-tabs-quick-order.png",
+      "Employee Advanced ordering rendered (Blocked in the #39 pass; the ordering_advanced module is on for E2E Employee in this fixture)."
     ]
   },
   {
@@ -475,17 +477,21 @@
     "route": "(tabs)/receive-delivery",
     "status": "Partial",
     "evidence": [
-      "e2e/18-manager-receive-empty.png",
-      "Empty receipt state rendered. Delivery mutation not verified."
+      "e2e/routes-2.3/emp-tabs-receive-delivery.png",
+      "e2e/routes-2.3/mgr-tabs-receive-delivery.png",
+      "Receive delivery rendered for both roles."
     ]
   },
   {
     "file": "app/(tabs)/settings.tsx",
     "route": "(tabs)/settings",
-    "status": "Partial",
+    "status": "Pass",
     "evidence": [
-      "e2e/root-employee-manager-guard.png",
-      "Employee settings rendered after rejecting manager fulfillment deep link."
+      "e2e/routes-2.3/emp-tabs-settings.png",
+      "e2e/routes-2.3/mgr-tabs-settings.png",
+      "app-store-2.3-proof/img/02a-manager-in-employee-view-settings.png",
+      "e2e/routes-2.3/emp-manager-guard-fulfillment.png",
+      "Rendered for both roles; an employee deep-linking a manager route lands here (role guard)."
     ]
   },
   {
@@ -493,64 +499,73 @@
     "route": "(tabs)/simple-order",
     "status": "Partial",
     "evidence": [
-      "e2e/10-manager-order-sent.png",
-      "e2e/27-employee-checklist.png",
-      "Manager checklist submission produced a matching local submitted order. Employee checklist rendered. Further writes await permission."
+      "e2e/routes-2.3/emp-tabs-simple-order.png",
+      "e2e/routes-2.3/mgr-tabs-simple-order.png",
+      "Checklist rendered for both roles."
     ]
   },
   {
     "file": "app/(tabs)/stock-check-list.tsx",
     "route": "(tabs)/stock-check-list",
-    "status": "Partial",
+    "status": "Pass",
     "evidence": [
-      "e2e/root-stock-list.png",
-      "Local stock station renders. No counts saved or submitted."
+      "e2e/routes-2.3/emp-tabs-stock-check-list.png",
+      "app-store-2.3-proof/img/73-03-salmon-sheet-default.png",
+      "app-store-2.3-proof/img/73-05-salmon-counted.png",
+      "app-store-2.3-proof/img/74-11-resume-online-nori-counted.png",
+      "app-store-2.3-proof/img/74-12-resume-offline-nori-recounted.png",
+      "#73 par units read in the count unit; online and offline counts written (stock_updates rows 60, 100, 150)."
     ]
   },
   {
     "file": "app/(tabs)/stock-check.tsx",
     "route": "(tabs)/stock-check",
-    "status": "Partial",
+    "status": "Pass",
     "evidence": [
-      "e2e/root-stock-home.png",
-      "Two seeded areas rendered with three unchecked items. No count submitted."
+      "e2e/routes-2.3/emp-tabs-stock-check.png",
+      "e2e/routes-2.3/mgr-tabs-stock-check.png",
+      "app-store-2.3-proof/img/73-01-stock-home.png",
+      "app-store-2.3-proof/img/74-15-resume-stock-screen-opened.png",
+      "Stock home for both roles. Opening it is what drains the offline queue, which is the #74 failure."
     ]
   },
   {
     "file": "app/(tabs)/voice.tsx",
     "route": "(tabs)/voice",
-    "status": "Pass",
+    "status": "Partial",
     "evidence": [
-      "e2e/issue-39/08-tabs-voice-redirect.png",
-      "Redirects to /(tabs) by design. Confirmed at runtime from an employee session."
+      "e2e/routes-2.3/emp-tabs-voice.png",
+      "Redirects to the checklist with the voice flags off."
     ]
   },
   {
     "file": "app/index.tsx",
     "route": "index",
-    "status": "Partial",
+    "status": "Pass",
     "evidence": [
-      "e2e/06-signed-welcome.png",
-      "e2e/27-employee-checklist.png",
-      "Launch routing worked for signed-out and restored employee session."
+      "e2e/routes-2.3/auth-root-index.png",
+      "e2e/routes-2.3/emp-root-index.png",
+      "e2e/routes-2.3/mgr-root-index.png",
+      "Root redirect: Welcome signed out, Checklist for the employee session and for the manager session while in employee view."
     ]
   },
   {
     "file": "app/inventory-browse.tsx",
     "route": "inventory-browse",
-    "status": "Pass",
+    "status": "Partial",
     "evidence": [
-      "e2e/issue-39/27-root-inventory-browse-redirect.png",
-      "Deep linking /inventory-browse?category=fish forwarded to /(tabs)/inventory-browse with the params preserved."
+      "e2e/routes-2.3/emp-root-inventory-browse.png",
+      "Root browse rendered with the fish filter."
     ]
   },
   {
     "file": "app/join.tsx",
     "route": "join",
-    "status": "Partial",
+    "status": "Pass",
     "evidence": [
-      "e2e/root-join-missing-token.png",
-      "Missing-token deep link returns to welcome. Valid invitation lifecycle remains unverified."
+      "e2e/routes-2.3/auth-join-missing-token.png",
+      "e2e/routes-2.3/auth-join-valid-token-invite-hello.png",
+      "Missing token falls back to Welcome; a valid token opens the invite flow."
     ]
   },
   {
@@ -558,8 +573,9 @@
     "route": "orders/[id]",
     "status": "Partial",
     "evidence": [
-      "e2e/root-order-detail.png",
-      "Actual locally submitted checklist order loads by ID with matching item quantity, employee and location. No status action pressed."
+      "e2e/routes-2.3/emp-orders-id.png",
+      "e2e/routes-2.3/mgr-orders-id.png",
+      "Order #1 detail rendered for both roles."
     ]
   },
   {
@@ -567,8 +583,8 @@
     "route": "orders/history",
     "status": "Partial",
     "evidence": [
-      "e2e/root-order-history.png",
-      "Local employee submitted order rendered with item and note counts. Detail/filter mutations not exhausted."
+      "e2e/routes-2.3/emp-orders-history.png",
+      "My orders rendered."
     ]
   },
   {
@@ -576,8 +592,8 @@
     "route": "settings/about-support",
     "status": "Partial",
     "evidence": [
-      "e2e/root-about-support.png",
-      "Version 2.3 and support/privacy actions render. Public destinations not verified."
+      "e2e/routes-2.3/emp-settings-about-support.png",
+      "About and support rendered."
     ]
   },
   {
@@ -585,8 +601,8 @@
     "route": "settings/display-accessibility",
     "status": "Partial",
     "evidence": [
-      "e2e/root-display-accessibility.png",
-      "Current settings and preview render. Whole-app large-text and physical VoiceOver testing remain."
+      "e2e/routes-2.3/emp-settings-display-accessibility.png",
+      "Display rendered."
     ]
   },
   {
@@ -594,8 +610,8 @@
     "route": "settings/notifications-debug",
     "status": "Pass",
     "evidence": [
-      "e2e/root-debug-redirect.png",
-      "Direct native deep link redirects to Notifications in Release. Diagnostic contents are not exposed."
+      "e2e/routes-2.3/emp-settings-notifications-debug.png",
+      "The Release build redirects the debug route to Notifications (production guard)."
     ]
   },
   {
@@ -603,17 +619,18 @@
     "route": "settings/notifications",
     "status": "Partial",
     "evidence": [
-      "e2e/root-notifications.png",
-      "Preferences render; physical delivery and server token ownership remain unverified."
+      "e2e/routes-2.3/emp-settings-notifications.png",
+      "Notifications rendered."
     ]
   },
   {
     "file": "app/settings/profile.tsx",
     "route": "settings/profile",
-    "status": "Partial",
+    "status": "Pass",
     "evidence": [
-      "e2e/root-credential-accessible-final.png",
-      "Shared credential sheet opens after asynchronous identity lookup. Separate accessible fields/buttons and Cancel verified. No new credential saved."
+      "e2e/routes-2.3/emp-settings-profile.png",
+      "e2e/routes-2.3/auth-ready-entered-app-profile.png",
+      "Profile rendered for E2E Employee and for the freshly invited Route Proof user."
     ]
   },
   {
@@ -621,8 +638,8 @@
     "route": "settings/quick-search",
     "status": "Partial",
     "evidence": [
-      "e2e/root-quick-search.png",
-      "Search field and empty prompt render. Search-result selection remains unverified."
+      "e2e/routes-2.3/emp-settings-quick-search.png",
+      "Quick search rendered."
     ]
   },
   {
@@ -630,8 +647,8 @@
     "route": "settings/reminders",
     "status": "Partial",
     "evidence": [
-      "e2e/root-reminders.png",
-      "Preset and empty custom reminder states render. Scheduling not verified."
+      "e2e/routes-2.3/emp-settings-reminders.png",
+      "Reminders rendered."
     ]
   },
   {
@@ -639,19 +656,20 @@
     "route": "settings/stock-settings",
     "status": "Partial",
     "evidence": [
-      "e2e/root-stock-settings.png",
-      "Stock settings render; preference writes not changed."
+      "e2e/routes-2.3/emp-settings-stock-settings.png",
+      "Stock settings rendered."
     ]
   },
   {
     "file": "app/suspended.tsx",
     "route": "suspended",
-    "status": "Blocked",
+    "status": "Pass",
     "evidence": [
-      "e2e/issue-39/37-suspended-no-session.png",
-      "e2e/issue-39/40-suspended-relaunch.png",
-      "e2e/issue-39/41-suspended-signin-attempt.png",
-      "Routing sends a restored suspended session to /suspended instead of home, and the screen's Sign Out button is covered by src/__tests__/suspendedRouting.test.ts. The runtime half landed too: src/store/authStore.ts now keeps the session and the suspended profile during initialize (shouldThrowOnSuspended: false) so the guard sees it, covered by src/__tests__/authStore.authFlow.test.ts. Sign-in stays an inline refusal by design and now propagates that message. Not yet re-driven on the simulator; proof is tests only. Tracked as issue #62."
+      "e2e/routes-2.3/auth-suspended-no-session.png",
+      "app-store-2.3-proof/img/62-01-relaunch-suspended.png",
+      "app-store-2.3-proof/img/62-02-after-sign-out.png",
+      "e2e/routes-2.3/emp-suspended-with-active-session.png",
+      "No session redirects to login; a suspended stored session relaunches into Account Suspended with a working Sign Out (#62); an active, non-suspended session deep-linking here lands on the checklist."
     ]
   }
 ]
