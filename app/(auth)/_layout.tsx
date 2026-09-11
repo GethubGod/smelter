@@ -18,7 +18,6 @@ export default function AuthLayout() {
       <Stack.Screen name="sign-in" options={{ contentStyle: { backgroundColor: authTheme.background } }} />
       <Stack.Screen name="login" />
       <Stack.Screen name="signup" />
-      <Stack.Screen name="complete-profile" />
     </Stack>
   );
 }

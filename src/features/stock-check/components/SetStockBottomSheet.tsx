@@ -367,7 +367,7 @@ function SetStockBottomSheetImpl(
     if (!item) return 0;
     return computeNeedToOrder({
       parLevel: item.parLevel,
-      unitType: item.unitType,
+      countUnitType: item.countUnitType,
       packSize: item.packSize,
       stockUnit,
       stockAmount,

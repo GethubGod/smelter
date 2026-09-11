@@ -13,6 +13,10 @@ import { invalidateCachePrefix } from '@/lib/queryCache';
 import { useSettingsStore } from './settingsStore';
 import { useSimpleOrderUiStore } from './simpleOrderUiStore';
 import { clearHomeInsightsCache } from '@/features/home/homeInsightsCache';
+import {
+  notifyAuthSessionCleared,
+  notifyAuthSessionRestored,
+} from '@/features/stock-check/queueDrainGate';
 
 type ViewMode = 'employee' | 'manager';
 type OAuthProvider = 'google' | 'apple';
@@ -474,7 +478,6 @@ interface AuthState {
     password: string,
     name: string
   ) => Promise<SignUpResult>;
-  completeProfile: (fullName: string, accessCode: string) => Promise<User>;
   signOut: () => Promise<void>;
   deleteSelfAccount: (confirmText: string) => Promise<void>;
   updateDefaultLocation: (locationId: string) => Promise<void>;
@@ -608,8 +611,11 @@ async function clearPersistedAuthState() {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => {
+      const isFreshTransition = (transitionId?: number) =>
+        typeof transitionId !== 'number' || transitionId === authStateTransitionId;
+
       const assertFreshTransition = (transitionId?: number) => {
-        if (typeof transitionId === 'number' && transitionId !== authStateTransitionId) {
+        if (!isFreshTransition(transitionId)) {
           throw new Error(AUTH_TRANSITION_STALE_MESSAGE);
         }
       };
@@ -630,38 +636,51 @@ export const useAuthStore = create<AuthState>()(
         activeSessionUserId = null;
       };
 
-      const clearSignedOutClientStateForTransition = async (transitionId?: number) => {
+      const clearSignedOutClientStateForTransition = async (
+        transitionId?: number,
+        stepTimeoutMs?: number
+      ) => {
+        // Account deletion runs this while the session it is tearing down may
+        // already be gone, so it caps each step. Sign-out passes no cap and
+        // keeps its original unbounded-but-awaited behavior.
+        const runStep = async (label: string, step: () => Promise<void>) => {
+          try {
+            await (stepTimeoutMs
+              ? withTimeout(step(), stepTimeoutMs, `Timed out ${label}.`)
+              : step());
+          } catch (error) {
+            console.warn(`Failed ${label}.`, error);
+          }
+        };
+
         assertFreshTransition(transitionId);
-
-        try {
-          await clearUserScopedClientState();
-        } catch (error) {
-          console.warn('Failed to clear user-scoped client state.', error);
-        }
+        await runStep('clearing user-scoped client state', clearUserScopedClientState);
 
         assertFreshTransition(transitionId);
-
-        try {
-          await clearPersistedAuthState();
-        } catch (error) {
-          console.warn('Failed to clear persisted auth state.', error);
-        }
+        await runStep('clearing persisted auth state', clearPersistedAuthState);
 
         assertFreshTransition(transitionId);
-
-        try {
-          await clearSupabaseStoredSession();
-        } catch (error) {
-          console.warn('Failed to clear persisted Supabase session storage.', error);
-        }
+        await runStep('clearing persisted Supabase session storage', clearSupabaseStoredSession);
 
         assertFreshTransition(transitionId);
       };
 
-      const resetSignedOutClientState = async (transitionId?: number) => {
+      /**
+       * The one way local auth state is torn down. Sign-out, the suspended
+       * force-out, an unrecoverable SIGNED_OUT event and account deletion all
+       * go through it so none of them can forget a step - notably
+       * `notifyAuthSessionCleared`, without which the stock-check launch drain
+       * stays armed for the departing session and never fires for the next
+       * account.
+       */
+      const resetSignedOutClientState = async (transitionId?: number, stepTimeoutMs?: number) => {
         applySignedOutState();
         clearExplicitSignOutFlag();
-        await clearSignedOutClientStateForTransition(transitionId);
+        // Re-arm the launch drain so the next user's queue flushes once their
+        // own session is restored, and drop the queue's owner so nothing can
+        // drain in between.
+        notifyAuthSessionCleared();
+        await clearSignedOutClientStateForTransition(transitionId, stepTimeoutMs);
       };
 
       const forceSignOutSuspended = async (message = SUSPENDED_ACCOUNT_MESSAGE) => {
@@ -1165,6 +1184,27 @@ export const useAuthStore = create<AuthState>()(
           }
         });
 
+        // The session is usable, so anything queued for an authenticated RPC
+        // can go now. The stock-check queue used to fire off its own rehydrate
+        // and hit a null `auth.uid()` at launch (issue #74); it now waits for
+        // this. Fires once per session; later refreshes are no-ops.
+        //
+        // Hydration is a long await chain, and a sign-out or an account switch
+        // can land in the middle of it. Report the session only while it is
+        // still the session the app is on: the direct sign-in paths do not
+        // carry a transition id (the SIGNED_IN listener bumps the counter
+        // mid-sign-in, so a carried id would abort every real sign-in), which
+        // leaves the identity check as the thing that keeps a superseded
+        // hydration from arming a drain under the wrong account.
+        const sessionStillCurrent =
+          isFreshTransition(params?.transitionId) &&
+          activeSessionUserId === nextUserId &&
+          get().session?.user?.id === nextUserId;
+
+        if (sessionStillCurrent) {
+          notifyAuthSessionRestored(nextUserId);
+        }
+
         return user;
       };
 
@@ -1648,47 +1688,6 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      completeProfile: async (fullName, accessCode) => {
-        beginAuthTransition();
-        set({ isLoading: true });
-        try {
-          const { session } = get();
-          if (!session?.user) {
-            throw new Error('Missing session. Please sign in again.');
-          }
-
-          const normalizedName = fullName.trim();
-          if (!normalizedName) {
-            throw new Error('Please enter your full name.');
-          }
-
-          const role = await validateAccessCode(accessCode, session.user.email);
-          const provider = getSessionAuthProvider(session.user);
-
-          const user = await hydrateAuthenticatedSession(session, {
-            bootstrapInput: {
-              email: session.user.email ?? null,
-              fullName: normalizedName,
-              role,
-              provider,
-              profileCompleted: true,
-            },
-            repairIfNeeded: true,
-            shouldThrowOnSuspended: true,
-          });
-
-          if (!user) {
-            throw new Error('Unable to complete your account setup. Please try again.');
-          }
-
-          return user;
-        } catch (error) {
-          throw new Error(getAuthErrorMessage(error, 'Unable to complete your profile. Please try again.'));
-        } finally {
-          set({ isLoading: false });
-        }
-      },
-
       signOut: async () => {
         explicitSignOutInProgress = true;
         const transitionId = beginAuthTransition();
@@ -1739,8 +1738,10 @@ export const useAuthStore = create<AuthState>()(
 
           await clearSignedOutNotifications(null);
 
+          explicitSignOutInProgress = true;
+          const transitionId = beginAuthTransition();
+
           try {
-            explicitSignOutInProgress = true;
             await withTimeout(
               signOutLocalSupabaseSession(
                 'Sign-out after delete-self failed; clearing local session anyway.'
@@ -1752,43 +1753,20 @@ export const useAuthStore = create<AuthState>()(
             console.warn('Sign-out after delete-self timed out; clearing local session anyway.', signOutError);
           }
 
-          clearProfileSubscription();
-          const cleanupResults = await Promise.allSettled([
-            withTimeout(
-              clearUserScopedClientState(),
-              DELETE_SELF_CLEANUP_TIMEOUT_MS,
-              'Timed out clearing user-scoped client state.'
-            ),
-            withTimeout(
-              clearPersistedAuthState(),
-              DELETE_SELF_CLEANUP_TIMEOUT_MS,
-              'Timed out clearing auth storage.'
-            ),
-            withTimeout(
-              clearSupabaseStoredSession(),
-              DELETE_SELF_CLEANUP_TIMEOUT_MS,
-              'Timed out clearing Supabase auth storage.'
-            ),
-          ]);
-          if (cleanupResults[0]?.status === 'rejected') {
-            console.warn('Failed to clear user-scoped client state after delete-self.', cleanupResults[0].reason);
-          }
-          if (cleanupResults[1]?.status === 'rejected') {
-            console.warn('Failed to clear auth storage after delete-self.', cleanupResults[1].reason);
-          }
-          if (cleanupResults[2]?.status === 'rejected') {
-            console.warn('Failed to clear Supabase auth storage after delete-self.', cleanupResults[2].reason);
+          // Same teardown as sign-out, with the delete-self step caps. The
+          // deleted account is as gone as a signed-out one, so it must clear
+          // the same client state - including the stock-check drain gate,
+          // which used to stay armed for the deleted session and swallow the
+          // next account's launch drain.
+          try {
+            await resetSignedOutClientState(transitionId, DELETE_SELF_CLEANUP_TIMEOUT_MS);
+          } catch (cleanupError) {
+            if (!isTransitionStaleError(cleanupError)) {
+              console.warn('Client state cleanup after delete-self failed.', cleanupError);
+            }
           }
 
-          activeSessionUserId = null;
-          set({
-            session: null,
-            user: null,
-            profile: null,
-            location: null,
-            locations: [],
-            viewMode: 'employee',
-          });
+          set({ locations: [] });
         } finally {
           set({ isLoading: false });
         }
