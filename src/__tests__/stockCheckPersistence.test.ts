@@ -31,6 +31,11 @@ import {
   __resetStockCheckSessionCache,
   useStockCheckStore,
 } from '../features/stock-check/useStockCheckStore';
+// eslint-disable-next-line import/first -- same ordering constraint as above
+import {
+  __resetStockQueueDrainGate,
+  notifyAuthSessionRestored,
+} from '../features/stock-check/queueDrainGate';
 
 // Ids and units mirror scripts/release-readiness/seed-local-mobile-e2e.sql,
 // the fixture the issue was reproduced against.
@@ -40,6 +45,8 @@ const SALMON_ID = '48000000-0000-4000-8000-000000000001';
 const RICE_ID = '48000000-0000-4000-8000-000000000002';
 const NORI_ID = '48000000-0000-4000-8000-000000000003';
 const SESSION_ID = '4d000000-0000-4000-8000-000000000001';
+/** The signed-in user every queued write in this file belongs to. */
+const USER_ID = '4a000000-0000-4000-8000-00000000000a';
 
 function areaItemRow(id: string, name: string, baseUnit: string, packUnit: string, packSize: number) {
   return {
@@ -84,6 +91,10 @@ describe('stock-check count persistence', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     __resetStockCheckSessionCache();
+    // The queue only drains for the user who filled it, so every case here
+    // runs as one signed-in user.
+    __resetStockQueueDrainGate();
+    notifyAuthSessionRestored(USER_ID);
     useStockCheckStore.setState(
       {
         locationId: null,
@@ -226,6 +237,10 @@ describe('stock-check offline queue', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     __resetStockCheckSessionCache();
+    // The queue only drains for the user who filled it, so every case here
+    // runs as one signed-in user.
+    __resetStockQueueDrainGate();
+    notifyAuthSessionRestored(USER_ID);
     useStockCheckStore.setState(
       {
         locationId: null,
@@ -307,6 +322,7 @@ describe('stock-check offline queue', () => {
           id: 'op-1',
           kind: 'count',
           locationId: LOCATION_ID,
+          ownerUserId: USER_ID,
           areaItemId: SALMON_ID,
           quantity: 6,
           createdAt: new Date().toISOString(),
@@ -388,6 +404,7 @@ describe('stock-check offline queue', () => {
           id: 'op-stale',
           kind: 'count',
           locationId: LOCATION_ID,
+          ownerUserId: USER_ID,
           areaItemId: SALMON_ID,
           quantity: 6,
           createdAt: eightDaysAgo,

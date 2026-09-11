@@ -16,18 +16,26 @@ import type {
   StockCheckStatus,
 } from './types';
 import {
+  getStockQueueOwnerId,
   notifyStockQueueRehydrated,
   registerStockQueueDrain,
 } from './queueDrainGate';
 import {
   computeNeedToOrder,
   countedQuantityInCountUnit,
+  parInUnit,
   resolveCountUnitType,
   totalStockInBase,
 } from './utils/stockMath';
 
 const STORAGE_KEY = 'stock-check-store-v1';
-const STORAGE_VERSION = 1;
+/**
+ * v2 stamps every queued write with the id of the user who made it. Ops
+ * persisted by v1 carry no owner and are dropped by `migrate`: they cannot be
+ * attributed, and sending one under whoever signs in next is exactly the
+ * misattribution this version exists to stop.
+ */
+const STORAGE_VERSION = 2;
 /** How long offline-edited UI state is retained per location (7 days). */
 const STATE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -64,22 +72,30 @@ interface PersistedRow {
  * queue in `src/store/stockStore.ts`: last write per target wins, ordered by
  * `createdAt`, entries removed only once the server has accepted them.
  */
-interface PendingCountOp {
+interface PendingOpBase {
   id: string;
-  kind: 'count';
   locationId: string;
+  createdAt: string;
+  /**
+   * The Supabase user id this write belongs to. The queue is persisted on the
+   * device, so it outlives the session that filled it: without an owner, a
+   * count taken offline by one user drains under the next user's JWT and the
+   * ledger attributes it to them. Null only for a write queued before any
+   * session was reported, which the drain discards for the same reason.
+   */
+  ownerUserId: string | null;
+}
+
+interface PendingCountOp extends PendingOpBase {
+  kind: 'count';
   /** `area_items.id` — the `p_area_item_id` argument of the RPC. */
   areaItemId: string;
   /** Count expressed in the area item's configured unit. */
   quantity: number;
-  createdAt: string;
 }
 
-interface PendingCompleteOp {
-  id: string;
+interface PendingCompleteOp extends PendingOpBase {
   kind: 'complete';
-  locationId: string;
-  createdAt: string;
 }
 
 export type PendingStockCheckOp = PendingCountOp | PendingCompleteOp;
@@ -187,6 +203,31 @@ export function deriveStatus(
 }
 
 /**
+ * The single derivation of `orderQuantity` + `status` from a wheel-picker
+ * stock entry. Used on commit and again on hydration, so a row that comes
+ * back from the offline cache reads exactly as it did when it was counted.
+ *
+ * Status rules:
+ *  - no deficit → `at_par`;
+ *  - a deficit with nothing on hand → `needs_order`;
+ *  - a deficit with some stock on hand → `low`.
+ */
+export function deriveStockEntry(input: {
+  parLevel: number;
+  countUnitType: UnitType;
+  packSize: number;
+  stockUnit: UnitType;
+  stockAmount: number;
+  stockPieces: number;
+}): { orderQuantity: number; status: StockCheckStatus } {
+  const orderQuantity = computeNeedToOrder(input);
+  const totalBase = totalStockInBase(input);
+  if (orderQuantity <= 0) return { orderQuantity, status: 'at_par' };
+  if (totalBase <= 0) return { orderQuantity, status: 'needs_order' };
+  return { orderQuantity, status: 'low' };
+}
+
+/**
  * Suggested order amount displayed in the subtitle. For `needs_order`
  * (out-of-stock, user hasn't typed a count yet) we surface `parLevel` as the
  * sensible suggestion — matches "Heavy Cream · order 4" in the design spec.
@@ -283,6 +324,12 @@ const INITIAL_STATE: Pick<
  * reason about and always correct.
  */
 const sessionIdByLocation = new Map<string, string>();
+/**
+ * Which user the ids in `sessionIdByLocation` were opened for. A stock-check
+ * session belongs to the account that started it, so the cache is dropped the
+ * moment the signed-in user changes rather than resumed under the new JWT.
+ */
+let sessionCacheOwnerId: string | null = null;
 
 let opSequence = 0;
 
@@ -291,14 +338,23 @@ function nextOpId(): string {
   return `stock-check-op-${Date.now()}-${opSequence}`;
 }
 
-/** Stable identity of an op's write target — the queue keeps one op per key. */
+/**
+ * Stable identity of an op's write target — the queue keeps one op per key.
+ * The owner is part of the key so one user's newer count never silently
+ * replaces another user's owed write on a shared device.
+ */
 function opTargetKey(op: PendingStockCheckOp): string {
   return op.kind === 'count'
-    ? `count:${op.locationId}:${op.areaItemId}`
-    : `complete:${op.locationId}`;
+    ? `count:${op.ownerUserId ?? 'anonymous'}:${op.locationId}:${op.areaItemId}`
+    : `complete:${op.ownerUserId ?? 'anonymous'}:${op.locationId}`;
 }
 
 async function resolveSessionId(locationId: string): Promise<string> {
+  const ownerUserId = getStockQueueOwnerId();
+  if (ownerUserId !== sessionCacheOwnerId) {
+    sessionIdByLocation.clear();
+    sessionCacheOwnerId = ownerUserId;
+  }
   const cached = sessionIdByLocation.get(locationId);
   if (cached) return cached;
   const session = await startOrResumeStockCheck(locationId);
@@ -309,6 +365,7 @@ async function resolveSessionId(locationId: string): Promise<string> {
 /** Test seam: drops the resolved-session cache between cases. */
 export function __resetStockCheckSessionCache(): void {
   sessionIdByLocation.clear();
+  sessionCacheOwnerId = null;
 }
 
 function errorMessage(error: unknown): string {
@@ -355,13 +412,11 @@ export const useStockCheckStore = create<StockCheckState>()(
               const id = row.id;
               const par = Number(row.par_level ?? row.max_quantity ?? 0) || 0;
               const cached = cachedRows[id];
-              const orderQty = cached?.orderQuantity ?? 0;
               const checked = cached?.checked ?? false;
               const checkedAt =
                 typeof cached?.checkedAt === 'number' ? cached.checkedAt : null;
               const hasNote = cached?.hasNote ?? false;
               const noteText = cached?.noteText ?? '';
-              const status = deriveStatus(par, orderQty, checked);
 
               // Resolve unit metadata. The configured `row.unit_type` from
               // `area_items` is the inventory team's preferred default; any
@@ -391,6 +446,30 @@ export const useStockCheckStore = create<StockCheckState>()(
                 Number.isFinite(cached?.stockPieces)
                   ? Math.max(0, Math.trunc(cached!.stockPieces as number))
                   : 0;
+              // The wheel triple is the source of truth for a counted row, so
+              // the deficit and the status are recomputed from it here rather
+              // than trusted from the cache. A cache written before the
+              // count-unit fix holds an `orderQuantity` derived against the
+              // wheel's unit instead of the row's count unit; replaying it
+              // would resurrect the wrong order number and, through
+              // `deriveStatus`, the wrong status with it.
+              const hasWheelEntry =
+                Number.isFinite(cached?.stockAmount) ||
+                Number.isFinite(cached?.stockPieces);
+              let orderQty = cached?.orderQuantity ?? 0;
+              let status = deriveStatus(par, orderQty, checked);
+              if (checked && hasWheelEntry) {
+                const derived = deriveStockEntry({
+                  parLevel: par,
+                  countUnitType,
+                  packSize,
+                  stockUnit,
+                  stockAmount,
+                  stockPieces,
+                });
+                orderQty = derived.orderQuantity;
+                status = derived.status;
+              }
               itemsById[id] = {
                 id,
                 name: inv.name,
@@ -528,17 +607,33 @@ export const useStockCheckStore = create<StockCheckState>()(
         // this row shows par-level stock dialed in. Keeping the wheel state
         // coherent with the row's status is critical: anything else would
         // make the sheet open to "0 0 0" and the user would lose the swipe
-        // shortcut's effect when they tap > to fine-tune.
-        const par = Math.max(0, item.parLevel);
+        // shortcut's effect when they tap > to fine-tune. Par is converted
+        // into the wheel's unit first — `parLevel` is denominated in the
+        // count unit, so dialing it in verbatim under a different wheel unit
+        // would record a different amount of stock than "full" means.
+        const stockAmount = parInUnit({
+          parLevel: item.parLevel,
+          countUnitType: item.countUnitType,
+          packSize: item.packSize,
+          unit: item.unitType,
+        });
+        const derived = deriveStockEntry({
+          parLevel: item.parLevel,
+          countUnitType: item.countUnitType,
+          packSize: item.packSize,
+          stockUnit: item.unitType,
+          stockAmount,
+          stockPieces: 0,
+        });
         const next: StockCheckItem = {
           ...item,
           stockUnit: item.unitType,
-          stockAmount: par,
+          stockAmount,
           stockPieces: 0,
-          orderQuantity: 0,
+          orderQuantity: derived.orderQuantity,
           checked: true,
           checkedAt: Date.now(),
-          status: 'at_par',
+          status: derived.status,
         };
         set(applyItemUpdate(state, next));
       },
@@ -557,15 +652,23 @@ export const useStockCheckStore = create<StockCheckState>()(
         }
         // "Empty" → wheel triple goes to 0/0 with the configured unit, and
         // the deficit equals par.
+        const derived = deriveStockEntry({
+          parLevel: item.parLevel,
+          countUnitType: item.countUnitType,
+          packSize: item.packSize,
+          stockUnit: item.unitType,
+          stockAmount: 0,
+          stockPieces: 0,
+        });
         const next: StockCheckItem = {
           ...item,
           stockUnit: item.unitType,
           stockAmount: 0,
           stockPieces: 0,
-          orderQuantity: par,
+          orderQuantity: derived.orderQuantity,
           checked: true,
           checkedAt: Date.now(),
-          status: 'needs_order',
+          status: derived.status,
         };
         set(applyItemUpdate(state, next));
       },
@@ -629,10 +732,11 @@ export const useStockCheckStore = create<StockCheckState>()(
             ? entry.stockUnit
             : item.unitType;
 
-        // Derive `orderQuantity` from the wheel triple so the existing cart
-        // pipeline + status/progress predicates stay correct without any
-        // downstream rewiring.
-        const orderQuantity = computeNeedToOrder({
+        // Derive `orderQuantity` and `status` from the wheel triple so the
+        // existing cart pipeline + status/progress predicates stay correct
+        // without any downstream rewiring. Hydration replays the same
+        // derivation, so a relaunch cannot disagree with what was on screen.
+        const { orderQuantity, status } = deriveStockEntry({
           parLevel: item.parLevel,
           countUnitType: item.countUnitType,
           packSize: item.packSize,
@@ -640,26 +744,6 @@ export const useStockCheckStore = create<StockCheckState>()(
           stockAmount,
           stockPieces,
         });
-
-        // Status is derived from the deficit + checked state. A row is
-        // "at_par" when totalStockInBase >= parInBase (deficit 0 AND user
-        // entered some stock). It's "needs_order" when there's a deficit
-        // and the user has entered nothing yet (totalStockInBase === 0).
-        // Otherwise "low" (some stock, but below par).
-        const totalBase = totalStockInBase({
-          stockUnit,
-          stockAmount,
-          stockPieces,
-          packSize: item.packSize,
-        });
-        let status: StockCheckStatus;
-        if (orderQuantity <= 0) {
-          status = 'at_par';
-        } else if (totalBase <= 0) {
-          status = 'needs_order';
-        } else {
-          status = 'low';
-        }
 
         const next: StockCheckItem = {
           ...item,
@@ -684,6 +768,7 @@ export const useStockCheckStore = create<StockCheckState>()(
           id: nextOpId(),
           kind: 'count',
           locationId,
+          ownerUserId: getStockQueueOwnerId(),
           areaItemId: item.id,
           quantity: countedQuantityInCountUnit({
             countUnitType: item.countUnitType,
@@ -713,6 +798,7 @@ export const useStockCheckStore = create<StockCheckState>()(
             id: nextOpId(),
             kind: 'complete',
             locationId,
+            ownerUserId: getStockQueueOwnerId(),
             createdAt,
           });
         }
@@ -757,11 +843,23 @@ export const useStockCheckStore = create<StockCheckState>()(
       syncPendingOps: async () => {
         if (get().isSyncing) return;
 
+        // Nothing can be written under the right identity until the auth
+        // store reports a session. Hold the queue rather than sending it:
+        // these RPCs resolve `auth.uid()` server-side, so an unowned drain
+        // either fails or lands on the wrong account.
+        const ownerUserId = getStockQueueOwnerId();
+        if (!ownerUserId) return;
+
         // Drop writes older than the offline-retention window rather than
-        // retrying them forever against pars that have since moved on.
+        // retrying them forever against pars that have since moved on, and
+        // drop anything belonging to another account: the JWT in flight is
+        // this user's, so sending someone else's count would move stock and
+        // attribute it to whoever happens to be signed in.
         const cutoff = Date.now() - STATE_MAX_AGE_MS;
         const fresh = get().pendingOps.filter(
-          (op) => new Date(op.createdAt).getTime() >= cutoff,
+          (op) =>
+            op.ownerUserId === ownerUserId &&
+            new Date(op.createdAt).getTime() >= cutoff,
         );
         if (fresh.length !== get().pendingOps.length) {
           set({ pendingOps: fresh });
@@ -849,9 +947,14 @@ export const useStockCheckStore = create<StockCheckState>()(
           pendingOps?: PendingStockCheckOp[];
           lastSyncAt?: string | null;
         } | null;
-        // Owed writes are carried across versions untouched: dropping them
-        // would silently lose counts the user already saw accepted.
-        const pendingOps = Array.isArray(state?.pendingOps) ? state.pendingOps : [];
+        // Owed writes are carried across versions, minus anything with no
+        // owner. v1 did not record who made a count, and the queue outlives
+        // the session that filled it, so an unowned write can only be sent
+        // under whichever account signs in next. Dropping it loses at most
+        // one offline count; keeping it moves stock on the wrong account.
+        const pendingOps = (
+          Array.isArray(state?.pendingOps) ? state.pendingOps : []
+        ).filter((op) => typeof op?.ownerUserId === 'string' && op.ownerUserId);
         const lastSyncAt = typeof state?.lastSyncAt === 'string' ? state.lastSyncAt : null;
         if (!state?.perLocationState) {
           return { perLocationState: {}, pendingOps, lastSyncAt } as Partial<StockCheckState>;
@@ -878,8 +981,9 @@ export const useStockCheckStore = create<StockCheckState>()(
 
 // The launch drain runs from the gate, not from `onRehydrateStorage` directly,
 // so it waits for the auth store to report a restored session. Registered at
-// module load: expo-router pulls every route in at startup, so this module is
-// evaluated before the first screen renders.
+// module load, which happens either when a stock route is navigated to or,
+// on a launch that never opens one, when the gate imports this module on the
+// restored-session notification (issue #74).
 registerStockQueueDrain(() => {
   void useStockCheckStore.getState().syncPendingOps();
 });
