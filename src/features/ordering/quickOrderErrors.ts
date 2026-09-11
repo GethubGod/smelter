@@ -22,6 +22,8 @@ export const QUICK_ORDER_ERROR_MESSAGES: Record<string, string> = {
   auth_failed: 'Please sign in again to use Quick Order.',
   network_error: "Couldn't reach the server. Check your connection and try again.",
   schema_validation_failed: 'I had trouble processing the result. Please try again.',
+  cart_apply_failed:
+    "I couldn't add that to your order list. Your items are unchanged. Fix any item marked in amber, then try again.",
 };
 
 /** Generic fallback when nothing more specific is known. */
