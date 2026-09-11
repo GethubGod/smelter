@@ -60,23 +60,11 @@ const DRIFT_ALLOWLIST = [
   'app/(manager)/inventory.tsx',
   'app/(manager)/orders.tsx',
   'app/(manager)/profile.tsx',
-  // app/(manager)/manager-settings (4 files, 70)
-  'app/(manager)/manager-settings/access-codes.tsx',
-  'app/(manager)/manager-settings/export-format.tsx',
-  'app/(manager)/manager-settings/profile.tsx',
-  'app/(manager)/manager-settings/user-management.tsx',
   // app/(tabs) (1 file, 45)
   'app/(tabs)/quick-order.tsx',
   // app/orders (2 files, 116)
   'app/orders/\\[id\\].tsx',
   'app/orders/history.tsx',
-  // app/settings (6 files, 43)
-  'app/settings/about-support.tsx',
-  'app/settings/display-accessibility.tsx',
-  'app/settings/notifications-debug.tsx',
-  'app/settings/notifications.tsx',
-  'app/settings/profile.tsx',
-  'app/settings/reminders.tsx',
   // src/components (15 files, 163)
   'src/components/BrowseCategoryScroller.tsx',
   'src/components/CategoryFilter.tsx',
@@ -97,17 +85,6 @@ const DRIFT_ALLOWLIST = [
   'src/components/navigation/FloatingPillTabBar.tsx',
   'src/components/navigation/tabBarConfig.ts',
   'src/components/navigation/TabButton.tsx',
-  // src/components/settings (10 files, 74)
-  'src/components/settings/ChangeCredentialSheet.tsx',
-  'src/components/settings/ChangePasswordModal.tsx',
-  'src/components/settings/ExpandableSection.tsx',
-  'src/components/settings/MultiOptionToggle.tsx',
-  'src/components/settings/ReminderListItem.tsx',
-  'src/components/settings/ReminderModal.tsx',
-  'src/components/settings/SettingsRow.tsx',
-  'src/components/settings/SettingsScreenLayout.tsx',
-  'src/components/settings/SettingToggle.tsx',
-  'src/components/settings/TimePickerRow.tsx',
   // src/components/tuna-specialist (3 files, 29)
   'src/components/tuna-specialist/ConversationHistory.tsx',
   'src/components/tuna-specialist/DebugPanel.tsx',
@@ -132,12 +109,6 @@ const DRIFT_ALLOWLIST = [
   'src/features/cart/CartScreenView.tsx',
   'src/features/cart/EmptyCartReorderState.tsx',
   'src/features/cart/OrderSubmissionConfirmationOverlay.tsx',
-  // src/features/employeeSettings (2 files, 40)
-  'src/features/employeeSettings/EmployeeProfileScreen.tsx',
-  'src/features/employeeSettings/EmployeeSettingsScreen.tsx',
-  // src/features/employeeSettings/components (2 files, 9)
-  'src/features/employeeSettings/components/AboutLegalSheet.tsx',
-  'src/features/employeeSettings/components/SettingsCardRow.tsx',
   // src/features/fulfillment/components (12 files, 121)
   'src/features/fulfillment/components/FulfillmentConfirmItemRow.tsx',
   'src/features/fulfillment/components/FulfillmentExpandedSupplierItems.tsx',
@@ -219,16 +190,6 @@ const DRIFT_ALLOWLIST = [
   // src/features/stock-check/components/wheel-picker (2 files, 3)
   'src/features/stock-check/components/wheel-picker/WheelPicker.tsx',
   'src/features/stock-check/components/wheel-picker/WheelPickerGroup.tsx',
-  // src/features/team (6 files, 75)
-  'src/features/team/DefaultsScreen.tsx',
-  'src/features/team/InviteLinkReadyScreen.tsx',
-  'src/features/team/InviteScreen.tsx',
-  'src/features/team/MemberDetailScreen.tsx',
-  'src/features/team/PreviewAsScreen.tsx',
-  'src/features/team/TeamScreen.tsx',
-  // src/features/team/components (2 files, 17)
-  'src/features/team/components/InvitePreviewCard.tsx',
-  'src/features/team/components/TeamUI.tsx',
 ];
 
 module.exports = defineConfig([

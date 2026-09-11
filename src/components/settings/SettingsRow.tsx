@@ -1,29 +1,40 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/constants';
+import { Button, ListRow } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { glassColors, glassHairlineWidth, glassRadii } from '@/theme/design';
+import { space } from '@/theme/tokens';
 
 export interface SettingsRowProps {
   icon?: keyof typeof Ionicons.glyphMap;
-  iconColor?: string;
-  iconBgColor?: string;
   title: string;
   subtitle?: string;
   onPress?: () => void;
   showChevron?: boolean;
+  /** Renders the contract's destructive Button instead of a row. */
   destructive?: boolean;
   rightElement?: React.ReactNode;
   disabled?: boolean;
   showBorder?: boolean;
+  /**
+   * @deprecated The contract has one icon tile and one hairline. Accepted so
+   * screens outside this sweep keep compiling; ignored.
+   */
+  iconColor?: string;
+  /** @deprecated See `iconColor`. */
+  iconBgColor?: string;
+  /** @deprecated See `iconColor`. */
   borderColor?: string;
 }
 
+/**
+ * A settings entry. Non-destructive rows are the contract `ListRow`.
+ *
+ * Destructive entries render `Button variant="destructive"`: the contract puts
+ * action colour on buttons, and `ListRow` has no destructive tone.
+ */
 export function SettingsRow({
   icon,
-  iconColor,
-  iconBgColor,
   title,
   subtitle,
   onPress,
@@ -32,81 +43,34 @@ export function SettingsRow({
   rightElement,
   disabled = false,
   showBorder = true,
-  borderColor = glassColors.divider,
 }: SettingsRowProps) {
   const ds = useScaledStyles();
 
-  const handlePress = () => {
-    if (disabled || !onPress) return;
-    onPress();
-  };
-
-  const content = (
-    <View
-      className={`flex-row items-center ${disabled ? 'opacity-50' : ''}`}
-      style={{
-        paddingHorizontal: ds.spacing(16),
-        paddingVertical: ds.spacing(14),
-        minHeight: Math.max(ds.rowH, 60),
-        borderBottomWidth: showBorder ? glassHairlineWidth : 0,
-        borderBottomColor: borderColor,
-      }}
-    >
-      {icon && (
-        <View
-          className="items-center justify-center"
-          style={{
-            width: Math.max(40, ds.icon(40)),
-            height: Math.max(40, ds.icon(40)),
-            borderRadius: glassRadii.iconTile,
-            marginRight: ds.spacing(14),
-            backgroundColor: iconBgColor || glassColors.mediumFill,
-          }}
-        >
-          <Ionicons name={icon} size={ds.icon(20)} color={iconColor || colors.gray[500]} />
-        </View>
-      )}
-      <View className="flex-1">
-        <Text
-          style={{
-            fontSize: ds.fontSize(16),
-            fontWeight: '600',
-            color: destructive ? glassColors.dangerText : glassColors.textPrimary,
-          }}
-        >
-          {title}
-        </Text>
-        {subtitle && (
-          <Text
-            style={{
-              fontSize: ds.fontSize(12),
-              marginTop: ds.spacing(4),
-              color: glassColors.textSecondary,
-              lineHeight: ds.fontSize(16),
-            }}
-          >
-            {subtitle}
-          </Text>
-        )}
-      </View>
-      {rightElement}
-      {showChevron && !rightElement && (
-        <Ionicons name="chevron-forward" size={ds.icon(18)} color={colors.gray[400]} />
-      )}
-    </View>
-  );
-
-  if (onPress) {
+  if (destructive) {
     return (
-      <TouchableOpacity
-        onPress={handlePress}
-        activeOpacity={0.82}
-        disabled={disabled}
-      >
-        {content}
-      </TouchableOpacity>
+      <View style={{ paddingVertical: ds.spacing(space[3]) }}>
+        <Button
+          variant="destructive"
+          label={title}
+          icon={icon}
+          onPress={onPress ?? (() => undefined)}
+          disabled={disabled || !onPress}
+          fullWidth
+        />
+      </View>
     );
   }
 
-  return content;
+  return (
+    <ListRow
+      icon={icon}
+      title={title}
+      subtitle={subtitle}
+      onPress={onPress}
+      right={rightElement}
+      chevron={showChevron && !rightElement}
+      disabled={disabled}
+      last={!showBorder}
+    />
+  );
 }

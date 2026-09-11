@@ -1,6 +1,5 @@
 import React from 'react';
-import { Alert, Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Text, View } from 'react-native';
 import { useDisplayStore } from '@/store';
 import {
   MultiOptionToggle,
@@ -9,130 +8,73 @@ import {
   SettingsScreenLayout,
   SettingsSectionLabel,
 } from '@/components/settings';
-import { GlassSurface } from '@/components';
+import { Button, Card, SectionLabel } from '@/components/ui';
 import { TEXT_SCALE_LABELS } from '@/types/settings';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import {
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-  glassSpacing,
-} from '@/theme/design';
+import { color, radius, space, typeScale, weight } from '@/theme/tokens';
 
 function PreviewCard() {
   const ds = useScaledStyles();
 
   return (
-    <GlassSurface
-      intensity="subtle"
-      blurred={false}
-      style={{
-        marginHorizontal: glassSpacing.screen,
-        borderRadius: glassRadii.surface,
-      }}
-    >
-      <View style={{ padding: ds.cardPad }}>
+    <View style={{ paddingHorizontal: ds.spacing(space[4]) }}>
+      <Card>
         <Text
           style={{
-            fontSize: ds.fontSize(16),
-            fontWeight: '700',
-            color: glassColors.textPrimary,
+            fontSize: ds.fontSize(typeScale.body),
+            fontWeight: weight.bold,
+            color: color.ink,
           }}
         >
-          Live Preview
+          Live preview
         </Text>
 
         <View
           style={{
-            marginTop: ds.spacing(12),
-            borderRadius: glassRadii.surface,
-            borderWidth: glassHairlineWidth,
-            borderColor: glassColors.cardBorder,
-            backgroundColor: glassColors.mediumFill,
-            overflow: 'hidden',
+            marginTop: ds.spacing(space[3]),
+            borderRadius: radius.control,
+            backgroundColor: color.well,
+            paddingHorizontal: ds.spacing(space[3] + 2),
+            paddingVertical: ds.spacing(space[3]),
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: ds.spacing(space[3]),
           }}
         >
-          <View
-            style={{
-              paddingHorizontal: ds.spacing(14),
-              paddingVertical: ds.spacing(12),
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <View style={{ flex: 1, paddingRight: ds.spacing(12) }}>
-              <Text
-                style={{
-                  fontSize: ds.fontSize(15),
-                  fontWeight: '600',
-                  color: glassColors.textPrimary,
-                }}
-                numberOfLines={1}
-              >
-                Atlantic Salmon
-              </Text>
-              <View
-                style={{
-                  marginTop: ds.spacing(6),
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                }}
-              >
-                <View
-                  style={{
-                    paddingHorizontal: ds.spacing(8),
-                    paddingVertical: ds.spacing(3),
-                    borderRadius: glassRadii.tag,
-                    backgroundColor: glassColors.mediumFill,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: ds.fontSize(11),
-                      fontWeight: '600',
-                      color: glassColors.textSecondary,
-                    }}
-                  >
-                    Preview
-                  </Text>
-                </View>
-                <Text
-                  style={{
-                    marginLeft: ds.spacing(8),
-                    fontSize: ds.fontSize(12),
-                    color: glassColors.textSecondary,
-                  }}
-                >
-                  10 lb/case
-                </Text>
-              </View>
-            </View>
-            <TouchableOpacity
-              activeOpacity={0.82}
+          <View style={{ flex: 1 }}>
+            <Text
+              numberOfLines={1}
               style={{
-                minWidth: ds.spacing(72),
-                paddingHorizontal: ds.spacing(16),
-                paddingVertical: ds.spacing(9),
-                borderRadius: glassRadii.button,
-                backgroundColor: glassColors.accent,
-                alignItems: 'center',
+                fontSize: ds.fontSize(typeScale.body),
+                fontWeight: weight.semibold,
+                color: color.ink,
               }}
             >
-              <Text
-                style={{
-                  fontSize: ds.buttonFont,
-                  fontWeight: '700',
-                  color: glassColors.textOnPrimary,
-                }}
-              >
-                Add
-              </Text>
-            </TouchableOpacity>
+              Atlantic Salmon
+            </Text>
+            <Text
+              style={{
+                marginTop: ds.spacing(space[1]),
+                fontSize: ds.fontSize(typeScale.secondary),
+                color: color.ink2,
+              }}
+            >
+              Preview · 10 lb/case
+            </Text>
+          </View>
+          {/* An illustration of the current scale, not a control: it takes no
+              touches and VoiceOver never offers it as a button. */}
+          <View
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            <Button size="small" label="Add" onPress={() => undefined} />
           </View>
         </View>
-      </View>
-    </GlassSurface>
+      </Card>
+    </View>
   );
 }
 
@@ -171,21 +113,10 @@ function DisplaySection() {
     <>
       <PreviewCard />
 
-      <SettingsSectionLabel
-        label="Typography"
-      />
+      <SettingsSectionLabel label="Typography" />
       <SettingsGroup>
-        <View style={{ padding: ds.spacing(16) }}>
-          <Text
-            style={{
-              fontSize: ds.fontSize(15),
-              fontWeight: '600',
-              color: glassColors.textPrimary,
-              marginBottom: ds.spacing(12),
-            }}
-          >
-            Text Size
-          </Text>
+        <View style={{ paddingVertical: ds.spacing(space[3]) }}>
+          <SectionLabel>Text size</SectionLabel>
           <MultiOptionToggle
             options={TEXT_SCALE_LABELS.map((label, index) => ({
               label,
@@ -201,9 +132,9 @@ function DisplaySection() {
           />
           <Text
             style={{
-              marginTop: ds.spacing(10),
-              fontSize: ds.fontSize(12),
-              color: glassColors.textSecondary,
+              marginTop: ds.spacing(space[3]),
+              fontSize: ds.fontSize(typeScale.secondary),
+              color: color.ink2,
             }}
           >
             Preview: The quick brown fox jumps over the lazy dog.
@@ -211,21 +142,10 @@ function DisplaySection() {
         </View>
       </SettingsGroup>
 
-      <SettingsSectionLabel
-        label="Layout"
-      />
+      <SettingsSectionLabel label="Layout" />
       <SettingsGroup>
-        <View style={{ padding: ds.spacing(16) }}>
-          <Text
-            style={{
-              fontSize: ds.fontSize(15),
-              fontWeight: '600',
-              color: glassColors.textPrimary,
-              marginBottom: ds.spacing(12),
-            }}
-          >
-            UI Scale
-          </Text>
+        <View style={{ paddingVertical: ds.spacing(space[3]) }}>
+          <SectionLabel>UI scale</SectionLabel>
           <MultiOptionToggle
             options={[
               { value: 'compact', label: 'Compact' },
@@ -238,9 +158,9 @@ function DisplaySection() {
 
           <Text
             style={{
-              marginTop: ds.spacing(10),
-              fontSize: ds.fontSize(12),
-              color: glassColors.textSecondary,
+              marginTop: ds.spacing(space[3]),
+              fontSize: ds.fontSize(typeScale.secondary),
+              color: color.ink2,
             }}
           >
             Large UI scale is unavailable on the current screen size.
@@ -248,22 +168,13 @@ function DisplaySection() {
 
           <View
             style={{
-              height: glassHairlineWidth,
-              backgroundColor: glassColors.divider,
-              marginVertical: ds.spacing(16),
+              height: 1,
+              backgroundColor: color.hairline,
+              marginVertical: ds.spacing(space[4]),
             }}
           />
 
-          <Text
-            style={{
-              fontSize: ds.fontSize(15),
-              fontWeight: '600',
-              color: glassColors.textPrimary,
-              marginBottom: ds.spacing(12),
-            }}
-          >
-            Button Size
-          </Text>
+          <SectionLabel>Button size</SectionLabel>
           <MultiOptionToggle
             options={[
               { value: 'small', label: 'Small' },
@@ -274,49 +185,29 @@ function DisplaySection() {
             onValueChange={setButtonSize}
           />
 
+          {/* Same rule as the live preview above: shows the chosen button size,
+              never fires. */}
           <View
-            style={{
-              marginTop: ds.spacing(16),
-              alignItems: 'center',
-            }}
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={{ marginTop: ds.spacing(space[4]), alignItems: 'center' }}
           >
-            <TouchableOpacity
-              activeOpacity={0.82}
-              style={{
-                minHeight: ds.buttonH,
-                paddingHorizontal: ds.buttonPadH + ds.spacing(6),
-                borderRadius: glassRadii.button,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: glassColors.accent,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: ds.buttonFont,
-                  fontWeight: '700',
-                  color: glassColors.textOnPrimary,
-                }}
-              >
-                Sample Button
-              </Text>
-            </TouchableOpacity>
+            <Button label="Sample button" fullWidth={false} onPress={() => undefined} />
           </View>
         </View>
       </SettingsGroup>
 
-      <SettingsSectionLabel
-        label="Accessibility"
-      />
+      <SettingsSectionLabel label="Accessibility" />
       <SettingsGroup>
         <SettingToggle
-          title="Haptic Feedback"
+          title="Haptic feedback"
           subtitle="Allow vibration on meaningful actions outside the quiet settings flow."
           value={hapticFeedback}
           onValueChange={setHapticFeedback}
         />
         <SettingToggle
-          title="Reduce Motion"
+          title="Reduce motion"
           subtitle="Minimize page and control animations when supported."
           value={reduceMotion}
           onValueChange={setReduceMotion}
@@ -324,38 +215,14 @@ function DisplaySection() {
         />
       </SettingsGroup>
 
-      <TouchableOpacity
-        onPress={handleReset}
-        activeOpacity={0.82}
-        style={{
-          marginHorizontal: glassSpacing.screen,
-          marginTop: ds.spacing(18),
-          minHeight: Math.max(48, ds.buttonH),
-          borderRadius: glassRadii.button,
-          borderWidth: glassHairlineWidth,
-          borderColor: 'rgba(239, 68, 68, 0.14)',
-          backgroundColor: glassColors.dangerSoft,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Ionicons
-          name="refresh-outline"
-          size={ds.icon(18)}
-          color={glassColors.dangerText}
+      <View style={{ paddingHorizontal: ds.spacing(space[4]), marginTop: ds.spacing(space[5]) }}>
+        <Button
+          variant="destructive"
+          icon="refresh-outline"
+          label="Reset to defaults"
+          onPress={handleReset}
         />
-        <Text
-          style={{
-            marginLeft: ds.spacing(8),
-            fontSize: ds.fontSize(15),
-            fontWeight: '700',
-            color: glassColors.dangerText,
-          }}
-        >
-          Reset to Defaults
-        </Text>
-      </TouchableOpacity>
+      </View>
     </>
   );
 }

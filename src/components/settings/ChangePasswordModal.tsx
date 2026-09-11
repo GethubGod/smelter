@@ -1,31 +1,52 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
-  Modal,
-  Pressable,
-  TextInput,
   TouchableOpacity,
   Alert,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, hairline, radii } from '@/theme/design';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BottomSheetShell } from '@/components/BottomSheetShell';
+import { Button } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Input } from '@/components/ui/Input';
+import { Loading } from '@/components/ui/Loading';
+import { SectionLabel } from '@/components/ui/SectionLabel';
 import { changeEmailPassword } from '@/services/changePassword';
 import { getMyCredentialKind, type CredentialKind } from '@/services/loginCredentials';
 import { useAuthStore } from '@/store/authStore';
 import { ChangeCredentialSheet } from './ChangeCredentialSheet';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
+import { color, size, space, tracking, typeScale, weight } from '@/theme/tokens';
 
 interface ChangePasswordModalProps {
   visible: boolean;
   onClose: () => void;
 }
 
+/**
+ * The sign-in editor. One `BottomSheetShell` hosts the native modal for every
+ * branch, so the host is never remounted while the credential lookup resolves;
+ * only the content inside it changes. That is why this one screen keeps the
+ * shell rather than `Sheet`: each branch carries its own header, and `Sheet`
+ * would add a second one.
+ *
+ * The shell owns the scrim and the drag-to-dismiss gesture, so the save-time
+ * guard has to live here: whichever form is showing reports whether it is
+ * mid-save, and the sheet refuses to dismiss until it finishes.
+ */
 export function ChangePasswordModal({ visible, onClose }: ChangePasswordModalProps) {
+  const ds = useScaledStyles();
+  const insets = useSafeAreaInsets();
+  const [isBusy, setIsBusy] = useState(false);
+  const closeSheet = useCallback(() => {
+    if (!isBusy) onClose();
+  }, [isBusy, onClose]);
   const userId = useAuthStore((state) => state.session?.user.id ?? null);
   const [identity, setIdentity] = useState<{ userId: string; kind: CredentialKind | null } | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -44,25 +65,125 @@ export function ChangePasswordModal({ visible, onClose }: ChangePasswordModalPro
   const isResolving = !identity || identity.userId !== userId;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <BottomSheetShell
+      visible={visible}
+      onClose={closeSheet}
+      bottomPadding={Math.max(insets.bottom, ds.spacing(space[3] + 2))}
+    >
       {!visible ? null : isResolving ? (
-        <View style={{ flex: 1, backgroundColor: colors.scrim, justifyContent: 'center', padding: 24 }}>
-          <View style={{ backgroundColor: colors.white, borderRadius: radii.card, padding: 24, gap: 16 }}>
-            {loadError || !userId ? <Text>{loadError ?? 'Sign in again to change your sign-in details.'}</Text> : <ActivityIndicator accessibilityLabel="Loading sign-in settings" />}
-            <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel="Close sign-in settings" style={{ minHeight: 44, justifyContent: 'center' }}><Text>Close</Text></TouchableOpacity>
+        loadError || !userId ? (
+          <EmptyState
+            icon="lock-closed-outline"
+            tone="alert"
+            title="Sign-in settings unavailable"
+            body={loadError ?? 'Sign in again to change your sign-in details.'}
+            action={{ label: 'Close', onPress: onClose }}
+          />
+        ) : (
+          <View style={{ alignItems: 'center', gap: ds.spacing(space[4]), paddingVertical: ds.spacing(space[6]) }}>
+            <Loading size="inline" label="Loading sign-in settings" />
+            <Button
+              variant="secondary"
+              label="Close"
+              accessibilityHint="Closes sign-in settings"
+              onPress={onClose}
+            />
           </View>
-        </View>
+        )
       ) : identity.kind ? (
-        <ChangeCredentialSheet visible presentation="embedded" onClose={onClose} initialKind={identity.kind} />
+        <ChangeCredentialSheet
+          visible
+          presentation="content"
+          onClose={onClose}
+          initialKind={identity.kind}
+          onBusyChange={setIsBusy}
+        />
       ) : (
-        <EmailPasswordContent onClose={onClose} />
+        <EmailPasswordContent onClose={onClose} onBusyChange={setIsBusy} />
       )}
-    </Modal>
+    </BottomSheetShell>
   );
 }
 
-function EmailPasswordContent({ onClose }: Pick<ChangePasswordModalProps, 'onClose'>) {
+interface PasswordFieldProps {
+  label: string;
+  value: string;
+  onChangeText: (value: string) => void;
+  placeholder: string;
+  revealed: boolean;
+  onToggleReveal: () => void;
+  helper?: string;
+}
+
+/**
+ * `Input` has no trailing accessory slot, so the show and hide control is laid
+ * over the field's right edge. Everything else is the contract input.
+ */
+function PasswordField({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  revealed,
+  onToggleReveal,
+  helper,
+}: PasswordFieldProps) {
   const ds = useScaledStyles();
+  const control = Math.max(size.touchMin, ds.icon(size.touchMin));
+
+  return (
+    <View>
+      <SectionLabel>{label}</SectionLabel>
+      <View>
+        <Input
+          value={value}
+          onChangeText={onChangeText}
+          secureTextEntry={!revealed}
+          placeholder={placeholder}
+          accessibilityLabel={label}
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        <TouchableOpacity
+          onPress={onToggleReveal}
+          accessibilityRole="button"
+          accessibilityLabel={revealed ? `Hide ${label}` : `Show ${label}`}
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: control,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Ionicons name={revealed ? 'eye-off' : 'eye'} size={ds.icon(size.icon)} color={color.ink3} />
+        </TouchableOpacity>
+      </View>
+      {helper ? (
+        <Text
+          style={{
+            marginTop: ds.spacing(space[1]),
+            fontSize: ds.fontSize(typeScale.secondary),
+            color: color.ink3,
+          }}
+        >
+          {helper}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+interface EmailPasswordContentProps extends Pick<ChangePasswordModalProps, 'onClose'> {
+  /** Lets the sheet refuse to dismiss while the password is being written. */
+  onBusyChange?: (busy: boolean) => void;
+}
+
+function EmailPasswordContent({ onClose, onBusyChange }: EmailPasswordContentProps) {
+  const ds = useScaledStyles();
+  const { height: windowHeight } = useWindowDimensions();
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -73,6 +194,9 @@ function EmailPasswordContent({ onClose }: Pick<ChangePasswordModalProps, 'onClo
   const [isLoading, setIsLoading] = useState(false);
   const operation = useRef<AbortController | null>(null);
   useEffect(() => () => operation.current?.abort(), []);
+  useEffect(() => {
+    onBusyChange?.(isLoading);
+  }, [isLoading, onBusyChange]);
 
   const resetForm = () => {
     setCurrentPassword('');
@@ -126,182 +250,69 @@ function EmailPasswordContent({ onClose }: Pick<ChangePasswordModalProps, 'onClo
   };
 
   return (
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
-      >
-        <Pressable
-          style={{ flex: 1, backgroundColor: colors.scrim, justifyContent: 'flex-end' }}
-          onPress={handleClose}
+    // The three fields sit above the keyboard on a small phone only while the
+    // sheet lifts with it, and only scroll while the sheet is capped.
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <View style={{ gap: ds.spacing(space[3]) }}>
+        <Text
+          accessibilityRole="header"
+          style={{
+            fontSize: ds.fontSize(typeScale.title),
+            fontWeight: weight.bold,
+            letterSpacing: tracking.title,
+            color: color.ink,
+          }}
         >
-          <Pressable
-            style={{ backgroundColor: colors.white, borderTopLeftRadius: radii.card, borderTopRightRadius: radii.card }}
-            onPress={(e) => e.stopPropagation()}
-          >
-            {/* Handle */}
-            <View style={{ alignItems: 'center', paddingTop: ds.spacing(12), paddingBottom: ds.spacing(8) }}>
-              <View style={{ width: ds.spacing(40), height: 4, borderRadius: 2, backgroundColor: colors.textMuted }} />
-            </View>
+          Change password
+        </Text>
 
-            {/* Header */}
-            <View
-              style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: hairline, borderBottomColor: colors.divider, paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}
-            >
-              <TouchableOpacity onPress={handleClose} disabled={isLoading} style={{ minHeight: 44, justifyContent: 'center' }}>
-                <Text style={{ fontSize: ds.fontSize(16), color: colors.textSecondary }}>Cancel</Text>
-              </TouchableOpacity>
-              <Text style={{ fontSize: ds.fontSize(18), fontWeight: '600', color: colors.textPrimary }}>
-                Change Password
-              </Text>
-              <View style={{ width: ds.spacing(56) }} />
-            </View>
+        <ScrollView
+          style={{ maxHeight: windowHeight * 0.5 }}
+          contentContainerStyle={{ gap: ds.spacing(space[3]) }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <PasswordField
+            label="Current password"
+            value={currentPassword}
+            onChangeText={setCurrentPassword}
+            placeholder="Enter current password"
+            revealed={showCurrentPassword}
+            onToggleReveal={() => setShowCurrentPassword(!showCurrentPassword)}
+          />
+          <PasswordField
+            label="New password"
+            value={newPassword}
+            onChangeText={setNewPassword}
+            placeholder="Enter new password"
+            revealed={showNewPassword}
+            onToggleReveal={() => setShowNewPassword(!showNewPassword)}
+            helper="Must be at least 8 characters"
+          />
+          <PasswordField
+            label="Confirm new password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            placeholder="Confirm new password"
+            revealed={showConfirmPassword}
+            onToggleReveal={() => setShowConfirmPassword(!showConfirmPassword)}
+          />
+        </ScrollView>
 
-            <ScrollView
-              contentContainerStyle={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(16), paddingBottom: ds.spacing(40) }}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator
-            >
-              {/* Current Password */}
-              <View style={{ marginBottom: ds.spacing(16) }}>
-              <Text style={{ fontSize: ds.fontSize(14), marginBottom: ds.spacing(8), fontWeight: '500', color: colors.textPrimary }}>
-                  Current Password
-                </Text>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: colors.background,
-                    borderRadius: radii.stepper,
-                    minHeight: Math.max(48, ds.buttonH),
-                    paddingHorizontal: ds.spacing(14),
-                  }}
-                >
-                  <TextInput
-                    value={currentPassword}
-                    onChangeText={setCurrentPassword}
-                    secureTextEntry={!showCurrentPassword}
-                    placeholder="Enter current password"
-                    placeholderTextColor={colors.textMuted}
-                    style={{ flex: 1, fontSize: ds.fontSize(15), color: colors.textPrimary }}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowCurrentPassword(!showCurrentPassword)}
-                    style={{ minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
-                  >
-                    <Ionicons
-                      name={showCurrentPassword ? 'eye-off' : 'eye'}
-                      size={ds.icon(22)}
-                      color={colors.textMuted}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* New Password */}
-              <View style={{ marginBottom: ds.spacing(16) }}>
-                <Text style={{ fontSize: ds.fontSize(14), marginBottom: ds.spacing(8), fontWeight: '500', color: colors.textPrimary }}>
-                  New Password
-                </Text>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: colors.background,
-                    borderRadius: radii.stepper,
-                    minHeight: Math.max(48, ds.buttonH),
-                    paddingHorizontal: ds.spacing(14),
-                  }}
-                >
-                  <TextInput
-                    value={newPassword}
-                    onChangeText={setNewPassword}
-                    secureTextEntry={!showNewPassword}
-                    placeholder="Enter new password"
-                    placeholderTextColor={colors.textMuted}
-                    style={{ flex: 1, fontSize: ds.fontSize(15), color: colors.textPrimary }}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowNewPassword(!showNewPassword)}
-                    style={{ minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
-                  >
-                    <Ionicons
-                      name={showNewPassword ? 'eye-off' : 'eye'}
-                      size={ds.icon(22)}
-                      color={colors.textMuted}
-                    />
-                  </TouchableOpacity>
-                </View>
-                <Text style={{ fontSize: ds.fontSize(12), marginTop: ds.spacing(4), color: colors.textMuted }}>
-                  Must be at least 8 characters
-                </Text>
-              </View>
-
-              {/* Confirm Password */}
-              <View style={{ marginBottom: ds.spacing(24) }}>
-                <Text style={{ fontSize: ds.fontSize(14), marginBottom: ds.spacing(8), fontWeight: '500', color: colors.textPrimary }}>
-                  Confirm New Password
-                </Text>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: colors.background,
-                    borderRadius: radii.stepper,
-                    minHeight: Math.max(48, ds.buttonH),
-                    paddingHorizontal: ds.spacing(14),
-                  }}
-                >
-                  <TextInput
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    secureTextEntry={!showConfirmPassword}
-                    placeholder="Confirm new password"
-                    placeholderTextColor={colors.textMuted}
-                    style={{ flex: 1, fontSize: ds.fontSize(15), color: colors.textPrimary }}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                    style={{ minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
-                  >
-                    <Ionicons
-                      name={showConfirmPassword ? 'eye-off' : 'eye'}
-                      size={ds.icon(22)}
-                      color={colors.textMuted}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Submit Button */}
-              <TouchableOpacity
-                onPress={handleSubmit}
-                disabled={isLoading}
-                style={{
-                  borderRadius: radii.submitButton,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minHeight: Math.max(48, ds.buttonH),
-                  backgroundColor: isLoading ? colors.primaryLight : colors.primary,
-                }}
-                activeOpacity={0.8}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color={colors.white} />
-                ) : (
-                  <Text style={{ fontSize: ds.buttonFont, fontWeight: '600', color: colors.white }}>
-                    Update Password
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </KeyboardAvoidingView>
+        <Button
+          variant="primary"
+          label="Update Password"
+          loading={isLoading}
+          onPress={() => void handleSubmit()}
+        />
+        <Button
+          variant="secondary"
+          label="Cancel"
+          disabled={isLoading}
+          accessibilityHint="Stops changing your password"
+          onPress={handleClose}
+        />
+      </View>
+    </KeyboardAvoidingView>
   );
 }

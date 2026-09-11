@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Platform,
@@ -8,7 +7,6 @@ import {
   ScrollView,
   Switch,
   Text,
-  TextInput,
   ToastAndroid,
   TouchableOpacity,
   View,
@@ -16,18 +14,24 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import { colors } from '@/constants';
-import { GlassSurface, StackScreenHeader } from '@/components';
+import {
+  Button,
+  Card,
+  Chip,
+  EmptyState,
+  Input,
+  ListRow,
+  Loading,
+  ScreenHeader,
+  StatusPill,
+  type StatusTone,
+} from '@/components/ui';
 import { useAuthStore } from '@/store';
 import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
 import { useManagedRefresh } from '@/hooks/useManagedRefresh';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import {
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-  glassSpacing,
-} from '@/theme/design';
+import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
+import { color, radius, size, space, typeScale, weight } from '@/theme/tokens';
 import { ManagedUser, listManagedUsers, setManagedUserSuspended } from '@/services/userManagement';
 import { getModulesForUser, setUserModule, type ModuleKey } from '@/services/userModules';
 import {
@@ -120,6 +124,7 @@ function getInitials(user: ManagedUser): string {
 
 export default function UserManagementScreen() {
   const ds = useScaledStyles();
+  const { backTo } = useSettingsNavigationContext('manager');
   const { user: currentUser, profile, session, isInitialized } = useAuthStore();
 
   const metadataRole =
@@ -430,241 +435,146 @@ export default function UserManagementScreen() {
     const isModulesExpanded = expandedModulesUserId === item.id;
     const manageableKeys = getManageableModuleKeys(item.role);
 
-    const roleStyle =
-      item.role === 'manager'
-        ? { label: 'Manager', bg: colors.purpleBg, text: colors.purple }
-        : { label: 'Employee', bg: colors.blueBg, text: colors.blue };
+    const roleLabel = item.role === 'manager' ? 'Manager' : 'Employee';
 
-    const statusStyle = item.is_suspended
-      ? { label: 'Suspended', bg: colors.errorBg, text: colors.error }
+    // Account status reuses the contract pill: the same three tones the order
+    // states use, relabelled, so the dot and the word always travel together.
+    const status: { tone: StatusTone; label: string } = item.is_suspended
+      ? { tone: 'cancelled', label: 'Suspended' }
       : inactive
-        ? { label: 'Inactive', bg: colors.warningBg, text: colors.warning }
-        : { label: 'Active', bg: colors.successBg, text: colors.success };
+        ? { tone: 'submitted', label: 'Inactive' }
+        : { tone: 'fulfilled', label: 'Active' };
 
     return (
-      <View
-        style={{
-          borderRadius: glassRadii.surface,
-          marginBottom: ds.spacing(12),
-          paddingHorizontal: ds.spacing(14),
-          paddingVertical: ds.spacing(12),
-          borderWidth: glassHairlineWidth,
-          borderColor: glassColors.cardBorder,
-          backgroundColor: glassColors.subtleFill,
-        }}
-      >
-        <View className="flex-row items-start">
+      <Card style={{ marginBottom: ds.spacing(space[3]) }}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: ds.spacing(space[3]) }}>
           <View
             style={{
               width: ds.icon(42),
               height: ds.icon(42),
-              borderRadius: glassRadii.round,
-              marginRight: ds.spacing(10),
+              borderRadius: radius.pill,
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: glassColors.mediumFill,
+              backgroundColor: color.well,
             }}
           >
-            <Text style={{ fontSize: ds.fontSize(13), fontWeight: '700', color: glassColors.textPrimary }}>
+            <Text
+              style={{
+                fontSize: ds.fontSize(typeScale.secondary),
+                fontWeight: weight.bold,
+                color: color.ink2,
+              }}
+            >
               {getInitials(item)}
             </Text>
           </View>
 
-          <View className="flex-1" style={{ paddingRight: ds.spacing(8) }}>
-            <Text style={{ fontSize: ds.fontSize(16), fontWeight: '700', color: glassColors.textPrimary }}>
-              {item.full_name || 'Unnamed User'}
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                fontSize: ds.fontSize(typeScale.body),
+                fontWeight: weight.semibold,
+                color: color.ink,
+              }}
+            >
+              {item.full_name || 'Unnamed user'}
             </Text>
-            <Text style={{ fontSize: ds.fontSize(13), marginTop: ds.spacing(2), color: glassColors.textSecondary }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
               {item.email || 'No email on file'}
             </Text>
-            <Text style={{ fontSize: ds.fontSize(12), marginTop: ds.spacing(4), color: glassColors.textSecondary }}>
-              {formatLastActivity(item)}
+            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}>
+              {roleLabel} · {formatLastActivity(item)}
             </Text>
           </View>
 
-          <View className="items-end">
-            <View
-              style={{
-                backgroundColor: roleStyle.bg,
-                borderRadius: ds.radius(999),
-                paddingHorizontal: ds.spacing(10),
-                paddingVertical: ds.spacing(4),
-                marginBottom: ds.spacing(6),
-              }}
-            >
-              <Text className="font-semibold" style={{ fontSize: ds.fontSize(11), color: roleStyle.text }}>
-                {roleStyle.label}
-              </Text>
-            </View>
-            <View
-              style={{
-                backgroundColor: statusStyle.bg,
-                borderRadius: ds.radius(999),
-                paddingHorizontal: ds.spacing(10),
-                paddingVertical: ds.spacing(4),
-              }}
-            >
-              <Text className="font-semibold" style={{ fontSize: ds.fontSize(11), color: statusStyle.text }}>
-                {statusStyle.label}
-              </Text>
-            </View>
-          </View>
+          <StatusPill status={status.tone} label={status.label} />
         </View>
 
         {item.role === 'employee' ? (
-          <TouchableOpacity
-            style={{
-              marginTop: ds.spacing(12),
-              borderRadius: glassRadii.button,
-              minHeight: Math.max(42, ds.buttonH - ds.spacing(6)),
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: isUpdating ? 0.7 : 1,
-              borderWidth: glassHairlineWidth,
-              borderColor: item.is_suspended
-                ? 'rgba(52, 168, 83, 0.16)'
-                : 'rgba(249, 115, 22, 0.18)',
-              backgroundColor: item.is_suspended
-                ? glassColors.successSoft
-                : colors.warningBg,
-            }}
-            disabled={isUpdating}
+          <Button
+            variant={item.is_suspended ? 'secondary' : 'destructive'}
+            label={item.is_suspended ? 'Reinstate' : 'Suspend'}
+            loading={isUpdating}
             onPress={() => handleSuspensionPress(item)}
-            activeOpacity={0.82}
-          >
-            <Text
-              style={{
-                fontSize: ds.fontSize(14),
-                fontWeight: '700',
-                color: item.is_suspended ? colors.success : colors.primary[700],
-              }}
-            >
-              {isUpdating ? 'Saving...' : item.is_suspended ? 'Reinstate' : 'Suspend'}
-            </Text>
-          </TouchableOpacity>
-        ) : (
-          <View
-            style={{
-              marginTop: ds.spacing(12),
-              borderRadius: glassRadii.button,
-              minHeight: Math.max(42, ds.buttonH - ds.spacing(6)),
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderWidth: glassHairlineWidth,
-              borderColor: glassColors.controlBorder,
-              backgroundColor: glassColors.mediumFill,
-            }}
-          >
-            <Text style={{ fontSize: ds.fontSize(13), fontWeight: '600', color: glassColors.textSecondary }}>
-              Manager account
-            </Text>
-          </View>
-        )}
-
-        {/* Phase 3: per-user module toggles (in-app mirror of the dashboard matrix). */}
-        <TouchableOpacity
-          onPress={() => handleModulesTogglePress(item)}
-          activeOpacity={0.82}
-          style={{
-            marginTop: ds.spacing(10),
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            borderRadius: glassRadii.button,
-            minHeight: Math.max(38, ds.buttonH - ds.spacing(10)),
-            paddingHorizontal: ds.spacing(12),
-            borderWidth: glassHairlineWidth,
-            borderColor: glassColors.controlBorder,
-            backgroundColor: glassColors.mediumFill,
-          }}
-        >
-          <Text style={{ fontSize: ds.fontSize(13), fontWeight: '700', color: glassColors.textPrimary }}>
-            Modules
-          </Text>
-          <Ionicons
-            name={isModulesExpanded ? 'chevron-up' : 'chevron-down'}
-            size={ds.icon(16)}
-            color={glassColors.textSecondary}
+            style={{ marginTop: ds.spacing(space[3]) }}
           />
-        </TouchableOpacity>
+        ) : null}
+
+        {/* Per-user module toggles (in-app mirror of the dashboard matrix). */}
+        <ListRow
+          title="Modules"
+          onPress={() => handleModulesTogglePress(item)}
+          last
+          right={
+            <Ionicons
+              name={isModulesExpanded ? 'chevron-up' : 'chevron-down'}
+              size={ds.icon(16)}
+              color={color.ink3}
+            />
+          }
+        />
 
         {isModulesExpanded ? (
           <View
             style={{
-              marginTop: ds.spacing(8),
-              borderRadius: glassRadii.button,
-              paddingHorizontal: ds.spacing(12),
-              paddingVertical: ds.spacing(6),
-              borderWidth: glassHairlineWidth,
-              borderColor: glassColors.cardBorder,
-              backgroundColor: glassColors.subtleFill,
+              borderRadius: radius.control,
+              paddingHorizontal: ds.spacing(space[3]),
+              backgroundColor: color.well,
             }}
           >
             {moduleRow?.isLoading && !loadedModules ? (
-              <View style={{ paddingVertical: ds.spacing(10), alignItems: 'center' }}>
-                <ActivityIndicator size="small" color={glassColors.accent} />
+              <View style={{ paddingVertical: ds.spacing(space[3]) }}>
+                <Loading size="inline" label="Loading modules" style={{ alignItems: 'center' }} />
               </View>
             ) : moduleRow?.error && !loadedModules ? (
-              <View style={{ paddingVertical: ds.spacing(8) }}>
-                <Text style={{ fontSize: ds.fontSize(13), color: glassColors.dangerText }}>
-                  {moduleRow.error}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => void loadModulesForUser(item)}
-                  style={{ marginTop: ds.spacing(6) }}
-                >
-                  <Text style={{ fontSize: ds.fontSize(13), fontWeight: '700', color: glassColors.dangerText }}>
-                    Retry
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              <EmptyState
+                icon="alert-circle-outline"
+                tone="alert"
+                title="Unable to load modules"
+                body={moduleRow.error}
+                action={{ label: 'Retry', onPress: () => void loadModulesForUser(item) }}
+                compact
+              />
             ) : loadedModules ? (
               manageableKeys.map((moduleKey, index) => (
-                <View
+                <ListRow
                   key={moduleKey}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    paddingVertical: ds.spacing(6),
-                    borderTopWidth: index === 0 ? 0 : glassHairlineWidth,
-                    borderTopColor: glassColors.cardBorder,
-                  }}
-                >
-                  <Text
-                    style={{
-                      flex: 1,
-                      paddingRight: ds.spacing(8),
-                      fontSize: ds.fontSize(14),
-                      fontWeight: '600',
-                      color: glassColors.textPrimary,
-                    }}
-                  >
-                    {MODULE_LABELS[moduleKey]}
-                  </Text>
-                  <Switch
-                    value={loadedModules[moduleKey]}
-                    disabled={moduleRow?.pendingKey != null}
-                    onValueChange={(nextEnabled) =>
-                      void handleModuleValueChange(item, moduleKey, nextEnabled)
-                    }
-                    trackColor={{ true: colors.primary[500] }}
-                  />
-                </View>
+                  title={MODULE_LABELS[moduleKey]}
+                  last={index === manageableKeys.length - 1}
+                  right={
+                    <Switch
+                      value={loadedModules[moduleKey]}
+                      disabled={moduleRow?.pendingKey != null}
+                      accessibilityLabel={MODULE_LABELS[moduleKey]}
+                      onValueChange={(nextEnabled) =>
+                        void handleModuleValueChange(item, moduleKey, nextEnabled)
+                      }
+                      trackColor={{ false: color.hairlineStrong, true: color.accent }}
+                      thumbColor={Platform.OS === 'android' ? color.card : undefined}
+                      ios_backgroundColor={color.hairlineStrong}
+                    />
+                  }
+                />
               ))
             ) : null}
           </View>
         ) : null}
-      </View>
+      </Card>
     );
+  };
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace(backTo);
   };
 
   if (!isInitialized) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: glassColors.background }} edges={['top', 'left', 'right']}>
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="small" color={glassColors.accent} />
-        </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: color.page }} edges={['top', 'left', 'right']}>
+        <Loading label="Loading users" />
       </SafeAreaView>
     );
   }
@@ -674,173 +584,122 @@ export default function UserManagementScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: glassColors.background }} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.page }} edges={['left', 'right']}>
       <ManagerScaleContainer>
-        <View style={{ backgroundColor: glassColors.background }}>
-          <StackScreenHeader
-            title="User Management"
-            subtitle="Manager-only account oversight"
-          />
-        </View>
+        <ScreenHeader
+          mode="pushed"
+          title="User management"
+          subtitle="Manager-only account oversight"
+          onBack={handleBack}
+        />
 
-        <View style={{ paddingHorizontal: glassSpacing.screen, paddingTop: ds.spacing(12) }}>
-          <GlassSurface
-            intensity="medium"
-            blurred={false}
-            style={{
-              borderRadius: glassRadii.search,
-              minHeight: Math.max(48, ds.buttonH),
-              paddingHorizontal: ds.spacing(14),
-              justifyContent: 'center',
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="search-outline" size={ds.icon(18)} color={glassColors.textSecondary} />
-              <TextInput
-                style={{ flex: 1, marginLeft: ds.spacing(8), fontSize: ds.fontSize(15), color: glassColors.textPrimary }}
-                placeholder="Search by name or email"
-                placeholderTextColor={glassColors.textMuted}
-                value={searchInput}
-                onChangeText={setSearchInput}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              {searchInput.length > 0 ? (
-                <TouchableOpacity onPress={() => setSearchInput('')}>
-                  <Ionicons name="close-circle" size={ds.icon(18)} color={glassColors.textSecondary} />
-                </TouchableOpacity>
-              ) : null}
-            </View>
-          </GlassSurface>
+        <View style={{ paddingHorizontal: ds.spacing(space[4]) }}>
+          <View>
+            <Input
+              placeholder="Search by name or email"
+              accessibilityLabel="Search by name or email"
+              value={searchInput}
+              onChangeText={setSearchInput}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {searchInput.length > 0 ? (
+              <TouchableOpacity
+                onPress={() => setSearchInput('')}
+                accessibilityRole="button"
+                accessibilityLabel="Clear the search"
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: Math.max(size.touchMin, ds.icon(size.touchMin)),
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Ionicons name="close-circle" size={ds.icon(size.icon)} color={color.ink3} />
+              </TouchableOpacity>
+            ) : null}
+          </View>
 
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             // Bleed past the screen gutter so the trailing chip scrolls fully
             // into view instead of being cut off at the right edge.
-            style={{ marginHorizontal: -glassSpacing.screen }}
+            style={{ marginHorizontal: -ds.spacing(space[4]) }}
             contentContainerStyle={{
-              paddingTop: ds.spacing(10),
-              paddingBottom: ds.spacing(2),
-              paddingLeft: glassSpacing.screen,
-              paddingRight: glassSpacing.screen,
+              gap: ds.spacing(space[2]),
+              paddingTop: ds.spacing(space[3]),
+              paddingBottom: ds.spacing(space[1] - 2),
+              paddingLeft: ds.spacing(space[4]),
+              paddingRight: ds.spacing(space[4]),
             }}
           >
-            {FILTER_OPTIONS.map((option) => {
-              const selected = option.key === selectedFilter;
-
-              return (
-                <TouchableOpacity
-                  key={option.key}
-                  onPress={() => setSelectedFilter(option.key)}
-                  style={{
-                    marginRight: ds.spacing(8),
-                    borderRadius: glassRadii.pill,
-                    borderWidth: selected ? 1.5 : glassHairlineWidth,
-                    borderColor: selected ? glassColors.accent : glassColors.controlBorder,
-                    backgroundColor: selected ? glassColors.accentSoft : glassColors.mediumFill,
-                    paddingHorizontal: ds.spacing(12),
-                    paddingVertical: ds.spacing(6),
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: ds.fontSize(12),
-                      fontWeight: '700',
-                      color: selected ? glassColors.accent : glassColors.textSecondary,
-                    }}
-                  >
-                    {option.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+            {FILTER_OPTIONS.map((option) => (
+              <Chip
+                key={option.key}
+                label={option.label}
+                selected={option.key === selectedFilter}
+                onPress={() => setSelectedFilter(option.key)}
+              />
+            ))}
           </ScrollView>
         </View>
 
         {noticeMessage ? (
-          <View
+          <Text
+            accessibilityRole="alert"
             style={{
-              marginHorizontal: glassSpacing.screen,
-              marginTop: ds.spacing(8),
-              borderRadius: glassRadii.button,
-              paddingHorizontal: ds.spacing(12),
-              paddingVertical: ds.spacing(10),
-              borderWidth: glassHairlineWidth,
-              borderColor: 'rgba(52, 168, 83, 0.16)',
-              backgroundColor: glassColors.successSoft,
+              marginHorizontal: ds.spacing(space[4]),
+              marginTop: ds.spacing(space[2]),
+              fontSize: ds.fontSize(typeScale.secondary),
+              fontWeight: weight.semibold,
+              color: color.good,
             }}
           >
-            <Text style={{ fontSize: ds.fontSize(13), fontWeight: '600', color: glassColors.successText }}>
-              {noticeMessage}
-            </Text>
-          </View>
+            {noticeMessage}
+          </Text>
         ) : null}
 
         {errorMessage ? (
-          <View
-            style={{
-              marginHorizontal: glassSpacing.screen,
-              marginTop: ds.spacing(8),
-              borderRadius: glassRadii.button,
-              paddingHorizontal: ds.spacing(12),
-              paddingVertical: ds.spacing(10),
-              borderWidth: glassHairlineWidth,
-              borderColor: 'rgba(239, 68, 68, 0.16)',
-              backgroundColor: glassColors.dangerSoft,
-            }}
-          >
-            <Text style={{ fontSize: ds.fontSize(13), color: glassColors.dangerText }}>
-              {errorMessage}
-            </Text>
-            <TouchableOpacity
-              onPress={() => loadUsers()}
-              style={{ marginTop: ds.spacing(8) }}
-            >
-              <Text style={{ fontSize: ds.fontSize(13), fontWeight: '700', color: glassColors.dangerText }}>
-                Retry
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <EmptyState
+            icon="alert-circle-outline"
+            tone="alert"
+            title="Unable to load users"
+            body={errorMessage}
+            action={{ label: 'Retry', onPress: () => loadUsers() }}
+            compact
+          />
         ) : null}
 
         {isLoading && users.length === 0 ? (
-          <View className="flex-1 items-center justify-center" style={{ paddingHorizontal: ds.spacing(16) }}>
-            <ActivityIndicator size="small" color={glassColors.accent} />
-            <Text style={{ marginTop: ds.spacing(10), fontSize: ds.fontSize(14), color: glassColors.textSecondary }}>
-              Loading users...
-            </Text>
-          </View>
+          <Loading label="Loading users" />
         ) : (
           <FlatList
             data={filteredUsers}
             renderItem={renderRow}
             keyExtractor={(item) => item.id}
             contentContainerStyle={{
-              paddingHorizontal: glassSpacing.screen,
-              paddingTop: ds.spacing(10),
-              paddingBottom: ds.spacing(24),
+              paddingHorizontal: ds.spacing(space[4]),
+              paddingTop: ds.spacing(space[3]),
+              paddingBottom: ds.spacing(space[6]),
               flexGrow: 1,
             }}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={handleRefresh}
-                tintColor={colors.primary[500]}
+                tintColor={color.accent}
               />
             }
             ListEmptyComponent={
-              <View className="items-center justify-center" style={{ paddingTop: ds.spacing(80) }}>
-                <Ionicons name="people-outline" size={ds.icon(34)} color={glassColors.textMuted} />
-                <Text style={{ marginTop: ds.spacing(10), fontSize: ds.fontSize(15), fontWeight: '700', color: glassColors.textPrimary }}>
-                  No users found
-                </Text>
-                <Text
-                  style={{ marginTop: ds.spacing(4), fontSize: ds.fontSize(13), color: glassColors.textSecondary, textAlign: 'center' }}
-                >
-                  Try adjusting your search or filters.
-                </Text>
-              </View>
+              <EmptyState
+                icon="people-outline"
+                title="No users found"
+                body="Try adjusting your search or filters."
+              />
             }
           />
         )}

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Platform, Modal, Pressable } from 'react-native';
+import { View, Text, Platform } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/constants';
+import { ListRow, Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { glassColors, glassRadii } from '@/theme/design';
+import { color, space, typeScale, weight } from '@/theme/tokens';
 
 interface TimePickerRowProps {
   title: string;
@@ -59,141 +59,56 @@ export function TimePickerRow({
     }
   };
 
-  const handleIOSDone = () => {
-    setShowPicker(false);
-  };
-
   return (
-    <View className={disabled ? 'opacity-50' : ''}>
-      <TouchableOpacity
+    <View>
+      <ListRow
+        title={title}
         onPress={handlePress}
         disabled={disabled}
-        style={{
-          minHeight: Math.max(48, ds.rowH - ds.spacing(8)),
-          paddingVertical: ds.spacing(12),
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-        activeOpacity={0.82}
-      >
-        <Text
-          style={{
-            fontSize: ds.fontSize(15),
-            fontWeight: '600',
-            color: glassColors.textPrimary,
-          }}
-        >
-          {title}
-        </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Text
-            style={{
-              fontSize: ds.fontSize(15),
-              marginRight: ds.spacing(8),
-              color: glassColors.textPrimary,
-              fontWeight: '600',
-            }}
-          >
-            {formatDisplayTime(value)}
-          </Text>
-          <Ionicons
-            name="time-outline"
-            size={ds.icon(18)}
-            color={glassColors.textSecondary}
-          />
-        </View>
-      </TouchableOpacity>
-
-      {/* iOS Modal Picker */}
-      {Platform.OS === 'ios' && showPicker && (
-        <Modal
-          visible={showPicker}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setShowPicker(false)}
-        >
-          <Pressable
-            style={{ flex: 1, backgroundColor: colors.scrim, justifyContent: 'flex-end' }}
-            onPress={() => setShowPicker(false)}
-          >
-            <Pressable
+        last
+        right={
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: ds.spacing(space[2]) }}>
+            <Text
               style={{
-                backgroundColor: glassColors.background,
-                borderTopLeftRadius: glassRadii.surface,
-                borderTopRightRadius: glassRadii.surface,
+                fontSize: ds.fontSize(typeScale.body),
+                fontWeight: weight.semibold,
+                color: color.ink,
               }}
-              onPress={(e) => e.stopPropagation()}
             >
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  paddingHorizontal: ds.spacing(16),
-                  paddingVertical: ds.spacing(12),
-                  borderBottomWidth: 1,
-                  borderBottomColor: glassColors.divider,
-                }}
-              >
-                <TouchableOpacity
-                  onPress={() => setShowPicker(false)}
-                  style={{ minHeight: 44, justifyContent: 'center' }}
-                >
-                  <Text
-                    style={{
-                      fontSize: ds.fontSize(15),
-                      color: glassColors.textSecondary,
-                    }}
-                  >
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
-                <Text
-                  style={{
-                    fontSize: ds.fontSize(18),
-                    fontWeight: '700',
-                    color: glassColors.textPrimary,
-                  }}
-                >
-                  {title}
-                </Text>
-                <TouchableOpacity
-                  onPress={handleIOSDone}
-                  style={{ minHeight: 44, justifyContent: 'center' }}
-                >
-                  <Text
-                    style={{
-                      fontSize: ds.fontSize(15),
-                      fontWeight: '700',
-                      color: glassColors.accent,
-                    }}
-                  >
-                    Done
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <DateTimePicker
-                value={parseTime(value)}
-                mode="time"
-                display="spinner"
-                onChange={handleChange}
-                style={{ height: Math.max(200, ds.spacing(200)) }}
-              />
-            </Pressable>
-          </Pressable>
-        </Modal>
-      )}
+              {formatDisplayTime(value)}
+            </Text>
+            <Ionicons name="time-outline" size={ds.icon(18)} color={color.ink2} />
+          </View>
+        }
+      />
 
-      {/* Android Inline Picker */}
-      {Platform.OS === 'android' && showPicker && (
+      {/* iOS: the contract sheet hosts the spinner. */}
+      {Platform.OS === 'ios' && showPicker ? (
+        <Sheet
+          visible={showPicker}
+          title={title}
+          onClose={() => setShowPicker(false)}
+          primary={{ label: 'Done', onPress: () => setShowPicker(false) }}
+        >
+          <DateTimePicker
+            value={parseTime(value)}
+            mode="time"
+            display="spinner"
+            onChange={handleChange}
+            style={{ height: Math.max(200, ds.spacing(200)) }}
+          />
+        </Sheet>
+      ) : null}
+
+      {/* Android keeps its platform dialog. */}
+      {Platform.OS === 'android' && showPicker ? (
         <DateTimePicker
           value={parseTime(value)}
           mode="time"
           display="default"
           onChange={handleChange}
         />
-      )}
+      ) : null}
     </View>
   );
 }

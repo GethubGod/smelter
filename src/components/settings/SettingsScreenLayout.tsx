@@ -1,21 +1,17 @@
 import React from 'react';
 import {
   ScrollView,
-  Text,
   View,
   type ScrollViewProps,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  glassColors,
-  glassRadii,
-  glassSpacing,
-} from '@/theme/design';
+import { Card, ScreenHeader, SectionLabel } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { GlassSurface } from '@/components/ui';
-import { StackScreenHeader } from '@/components/ui/StackScreenHeader';
+import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
+import { color, space } from '@/theme/tokens';
 
 interface SettingsScreenLayoutProps {
   title: string;
@@ -36,6 +32,11 @@ interface SettingsSectionLabelProps {
   description?: string;
 }
 
+/**
+ * Every pushed settings screen. `ScreenHeader mode="pushed"` owns the safe area
+ * and the back circle; the back target is the same one `StackScreenHeader` used
+ * so navigation is unchanged.
+ */
 export function SettingsScreenLayout({
   title,
   subtitle,
@@ -45,23 +46,34 @@ export function SettingsScreenLayout({
   scrollProps,
 }: SettingsScreenLayoutProps) {
   const ds = useScaledStyles();
+  const { backTo } = useSettingsNavigationContext();
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace(backTo);
+  };
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: glassColors.background }}
-      edges={['top', 'left', 'right']}
+      style={{ flex: 1, backgroundColor: color.page }}
+      edges={['left', 'right']}
     >
-      <View style={{ backgroundColor: glassColors.background }}>
-        <StackScreenHeader title={title} subtitle={subtitle} right={right} />
-      </View>
+      <ScreenHeader
+        mode="pushed"
+        title={title}
+        subtitle={subtitle}
+        right={right}
+        onBack={handleBack}
+      />
       <ScrollView
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[
-          {
-            paddingBottom: ds.spacing(32),
-          },
+          { paddingBottom: ds.spacing(space[8]) },
           contentContainerStyle,
         ]}
         {...scrollProps}
@@ -72,48 +84,33 @@ export function SettingsScreenLayout({
   );
 }
 
+/** Rows group inside a Card. The card is flush so rows carry their own padding. */
 export function SettingsGroup({ children, style }: SettingsGroupProps) {
+  const ds = useScaledStyles();
+
   return (
-    <GlassSurface
-      intensity="subtle"
-      blurred={false}
+    <Card
       style={[
         {
-          marginHorizontal: glassSpacing.screen,
-          borderRadius: glassRadii.surface,
+          marginHorizontal: ds.spacing(space[4]),
+          paddingHorizontal: ds.spacing(space[4]),
           overflow: 'hidden',
         },
         style,
       ]}
+      flush
     >
       {children}
-    </GlassSurface>
+    </Card>
   );
 }
 
-export function SettingsSectionLabel({
-  label,
-}: SettingsSectionLabelProps) {
+export function SettingsSectionLabel({ label }: SettingsSectionLabelProps) {
   const ds = useScaledStyles();
 
   return (
-    <View
-      style={{
-        paddingHorizontal: glassSpacing.screen,
-        paddingTop: ds.spacing(18),
-        paddingBottom: ds.spacing(12),
-      }}
-    >
-      <Text
-        style={{
-          fontSize: ds.fontSize(18),
-          fontWeight: '700',
-          color: glassColors.textPrimary,
-          letterSpacing: -0.2,
-        }}
-      >
-        {label}
-      </Text>
+    <View style={{ paddingHorizontal: ds.spacing(space[4]) }}>
+      <SectionLabel>{label}</SectionLabel>
     </View>
   );
 }

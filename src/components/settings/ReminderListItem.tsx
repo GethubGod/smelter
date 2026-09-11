@@ -1,14 +1,10 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Switch, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/constants';
 import { Reminder } from '@/types/settings';
+import { Card } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import {
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-} from '@/theme/design';
+import { color, radius, size, space, typeScale, weight } from '@/theme/tokens';
 
 interface ReminderListItemProps {
   reminder: Reminder;
@@ -28,6 +24,7 @@ function ReminderListItemInner({
 }: ReminderListItemProps) {
   const ds = useScaledStyles();
   const switchScale = ds.isLarge ? 1.15 : ds.isCompact ? 0.95 : 1;
+  const control = Math.max(size.touchMin, ds.icon(size.touchMin));
 
   const formatTime = (time: string): string => {
     const [hours, minutes] = time.split(':').map(Number);
@@ -48,49 +45,36 @@ function ReminderListItemInner({
     return `${days} at ${formatTime(reminder.time)}`;
   };
 
-  const handleToggle = () => {
-    onToggle();
-  };
-
   return (
-    <View
-      style={{
-        padding: ds.cardPad,
-        marginBottom: ds.spacing(12),
-        borderRadius: glassRadii.surface,
-        borderWidth: glassHairlineWidth,
-        borderColor: glassColors.cardBorder,
-        backgroundColor: glassColors.subtleFill,
-      }}
-    >
+    <Card style={{ marginBottom: ds.spacing(space[3]) }}>
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'flex-start',
           justifyContent: 'space-between',
+          gap: ds.spacing(space[3]),
         }}
       >
-        <View className="flex-1" style={{ marginRight: ds.spacing(12) }}>
+        <View style={{ flex: 1 }}>
           <View
             style={{
               flexDirection: 'row',
               alignItems: 'center',
-              marginBottom: ds.spacing(4),
+              gap: ds.spacing(space[2]),
+              marginBottom: ds.spacing(space[1]),
             }}
           >
             <Ionicons
               name="notifications"
               size={ds.icon(18)}
-              color={reminder.enabled ? glassColors.accent : glassColors.textMuted}
+              color={reminder.enabled ? color.accent : color.ink3}
             />
             <Text
               style={{
-                fontSize: ds.fontSize(16),
-                marginLeft: ds.spacing(8),
-                fontWeight: '600',
-                color: reminder.enabled
-                  ? glassColors.textPrimary
-                  : glassColors.textSecondary,
+                flex: 1,
+                fontSize: ds.fontSize(typeScale.body),
+                fontWeight: weight.semibold,
+                color: reminder.enabled ? color.ink : color.ink2,
               }}
             >
               {reminder.name}
@@ -98,20 +82,20 @@ function ReminderListItemInner({
           </View>
           <Text
             style={{
-              fontSize: ds.fontSize(13),
-              marginBottom: ds.spacing(4),
-              color: glassColors.textSecondary,
+              fontSize: ds.fontSize(typeScale.secondary),
+              marginBottom: ds.spacing(space[1]),
+              color: color.ink2,
             }}
           >
             {formatSchedule()}
           </Text>
           <Text
+            numberOfLines={1}
             style={{
-              fontSize: ds.fontSize(12),
-              color: glassColors.textSecondary,
+              fontSize: ds.fontSize(typeScale.secondary),
+              color: color.ink3,
               fontStyle: 'italic',
             }}
-            numberOfLines={1}
           >
             {'"'}
             {reminder.message}
@@ -119,62 +103,51 @@ function ReminderListItemInner({
           </Text>
         </View>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: ds.spacing(space[2]) }}>
           <TouchableOpacity
             onPress={onEdit}
+            activeOpacity={0.82}
+            accessibilityRole="button"
+            accessibilityLabel={`Edit ${reminder.name}`}
             style={{
-              width: Math.max(44, ds.icon(36)),
-              height: Math.max(44, ds.icon(36)),
-              marginRight: ds.spacing(4),
+              width: control,
+              height: control,
               alignItems: 'center',
               justifyContent: 'center',
-              borderRadius: glassRadii.stepper,
-              backgroundColor: glassColors.mediumFill,
+              borderRadius: radius.pill,
+              backgroundColor: color.well,
             }}
-            activeOpacity={0.82}
           >
-            <Ionicons
-              name="pencil"
-              size={ds.icon(18)}
-              color={glassColors.textSecondary}
-            />
+            <Ionicons name="pencil" size={ds.icon(18)} color={color.ink2} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={onDelete}
+            activeOpacity={0.82}
+            accessibilityRole="button"
+            accessibilityLabel={`Delete ${reminder.name}`}
             style={{
-              width: Math.max(44, ds.icon(36)),
-              height: Math.max(44, ds.icon(36)),
-              marginRight: ds.spacing(8),
+              width: control,
+              height: control,
               alignItems: 'center',
               justifyContent: 'center',
-              borderRadius: glassRadii.stepper,
-              backgroundColor: glassColors.dangerSoft,
+              borderRadius: radius.pill,
+              backgroundColor: color.alertBg,
             }}
-            activeOpacity={0.82}
           >
-            <Ionicons
-              name="trash-outline"
-              size={ds.icon(18)}
-              color={glassColors.dangerText}
-            />
+            <Ionicons name="trash-outline" size={ds.icon(18)} color={color.alert} />
           </TouchableOpacity>
           <Switch
             value={reminder.enabled}
-            onValueChange={handleToggle}
-            trackColor={{ false: colors.gray[200], true: colors.primary[500] }}
-            thumbColor={
-              Platform.OS === 'android'
-                ? reminder.enabled
-                  ? colors.primary[600]
-                  : colors.gray[50]
-                : undefined
-            }
-            ios_backgroundColor={colors.gray[200]}
+            onValueChange={onToggle}
+            accessibilityLabel={`${reminder.name} enabled`}
+            trackColor={{ false: color.well, true: color.accent }}
+            thumbColor={Platform.OS === 'android' ? color.card : undefined}
+            ios_backgroundColor={color.well}
             style={{ transform: [{ scaleX: switchScale }, { scaleY: switchScale }] }}
           />
         </View>
       </View>
-    </View>
+    </Card>
   );
 }
 
