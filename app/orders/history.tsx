@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, router, type Href, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { RealtimeChannel } from '@supabase/supabase-js';
+import { useShallow } from 'zustand/react/shallow';
 import { useOrderStore, useAuthStore } from '@/store';
 import { supabase } from '@/lib/supabase';
 import { OrderWithDetails, OrderStatus } from '@/types';
@@ -118,8 +119,13 @@ function OrderListCard({ order }: { order: OrderWithDetails }) {
 export default function OrdersScreen() {
   const ds = useScaledStyles();
   const params = useLocalSearchParams<{ backTo?: string | string[] }>();
-  const { user } = useAuthStore();
-  const { orders, fetchUserOrders } = useOrderStore();
+  const user = useAuthStore((state) => state.user);
+  const { orders, fetchUserOrders } = useOrderStore(
+    useShallow((state) => ({
+      orders: state.orders,
+      fetchUserOrders: state.fetchUserOrders,
+    })),
+  );
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | null>(null);
   const realtimeChannelRef = useRef<RealtimeChannel | null>(null);
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);

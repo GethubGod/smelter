@@ -1,10 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   ActivityIndicator,
   LayoutChangeEvent,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -13,6 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   Easing,
+  useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -127,7 +125,7 @@ export function QuickOrderListCard({
   onClear,
 }: QuickOrderListCardProps) {
   const ds = useScaledStyles();
-  const scrollRef = useRef<ScrollView | null>(null);
+  const scrollRef = useRef<React.ComponentRef<typeof Animated.ScrollView> | null>(null);
 
   const showLocationPill = Boolean(onToggleLocationDropdown && locationShortLabel);
   const sortedLocations = useMemo(
@@ -176,62 +174,51 @@ export function QuickOrderListCard({
   // native indicator fades out after scrolling stops, so we draw our own thumb
   // and keep it pinned. Seeded from onLayout / onContentSizeChange so the bar
   // is correct before the first scroll event.
-  const [scrollGeometry, setScrollGeometry] = useState({
-    offsetY: 0,
-    contentHeight: 0,
-    viewportHeight: 0,
+  const offsetY = useSharedValue(0);
+  const contentHeight = useSharedValue(0);
+  const viewportHeight = useSharedValue(0);
+
+  const handleScroll = useAnimatedScrollHandler((event) => {
+    offsetY.value = event.contentOffset.y;
+    contentHeight.value = event.contentSize.height;
+    viewportHeight.value = event.layoutMeasurement.height;
   });
 
-  const handleScroll = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const { contentOffset, contentSize, layoutMeasurement } =
-        event.nativeEvent;
-      setScrollGeometry({
-        offsetY: contentOffset.y,
-        contentHeight: contentSize.height,
-        viewportHeight: layoutMeasurement.height,
-      });
-    },
-    [],
-  );
-
   const handleScrollContentSizeChange = useCallback(
-    (_width: number, height: number) =>
-      setScrollGeometry((prev) => ({ ...prev, contentHeight: height })),
-    [],
+    (_width: number, height: number) => {
+      contentHeight.value = height;
+    },
+    [contentHeight],
   );
 
   const handleScrollViewLayout = useCallback(
-    (event: LayoutChangeEvent) =>
-      setScrollGeometry((prev) => ({
-        ...prev,
-        viewportHeight: event.nativeEvent.layout.height,
-      })),
-    [],
+    (event: LayoutChangeEvent) => {
+      viewportHeight.value = event.nativeEvent.layout.height;
+    },
+    [viewportHeight],
   );
 
   // Derive the custom scrollbar thumb geometry. We seed it from the known row
   // count (available on first render) and refine with measured values once the
   // ScrollView reports them, so the bar is visible immediately and stays
   // accurate as rows resize.
-  const viewportHeight =
-    scrollGeometry.viewportHeight > 0 ? scrollGeometry.viewportHeight : listMaxHeight;
-  const contentHeight = Math.max(
-    scrollGeometry.contentHeight,
-    count * rowSlot,
-  );
-  const offsetY = scrollGeometry.offsetY;
   const showScrollbar = scrollable;
-  const thumbHeight = Math.min(
-    viewportHeight,
-    Math.max(SCROLLBAR_MIN_THUMB, (viewportHeight * viewportHeight) / contentHeight),
-  );
-  const maxOffset = Math.max(0, contentHeight - viewportHeight);
-  const maxThumbTravel = Math.max(0, viewportHeight - thumbHeight);
-  const thumbTop =
-    maxOffset > 0
-      ? Math.min(maxThumbTravel, (offsetY / maxOffset) * maxThumbTravel)
-      : 0;
+  const scrollbarThumbStyle = useAnimatedStyle(() => {
+    const measuredViewportHeight =
+      viewportHeight.value > 0 ? viewportHeight.value : listMaxHeight;
+    const measuredContentHeight = Math.max(contentHeight.value, count * rowSlot);
+    const geometry = getScrollbarThumbGeometry({
+      viewportHeight: measuredViewportHeight,
+      contentHeight: measuredContentHeight,
+      offsetY: offsetY.value,
+      minThumbHeight: SCROLLBAR_MIN_THUMB,
+    });
+
+    return {
+      height: geometry.height,
+      transform: [{ translateY: geometry.top }],
+    };
+  }, [count, listMaxHeight, rowSlot]);
 
   const handleLayout = useCallback(
     (event: LayoutChangeEvent) =>
@@ -405,7 +392,7 @@ export function QuickOrderListCard({
             </View>
           ) : (
             <View style={{ position: "relative" }}>
-              <ScrollView
+              <Animated.ScrollView
                 ref={scrollRef}
                 style={{ maxHeight: listMaxHeight }}
                 contentContainerStyle={{ paddingRight: ds.spacing(14) }}
@@ -430,7 +417,7 @@ export function QuickOrderListCard({
                     onRemove={() => onRemoveItems(group.items)}
                   />
                 ))}
-              </ScrollView>
+              </Animated.ScrollView>
               {showScrollbar ? (
                 <View
                   pointerEvents="none"
@@ -442,12 +429,11 @@ export function QuickOrderListCard({
                     },
                   ]}
                 >
-                  <View
+                  <Animated.View
                     style={[
                       styles.scrollbarThumb,
+                      scrollbarThumbStyle,
                       {
-                        height: thumbHeight,
-                        top: thumbTop,
                         borderRadius: ds.radius(SCROLLBAR_WIDTH),
                       },
                     ]}
@@ -536,6 +522,32 @@ export function QuickOrderListCard({
       </View>
     </View>
   );
+}
+
+export function getScrollbarThumbGeometry({
+  viewportHeight,
+  contentHeight,
+  offsetY,
+  minThumbHeight,
+}: {
+  viewportHeight: number;
+  contentHeight: number;
+  offsetY: number;
+  minThumbHeight: number;
+}): { height: number; top: number } {
+  'worklet';
+  if (viewportHeight <= 0 || contentHeight <= viewportHeight) {
+    return { height: Math.max(0, viewportHeight), top: 0 };
+  }
+
+  const height = Math.min(
+    viewportHeight,
+    Math.max(minThumbHeight, (viewportHeight * viewportHeight) / contentHeight),
+  );
+  const maxOffset = contentHeight - viewportHeight;
+  const maxTop = viewportHeight - height;
+  const top = Math.max(0, Math.min(maxTop, (offsetY / maxOffset) * maxTop));
+  return { height, top };
 }
 
 function groupOrderListItems(items: ParsedQuickOrderItem[]): OrderListGroup[] {

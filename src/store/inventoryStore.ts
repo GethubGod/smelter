@@ -1,9 +1,10 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { InventoryItem, ItemCategory, SupplierCategory } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { listInventory } from '@/lib/api/client';
+import { createEqualityGatedJSONStorage } from '@/lib/equalityGatedJSONStorage';
 import { normalizeInventoryItemUnits } from '@/lib/inventoryUnits';
 
 export interface NewInventoryItem {
@@ -41,6 +42,7 @@ interface InventoryState {
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const INVENTORY_FETCH_LIMIT = 5000;
+const MAX_CACHED_ITEMS = 2000;
 const SESSION_EXPIRED_MESSAGE = 'Session expired. Please sign in again.';
 const DIRECT_INVENTORY_OPTIONAL_COLUMNS = ['supplier_id', 'location_id', 'created_by'] as const;
 
@@ -115,6 +117,44 @@ function mapDirectInventoryRow(row: DirectInventoryRow): InventoryItem {
   };
 }
 
+interface InventoryRequest {
+  generation: number;
+  followUpRequested: boolean;
+  promise: Promise<void> | null;
+}
+
+let inventoryRequestGeneration = 0;
+let activeInventoryRequest: InventoryRequest | null = null;
+
+interface PersistedInventoryState {
+  items: InventoryItem[];
+}
+
+let lastPartializedItemsSource: InventoryItem[] | null = null;
+let lastPartializedItems: InventoryItem[] = [];
+
+function partializeInventoryState(state: InventoryState): PersistedInventoryState {
+  if (lastPartializedItemsSource !== state.items) {
+    lastPartializedItemsSource = state.items;
+    lastPartializedItems =
+      state.items.length > MAX_CACHED_ITEMS
+        ? state.items.slice(0, MAX_CACHED_ITEMS)
+        : state.items;
+  }
+  return { items: lastPartializedItems };
+}
+
+const inventoryStorage = createEqualityGatedJSONStorage<
+  PersistedInventoryState,
+  InventoryItem[]
+>(() => AsyncStorage, (state) => state.items);
+
+/** Prevent an earlier account's request from joining or publishing after reset. */
+export function invalidatePendingInventoryRequests(): void {
+  inventoryRequestGeneration += 1;
+  activeInventoryRequest = null;
+}
+
 async function listInventoryDirect(options?: {
   limit?: number;
 }): Promise<InventoryItem[]> {
@@ -181,6 +221,13 @@ export const useInventoryStore = create<InventoryState>()(
 
       fetchItems: async (options) => {
         const force = options?.force === true;
+        const requestGeneration = inventoryRequestGeneration;
+        const activeRequest = activeInventoryRequest;
+        if (activeRequest?.generation === requestGeneration && activeRequest.promise) {
+          if (force) activeRequest.followUpRequested = true;
+          return activeRequest.promise;
+        }
+
         const { lastFetched, items, hasFetchedThisSession } = get();
 
         if (!force && hasFetchedThisSession && lastFetched && items.length > 0) {
@@ -190,73 +237,102 @@ export const useInventoryStore = create<InventoryState>()(
           }
         }
 
-        set({ isLoading: true, error: null });
-        try {
-          const result = await listInventory({
-            limit: INVENTORY_FETCH_LIMIT,
-          });
-          let resolvedItems = result.data ?? null;
+        const request: InventoryRequest = {
+          generation: requestGeneration,
+          followUpRequested: false,
+          promise: null,
+        };
+        activeInventoryRequest = request;
 
-          const shouldTryDirectFallback =
-            Boolean(result.error) ||
-            (Array.isArray(result.data) && result.data.length === 0);
+        request.promise = Promise.resolve().then(async () => {
+          set({ isLoading: true, error: null });
+          try {
+            do {
+              request.followUpRequested = false;
+              try {
+                const result = await listInventory({
+                  limit: INVENTORY_FETCH_LIMIT,
+                });
+                if (requestGeneration !== inventoryRequestGeneration) return;
+                let resolvedItems = result.data ?? null;
 
-          if (shouldTryDirectFallback) {
-            try {
-              const directItems = await listInventoryDirect({
-                limit: INVENTORY_FETCH_LIMIT,
-              });
+                const shouldTryDirectFallback =
+                  Boolean(result.error) ||
+                  (Array.isArray(result.data) && result.data.length === 0);
 
-              if (!result.error || directItems.length > 0) {
-                resolvedItems = directItems;
-              }
+                if (shouldTryDirectFallback) {
+                  try {
+                    const directItems = await listInventoryDirect({
+                      limit: INVENTORY_FETCH_LIMIT,
+                    });
+                    if (requestGeneration !== inventoryRequestGeneration) return;
 
-              if (result.error && directItems.length > 0) {
-                console.warn(
-                  'Inventory API failed; using direct inventory query fallback.',
-                  result.error
+                    if (!result.error || directItems.length > 0) {
+                      resolvedItems = directItems;
+                    }
+
+                    if (result.error && directItems.length > 0) {
+                      console.warn(
+                        'Inventory API failed; using direct inventory query fallback.',
+                        result.error
+                      );
+                    }
+                  } catch (fallbackError) {
+                    if (result.error) {
+                      console.warn(
+                        'Failed to fetch inventory items via API and direct fallback.',
+                        fallbackError
+                      );
+                    }
+                  }
+                }
+
+                if (requestGeneration !== inventoryRequestGeneration) return;
+                if (result.error && (!resolvedItems || resolvedItems.length === 0)) {
+                  console.warn('Failed to fetch inventory items.', result.error);
+                  set({ error: result.error });
+                  continue;
+                }
+
+                const activeItems = sortInventoryItems(
+                  (resolvedItems ?? []).filter((item) => item.active)
                 );
+
+                set({
+                  items: activeItems,
+                  error: null,
+                  lastFetched: Date.now(),
+                  hasFetchedThisSession: true,
+                });
+              } catch (error) {
+                if (requestGeneration !== inventoryRequestGeneration) return;
+                const message =
+                  error instanceof Error ? error.message : 'Failed to load inventory.';
+
+                if (isSessionExpiredErrorMessage(message)) {
+                  set({ error: message });
+                  continue;
+                }
+
+                console.error('Unexpected inventory fetch failure.', error);
+                set({ error: message });
               }
-            } catch (fallbackError) {
-              if (result.error) {
-                console.warn(
-                  'Failed to fetch inventory items via API and direct fallback.',
-                  fallbackError
-                );
-              }
+            } while (
+              request.followUpRequested &&
+              requestGeneration === inventoryRequestGeneration
+            );
+          } finally {
+            if (
+              requestGeneration === inventoryRequestGeneration &&
+              activeInventoryRequest === request
+            ) {
+              activeInventoryRequest = null;
+              set({ isLoading: false });
             }
           }
+        });
 
-          if (result.error && (!resolvedItems || resolvedItems.length === 0)) {
-            console.warn('Failed to fetch inventory items.', result.error);
-            set({ error: result.error });
-            return;
-          }
-
-          const activeItems = sortInventoryItems(
-            (resolvedItems ?? []).filter((item) => item.active)
-          );
-
-          set({
-            items: activeItems,
-            error: null,
-            lastFetched: Date.now(),
-            hasFetchedThisSession: true,
-          });
-        } catch (error) {
-          const message =
-            error instanceof Error ? error.message : 'Failed to load inventory.';
-
-          if (isSessionExpiredErrorMessage(message)) {
-            set({ error: message });
-            return;
-          }
-
-          console.error('Unexpected inventory fetch failure.', error);
-          set({ error: message });
-        } finally {
-          set({ isLoading: false });
-        }
+        return request.promise;
       },
 
       addItem: async (item) => {
@@ -427,15 +503,8 @@ export const useInventoryStore = create<InventoryState>()(
     }),
     {
       name: 'inventory-storage',
-      storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => {
-        const MAX_CACHED_ITEMS = 2000;
-        return {
-          items: state.items.length > MAX_CACHED_ITEMS 
-            ? state.items.slice(0, MAX_CACHED_ITEMS) 
-            : state.items,
-        };
-      },
+      storage: inventoryStorage,
+      partialize: partializeInventoryState,
     }
   )
 );

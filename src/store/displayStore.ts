@@ -59,6 +59,19 @@ const ITEM_ROW_HEIGHT: Record<UIScale, number> = {
   large: 84,
 };
 
+export function computeScaledFontSize(
+  basePx: number,
+  textScale: TextScale,
+  uiScale: UIScale,
+  systemScale: number = PixelRatio.getFontScale(),
+): number {
+  const combinedTextScale = Math.min(textScale * systemScale, 2.0);
+  const uiMult = UI_FONT_MULTIPLIER[uiScale];
+  const raw = basePx * combinedTextScale * uiMult;
+  const max = basePx > 20 ? 36 : 24;
+  return Math.round(Math.max(10, Math.min(raw, max)));
+}
+
 interface DisplayState {
   // Raw settings
   textScale: TextScale;
@@ -110,12 +123,7 @@ export const useDisplayStore = create<DisplayState>()(
       // Helper to compute font size with system Dynamic Type integration
       const computeScaledFont = (basePx: number): number => {
         const { textScale, uiScale } = get();
-        const systemScale = PixelRatio.getFontScale();
-        const combinedTextScale = Math.min(textScale * systemScale, 2.0);
-        const uiMult = UI_FONT_MULTIPLIER[uiScale];
-        const raw = basePx * combinedTextScale * uiMult;
-        const max = basePx > 20 ? 36 : 24;
-        return Math.round(Math.max(10, Math.min(raw, max)));
+        return computeScaledFontSize(basePx, textScale, uiScale);
       };
 
       const computeScaledSpacing = (basePx: number): number => {

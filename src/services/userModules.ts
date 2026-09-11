@@ -1,3 +1,4 @@
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
 const MODULE_KEYS = [
@@ -88,15 +89,16 @@ export async function setUserModule(
   }
 }
 
-export function subscribeToMyModules(onChange: () => void): () => void {
+export function subscribeToMyModules(
+  onChange: () => void,
+  knownUserId?: string,
+): () => void {
   let disposed = false;
-  let channel: any = null;
+  let channel: RealtimeChannel | null = null;
 
-  void (async () => {
+  const subscribe = (userId: string) => {
+    if (disposed) return;
     try {
-      const userId = await getCurrentUserId();
-      if (disposed) return;
-
       channel = supabase
         .channel(`user-module-updates-${userId}`)
         .on(
@@ -113,7 +115,20 @@ export function subscribeToMyModules(onChange: () => void): () => void {
     } catch (error) {
       console.error('Failed to subscribe to module updates', error);
     }
-  })();
+  };
+
+  if (knownUserId) {
+    subscribe(knownUserId);
+  } else {
+    void (async () => {
+      try {
+        const userId = await getCurrentUserId();
+        subscribe(userId);
+      } catch (error) {
+        console.error('Failed to subscribe to module updates', error);
+      }
+    })();
+  }
 
   return () => {
     disposed = true;

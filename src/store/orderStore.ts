@@ -514,9 +514,8 @@ export const useOrderStore = create<OrderState>()(
       getTotalCartCount: (context) => {
         const state = get();
         const cartByLocation = getCartByContext(state, context);
-        return Object.entries(cartByLocation).reduce((total, [locationId, rawItems]) => {
-          const items = normalizeLocationCart(rawItems, locationId);
-          return total + items.length;
+        return Object.keys(cartByLocation).reduce((total, locationId) => {
+          return total + getLocationCart(cartByLocation, locationId).length;
         }, 0);
       },
 
@@ -524,7 +523,7 @@ export const useOrderStore = create<OrderState>()(
         const state = get();
         const cartByLocation = getCartByContext(state, context);
         return Object.keys(cartByLocation).filter((locId) => {
-          const items = normalizeLocationCart(cartByLocation[locId], locId);
+          const items = getLocationCart(cartByLocation, locId);
           return items.length > 0;
         });
       },

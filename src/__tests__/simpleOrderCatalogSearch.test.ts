@@ -1,4 +1,6 @@
 import {
+  buildCatalogSearchIndex,
+  filterCatalogSearchIndex,
   filterCatalogItems,
   mapVoiceActionsToAdditions,
 } from '@/features/simpleOrder/catalogSearch';
@@ -70,6 +72,41 @@ describe('filterCatalogItems', () => {
   it('respects the result limit', () => {
     const results = filterCatalogItems(catalog, 'salmon', 2);
     expect(results).toHaveLength(2);
+  });
+
+  it('indexes item text once across repeated queries', () => {
+    let nameReads = 0;
+    let aliasReads = 0;
+    const indexedCatalog = Array.from({ length: 40 }, (_, index) => {
+      const item = makeInventoryItem({ id: `indexed-${index}` });
+      Object.defineProperties(item, {
+        name: {
+          configurable: true,
+          enumerable: true,
+          get: () => {
+            nameReads += 1;
+            return `Ingredient ${index}`;
+          },
+        },
+        aliases: {
+          configurable: true,
+          enumerable: true,
+          get: () => {
+            aliasReads += 1;
+            return [`alias ${index}`];
+          },
+        },
+      });
+      return item;
+    });
+
+    const index = buildCatalogSearchIndex(indexedCatalog);
+    for (const query of ['ingredient', 'alias', 'ingredient 3', 'missing']) {
+      filterCatalogSearchIndex(index, query);
+    }
+
+    expect(nameReads).toBe(indexedCatalog.length);
+    expect(aliasReads).toBe(indexedCatalog.length);
   });
 });
 
