@@ -1,0 +1,107 @@
+{
+  "build": {
+    "summary": "Final verification of the App Store 2.3 integration head on the signed Release simulator build against a disposable local full stack. Every card carries the screenshot or the psql or lint proof behind its verdict.",
+    "integration_sha": "54f4912",
+    "branch": "issue/49-release-proof",
+    "date": "2026-09-10",
+    "sim": "Smelter Release QA iPhone 17 Pro Max, iOS 26.2, UDID EF05F833-2AC4-4383-8688-36C51B956BCF",
+    "facts": [
+      [
+        "Integration head",
+        "54f4912 (integration/app-store-2.3), proof branch issue/49-release-proof cut from it"
+      ],
+      [
+        "Simulator",
+        "EF05F833-2AC4-4383-8688-36C51B956BCF, driven only through scripts/sim.sh (simctl by UDID, AXe 1.8.0 for taps and describe-ui)"
+      ],
+      [
+        "Local stack",
+        "FULL_STACK_PORT_BASE=54620: API http://127.0.0.1:54621, database 54622, containers supabase_*_agent-a65bc65c005581c1d, 30 migrations applied on the baseline"
+      ],
+      [
+        "Fixtures",
+        "scripts/release-readiness/setup-local-issue-40.sh and setup-local-issue-69.sh (seed-local-mobile-e2e.sql, seed-local-quick-order-catalog.sql), PINs 1111 / 2222 / 3333"
+      ],
+      [
+        "Build",
+        "xcodebuild -workspace ios/Babytuna.xcworkspace -scheme Babytuna -configuration Release -sdk iphonesimulator, ad hoc signed, after npm ci, the four space-in-path quoting patches and pod install with LANG=en_US.UTF-8"
+      ],
+      [
+        "App identity",
+        "CFBundleDisplayName Smelter, CFBundleIdentifier com.babytuna.systems, CFBundleShortVersionString 2.3, CFBundleVersion 21, DTSDKName iphonesimulator26.2"
+      ],
+      [
+        "Embedded resources",
+        "scripts/verify-ios-release.py: PASS, Smelter identity, embedded JavaScript, valid update manifest and 43 bundled assets; EXConstants.bundle/app.config present; AppIcon60x60@2x.png is the silver Smelter mark"
+      ],
+      [
+        "Bundle",
+        "main.jsbundle sha256 de2ce880052a30ffc60c16d03e5f4463e0c9a7f222814744e36a864b9c3a381b, carries http://127.0.0.1:54621; scripts/prepare-ios-simulator-qa.py set EXUpdatesCheckOnLaunch NEVER on the simulator artifact only"
+      ]
+    ],
+    "prs": [
+      "#75 perf (with the persisted-write fix)",
+      "#54 primitives, tokens, drift lint",
+      "#77 #73 par units, #74 owner-scoped queue drain after auth restore, #59 complete-profile removed",
+      "#78 #70 send hardening",
+      "#76 #61 draft route and store removed, #62 suspended users routed to app/suspended.tsx and kept signed in, plus Sol fixes",
+      "#79 #36 settings and team sweep",
+      "#80 #34 employee sweep",
+      "#33 auth sweep and #35 manager sweep branches (PRs opening)",
+      "#82 #38 copy sweep",
+      "#81 #37 route merge, drift zero, DRIFT_ALLOWLIST mechanism and lint:drift script deleted so the drift rule runs inside npm run lint"
+    ]
+  },
+  "issues": [],
+  "drift": {
+    "before": "3266 violations across 156 files at the start of the sweeps (orchestrator figure; PR #54 recorded 3334 across 157 when the rule was widened, 819 across 115 before that), all hidden from npm run lint by DRIFT_ALLOWLIST and surfaced only by npm run lint:drift.",
+    "after": "0. npm run lint exits 0 with smelter/no-design-drift at error severity on all of app/** and src/**, no allowlist.",
+    "mechanism": "DRIFT_ALLOWLIST, eslint.drift.config.js and the lint:drift script were deleted in #81 (a search for DRIFT_ALLOWLIST or lint:drift in eslint.config.js and package.json finds nothing). Exemptions that remain by design: src/theme/**, src/components/ui/**, the two modal and spinner hosts, src/__tests__/**.",
+    "probe": "Temporary file app/__drift_probe/probe.tsx containing backgroundColor: '#ff0000' and borderRadius: 13, run with npx eslint, then deleted:\n\n/Users/david/Babytuna Systems/smelter/.claude/worktrees/agent-a65bc65c005581c1d/app/__drift_probe/probe.tsx\n  3:42  error  Hex colour \"#ff0000\". Import a colour from @/theme/tokens instead                     smelter/no-design-drift\n  3:53  error  Numeric borderRadius 13. Use radius from @/theme/tokens (pill, card, control, sheet)  smelter/no-design-drift\n\n\u2716 2 problems (2 errors, 0 warnings)\n\neslint exit 1\n"
+  },
+  "route_note": "",
+  "route_sheet": [],
+  "commands": [
+    {
+      "command": "npm run typecheck",
+      "result": "PASS",
+      "detail": "tsc --noEmit exit 0."
+    },
+    {
+      "command": "npm run lint",
+      "result": "PASS",
+      "detail": "eslint . --max-warnings 0 exit 0, smelter/no-design-drift active with no allowlist."
+    },
+    {
+      "command": "npm run test:ci",
+      "result": "PASS",
+      "detail": "jest --runInBand --watchman=false: 89 suites passed, 1 skipped; 1247 tests passed, 1 skipped; exit 0."
+    },
+    {
+      "command": "npm run verify:submit-order-rpc",
+      "result": "PASS",
+      "detail": "Against http://127.0.0.1:54621 with the local publishable key: submit_order_rpc 8-parameter contract resolved and rejected the unauthenticated probe (401, 42501 permission denied). Exit 0. Does not verify order submission."
+    },
+    {
+      "command": "npx eslint app/__drift_probe/probe.tsx (temporary probe)",
+      "result": "PASS",
+      "detail": "2 smelter/no-design-drift errors (hex colour, numeric borderRadius), exit 1 as required; the probe file was deleted afterwards."
+    },
+    {
+      "command": "FULL_STACK_PORT_BASE=54620 scripts/local-db/full-stack.sh up",
+      "result": "PASS",
+      "detail": "PASS: schema loaded (30 migration(s) applied this run). /rest/v1/ returned 200 with the local publishable key."
+    },
+    {
+      "command": "FULL_STACK_PORT_BASE=54620 scripts/release-readiness/setup-local-issue-40.sh; setup-local-issue-69.sh",
+      "result": "PASS",
+      "detail": "PASS: issue #40 fixture ready; PASS: issue #69 fixture ready. manager c49977c9, employee 5c0f052e, employee two 634a23a3."
+    },
+    {
+      "command": "xcodebuild ... -configuration Release -sdk iphonesimulator build",
+      "result": "PASS",
+      "detail": "exit 0. scripts/verify-ios-release.py PASS (43 bundled assets). scripts/prepare-ios-simulator-qa.py PASS."
+    }
+  ],
+  "needs_david": "# NEEDS-DAVID (App Store 2.3, updated 2026-09-10 by the orchestrator)\n\nItems only David can decide or run. Each has a recommended default.\n\n## #47 production build, TestFlight, device session\n- Prepared, not run: docs/release/production-build.md (eas build and eas submit commands, archive checks) and docs/release/device-session.md (tap-by-tap script) are written by the #49 verifier. David runs the EAS production build and submit.\n\n## The 27 CONFIRM items for App Store Connect\n- docs/release/app-store-connect.md, section \"Every CONFIRM in one list\". #47 depends on them.\n\n## #41 recognition audit\n- No production manager credential exists in repo fixtures, `eas env:list --environment production` (only EXPO_PUBLIC_SUPABASE_URL, _ANON_KEY, _PUBLISHABLE_KEY), or the gitignored .env (URL and anon key only).\n- The audit test (src/__tests__/quickOrderInventoryAudit.test.ts) accepts only a publishable key (sees zero rows under RLS) or SUPABASE_SERVICE_ROLE_KEY (forbidden by decision).\n- Needs: a manager sign-in path in the audit (email + password env) and a production manager credential from David. Issue stays open.\n\n## Branch cleanup candidates (list only, never deleted)\nMerged issue/* branches (PR merged): issue/39-e2e-unexercised-routes (#64), issue/40-e2e-mutations (#71), issue/41-recognition-audit (#66), issue/42-delete-cap-tests (#51), issue/43-lint-warnings-zero (#55), issue/44-npm-audit-mitigations (#56), issue/45-push-token-ownership (#52), issue/48-app-store-metadata (#53), issue/57-agents-sim-udid (#58), issue/60-send-all-params (#68), issue/63-local-service-role-grants (#65), issue/69-stock-count-persistence (#72). That is 12 (the audit said 13; main is the 13th merged ref).\nMerged worktree-agent-* branches (no PR, fully contained in origin/main): a150b1288d97dfe69, a38bd304d03312798, a435d3a57e1a702d9, a47d23a5e5a33db74, a6631a0d491399755, a6f435030f056b4a5, a76e7e61d2b3beef8, a7a8ff6087fa45247, a7dd68c5aa431b847, a84a350a8bd3bfed3, a9d910f9e9e877e1d, aaf060bbad27fa15a, acddc5b5f05ece8cc (13).\nExcluded: this session's worker branches (worktree-agent-a283a281d875b650e, a2d2d2da61d897b8d, a892664a2b6ae35c2, ade16153dd8754d14), issue/32-ui-primitives (#54 open), perf/ten-high-impact-improvements (#75 open), integration/app-store-2.3.\nCommand per branch: git branch -d <name> (falls back to -D only for squash-merged ones after confirming the PR shows merged).\n\n## 27 CONFIRM items\ndocs/release/app-store-connect.md, section \"Every CONFIRM in one list\" (line 473).\n\n## Stock RPCs and suspended accounts (from Sol's #76 review)\n- startOrResumeStockCheck, recordStockCheckCount and completeStockCheck are SECURITY DEFINER and check only for an authenticated owner, not profiles.is_suspended (supabase/migrations/20260812170000_stock_check_v2.sql). The app side is fixed in #76 (suspended sessions no longer trigger the queue drain), but a suspended account with a valid JWT could still call the RPCs directly.\n- Recommended default: a follow-up migration that raises when the caller's profile is suspended, after 2.3 ships. Not done in this milestone because migrations need David's go.\n\n## Legacy theme module still imported (from Sol's #35 and #37 reviews)\n- After all four sweeps and #37, 73 files under app/ and src/ still import @/theme/design or src/constants/theme (the deprecated token set), including BottomSheetShell. The drift rule does not flag identifier imports, only literals. Deleting design.ts was planned \"when the last import goes\"; it did not go in 2.3.\n- Recommended default: open a 2.4 issue \"Migrate the remaining design.ts importers to src/theme/tokens and delete the shim\", Sonnet, mechanical, one PR per area.\n\n## #67 local baseline grants\n- Deferred past 2.3 by decision. Issue stays open.\n"
+}
