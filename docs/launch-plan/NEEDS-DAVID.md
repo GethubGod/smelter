@@ -26,5 +26,9 @@ docs/release/app-store-connect.md, section "Every CONFIRM in one list" (line 473
 - startOrResumeStockCheck, recordStockCheckCount and completeStockCheck are SECURITY DEFINER and check only for an authenticated owner, not profiles.is_suspended (supabase/migrations/20260812170000_stock_check_v2.sql). The app side is fixed in #76 (suspended sessions no longer trigger the queue drain), but a suspended account with a valid JWT could still call the RPCs directly.
 - Recommended default: a follow-up migration that raises when the caller's profile is suspended, after 2.3 ships. Not done in this milestone because migrations need David's go.
 
+## Legacy theme module still imported (from Sol's #35 and #37 reviews)
+- After all four sweeps and #37, 73 files under app/ and src/ still import @/theme/design or src/constants/theme (the deprecated token set), including BottomSheetShell. The drift rule does not flag identifier imports, only literals. Deleting design.ts was planned "when the last import goes"; it did not go in 2.3.
+- Recommended default: open a 2.4 issue "Migrate the remaining design.ts importers to src/theme/tokens and delete the shim", Sonnet, mechanical, one PR per area.
+
 ## #67 local baseline grants
 - Deferred past 2.3 by decision. Issue stays open.

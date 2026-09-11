@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """Build the local, self-contained mobile release report from recorded evidence."""
 from pathlib import Path
-import base64
 import html
 import json
-import mimetypes
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT = ROOT / 'docs/release-readiness'
@@ -39,9 +37,11 @@ def main():
         path = (REPORT / shot['path']).resolve()
         if not path.is_relative_to(REPORT.resolve()):
             raise ValueError('Evidence image must be in the report directory')
-        image = base64.b64encode(path.read_bytes()).decode('ascii')
-        mime = mimetypes.guess_type(path.name)[0] or 'image/png'
-        screenshots.append(f'<figure><button class="zoom" type="button" aria-label="Enlarge {esc(shot["title"])}"><img src="data:{mime};base64,{image}" alt="{esc(shot["caption"])}" loading="lazy"></button><figcaption><strong>{esc(shot["title"])}</strong><p>{esc(shot["caption"])}</p><code>{esc(shot["path"])}</code></figcaption></figure>')
+        if not path.is_file():
+            raise FileNotFoundError(f'Evidence image missing: {shot["path"]}')
+        # Relative links keep index.html diffable (issue #49); the images live
+        # beside it under docs/release-readiness, so the page still works offline.
+        screenshots.append(f'<figure><button class="zoom" type="button" aria-label="Enlarge {esc(shot["title"])}"><img src="{esc(shot["path"])}" alt="{esc(shot["caption"])}" loading="lazy"></button><figcaption><strong>{esc(shot["title"])}</strong><p>{esc(shot["caption"])}</p><code>{esc(shot["path"])}</code></figcaption></figure>')
     gallery = ''.join(screenshots) or '<p>No simulator screenshots were recorded. No visual pass is claimed.</p>'
     blockers = ''.join(f'<li><strong>{esc(x["title"])}</strong><p>{esc(x["detail"])}</p></li>' for x in data['blockers'])
     sources = ''.join(f'<li><a href="{esc(x["url"])}">{esc(x["title"])}</a>: {esc(x["detail"])}</li>' for x in data['sources'])
