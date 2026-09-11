@@ -9,10 +9,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, hairline, radii } from '@/theme/design';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { BrandLogo } from './BrandLogo';
-import { BottomSheetShell } from './BottomSheetShell';
+import { Button } from '@/components/ui/Button';
+import { Sheet } from '@/components/ui/Sheet';
 import { resolveLocationSwitchTarget } from '@/features/cart/locationSwitch';
-import { color, typeScale, weight } from '@/theme/tokens';
-import { Loading } from '@/components/ui/Loading';
+import { typeScale, weight } from '@/theme/tokens';
 
 export interface ConfirmLocationOption {
   id: string;
@@ -91,17 +91,26 @@ export function ConfirmLocationBottomSheet({
     : 'Submitting for selected location';
 
   return (
-    <BottomSheetShell visible={visible} onClose={onClose}>
+    <Sheet
+      visible={visible}
+      title={viewMode === 'change' ? 'Change Location' : 'Confirm Location'}
+      onClose={onClose}
+      primary={
+        viewMode === 'change'
+          ? undefined
+          : {
+              label: isSubmitting ? 'Submitting...' : 'Confirm & Submit',
+              onPress: onConfirm,
+              loading: isSubmitting,
+              disabled: isSubmitting || !selectedLocation,
+            }
+      }
+    >
       {viewMode === 'change' ? (
         <>
-          <View style={{ paddingHorizontal: ds.spacing(6), paddingBottom: ds.spacing(8) }}>
-            <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.bold, color: colors.textPrimary }}>
-              Change Location
-            </Text>
-            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(4), color: colors.textSecondary }}>
-              Select another location.
-            </Text>
-          </View>
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: colors.textSecondary }}>
+            Select another location.
+          </Text>
 
           <ScrollView
             style={{ maxHeight: ds.spacing(360) }}
@@ -157,24 +166,12 @@ export function ConfirmLocationBottomSheet({
               </View>
             )}
 
-            <TouchableOpacity
-              onPress={() => setViewMode('confirm')}
-              style={{ paddingVertical: ds.spacing(16), marginTop: ds.spacing(4) }}
-            >
-              <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: colors.textSecondary, textAlign: 'center' }}>
-                Back
-              </Text>
-            </TouchableOpacity>
           </ScrollView>
+
+          <Button label="Back" variant="secondary" onPress={() => setViewMode('confirm')} />
         </>
       ) : (
         <>
-          <View style={{ paddingHorizontal: ds.spacing(6), paddingBottom: ds.spacing(10) }}>
-            <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.bold, color: colors.textPrimary }}>
-              Confirm Location
-            </Text>
-          </View>
-
           <ScrollView
             style={{ maxHeight: ds.spacing(420) }}
             contentContainerStyle={{ paddingHorizontal: ds.spacing(6), paddingBottom: ds.spacing(8) }}
@@ -215,66 +212,17 @@ export function ConfirmLocationBottomSheet({
               {submitLabel}
             </Text>
 
-            <TouchableOpacity
-              onPress={onConfirm}
-              activeOpacity={0.8}
-              disabled={isSubmitting || !selectedLocation}
-              style={{
-                minHeight: ds.buttonH,
-                marginTop: ds.spacing(14),
-                borderRadius: radii.submitButton,
-                backgroundColor: isSubmitting || !selectedLocation ? colors.primaryLight : colors.primary,
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexDirection: 'row',
-              }}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loading size="inline" color={colors.white} />
-                  <Text style={{ fontSize: ds.fontSize(typeScale.title), marginLeft: ds.spacing(8), color: colors.white, fontWeight: weight.semibold }}>
-                    Submitting...
-                  </Text>
-                </>
-              ) : (
-                <Text style={{ fontSize: ds.fontSize(typeScale.title), color: colors.white, fontWeight: weight.semibold }}>
-                  Confirm & Submit
-                </Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handlePressChangeLocation}
-              activeOpacity={0.8}
-              disabled={isSubmitting}
-              style={{
-                minHeight: ds.buttonH,
-                marginTop: ds.spacing(10),
-                borderRadius: radii.submitButton,
-                borderWidth: 1.5,
-                borderColor: color.hairlineStrong,
-                backgroundColor: isSubmitting ? colors.background : colors.white,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: weight.semibold, color: colors.textPrimary }}>
-                Change Location
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={onClose}
-              disabled={isSubmitting}
-              style={{ paddingVertical: ds.spacing(16), marginTop: ds.spacing(4) }}
-            >
-              <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: colors.textSecondary, textAlign: 'center' }}>
-                Cancel
-              </Text>
-            </TouchableOpacity>
           </ScrollView>
+
+          <Button
+            label="Change Location"
+            variant="secondary"
+            onPress={handlePressChangeLocation}
+            disabled={isSubmitting}
+          />
+          <Button label="Cancel" variant="secondary" onPress={onClose} disabled={isSubmitting} />
         </>
       )}
-    </BottomSheetShell>
+    </Sheet>
   );
 }

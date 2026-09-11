@@ -9,9 +9,7 @@ import {
   useAudioRecorderState,
   type RecordingOptions,
 } from 'expo-audio';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomSheetShell } from '@/components/BottomSheetShell';
-import { Loading } from '@/components/ui';
+import { Button, Loading, Sheet } from '@/components/ui';
 import { useAmplitudeBuffer } from '@/hooks/useAmplitudeBuffer';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { RollingSpectrogram } from '@/features/ordering/RollingSpectrogram';
@@ -61,7 +59,6 @@ export function VoiceAddSheet({
   onClose,
 }: VoiceAddSheetProps) {
   const ds = useScaledStyles();
-  const insets = useSafeAreaInsets();
 
   const recorder = useAudioRecorder(RECORDING_OPTIONS);
   const recorderState = useAudioRecorderState(recorder, 100);
@@ -122,7 +119,7 @@ export function VoiceAddSheet({
     const { uri, durationMs } = await stopRecorder();
     if (!uri || isQuickOrderVoiceTooShort(durationMs)) {
       await cleanupQuickOrderVoiceFile(uri);
-      setErrorMessage('That was too short — hold on a moment longer and try again.');
+      setErrorMessage('That was too short. Hold on a moment longer and try again.');
       setPhase('error');
       stoppingRef.current = false;
       return;
@@ -232,7 +229,7 @@ export function VoiceAddSheet({
             textAlign: 'center',
           }}
         >
-          Say what you need — “two cases of salmon, a bag of rice”
+          Say what you need: “two cases of salmon, a bag of rice”
         </Text>
         <View
           style={{
@@ -386,7 +383,7 @@ export function VoiceAddSheet({
               </Text>
               {addition.spokenUnit ? (
                 <Text style={{ fontSize: ds.fontSize(typeScale.caption), color: color.warning }}>
-                  Heard “{addition.spokenUnit}” — this item orders in {addition.unit}
+                  Heard “{addition.spokenUnit}”, this item orders in {addition.unit}
                 </Text>
               ) : null}
             </View>
@@ -481,46 +478,24 @@ export function VoiceAddSheet({
   }
 
   return (
-    <BottomSheetShell
+    <Sheet
       visible={visible}
+      title={phase === 'review' ? 'Heard you' : 'Add by voice'}
       onClose={handleClose}
-      bottomPadding={Math.max(insets.bottom, ds.spacing(12))}
     >
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          marginBottom: ds.spacing(10),
-        }}
-      >
-        <Text
-          style={{
-            flex: 1,
-            fontSize: ds.fontSize(typeScale.title),
-            fontWeight: '700',
-            color: color.ink,
-          }}
-        >
-          {phase === 'review' ? 'Heard you' : 'Add by voice'}
-        </Text>
-        <TouchableOpacity
+      {/* Sheet dismisses on scrim tap and drag, but recording needs an explicit
+          way out, so the close control the shell version had stays. */}
+      <View style={{ alignItems: 'flex-end' }}>
+        <Button
+          label="Close"
+          variant="secondary"
+          size="small"
+          icon="close"
           onPress={handleClose}
-          accessibilityRole="button"
-          accessibilityLabel="Close voice input"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: radius.card,
-            backgroundColor: color.well,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Ionicons name="close" size={ds.icon(16)} color={color.ink} />
-        </TouchableOpacity>
+          accessibilityHint="Closes voice input"
+        />
       </View>
       {body}
-    </BottomSheetShell>
+    </Sheet>
   );
 }

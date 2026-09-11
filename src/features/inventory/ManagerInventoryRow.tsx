@@ -7,9 +7,12 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/constants';
+// Imported from the file, not the barrel: the row is rendered in a list and
+// the barrel would drag ScreenHeader and its safe-area dependency in with it.
+import { StatusPill, type StatusTone } from '@/components/ui/StatusPill';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import type { InventoryWithStock } from '@/lib/api/stock';
-import { color, radius, typeScale } from '@/theme/tokens';
+import { color, radius, size, typeScale } from '@/theme/tokens';
 
 export type ManagerInventoryStatus = 'critical' | 'low' | 'good';
 
@@ -44,11 +47,31 @@ const CATEGORY_EMOJI: Record<string, string> = {
   packaging: '📦',
 };
 
-const STATUS_COLORS: Record<ManagerInventoryStatus, string> = {
-  critical: colors.error,
-  low: colors.warning,
-  good: colors.success,
+// Stock state is a status, so it reads as a dot plus a word through
+// StatusPill. Colour alone is unreadable in greyscale and to a colour-blind
+// manager, and the fill bar below repeats the same tone.
+const STATUS_TONE: Record<ManagerInventoryStatus, StatusTone> = {
+  critical: 'cancelled',
+  low: 'submitted',
+  good: 'fulfilled',
 };
+
+const STATUS_LABEL: Record<ManagerInventoryStatus, string> = {
+  critical: 'Critical',
+  low: 'Low',
+  good: 'Good',
+};
+
+const STATUS_COLORS: Record<ManagerInventoryStatus, string> = {
+  critical: color.alert,
+  low: color.warning,
+  good: color.good,
+};
+
+function touchSlop(controlSize: number) {
+  const slop = Math.max(0, Math.ceil((size.touchMin - controlSize) / 2));
+  return { top: slop, bottom: slop, left: slop, right: slop };
+}
 
 function getRelativeTime(timestamp: string | null): string {
   if (!timestamp) return 'Never updated';
@@ -75,6 +98,13 @@ function ManagerInventoryRowInner({
   const ds = useScaledStyles();
   const statusColor = STATUS_COLORS[item.status];
   const reorderQty = Math.max(item.max_quantity - item.current_quantity, 0);
+
+  // Both reorder controls keep their compact look and reach the 44pt minimum
+  // through hitSlop, the same trade the Button and Chip primitives make.
+  const compactControl = Math.max(36, ds.icon(32));
+  const reorderSlop = touchSlop(compactControl);
+  const listControl = Math.max(32, ds.icon(28));
+  const listSlop = touchSlop(listControl);
 
   const handlePress = useCallback(() => {
     if (isBulkMode) {
@@ -135,25 +165,22 @@ function ManagerInventoryRowInner({
               {item.current_quantity} / {item.max_quantity} {item.unit_type}
             </Text>
           </View>
-          <View className="flex-row items-center">
-            <View
-
-              style={{ borderRadius: radius.pill, width: ds.spacing(10),
-                height: ds.spacing(10),
-                backgroundColor: statusColor,
-                marginRight: ds.spacing(8) }}
-            />
+          <View className="flex-row items-center" style={{ gap: ds.spacing(8) }}>
+            <StatusPill status={STATUS_TONE[item.status]} label={STATUS_LABEL[item.status]} />
             {item.status === 'critical' && reorderQty > 0 && !isBulkMode ? (
               <TouchableOpacity
                 className="items-center justify-center border"
-                style={{ borderRadius: radius.pill, borderColor: added ? color.good : color.warning, width: Math.max(36, ds.icon(32)),
-                  height: Math.max(36, ds.icon(32)) }}
+                accessibilityRole="button"
+                accessibilityLabel={added ? 'Added to reorder' : 'Add to reorder'}
+                hitSlop={reorderSlop}
+                style={{ borderRadius: radius.pill, borderColor: added ? color.accent : color.hairlineStrong, width: compactControl,
+                  height: compactControl }}
                 onPress={handleAddToReorder}
               >
                 <Ionicons
                   name={added ? 'checkmark' : 'add'}
                   size={ds.icon(16)}
-                  color={added ? colors.success : colors.primary[500]}
+                  color={added ? color.accent : color.ink2}
                 />
               </TouchableOpacity>
             ) : null}
@@ -202,13 +229,7 @@ function ManagerInventoryRowInner({
               {item.inventory_item.name}
             </Text>
           </View>
-          <View
-
-            style={{ borderRadius: radius.pill, width: ds.spacing(10),
-              height: ds.spacing(10),
-              backgroundColor: statusColor,
-              marginTop: ds.spacing(4) }}
-          />
+          <StatusPill status={STATUS_TONE[item.status]} label={STATUS_LABEL[item.status]} />
         </View>
 
         <Text
@@ -248,17 +269,20 @@ function ManagerInventoryRowInner({
           {item.status === 'critical' && reorderQty > 0 && !isBulkMode ? (
             <TouchableOpacity
               className="border"
-              style={{ borderRadius: radius.pill, borderColor: added ? color.good : color.warning, paddingHorizontal: ds.spacing(12),
+              accessibilityRole="button"
+              accessibilityLabel={added ? 'Added to reorder' : `Reorder ${reorderQty}`}
+              hitSlop={listSlop}
+              style={{ borderRadius: radius.pill, borderColor: added ? color.accent : color.hairlineStrong, paddingHorizontal: ds.spacing(12),
                 paddingVertical: ds.spacing(6),
-                minHeight: Math.max(32, ds.icon(28)),
+                minHeight: listControl,
                 justifyContent: 'center' }}
               onPress={handleAddToReorder}
             >
               <Text
                 className="font-semibold"
-                style={{ color: added ? color.good : color.warning, fontSize: ds.fontSize(typeScale.secondary) }}
+                style={{ color: added ? color.accent : color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}
               >
-                {added ? '✓ Added' : `Reorder ${reorderQty}`}
+                {added ? 'Added' : `Reorder ${reorderQty}`}
               </Text>
             </TouchableOpacity>
           ) : null}

@@ -324,7 +324,7 @@ export function formatParsedItemQuantity(item: ParsedQuickOrderItem): string {
   const hasQty = item.quantity != null && Number.isFinite(item.quantity) && item.quantity > 0;
 
   if (!hasQty) {
-    return unit ? `— ${formatQuickOrderUnitName(unit, 1)}` : 'Quantity needed';
+    return unit ? `- ${formatQuickOrderUnitName(unit, 1)}` : 'Quantity needed';
   }
   return unit ? formatQuickOrderQuantity(item.quantity, unit) : `${item.quantity} · unit needed`;
 }

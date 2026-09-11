@@ -244,7 +244,7 @@ export function getStockUnitLabel(item: {
 export function formatStockDisplay(item: StockCheckItem): string {
   if (!item.checked) {
     // Show "—" rather than "0 lb" so the row clearly reads as untouched.
-    return '—';
+    return '-';
   }
   const unitLabel = getStockUnitLabel(item);
   const amount = clampInt(item.stockAmount);

@@ -605,7 +605,7 @@ function SetStockBottomSheetImpl(
                   <BottomSheetTextInput
                     value={noteDraft}
                     onChangeText={setNoteDraft}
-                    placeholder="Bump up — chef expecting big weekend rush"
+                    placeholder="Bump up, chef expecting big weekend rush"
                     placeholderTextColor={color.ink3}
                     multiline
                     textAlignVertical="top"

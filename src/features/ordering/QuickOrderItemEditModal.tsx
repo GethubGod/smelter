@@ -430,7 +430,7 @@ function EditModalBody({
 function issueLabelFull(kind: ParsedItemIssueKind): string {
   switch (kind) {
     case 'choose-item':
-      return 'This text didn’t match an inventory item — pick one below.';
+      return 'This text didn’t match an inventory item. Pick one below.';
     case 'pick-quantity':
       return 'This item needs a quantity before the order can be sent.';
     case 'pick-unit':
@@ -438,7 +438,7 @@ function issueLabelFull(kind: ParsedItemIssueKind): string {
     case 'fix-unit':
       return 'This unit is not valid for the selected inventory item.';
     case 'needs-clarification':
-      return 'The parser flagged this item for review — double-check it.';
+      return 'The parser flagged this item for review. Double-check it.';
     default:
       return 'Review this item.';
   }

@@ -9,7 +9,9 @@ export default function Index() {
   const guard = useProtectedAuthGuard();
 
   if (guard.isChecking) {
-    return <AuthLoadingScreen />;
+    // Cold start resolves here before redirecting, and the auth stack behind
+    // it is black. Anything lighter flashes on every launch.
+    return <AuthLoadingScreen onDark />;
   }
 
   if (guard.redirectTo) {

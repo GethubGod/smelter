@@ -329,7 +329,7 @@ export function buildQuickOrderAssistantMessage(input: {
   const reviewCount = mergeResult.reviewCount + pendingCount;
 
   if (normalized.status === 'qa_answer') {
-    return normalized.assistantMessage || "I couldn't answer that — try rephrasing.";
+    return normalized.assistantMessage || "I couldn't answer that. Try rephrasing.";
   }
 
   // If operations were applied, build message from operations.

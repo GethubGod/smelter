@@ -3,8 +3,7 @@ import { Text, TouchableOpacity, useWindowDimensions, View } from 'react-native'
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { GlassSurface } from '@/components';
-import { getTabBarClearance } from '@/components/ui';
+import { Card, getTabBarClearance } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { color, radius, space, typeScale } from '@/theme/tokens';
 
@@ -136,11 +135,12 @@ export function EmptyCartReorderState({
             </Text>
           </TouchableOpacity>
 
-          <GlassSurface
-            intensity="subtle"
+          <Card
+            flush
             style={{
               flex: 1,
               borderRadius: actionButtonRadius,
+              overflow: 'hidden',
             }}
           >
             <TouchableOpacity
@@ -171,7 +171,7 @@ export function EmptyCartReorderState({
                 Quick
               </Text>
             </TouchableOpacity>
-          </GlassSurface>
+          </Card>
         </View>
       </View>
     </View>

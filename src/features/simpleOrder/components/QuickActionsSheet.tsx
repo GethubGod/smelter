@@ -1,8 +1,7 @@
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomSheetShell } from '@/components/BottomSheetShell';
+import { Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerSelectionHaptic } from '@/lib/haptics';
 import { color, radius, typeScale, weight } from '@/theme/tokens';
@@ -94,7 +93,6 @@ export function QuickActionsSheet({
   onClose,
 }: QuickActionsSheetProps) {
   const ds = useScaledStyles();
-  const insets = useSafeAreaInsets();
 
   const checklistRows: RowSpec[] = [
     {
@@ -157,14 +155,7 @@ export function QuickActionsSheet({
   };
 
   return (
-    <BottomSheetShell
-      visible={visible}
-      onClose={onClose}
-      bottomPadding={Math.max(insets.bottom, ds.spacing(14))}
-    >
-      <Text style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: '700', color: color.ink }}>
-        Quick actions
-      </Text>
+    <Sheet visible={visible} title="Quick actions" onClose={onClose}>
       <Text
         style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginBottom: ds.spacing(12) }}
       >
@@ -192,6 +183,6 @@ export function QuickActionsSheet({
           />
         ))}
       </View>
-    </BottomSheetShell>
+    </Sheet>
   );
 }

@@ -15,6 +15,12 @@ export interface SheetProps {
   primary?: Pick<ButtonProps, 'label' | 'onPress' | 'loading' | 'disabled' | 'variant'>;
   /** Use `embedded` when the sheet already sits inside a native modal. */
   presentation?: 'modal' | 'embedded';
+  /**
+   * Scrim tap and drag-to-dismiss, on by default. Pass false while the sheet
+   * holds unsaved input: a graze on the backdrop must not discard a draft, so
+   * the sheet's own Cancel action becomes the only way out.
+   */
+  dismissible?: boolean;
   testID?: string;
 }
 
@@ -37,6 +43,7 @@ export function Sheet({
   children,
   primary,
   presentation = 'modal',
+  dismissible = true,
   testID,
 }: SheetProps) {
   const ds = useScaledStyles();
@@ -47,6 +54,7 @@ export function Sheet({
       visible={visible}
       presentation={presentation}
       onClose={onClose}
+      dismissible={dismissible}
       bottomPadding={Math.max(insets.bottom, ds.spacing(space[3] + 2))}
     >
       <View testID={testID} style={{ gap: ds.spacing(space[3]) }}>

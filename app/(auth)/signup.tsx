@@ -87,7 +87,7 @@ export default function SignUpScreen() {
   const sanitizeAccessCode = (value: string) => value.replace(/\D/g, '').slice(0, 4);
 
   if (guard.isChecking) {
-    return <AuthLoadingScreen />;
+    return <AuthLoadingScreen onDark />;
   }
 
   if (guard.authenticatedRedirectTo) {
@@ -180,6 +180,11 @@ export default function SignUpScreen() {
     fontWeight: weight.semibold,
     color: auth.text,
   };
+  /** Inline text actions still have to clear the 44pt target. */
+  const inlineActionStyle = {
+    minHeight: ds.spacing(size.touchMin),
+    justifyContent: 'center' as const,
+  };
 
   const renderRevealLabel = (
     label: string,
@@ -199,6 +204,7 @@ export default function SignUpScreen() {
         accessibilityLabel={revealed ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
         onPress={onToggle}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        style={inlineActionStyle}
       >
         <Text style={linkTextStyle}>{revealed ? 'Hide' : 'Show'}</Text>
       </TouchableOpacity>
@@ -287,8 +293,8 @@ export default function SignUpScreen() {
               <TouchableOpacity
                 accessibilityRole="button"
                 onPress={() => setInviteDismissed(true)}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={{ marginTop: ds.spacing(space[2]) }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={[inlineActionStyle, { marginTop: ds.spacing(space[2]) }]}
               >
                 <Text style={linkTextStyle}>Use an access code instead</Text>
               </TouchableOpacity>
@@ -479,7 +485,8 @@ export default function SignUpScreen() {
           <Link href="/(auth)/login" asChild>
             <TouchableOpacity
               accessibilityRole="link"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={inlineActionStyle}
             >
               <Text style={linkTextStyle}>Sign In</Text>
             </TouchableOpacity>

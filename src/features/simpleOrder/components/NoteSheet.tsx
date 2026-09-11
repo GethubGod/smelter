@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Text, TextInput } from 'react-native';
-import { Sheet } from '@/components/ui';
+import { Button, Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerImpactHaptic } from '@/lib/haptics';
 import { color, radius, typeScale } from '@/theme/tokens';
@@ -30,13 +30,6 @@ export function NoteSheet({ visible, note, onSave, onClose }: NoteSheetProps) {
       visible={visible}
       title={note.trim() ? 'Edit note' : 'Add note'}
       onClose={onClose}
-      primary={{
-        label: draft.trim() ? 'Save note' : note.trim() ? 'Remove note' : 'Save note',
-        onPress: () => {
-          void triggerImpactHaptic();
-          onSave(draft.trim());
-        },
-      }}
     >
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Text
@@ -68,6 +61,16 @@ export function NoteSheet({ visible, note, onSave, onClose }: NoteSheetProps) {
           }}
         />
 
+        {/* The action stays inside the keyboard-avoiding region: `Sheet.primary`
+            renders outside it, so with the note keyboard open Save sat behind
+            the keyboard. */}
+        <Button
+          label={draft.trim() ? 'Save note' : note.trim() ? 'Remove note' : 'Save note'}
+          onPress={() => {
+            void triggerImpactHaptic();
+            onSave(draft.trim());
+          }}
+        />
       </KeyboardAvoidingView>
     </Sheet>
   );

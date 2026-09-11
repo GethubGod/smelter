@@ -1617,7 +1617,7 @@ function getAssistantPill(message: QuickOrderMessage) {
           text = `What unit for ${flaggedItemName}?`;
           break;
         case "choose-item":
-          text = `Couldn't match "${flaggedItemName}" — tap ⓘ to pick it.`;
+          text = `Couldn't match "${flaggedItemName}", tap ⓘ to pick it.`;
           break;
         default:
           text = `Double-check ${flaggedItemName}.`;
@@ -1955,7 +1955,7 @@ const ClarificationCard = React.memo(function ClarificationCard({
               clarification.actions.length === 1 && index === 0
                 ? "Use this"
                 : action.preview
-                  ? `${action.label} — ${action.preview}`
+                  ? `${action.label}: ${action.preview}`
                   : action.label,
             accessibilityLabel: action.label,
             onPress: () => onAction(clarification, action),
@@ -2366,7 +2366,7 @@ const InventoryUpdateCard = React.memo(function InventoryUpdateCard({
             ) : (
               <>
                 <Text style={[styles.inventoryUpdateDashText, { fontSize: ds.fontSize(typeScale.body) }]}>
-                  –
+                  -
                 </Text>
                 <Text style={[styles.inventoryUpdateNotOrderedText, { fontSize: ds.fontSize(typeScale.body) }]}>
                   {formatQuickOrderQuantity(0, update.new_unit ?? update.current_unit)}
@@ -4385,15 +4385,15 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
           if (reorderPill) {
             if (requestMode === "inventory") {
               finalAssistantText = reorderPrefillText
-                ? "Got it — your last inventory list is in the composer. Re-count each item, then send."
+                ? "Got it. Your last inventory list is in the composer. Re-count each item, then send."
                 : response.displayMessage;
             } else {
               finalAssistantText = reorderPrefillText
                 ? reorderPill === "last_week"
-                  ? "Got it — last week’s order is in the composer. Edit it if needed, then send."
+                  ? "Got it. Last week’s order is in the composer. Edit it if needed, then send."
                   : reorderPill === "recent"
-                    ? "Got it — your most recent order is in the composer. Edit it if needed, then send."
-                    : "Got it — your usual order is in the composer. Edit it if needed, then send."
+                    ? "Got it. Your most recent order is in the composer. Edit it if needed, then send."
+                    : "Got it. Your usual order is in the composer. Edit it if needed, then send."
                 : response.displayMessage;
             }
           }
@@ -5567,7 +5567,7 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
       const assistantMessage: QuickOrderMessage = {
         id: createMessageId(),
         role: "assistant",
-        text: "Got it — I will not show that suggestion again for this order.",
+        text: "Got it. I will not show that suggestion again for this order.",
         createdAt: new Date().toISOString(),
       };
       const nextMessages = [...messages, assistantMessage];
@@ -5621,7 +5621,7 @@ export function QuickOrderScreen({ mode }: QuickOrderScreenProps) {
       const assistantMessage: QuickOrderMessage = {
         id: createMessageId(),
         role: "assistant",
-        text: "Got it — try saying it differently.",
+        text: "Got it. Try saying it differently.",
         createdAt: new Date().toISOString(),
       };
       const nextMessages = [...messages, assistantMessage];
@@ -7079,17 +7079,6 @@ const styles = StyleSheet.create({
     color: quickOrderAccent,
     fontWeight: weight.bold,
     letterSpacing: 0,
-  },
-  missingReviewBackdrop: {
-    flex: 1,
-    justifyContent: "center",
-    padding: 22,
-    backgroundColor: colors.scrimStrong,
-  },
-  missingReviewCard: {
-    backgroundColor: colors.white,
-    borderWidth: glassHairlineWidth,
-    borderColor: glassColors.cardBorder,
   },
   missingReviewBody: {
     color: color.ink2,
