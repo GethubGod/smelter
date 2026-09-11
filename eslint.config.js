@@ -65,8 +65,7 @@ const DRIFT_ALLOWLIST = [
   'app/(manager)/manager-settings/export-format.tsx',
   'app/(manager)/manager-settings/profile.tsx',
   'app/(manager)/manager-settings/user-management.tsx',
-  // app/(tabs) (2 files, 45)
-  'app/(tabs)/draft.tsx',
+  // app/(tabs) (1 file, 45)
   'app/(tabs)/quick-order.tsx',
   // app/orders (2 files, 116)
   'app/orders/\\[id\\].tsx',

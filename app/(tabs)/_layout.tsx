@@ -86,7 +86,6 @@ export default function TabsLayout() {
         <Tabs.Screen name="voice" options={{ href: null }} />
 
         {/* Hidden screens */}
-        <Tabs.Screen name="draft" options={{ href: null }} />
         <Tabs.Screen name="orders" options={{ href: null }} />
         <Tabs.Screen name="profile" options={{ href: null }} />
         <Tabs.Screen name="inventory-browse" options={{ href: null }} />

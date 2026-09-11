@@ -173,6 +173,22 @@ function isTransitionStaleError(error: unknown): boolean {
   return error instanceof Error && error.message === AUTH_TRANSITION_STALE_MESSAGE;
 }
 
+const SUSPENDED_ACCOUNT_ERROR_FLAG = '__suspendedAccountError__';
+
+function createSuspendedAccountError(message: string): Error {
+  const error = new Error(message) as Error & { [SUSPENDED_ACCOUNT_ERROR_FLAG]?: true };
+  error[SUSPENDED_ACCOUNT_ERROR_FLAG] = true;
+  return error;
+}
+
+function isSuspendedAccountError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    (error as Error & { [SUSPENDED_ACCOUNT_ERROR_FLAG]?: true })[SUSPENDED_ACCOUNT_ERROR_FLAG] ===
+      true
+  );
+}
+
 function getAuthErrorMessage(error: unknown, fallbackMessage: string): string {
   const rawMessage =
     error instanceof Error
@@ -485,8 +501,13 @@ interface AuthState {
 }
 
 const USER_SCOPED_STORAGE_KEYS = [
-  'order-storage',
+  // Migration cleanup (issue #61). draftStore was deleted, so nothing writes
+  // this key any more, but installs that ran an older build still have the
+  // previous user's draft on disk. Keep removing it on sign-out until those
+  // devices have turned over; dropping it here would strand draft contents on
+  // a shared device.
   'draft-storage',
+  'order-storage',
   'inventory-storage',
   'stock-storage',
   'babytuna-fulfillment',
@@ -538,14 +559,12 @@ async function clearUserScopedClientState() {
     try {
       const [
         { useOrderStore, invalidatePendingOrderRequests },
-        { useDraftStore },
         { useInventoryStore, invalidatePendingInventoryRequests },
         { useStockStore, invalidatePendingStockRequests },
         { useFulfillmentStore },
         { useTunaSpecialistStore },
       ] = await Promise.all([
         import('./orderStore'),
-        import('./draftStore'),
         import('./inventoryStore'),
         import('./stockStore'),
         import('./fulfillmentStore'),
@@ -557,7 +576,6 @@ async function clearUserScopedClientState() {
       invalidatePendingStockRequests();
       await Promise.all([
         resetPersistedStore('order-storage', useOrderStore as unknown as PersistedStoreApi),
-        resetPersistedStore('draft-storage', useDraftStore as unknown as PersistedStoreApi),
         resetPersistedStore('inventory-storage', useInventoryStore as unknown as PersistedStoreApi),
         resetPersistedStore('stock-storage', useStockStore as unknown as PersistedStoreApi),
         resetPersistedStore('babytuna-fulfillment', useFulfillmentStore as unknown as PersistedStoreApi),
@@ -692,7 +710,7 @@ export const useAuthStore = create<AuthState>()(
           await resetSignedOutClientState(transitionId);
         }
 
-        throw new Error(message);
+        throw createSuspendedAccountError(message);
       };
 
       const clearExplicitSignOutFlag = () => {
@@ -945,13 +963,19 @@ export const useAuthStore = create<AuthState>()(
 
         if (profile?.is_suspended) {
           if (params?.shouldThrowOnSuspended === false) {
-            explicitSignOutInProgress = true;
-            const transitionId = beginAuthTransition();
-            void signOutLocalSupabaseSession('Failed to sign out suspended session cleanly');
-            await resetSignedOutClientState(transitionId);
-            return { profile, suspended: true };
+            // Session restore (issue #62). Keep the session and the suspended
+            // profile in state. The route guards (resolveProtectedAuthGuard /
+            // resolveAuthScreenGuard) send the user to /suspended, which
+            // explains the situation and offers Sign Out.
+            //
+            // `suspended: false` is deliberate: hydrateAuthenticatedSession
+            // returns null early when it is true, which would skip user
+            // hydration and leave the guard without a user. Nothing else
+            // reads this flag.
+            return { profile, suspended: false };
           }
 
+          // Explicit sign-in paths keep the inline refusal.
           await forceSignOutSuspended();
         }
 
@@ -1110,6 +1134,10 @@ export const useAuthStore = create<AuthState>()(
           suspended = result.suspended;
         } catch (profileError) {
           if (isTransitionStaleError(profileError)) throw profileError;
+          // A suspended account is not a hydration hiccup. The explicit
+          // sign-in paths (shouldThrowOnSuspended: true) rely on this error
+          // reaching them so they can show the inline refusal.
+          if (isSuspendedAccountError(profileError)) throw profileError;
           console.warn('Profile hydration failed (non-fatal):', profileError);
           profile = get().profile;
         }
@@ -1201,7 +1229,19 @@ export const useAuthStore = create<AuthState>()(
           activeSessionUserId === nextUserId &&
           get().session?.user?.id === nextUserId;
 
-        if (sessionStillCurrent) {
+        // A suspended session survives the restore (issue #62) so the guards
+        // can route to /suspended and a reinstatement is picked up live. It is
+        // still not a session that may write. The stock-check RPCs are
+        // SECURITY DEFINER and check only for an authenticated owner, not
+        // profiles.is_suspended, so an armed drain would commit counts queued
+        // before the suspension. Do not arm it.
+        // NEEDS-DAVID: rejecting suspended accounts inside the RPCs is a
+        // migration and is tracked separately.
+        const sessionIsSuspended = Boolean(
+          (profile ?? (get().profile?.id === nextUserId ? get().profile : null))?.is_suspended
+        );
+
+        if (sessionStillCurrent && !sessionIsSuspended) {
           notifyAuthSessionRestored(nextUserId);
         }
 

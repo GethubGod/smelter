@@ -9,6 +9,7 @@ const signInWithPasswordMock = jest.fn();
 const signUpMock = jest.fn();
 const getSessionMock = jest.fn(async () => ({ data: { session: null } }));
 const onAuthStateChangeMock = jest.fn();
+const signOutMock = jest.fn(async () => ({ error: null }));
 const clearSupabaseStoredSessionMock = jest.fn(async () => undefined);
 
 const profileMaybeSingleMock = jest.fn();
@@ -92,6 +93,7 @@ jest.mock('@/lib/supabase', () => ({
       signUp: signUpMock,
       getSession: getSessionMock,
       onAuthStateChange: onAuthStateChangeMock,
+      signOut: signOutMock,
     },
     from: fromMock,
     rpc: rpcMock,
@@ -361,5 +363,105 @@ describe('useAuthStore auth flow reliability', () => {
 
     expect(clearSupabaseStoredSessionMock).not.toHaveBeenCalled();
     expect(useAuthStore.getState().session?.user?.id).toBe('employee-1');
+  });
+  test('keeps a restored session when the profile is suspended instead of signing out', async () => {
+    // Issue #62: session restore at launch must leave the suspended session in
+    // place so the route guards can send the user to /suspended.
+    getSessionMock.mockResolvedValueOnce({
+      data: {
+        session: {
+          user: {
+            id: 'suspended-1',
+            email: 'suspended@example.com',
+            user_metadata: {},
+            app_metadata: {},
+          },
+        },
+      },
+    } as any);
+
+    profileMaybeSingleMock.mockResolvedValue({
+      data: {
+        id: 'suspended-1',
+        email: 'suspended@example.com',
+        full_name: 'Suspended Employee',
+        role: 'employee',
+        is_suspended: true,
+        suspended_at: '2026-09-08T00:00:00.000Z',
+        suspended_by: 'manager-1',
+        notifications_enabled: true,
+        last_active_at: '2026-09-07T00:00:00.000Z',
+        last_order_at: null,
+        profile_completed: true,
+        provider: 'email',
+        created_at: '2026-03-22T00:00:00.000Z',
+        updated_at: '2026-09-08T00:00:00.000Z',
+      },
+      error: null,
+    });
+
+    userMaybeSingleMock.mockResolvedValue({
+      data: {
+        id: 'suspended-1',
+        email: 'suspended@example.com',
+        name: 'Suspended Employee',
+        role: 'employee',
+        default_location_id: null,
+        created_at: '2026-03-22T00:00:00.000Z',
+      },
+      error: null,
+    });
+
+    await useAuthStore.getState().initialize();
+
+    const state = useAuthStore.getState();
+    expect(state.session?.user?.id).toBe('suspended-1');
+    expect(state.profile).toMatchObject({ id: 'suspended-1', is_suspended: true });
+    expect(state.user).toMatchObject({ id: 'suspended-1', role: 'employee' });
+    expect(signOutMock).not.toHaveBeenCalled();
+    expect(clearSupabaseStoredSessionMock).not.toHaveBeenCalled();
+  });
+
+  test('still refuses an explicit sign-in by a suspended user', async () => {
+    signInWithPasswordMock.mockResolvedValue({
+      data: {
+        session: {
+          user: {
+            id: 'suspended-2',
+            email: 'suspended2@example.com',
+            user_metadata: {},
+            app_metadata: {},
+          },
+        },
+      },
+      error: null,
+    });
+
+    profileMaybeSingleMock.mockResolvedValue({
+      data: {
+        id: 'suspended-2',
+        email: 'suspended2@example.com',
+        full_name: 'Suspended Two',
+        role: 'employee',
+        is_suspended: true,
+        suspended_at: '2026-09-08T00:00:00.000Z',
+        suspended_by: 'manager-1',
+        notifications_enabled: true,
+        last_active_at: null,
+        last_order_at: null,
+        profile_completed: true,
+        provider: 'email',
+        created_at: '2026-03-22T00:00:00.000Z',
+        updated_at: '2026-09-08T00:00:00.000Z',
+      },
+      error: null,
+    });
+
+    await expect(
+      useAuthStore.getState().signIn('suspended2@example.com', 'Password123')
+    ).rejects.toThrow('Account suspended. Contact a manager.');
+
+    expect(useAuthStore.getState().session).toBeNull();
+    expect(useAuthStore.getState().profile).toBeNull();
   });
 });
