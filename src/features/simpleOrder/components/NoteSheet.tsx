@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomSheetShell } from '@/components/BottomSheetShell';
+import { KeyboardAvoidingView, Platform, Text, TextInput } from 'react-native';
+import { Button, Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerImpactHaptic } from '@/lib/haptics';
-import { glassHairlineWidth, radii, tipsTheme } from '@/theme/design';
+import { color, radius, typeScale } from '@/theme/tokens';
 
 /**
  * Free-text note attached to THIS send: travels to manager review with the
@@ -20,7 +19,6 @@ interface NoteSheetProps {
 
 export function NoteSheet({ visible, note, onSave, onClose }: NoteSheetProps) {
   const ds = useScaledStyles();
-  const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState(note);
 
   useEffect(() => {
@@ -28,17 +26,14 @@ export function NoteSheet({ visible, note, onSave, onClose }: NoteSheetProps) {
   }, [visible, note]);
 
   return (
-    <BottomSheetShell
+    <Sheet
       visible={visible}
+      title={note.trim() ? 'Edit note' : 'Add note'}
       onClose={onClose}
-      bottomPadding={Math.max(insets.bottom, ds.spacing(14))}
     >
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <Text style={{ fontSize: ds.fontSize(20), fontWeight: '700', color: tipsTheme.ink }}>
-          {note.trim() ? 'Edit note' : 'Add note'}
-        </Text>
         <Text
-          style={{ fontSize: ds.fontSize(13), color: tipsTheme.ink2, marginBottom: ds.spacing(12) }}
+          style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginBottom: ds.spacing(12) }}
         >
           Goes with this order to the manager.
         </Text>
@@ -48,45 +43,35 @@ export function NoteSheet({ visible, note, onSave, onClose }: NoteSheetProps) {
           onChangeText={setDraft}
           multiline
           placeholder="Example: the walk-in freezer is full, hold the extra rice until Friday"
-          placeholderTextColor={tipsTheme.ink3}
+          placeholderTextColor={color.ink3}
           accessibilityLabel="Order note"
           style={{
             minHeight: ds.spacing(96),
             maxHeight: ds.spacing(180),
-            backgroundColor: tipsTheme.card,
-            borderWidth: glassHairlineWidth,
-            borderColor: tipsTheme.hairline,
-            borderRadius: 16,
+            backgroundColor: color.card,
+            borderWidth: 1,
+            borderColor: color.hairline,
+            borderRadius: radius.card,
             paddingHorizontal: ds.spacing(15),
             paddingVertical: ds.spacing(12),
-            fontSize: ds.fontSize(14),
-            color: tipsTheme.ink,
+            fontSize: ds.fontSize(typeScale.body),
+            color: color.ink,
             textAlignVertical: 'top',
             marginBottom: ds.spacing(14),
           }}
         />
 
-        <TouchableOpacity
+        {/* The action stays inside the keyboard-avoiding region: `Sheet.primary`
+            renders outside it, so with the note keyboard open Save sat behind
+            the keyboard. */}
+        <Button
+          label={draft.trim() ? 'Save note' : note.trim() ? 'Remove note' : 'Save note'}
           onPress={() => {
             void triggerImpactHaptic();
             onSave(draft.trim());
           }}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="Save note"
-          style={{
-            minHeight: 52,
-            borderRadius: radii.pill,
-            backgroundColor: tipsTheme.accent,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Text style={{ fontSize: ds.fontSize(15), fontWeight: '700', color: '#FFFFFF' }}>
-            {draft.trim() ? 'Save note' : note.trim() ? 'Remove note' : 'Save note'}
-          </Text>
-        </TouchableOpacity>
+        />
       </KeyboardAvoidingView>
-    </BottomSheetShell>
+    </Sheet>
   );
 }

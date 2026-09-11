@@ -2,7 +2,7 @@ import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Platform, Text, View } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { triggerSelectionHaptic } from '@/lib/haptics';
-import { glassColors } from '@/theme/design';
+import { color, typeScale, weight } from '@/theme/tokens';
 
 export interface WheelPickerOption<T = string> {
   key: string;
@@ -82,9 +82,9 @@ function WheelPickerImpl<T>({
       >
         <Text
           style={{
-            fontSize: 22,
-            fontWeight: '700',
-            color: glassColors.textPrimary,
+            fontSize: typeScale.title,
+            fontWeight: weight.bold,
+            color: color.ink,
           }}
           numberOfLines={1}
         >
@@ -107,9 +107,9 @@ function WheelPickerImpl<T>({
       }}
       itemStyle={{
         height: itemHeight,
-        fontSize: 22,
-        fontWeight: Platform.OS === 'ios' ? '700' : 'normal',
-        color: glassColors.textPrimary,
+        fontSize: typeScale.title,
+        fontWeight: Platform.OS === 'ios' ? weight.bold : weight.regular,
+        color: color.ink,
       }}
     >
       {options.map((option) => (
@@ -117,7 +117,7 @@ function WheelPickerImpl<T>({
           key={option.key}
           label={option.label}
           value={option.key}
-          color={glassColors.textPrimary}
+          color={color.ink}
         />
       ))}
     </Picker>

@@ -1,11 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomSheetShell } from '@/components/BottomSheetShell';
+import { Segment, Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerImpactHaptic, triggerSelectionHaptic } from '@/lib/haptics';
-import { glassHairlineWidth, radii, tipsTheme } from '@/theme/design';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 import { formatQuantity, type SelectionLine } from '../checklistSelection';
 
 /**
@@ -42,7 +41,6 @@ export function QuantityCardSheet({
   onClose,
 }: QuantityCardSheetProps) {
   const ds = useScaledStyles();
-  const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState('');
 
   useEffect(() => {
@@ -81,6 +79,13 @@ export function QuantityCardSheet({
     setDraft(formatQuantity(usual));
   }, [line]);
 
+  // `Segment` carries the radiogroup role, the labels, the selected state and
+  // the 44pt target that the hand-built control was missing.
+  const unitSegmentOptions = useMemo(
+    () => unitOptions.map((unit) => ({ value: unit, label: unit })),
+    [unitOptions],
+  );
+
   const handleCommit = useCallback(() => {
     if (!line) return;
     void triggerImpactHaptic();
@@ -89,75 +94,44 @@ export function QuantityCardSheet({
 
   if (!line) {
     return (
-      <BottomSheetShell visible={false} onClose={onClose}>
+      <Sheet visible={false} title="" onClose={onClose}>
         <View />
-      </BottomSheetShell>
+      </Sheet>
     );
   }
 
+  // Matching stays case-insensitive, the way the hand-built control compared.
+  const selectedUnit =
+    unitOptions.find((unit) => unit.toLowerCase() === line.unit.toLowerCase()) ?? line.unit;
+
   return (
-    <BottomSheetShell
+    <Sheet
       visible={visible}
+      title={line.itemName}
       onClose={onClose}
-      bottomPadding={Math.max(insets.bottom, ds.spacing(14))}
+      primary={{
+        label: `Set ${formatQuantity(quantity)} ${line.unit}`,
+        onPress: handleCommit,
+      }}
     >
-      <Text style={{ fontSize: ds.fontSize(20), fontWeight: '700', color: tipsTheme.ink }}>
-        {line.itemName}
-      </Text>
       <Text
-        style={{ fontSize: ds.fontSize(13), color: tipsTheme.ink2, marginBottom: ds.spacing(12) }}
+        style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginBottom: ds.spacing(12) }}
       >
         {line.recommendedQty !== null
           ? `Usually ${formatQuantity(line.recommendedQty)} ${line.unit}`
           : `Counted in ${line.unit}`}
       </Text>
 
-      <View
-        style={{
-          flexDirection: 'row',
-          backgroundColor: tipsTheme.card,
-          borderWidth: glassHairlineWidth,
-          borderColor: tipsTheme.hairline,
-          borderRadius: radii.pill,
-          padding: 4,
-          marginBottom: ds.spacing(16),
+      <Segment
+        options={unitSegmentOptions}
+        value={selectedUnit}
+        onChange={(unit) => {
+          void triggerSelectionHaptic();
+          onSetUnit(line.key, unit);
         }}
-      >
-        {unitOptions.map((unit) => {
-          const selected = unit.toLowerCase() === line.unit.toLowerCase();
-          return (
-            <TouchableOpacity
-              key={unit}
-              onPress={() => {
-                void triggerSelectionHaptic();
-                onSetUnit(line.key, unit);
-              }}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              accessibilityLabel={`Use ${unit}`}
-              style={{
-                flex: 1,
-                paddingVertical: ds.spacing(9),
-                borderRadius: radii.pill,
-                backgroundColor: selected ? tipsTheme.accent : 'transparent',
-                alignItems: 'center',
-              }}
-            >
-              <Text
-                numberOfLines={1}
-                style={{
-                  fontSize: ds.fontSize(13),
-                  fontWeight: selected ? '700' : '600',
-                  color: selected ? '#FFFFFF' : tipsTheme.ink2,
-                }}
-              >
-                {unit}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+        accessibilityLabel="Unit"
+        style={{ marginBottom: ds.spacing(16) }}
+      />
 
       <View
         style={{
@@ -175,15 +149,15 @@ export function QuantityCardSheet({
           style={{
             width: 52,
             height: 52,
-            borderRadius: radii.circle,
-            backgroundColor: tipsTheme.card,
-            borderWidth: glassHairlineWidth,
-            borderColor: tipsTheme.hairline,
+            borderRadius: radius.pill,
+            backgroundColor: color.card,
+            borderWidth: 1,
+            borderColor: color.hairline,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Ionicons name="remove" size={ds.icon(22)} color={tipsTheme.ink} />
+          <Ionicons name="remove" size={ds.icon(22)} color={color.ink} />
         </TouchableOpacity>
 
         <View style={{ alignItems: 'center' }}>
@@ -197,13 +171,13 @@ export function QuantityCardSheet({
             style={{
               minWidth: ds.spacing(120),
               textAlign: 'center',
-              fontSize: ds.fontSize(44),
+              fontSize: ds.fontSize(typeScale.display),
               fontWeight: '700',
-              color: tipsTheme.ink,
+              color: color.ink,
               paddingVertical: 0,
             }}
           />
-          <Text style={{ fontSize: ds.fontSize(13), color: tipsTheme.ink2 }}>{line.unit}</Text>
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>{line.unit}</Text>
         </View>
 
         <TouchableOpacity
@@ -214,13 +188,13 @@ export function QuantityCardSheet({
           style={{
             width: 52,
             height: 52,
-            borderRadius: radii.circle,
-            backgroundColor: tipsTheme.tint,
+            borderRadius: radius.pill,
+            backgroundColor: color.tint,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Ionicons name="add" size={ds.icon(22)} color={tipsTheme.accent} />
+          <Ionicons name="add" size={ds.icon(22)} color={color.accent} />
         </TouchableOpacity>
       </View>
 
@@ -235,14 +209,14 @@ export function QuantityCardSheet({
             style={{
               flex: 1,
               paddingVertical: ds.spacing(9),
-              borderRadius: radii.pill,
-              backgroundColor: tipsTheme.card,
-              borderWidth: glassHairlineWidth,
-              borderColor: tipsTheme.hairline,
+              borderRadius: radius.pill,
+              backgroundColor: color.card,
+              borderWidth: 1,
+              borderColor: color.hairline,
               alignItems: 'center',
             }}
           >
-            <Text style={{ fontSize: ds.fontSize(12.5), fontWeight: '600', color: tipsTheme.ink2 }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: color.ink2 }}>
               +{amount}
             </Text>
           </TouchableOpacity>
@@ -255,36 +229,19 @@ export function QuantityCardSheet({
           style={{
             flex: 1,
             paddingVertical: ds.spacing(9),
-            borderRadius: radii.pill,
-            backgroundColor: tipsTheme.card,
-            borderWidth: glassHairlineWidth,
-            borderColor: tipsTheme.hairline,
+            borderRadius: radius.pill,
+            backgroundColor: color.card,
+            borderWidth: 1,
+            borderColor: color.hairline,
             alignItems: 'center',
           }}
         >
-          <Text style={{ fontSize: ds.fontSize(12.5), fontWeight: '600', color: tipsTheme.ink2 }}>
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: color.ink2 }}>
             Usual
           </Text>
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity
-        onPress={handleCommit}
-        activeOpacity={0.85}
-        accessibilityRole="button"
-        accessibilityLabel={`Set ${formatQuantity(quantity)} ${line.unit}`}
-        style={{
-          minHeight: 52,
-          borderRadius: radii.pill,
-          backgroundColor: tipsTheme.accent,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Text style={{ fontSize: ds.fontSize(15), fontWeight: '700', color: '#FFFFFF' }}>
-          Set {formatQuantity(quantity)} {line.unit}
-        </Text>
-      </TouchableOpacity>
-    </BottomSheetShell>
+    </Sheet>
   );
 }

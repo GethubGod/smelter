@@ -1,7 +1,7 @@
 import { Redirect, Stack } from 'expo-router';
 import { AuthLoadingScreen } from '@/components';
 import { useProtectedAuthGuard } from '@/hooks';
-import { colors } from '@/theme/design';
+import { color } from '@/theme/tokens';
 
 export default function OrdersLayout() {
   const guard = useProtectedAuthGuard();
@@ -18,7 +18,7 @@ export default function OrdersLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: colors.background },
+        contentStyle: { backgroundColor: color.page },
         gestureEnabled: true,
         animation: 'simple_push',
       }}

@@ -1,16 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomSheetShell } from '@/components/BottomSheetShell';
-import { LoadingIndicator } from '@/components';
+import { Button, Loading, Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerSelectionHaptic } from '@/lib/haptics';
-import {
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-} from '@/theme/design';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 import {
   formatRecentOrderDate,
   listMyRecentOrders,
@@ -30,7 +24,6 @@ interface RecentOrdersSheetProps {
 
 export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) {
   const ds = useScaledStyles();
-  const insets = useSafeAreaInsets();
 
   const [orders, setOrders] = useState<RecentOrder[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -77,8 +70,8 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
       <Text
         style={{
           paddingVertical: ds.spacing(20),
-          fontSize: ds.fontSize(14),
-          color: glassColors.dangerText,
+          fontSize: ds.fontSize(typeScale.body),
+          color: color.alert,
           textAlign: 'center',
         }}
       >
@@ -88,7 +81,7 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
   } else if (orders === null) {
     body = (
       <View style={{ paddingVertical: ds.spacing(24), alignItems: 'center' }}>
-        <LoadingIndicator size="small" color={glassColors.accent} />
+        <Loading size="inline" color={color.accent} label="Loading" />
       </View>
     );
   } else if (detailOrder) {
@@ -99,19 +92,19 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
       >
         <View
           style={{
-            borderRadius: glassRadii.button,
-            borderWidth: glassHairlineWidth,
-            borderColor: glassColors.cardBorder,
-            backgroundColor: glassColors.subtleFill,
+            borderRadius: radius.card,
+            borderWidth: 1,
+            borderColor: color.hairline,
+            backgroundColor: color.well,
             paddingHorizontal: ds.spacing(14),
             paddingVertical: ds.spacing(12),
           }}
         >
           <Text
             style={{
-              fontSize: ds.fontSize(13),
-              lineHeight: ds.fontSize(19),
-              color: glassColors.textPrimary,
+              fontSize: ds.fontSize(typeScale.secondary),
+              lineHeight: ds.fontSize(typeScale.title),
+              color: color.ink,
             }}
           >
             {detailOrder.messageText || 'No message text was saved for this order.'}
@@ -124,8 +117,8 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
       <Text
         style={{
           paddingVertical: ds.spacing(20),
-          fontSize: ds.fontSize(14),
-          color: glassColors.textSecondary,
+          fontSize: ds.fontSize(typeScale.body),
+          color: color.ink2,
           textAlign: 'center',
         }}
       >
@@ -151,23 +144,23 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
               minHeight: 52,
               paddingVertical: ds.spacing(8),
               borderBottomWidth:
-                index === orders.length - 1 ? 0 : glassHairlineWidth,
-              borderBottomColor: glassColors.divider,
+                index === orders.length - 1 ? 0 : 1,
+              borderBottomColor: color.hairline,
             }}
           >
             <View style={{ flex: 1, paddingRight: ds.spacing(8) }}>
               <Text
                 numberOfLines={1}
                 style={{
-                  fontSize: ds.fontSize(15),
-                  fontWeight: '600',
-                  color: glassColors.textPrimary,
+                  fontSize: ds.fontSize(typeScale.body),
+                  fontWeight: weight.semibold,
+                  color: color.ink,
                 }}
               >
                 {order.supplierName}
               </Text>
               <Text
-                style={{ fontSize: ds.fontSize(12), color: glassColors.textMuted }}
+                style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}
               >
                 {formatRecentOrderDate(order.createdAt)}
                 {order.itemCount !== null
@@ -178,7 +171,7 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
             <Ionicons
               name="chevron-forward"
               size={ds.icon(16)}
-              color={glassColors.textMuted}
+              color={color.ink3}
             />
           </TouchableOpacity>
         ))}
@@ -187,46 +180,30 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
   }
 
   return (
-    <BottomSheetShell
+    <Sheet
       visible={visible}
+      title={detailOrder ? detailOrder.supplierName : 'Recent orders'}
       onClose={handleClose}
-      bottomPadding={Math.max(insets.bottom, ds.spacing(12))}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: ds.spacing(10) }}>
-        {detailOrder ? (
-          <TouchableOpacity
+      {detailOrder ? (
+        <View style={{ gap: ds.spacing(8) }}>
+          <Button
+            label="Back to recent orders"
+            variant="secondary"
+            size="small"
+            icon="chevron-back"
             onPress={handleBackToList}
-            accessibilityRole="button"
-            accessibilityLabel="Back to recent orders"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={{ marginRight: ds.spacing(8) }}
-          >
-            <Ionicons name="chevron-back" size={ds.icon(20)} color={glassColors.textPrimary} />
-          </TouchableOpacity>
-        ) : null}
-        <View style={{ flex: 1 }}>
-          <Text
-            style={{
-              fontSize: ds.fontSize(20),
-              fontWeight: '700',
-              color: glassColors.textPrimary,
-            }}
-            numberOfLines={1}
-          >
-            {detailOrder ? detailOrder.supplierName : 'Recent orders'}
+          />
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}>
+            {formatRecentOrderDate(detailOrder.createdAt)}
+            {detailOrder.itemCount !== null
+              ? ` • ${detailOrder.itemCount} item${detailOrder.itemCount === 1 ? '' : 's'}`
+              : ''}
           </Text>
-          {detailOrder ? (
-            <Text style={{ fontSize: ds.fontSize(12), color: glassColors.textMuted }}>
-              {formatRecentOrderDate(detailOrder.createdAt)}
-              {detailOrder.itemCount !== null
-                ? ` • ${detailOrder.itemCount} item${detailOrder.itemCount === 1 ? '' : 's'}`
-                : ''}
-            </Text>
-          ) : null}
         </View>
-      </View>
+      ) : null}
 
       {body}
-    </BottomSheetShell>
+    </Sheet>
   );
 }

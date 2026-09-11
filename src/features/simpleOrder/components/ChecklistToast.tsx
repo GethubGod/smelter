@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Text, TouchableOpacity } from 'react-native';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { radii, tipsTheme } from '@/theme/design';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 /**
  * Lightweight toast for the checklist surface, with an optional action button
@@ -77,8 +77,8 @@ export function ChecklistToast({
           flexDirection: 'row',
           alignItems: 'center',
           gap: ds.spacing(10),
-          backgroundColor: tipsTheme.ink,
-          borderRadius: radii.pill,
+          backgroundColor: color.ink,
+          borderRadius: radius.pill,
           paddingHorizontal: ds.spacing(16),
           paddingVertical: ds.spacing(10),
           maxWidth: '86%',
@@ -86,12 +86,12 @@ export function ChecklistToast({
       >
         <Text
           numberOfLines={2}
-          style={{ fontSize: ds.fontSize(12.5), fontWeight: '600', color: '#FFFFFF', flexShrink: 1 }}
+          style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: color.onAccent, flexShrink: 1 }}
         >
           {toast.message}
         </Text>
         {toast.actionLabel ? (
-          <Text style={{ fontSize: ds.fontSize(12.5), fontWeight: '700', color: '#F79B8C' }}>
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: '700', color: color.tint }}>
             {toast.actionLabel}
           </Text>
         ) : null}
