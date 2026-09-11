@@ -7,6 +7,7 @@ import {
   glassColors,
   glassRadii,
 } from '@/theme/design';
+import { typeScale, weight } from '@/theme/tokens';
 
 type EmptyStateAlignment = 'center' | 'leading';
 
@@ -63,8 +64,8 @@ export function EmptyStateCard({
         <Text
           style={{
             marginTop: ds.spacing(12),
-            fontSize: ds.fontSize(15),
-            fontWeight: '600',
+            fontSize: ds.fontSize(typeScale.body),
+            fontWeight: weight.semibold,
             color: glassColors.textPrimary,
             textAlign: isCentered ? 'center' : 'left',
           }}
@@ -74,10 +75,10 @@ export function EmptyStateCard({
         <Text
           style={{
             marginTop: ds.spacing(6),
-            fontSize: ds.fontSize(12),
+            fontSize: ds.fontSize(typeScale.secondary),
             color: glassColors.textSecondary,
             textAlign: isCentered ? 'center' : 'left',
-            lineHeight: ds.fontSize(18),
+            lineHeight: ds.fontSize(typeScale.title),
           }}
         >
           {message}
@@ -100,7 +101,7 @@ export function EmptyStateCard({
             <Text
               style={{
                 fontSize: ds.buttonFont,
-                fontWeight: '700',
+                fontWeight: weight.bold,
                 color: glassColors.textOnPrimary,
               }}
             >

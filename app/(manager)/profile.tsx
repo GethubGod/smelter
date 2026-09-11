@@ -23,8 +23,9 @@ import {
   glassRadii,
   glassSpacing,
 } from '@/theme/design';
+import { color, typeScale, weight } from '@/theme/tokens';
 
-const SETTINGS_DIVIDER_COLOR = '#EAEAEA';
+const SETTINGS_DIVIDER_COLOR = color.hairline;
 
 export default function ManagerSettingsScreen() {
   const ds = useScaledStyles();
@@ -74,8 +75,8 @@ export default function ManagerSettingsScreen() {
           <View style={{ flex: 1 }}>
             <Text
               style={{
-                fontSize: ds.fontSize(32),
-                fontWeight: '800',
+                fontSize: ds.fontSize(typeScale.display),
+                fontWeight: weight.bold,
                 color: glassColors.textPrimary,
                 letterSpacing: -0.5,
               }}
@@ -85,7 +86,7 @@ export default function ManagerSettingsScreen() {
           </View>
           <GlassSurface intensity="medium" style={{ borderRadius: glassRadii.pill }}>
             <View style={{ paddingHorizontal: ds.spacing(12), paddingVertical: ds.spacing(6) }}>
-              <Text style={{ fontSize: ds.fontSize(11), fontWeight: '600', color: glassColors.accent }}>Manager</Text>
+              <Text style={{ fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.semibold, color: glassColors.accent }}>Manager</Text>
             </View>
           </GlassSurface>
         </View>
@@ -127,7 +128,7 @@ export default function ManagerSettingsScreen() {
           <Text
             numberOfLines={1}
             style={{
-              fontSize: ds.fontSize(11),
+              fontSize: ds.fontSize(typeScale.caption),
               color: glassColors.textSecondary,
               paddingHorizontal: ds.spacing(24),
             }}
@@ -138,8 +139,8 @@ export default function ManagerSettingsScreen() {
 
         <View className="items-center" style={{ paddingHorizontal: ds.spacing(24), paddingTop: ds.spacing(24), paddingBottom: ds.spacing(40) }}>
           <BrandLogo variant="footer" size={40} />
-          <Text style={{ fontSize: ds.fontSize(12), marginTop: ds.spacing(8), color: glassColors.textPrimary }}>Smelter</Text>
-          <Text style={{ fontSize: ds.fontSize(11), marginTop: ds.spacing(4), color: glassColors.textSecondary }}>Version {appVersion}</Text>
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(8), color: glassColors.textPrimary }}>Smelter</Text>
+          <Text style={{ fontSize: ds.fontSize(typeScale.caption), marginTop: ds.spacing(4), color: glassColors.textSecondary }}>Version {appVersion}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

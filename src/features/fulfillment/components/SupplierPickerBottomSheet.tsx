@@ -1,8 +1,13 @@
 import React, { memo, useCallback, useMemo } from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomSheetShell } from '@/components/BottomSheetShell';
+import { Button } from '@/components/ui/Button';
+import { Sheet } from '@/components/ui/Sheet';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import {
   colors,
@@ -10,6 +15,8 @@ import {
   glassHairlineWidth,
   glassRadii,
 } from '@/theme/design';
+import { typeScale, weight } from '@/theme/tokens';
+import { Loading } from '@/components/ui/Loading';
 
 export interface SupplierPickerOption {
   id: string;
@@ -76,8 +83,8 @@ const SupplierRow = memo(function SupplierRow({
       <Text
         style={{
           flex: 1,
-          fontSize: ds.fontSize(16),
-          fontWeight: '600',
+          fontSize: ds.fontSize(typeScale.body),
+          fontWeight: weight.semibold,
           color: glassColors.textPrimary,
         }}
         numberOfLines={2}
@@ -99,7 +106,6 @@ export const SupplierPickerBottomSheet = memo(function SupplierPickerBottomSheet
   onClose,
 }: SupplierPickerBottomSheetProps) {
   const ds = useScaledStyles();
-  const insets = useSafeAreaInsets();
 
   const selectableSuppliers = useMemo(
     () =>
@@ -119,35 +125,18 @@ export const SupplierPickerBottomSheet = memo(function SupplierPickerBottomSheet
   );
 
   return (
-    <BottomSheetShell
-      visible={visible}
-      onClose={onClose}
-      bottomPadding={Math.max(ds.spacing(10), insets.bottom + ds.spacing(8))}
-    >
-      <View style={{ paddingHorizontal: ds.spacing(6), paddingBottom: ds.spacing(8) }}>
+    <Sheet visible={visible} title="Choose Supplier" onClose={onClose}>
+      {itemName ? (
         <Text
           style={{
-            fontSize: ds.fontSize(20),
-            fontWeight: '700',
-            color: glassColors.textPrimary,
-            letterSpacing: -0.3,
+            fontSize: ds.fontSize(typeScale.secondary),
+            color: glassColors.textSecondary,
+            lineHeight: ds.fontSize(typeScale.title),
           }}
         >
-          Choose Supplier
+          {itemName}
         </Text>
-        {itemName ? (
-          <Text
-            style={{
-              fontSize: ds.fontSize(13),
-              marginTop: ds.spacing(6),
-              color: glassColors.textSecondary,
-              lineHeight: ds.fontSize(18),
-            }}
-          >
-            {itemName}
-          </Text>
-        ) : null}
-      </View>
+      ) : null}
 
       <ScrollView
         style={{ maxHeight: ds.spacing(432) }}
@@ -166,11 +155,11 @@ export const SupplierPickerBottomSheet = memo(function SupplierPickerBottomSheet
               paddingVertical: ds.spacing(24),
             }}
           >
-            <ActivityIndicator color={glassColors.accent} size="small" />
+            <Loading size="inline" color={glassColors.accent} />
             <Text
               style={{
                 marginLeft: ds.spacing(10),
-                fontSize: ds.fontSize(14),
+                fontSize: ds.fontSize(typeScale.body),
                 color: glassColors.textSecondary,
               }}
             >
@@ -190,10 +179,10 @@ export const SupplierPickerBottomSheet = memo(function SupplierPickerBottomSheet
           >
             <Text
               style={{
-                fontSize: ds.fontSize(14),
+                fontSize: ds.fontSize(typeScale.body),
                 color: glassColors.textSecondary,
                 textAlign: 'center',
-                lineHeight: ds.fontSize(20),
+                lineHeight: ds.fontSize(typeScale.title),
               }}
             >
               No other suppliers are available.
@@ -221,27 +210,9 @@ export const SupplierPickerBottomSheet = memo(function SupplierPickerBottomSheet
           </View>
         )}
 
-        <TouchableOpacity
-          onPress={onClose}
-          disabled={isMoving}
-          style={{
-            paddingVertical: ds.spacing(16),
-            marginTop: ds.spacing(4),
-            opacity: isMoving ? 0.5 : 1,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: ds.fontSize(15),
-              fontWeight: '600',
-              color: glassColors.textSecondary,
-              textAlign: 'center',
-            }}
-          >
-            Cancel
-          </Text>
-        </TouchableOpacity>
       </ScrollView>
-    </BottomSheetShell>
+
+      <Button label="Cancel" variant="secondary" onPress={onClose} disabled={isMoving} />
+    </Sheet>
   );
 });

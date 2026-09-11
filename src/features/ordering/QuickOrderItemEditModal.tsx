@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
   KeyboardEvent,
@@ -26,6 +25,8 @@ import {
   type ParsedQuickOrderItem,
   type QuickOrderInventoryItem,
 } from './quickOrderItems';
+import { radius, typeScale, weight } from '@/theme/tokens';
+import { Loading } from '@/components/ui/Loading';
 
 export type QuickOrderItemEditResult = {
   itemId: string | null;
@@ -216,8 +217,8 @@ function EditModalBody({
           styles.sheet,
           {
             maxHeight: sheetMaxHeight,
-            borderTopLeftRadius: ds.radius(26),
-            borderTopRightRadius: ds.radius(26),
+            borderTopLeftRadius: radius.sheet,
+            borderTopRightRadius: radius.sheet,
             paddingHorizontal: ds.spacing(20),
             paddingTop: ds.spacing(10),
             paddingBottom: Math.max(insets.bottom, ds.spacing(12)),
@@ -230,10 +231,10 @@ function EditModalBody({
 
         <View style={styles.headerRow}>
           <View style={styles.flexShrink}>
-            <Text style={[styles.title, { fontSize: ds.fontSize(20) }]} numberOfLines={1}>
+            <Text style={[styles.title, { fontSize: ds.fontSize(typeScale.title) }]} numberOfLines={1}>
               {originalName}
             </Text>
-            <Text style={[styles.subtitle, { fontSize: ds.fontSize(12) }]} numberOfLines={1}>
+            <Text style={[styles.subtitle, { fontSize: ds.fontSize(typeScale.secondary) }]} numberOfLines={1}>
               {item.raw_token?.trim() ? `You typed “${item.raw_token.trim()}”` : 'Edit this order item'}
             </Text>
           </View>
@@ -257,15 +258,15 @@ function EditModalBody({
           showsVerticalScrollIndicator={false}
         >
           {issue ? (
-            <View style={[styles.issueBanner, { borderRadius: ds.radius(14), padding: ds.spacing(12), marginTop: ds.spacing(12) }]}>
+            <View style={[styles.issueBanner, { borderRadius: radius.card, padding: ds.spacing(12), marginTop: ds.spacing(12) }]}>
               <Ionicons name="alert-circle" size={ds.icon(18)} color={colors.statusAmber} />
-              <Text style={[styles.issueText, { fontSize: ds.fontSize(14), marginLeft: ds.spacing(8) }]}>
+              <Text style={[styles.issueText, { fontSize: ds.fontSize(typeScale.body), marginLeft: ds.spacing(8) }]}>
                 {issueLabelFull(issue.kind)}
               </Text>
             </View>
           ) : null}
 
-          <Text style={[styles.label, { fontSize: ds.fontSize(12), marginTop: ds.spacing(16) }]}>Item</Text>
+          <Text style={[styles.label, { fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(16) }]}>Item</Text>
           <TextInput
             value={search}
             onChangeText={(value) => {
@@ -275,7 +276,7 @@ function EditModalBody({
             }}
             placeholder="Search inventory item"
             placeholderTextColor={colors.textMuted}
-            style={[styles.input, { fontSize: ds.fontSize(16), minHeight: ds.spacing(48), borderRadius: ds.radius(14) }]}
+            style={[styles.input, { fontSize: ds.fontSize(typeScale.body), minHeight: ds.spacing(48), borderRadius: radius.card }]}
           />
           {matches.length > 0 ? (
             <View style={{ marginTop: ds.spacing(8), gap: ds.spacing(6) }}>
@@ -285,21 +286,21 @@ function EditModalBody({
                   onPress={() => handlePickInventory(row)}
                   style={({ pressed }) => [
                     styles.matchRow,
-                    { borderRadius: ds.radius(10), minHeight: ds.spacing(42), paddingHorizontal: ds.spacing(12), backgroundColor: pressed ? colors.primaryPale : colors.glassCircle },
+                    { borderRadius: radius.control, minHeight: ds.spacing(42), paddingHorizontal: ds.spacing(12), backgroundColor: pressed ? colors.primaryPale : colors.glassCircle },
                   ]}
                 >
-                  <Text style={[styles.matchText, { fontSize: ds.fontSize(15) }]}>{row.name}</Text>
+                  <Text style={[styles.matchText, { fontSize: ds.fontSize(typeScale.body) }]}>{row.name}</Text>
                 </Pressable>
               ))}
             </View>
           ) : null}
-          <Text style={[styles.selectedHint, { fontSize: ds.fontSize(12), marginTop: ds.spacing(8) }]}>
+          <Text style={[styles.selectedHint, { fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(8) }]}>
             {selectedInventory ? `Selected: ${selectedInventory.name}` : needsItemPick ? 'No inventory item selected yet.' : `Keeping: ${originalName}`}
           </Text>
 
           <View style={{ flexDirection: 'row', gap: ds.spacing(12), marginTop: ds.spacing(16) }}>
             <View style={{ flex: 0.85 }}>
-              <Text style={[styles.label, { fontSize: ds.fontSize(12) }]}>Quantity</Text>
+              <Text style={[styles.label, { fontSize: ds.fontSize(typeScale.secondary) }]}>Quantity</Text>
               <TextInput
                 value={quantity}
                 onChangeText={(value) => {
@@ -309,11 +310,11 @@ function EditModalBody({
                 keyboardType="decimal-pad"
                 placeholder="0"
                 placeholderTextColor={colors.textMuted}
-                style={[styles.input, { fontSize: ds.fontSize(16), minHeight: ds.spacing(48), borderRadius: ds.radius(14) }]}
+                style={[styles.input, { fontSize: ds.fontSize(typeScale.body), minHeight: ds.spacing(48), borderRadius: radius.card }]}
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.label, { fontSize: ds.fontSize(12) }]}>Unit</Text>
+              <Text style={[styles.label, { fontSize: ds.fontSize(typeScale.secondary) }]}>Unit</Text>
               <TextInput
                 value={unit}
                 onChangeText={(value) => {
@@ -323,7 +324,7 @@ function EditModalBody({
                 autoCapitalize="none"
                 placeholder="lb, case, pack"
                 placeholderTextColor={colors.textMuted}
-                style={[styles.input, { fontSize: ds.fontSize(16), minHeight: ds.spacing(48), borderRadius: ds.radius(14) }]}
+                style={[styles.input, { fontSize: ds.fontSize(typeScale.body), minHeight: ds.spacing(48), borderRadius: radius.card }]}
               />
             </View>
           </View>
@@ -342,7 +343,7 @@ function EditModalBody({
                     style={({ pressed }) => [
                       styles.presetChip,
                       {
-                        borderRadius: ds.radius(999),
+                        borderRadius: radius.pill,
                         paddingHorizontal: ds.spacing(12),
                         paddingVertical: ds.spacing(6),
                         backgroundColor: active ? colors.primaryLight : colors.glassCircle,
@@ -353,7 +354,7 @@ function EditModalBody({
                     <Text
                       style={[
                         styles.presetText,
-                        { fontSize: ds.fontSize(13), color: active ? colors.primary : colors.textSecondary },
+                        { fontSize: ds.fontSize(typeScale.secondary), color: active ? colors.primary : colors.textSecondary },
                       ]}
                     >
                       {preset}
@@ -365,7 +366,7 @@ function EditModalBody({
           ) : null}
 
           {error ? (
-            <Text style={[styles.errorText, { fontSize: ds.fontSize(13), marginTop: ds.spacing(12) }]}>{error}</Text>
+            <Text style={[styles.errorText, { fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(12) }]}>{error}</Text>
           ) : null}
 
           {canRemove ? (
@@ -376,11 +377,11 @@ function EditModalBody({
               disabled={isSaving}
               style={({ pressed }) => [
                 styles.removeButton,
-                { borderRadius: ds.radius(14), minHeight: ds.spacing(46), marginTop: ds.spacing(18), opacity: isSaving ? 0.5 : pressed ? 0.7 : 1 },
+                { borderRadius: radius.card, minHeight: ds.spacing(46), marginTop: ds.spacing(18), opacity: isSaving ? 0.5 : pressed ? 0.7 : 1 },
               ]}
             >
               <Ionicons name="trash-outline" size={ds.icon(16)} color={colors.statusRed} />
-              <Text style={[styles.removeText, { fontSize: ds.fontSize(15), marginLeft: ds.spacing(6) }]}>
+              <Text style={[styles.removeText, { fontSize: ds.fontSize(typeScale.body), marginLeft: ds.spacing(6) }]}>
                 Remove from order
               </Text>
             </Pressable>
@@ -395,10 +396,10 @@ function EditModalBody({
             disabled={isSaving}
             style={({ pressed }) => [
               styles.secondaryButton,
-              { borderRadius: ds.radius(999), minHeight: ds.spacing(50), opacity: isSaving ? 0.6 : pressed ? 0.82 : 1 },
+              { borderRadius: radius.pill, minHeight: ds.spacing(50), opacity: isSaving ? 0.6 : pressed ? 0.82 : 1 },
             ]}
           >
-            <Text style={[styles.secondaryText, { fontSize: ds.fontSize(16) }]}>Cancel</Text>
+            <Text style={[styles.secondaryText, { fontSize: ds.fontSize(typeScale.body) }]}>Cancel</Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
@@ -407,13 +408,13 @@ function EditModalBody({
             disabled={isSaving}
             style={({ pressed }) => [
               styles.primaryButton,
-              { borderRadius: ds.radius(999), minHeight: ds.spacing(50), opacity: isSaving ? 0.7 : pressed ? 0.86 : 1 },
+              { borderRadius: radius.pill, minHeight: ds.spacing(50), opacity: isSaving ? 0.7 : pressed ? 0.86 : 1 },
             ]}
           >
             {isSaving ? (
-              <ActivityIndicator color={colors.textOnPrimary} />
+              <Loading size="inline" color={colors.textOnPrimary} />
             ) : (
-              <Text style={[styles.primaryText, { fontSize: ds.fontSize(16) }]}>Save</Text>
+              <Text style={[styles.primaryText, { fontSize: ds.fontSize(typeScale.body) }]}>Save</Text>
             )}
           </Pressable>
         </View>
@@ -468,7 +469,7 @@ const styles = StyleSheet.create({
   grabber: {
     width: 42,
     height: 4,
-    borderRadius: 2,
+    borderRadius: radius.pill,
   },
   headerRow: {
     flexDirection: 'row',
@@ -476,12 +477,12 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.textPrimary,
-    fontWeight: '800',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   subtitle: {
     color: colors.textSecondary,
-    fontWeight: '600',
+    fontWeight: weight.semibold,
     marginTop: 3,
     letterSpacing: 0,
   },
@@ -500,12 +501,12 @@ const styles = StyleSheet.create({
   issueText: {
     flex: 1,
     color: colors.statusAmber,
-    fontWeight: '700',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   label: {
     color: colors.textSecondary,
-    fontWeight: '800',
+    fontWeight: weight.bold,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
     marginBottom: 6,
@@ -516,7 +517,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.glassCircle,
     color: colors.textPrimary,
     paddingHorizontal: 12,
-    fontWeight: '700',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   matchRow: {
@@ -526,12 +527,12 @@ const styles = StyleSheet.create({
   },
   matchText: {
     color: colors.textPrimary,
-    fontWeight: '700',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   selectedHint: {
     color: colors.textSecondary,
-    fontWeight: '700',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   presetRow: {
@@ -544,12 +545,12 @@ const styles = StyleSheet.create({
     borderColor: glassColors.cardBorder,
   },
   presetText: {
-    fontWeight: '800',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   errorText: {
     color: colors.statusRed,
-    fontWeight: '700',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   removeButton: {
@@ -560,7 +561,7 @@ const styles = StyleSheet.create({
   },
   removeText: {
     color: colors.statusRed,
-    fontWeight: '800',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   footer: {
@@ -577,7 +578,7 @@ const styles = StyleSheet.create({
   },
   secondaryText: {
     color: colors.textPrimary,
-    fontWeight: '800',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   primaryButton: {
@@ -588,7 +589,7 @@ const styles = StyleSheet.create({
   },
   primaryText: {
     color: colors.textOnPrimary,
-    fontWeight: '800',
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
 });

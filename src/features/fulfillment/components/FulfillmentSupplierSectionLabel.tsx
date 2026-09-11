@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text } from 'react-native';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
+import { color, typeScale, weight } from '@/theme/tokens';
 
 interface FulfillmentSupplierSectionLabelProps {
   readyCount: number;
@@ -14,9 +15,9 @@ export function FulfillmentSupplierSectionLabel({
   return (
     <Text
       style={{
-        color: '#9B958F',
-        fontSize: ds.fontSize(11),
-        fontWeight: '700',
+        color: color.ink3,
+        fontSize: ds.fontSize(typeScale.caption),
+        fontWeight: weight.bold,
         letterSpacing: 1.5,
         marginTop: ds.spacing(32),
         marginBottom: ds.spacing(20),

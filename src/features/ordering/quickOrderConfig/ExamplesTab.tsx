@@ -24,6 +24,7 @@ import {
   getExampleType,
   getMappingRows,
 } from './types';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 interface ExamplesTabProps {
   examples: ParserExampleRow[];
@@ -80,8 +81,8 @@ export function ExamplesTab({ examples, items, onRefresh }: ExamplesTabProps) {
     <View>
       <Text
         style={{
-          fontSize: ds.fontSize(22),
-          fontWeight: '800',
+          fontSize: ds.fontSize(typeScale.title),
+          fontWeight: weight.bold,
           color: glassColors.textPrimary,
           marginBottom: ds.spacing(12),
         }}
@@ -109,8 +110,8 @@ export function ExamplesTab({ examples, items, onRefresh }: ExamplesTabProps) {
         <Text
           style={{
             color: colors.primary,
-            fontSize: ds.fontSize(15),
-            fontWeight: '700',
+            fontSize: ds.fontSize(typeScale.body),
+            fontWeight: weight.bold,
           }}
         >
           Add training example
@@ -141,7 +142,7 @@ export function ExamplesTab({ examples, items, onRefresh }: ExamplesTabProps) {
           <Text
             style={{
               color: glassColors.textSecondary,
-              fontSize: ds.fontSize(14),
+              fontSize: ds.fontSize(typeScale.body),
               textAlign: 'center',
               paddingVertical: ds.spacing(40),
             }}
@@ -196,7 +197,7 @@ function ExampleCardShell({
       <View
         style={{
           backgroundColor: grayScale[100],
-          borderRadius: 12,
+          borderRadius: radius.control,
           paddingHorizontal: ds.spacing(12),
           paddingVertical: ds.spacing(12),
           marginBottom: ds.spacing(12),
@@ -205,9 +206,9 @@ function ExampleCardShell({
         <Text
           style={{
             color: glassColors.textPrimary,
-            fontSize: ds.fontSize(14),
+            fontSize: ds.fontSize(typeScale.body),
             fontFamily: 'Menlo',
-            lineHeight: ds.fontSize(20),
+            lineHeight: ds.fontSize(typeScale.title),
           }}
         >
           {`"${raw_text}"`}
@@ -231,7 +232,7 @@ function ExampleCardShell({
             flexDirection: 'row',
             alignItems: 'center',
             gap: ds.spacing(6),
-            backgroundColor: is_active ? 'rgba(34, 197, 94, 0.12)' : grayScale[100],
+            backgroundColor: is_active ? color.goodBg : grayScale[100],
             borderRadius: glassRadii.pill,
             paddingHorizontal: ds.spacing(10),
             paddingVertical: ds.spacing(5),
@@ -241,15 +242,15 @@ function ExampleCardShell({
             style={{
               width: 6,
               height: 6,
-              borderRadius: 3,
+              borderRadius: radius.pill,
               backgroundColor: is_active ? colors.statusGreen : glassColors.textSecondary,
             }}
           />
           <Text
             style={{
-              color: is_active ? '#2E7D32' : glassColors.textSecondary,
-              fontSize: ds.fontSize(12),
-              fontWeight: '700',
+              color: is_active ? color.good : glassColors.textSecondary,
+              fontSize: ds.fontSize(typeScale.secondary),
+              fontWeight: weight.bold,
             }}
           >
             {footerLabel}
@@ -317,8 +318,8 @@ function MappingExampleCard({ example, items, onEdit, onDelete }: MappingExample
               <Text
                 style={{
                   flex: 1,
-                  fontSize: ds.fontSize(15),
-                  fontWeight: '600',
+                  fontSize: ds.fontSize(typeScale.body),
+                  fontWeight: weight.semibold,
                   color: glassColors.textPrimary,
                 }}
               >
@@ -326,9 +327,9 @@ function MappingExampleCard({ example, items, onEdit, onDelete }: MappingExample
               </Text>
               <Text
                 style={{
-                  fontSize: ds.fontSize(14),
+                  fontSize: ds.fontSize(typeScale.body),
                   color: glassColors.textSecondary,
-                  fontWeight: '500',
+                  fontWeight: weight.semibold,
                 }}
               >
                 {formatExampleQuantity(quantity, unit)}
@@ -340,7 +341,7 @@ function MappingExampleCard({ example, items, onEdit, onDelete }: MappingExample
           <Text
             style={{
               color: glassColors.textSecondary,
-              fontSize: ds.fontSize(13),
+              fontSize: ds.fontSize(typeScale.secondary),
               fontStyle: 'italic',
             }}
           >
@@ -386,8 +387,8 @@ function ConflictExampleCard({ example, onEdit, onDelete }: ConflictExampleCardP
         <Text
           style={{
             color: glassColors.textSecondary,
-            fontSize: ds.fontSize(14),
-            fontWeight: '600',
+            fontSize: ds.fontSize(typeScale.body),
+            fontWeight: weight.semibold,
           }}
         >
           Pending conflict
@@ -396,8 +397,8 @@ function ConflictExampleCard({ example, onEdit, onDelete }: ConflictExampleCardP
         <Text
           style={{
             color: colors.primary,
-            fontSize: ds.fontSize(14),
-            fontWeight: '700',
+            fontSize: ds.fontSize(typeScale.body),
+            fontWeight: weight.bold,
           }}
         >
           Asks: {question}

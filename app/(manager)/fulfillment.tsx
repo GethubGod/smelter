@@ -2,9 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
   LayoutAnimation,
-  Modal,
   Platform,
-  Pressable,
   RefreshControl,
   ScrollView,
   Text,
@@ -24,7 +22,8 @@ import { getCategoryLabel, colors } from '@/constants';
 import { InventoryItem, KNOWN_SUPPLIER_CATEGORIES, OrderWithDetails } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
-import { GlassSurface, ItemActionSheet, LoadingIndicator } from '@/components';
+import { GlassSurface, ItemActionSheet } from '@/components';
+import { Loading } from '@/components/ui';
 import type { ItemActionSheetSection } from '@/components';
 import {
   FulfillmentHeader,
@@ -53,6 +52,9 @@ import {
   glassSpacing,
   glassTabBarHeight,
 } from '@/theme/design';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { Button } from '@/components/ui/Button';
+import { Sheet } from '@/components/ui/Sheet';
 
 interface AggregatedLocationBreakdown {
   locationId: string;
@@ -1102,8 +1104,8 @@ function FulfillmentScreen() {
         const dominantGroupTotals = item.locationBreakdown.reduce(
           (totals, location) => {
             const group = getLocationGroup(location.locationName, location.shortCode);
-            const weight = Math.max(location.quantity, location.remainingReported, 1);
-            totals[group] += weight;
+            const locationWeight = Math.max(location.quantity, location.remainingReported, 1);
+            totals[group] += locationWeight;
             return totals;
           },
           { sushi: 0, poki: 0 }
@@ -2496,8 +2498,8 @@ function FulfillmentScreen() {
                 />
                 <Text
                   style={{
-                    fontSize: ds.fontSize(12),
-                    fontWeight: '700',
+                    fontSize: ds.fontSize(typeScale.secondary),
+                    fontWeight: weight.bold,
                     letterSpacing: 0.6,
                     textTransform: 'uppercase',
                     color: glassColors.textSecondary,
@@ -2515,11 +2517,11 @@ function FulfillmentScreen() {
                     borderTopColor: glassColors.divider,
                   }}
                 >
-                  <Text style={{ fontSize: ds.fontSize(12), fontWeight: '700', color: glassColors.textPrimary }}>
+                  <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.bold, color: glassColors.textPrimary }}>
                     {entry.employeeName}
                     {entry.locationShortCode ? ` · ${entry.locationShortCode}` : ''}
                   </Text>
-                  <Text style={{ fontSize: ds.fontSize(13), color: glassColors.textPrimary, marginTop: 1 }}>
+                  <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: glassColors.textPrimary, marginTop: 1 }}>
                     {entry.note}
                   </Text>
                 </View>
@@ -2554,7 +2556,7 @@ function FulfillmentScreen() {
                             style={{
                               width: 120 - i * 16,
                               height: 14,
-                              borderRadius: 7,
+                              borderRadius: radius.control,
                               backgroundColor: glassColors.mediumFill,
                             }}
                           />
@@ -2562,7 +2564,7 @@ function FulfillmentScreen() {
                             style={{
                               width: 80,
                               height: 10,
-                              borderRadius: 5,
+                              borderRadius: radius.pill,
                               backgroundColor: glassColors.subtleFill,
                               marginTop: ds.spacing(8),
                             }}
@@ -2580,7 +2582,7 @@ function FulfillmentScreen() {
                     </GlassSurface>
                   ))}
                   <View style={{ alignItems: 'center', paddingTop: ds.spacing(6) }}>
-                    <LoadingIndicator size="small" color={glassColors.accent} />
+                    <Loading size="inline" color={glassColors.accent} label="Loading suppliers" />
                   </View>
                 </View>
               ) : showErrorState ? (
@@ -2597,8 +2599,8 @@ function FulfillmentScreen() {
                     style={{
                       width: 44,
                       height: 44,
-                      borderRadius: 22,
-                      backgroundColor: '#FFF0EA',
+                      borderRadius: radius.sheet,
+                      backgroundColor: color.tint,
                       alignItems: 'center',
                       justifyContent: 'center',
                       marginBottom: ds.spacing(12),
@@ -2609,8 +2611,8 @@ function FulfillmentScreen() {
                   <Text
                     style={{
                       color: glassColors.textPrimary,
-                      fontSize: ds.fontSize(16),
-                      fontWeight: '700',
+                      fontSize: ds.fontSize(typeScale.body),
+                      fontWeight: weight.bold,
                       textAlign: 'center',
                     }}
                   >
@@ -2619,8 +2621,8 @@ function FulfillmentScreen() {
                   <Text
                     style={{
                       color: glassColors.textSecondary,
-                      fontSize: ds.fontSize(13),
-                      lineHeight: ds.fontSize(18),
+                      fontSize: ds.fontSize(typeScale.secondary),
+                      lineHeight: ds.fontSize(typeScale.title),
                       marginTop: ds.spacing(6),
                       textAlign: 'center',
                     }}
@@ -2641,8 +2643,8 @@ function FulfillmentScreen() {
                     <Text
                       style={{
                         color: glassColors.textOnPrimary,
-                        fontSize: ds.fontSize(14),
-                        fontWeight: '700',
+                        fontSize: ds.fontSize(typeScale.body),
+                        fontWeight: weight.bold,
                       }}
                     >
                       Retry
@@ -2673,8 +2675,8 @@ function FulfillmentScreen() {
                     <Text
                       style={{
                         marginLeft: ds.spacing(8),
-                        fontSize: ds.fontSize(15),
-                        fontWeight: '700',
+                        fontSize: ds.fontSize(typeScale.body),
+                        fontWeight: weight.bold,
                         color: glassColors.textOnPrimary,
                       }}
                     >
@@ -2729,8 +2731,8 @@ function FulfillmentScreen() {
                     <Text
                       style={{
                         color: glassColors.textPrimary,
-                        fontSize: ds.fontSize(15),
-                        fontWeight: '700',
+                        fontSize: ds.fontSize(typeScale.body),
+                        fontWeight: weight.bold,
                       }}
                     >
                       {item.itemName}
@@ -2738,7 +2740,7 @@ function FulfillmentScreen() {
                     <Text
                       style={{
                         color: glassColors.textSecondary,
-                        fontSize: ds.fontSize(12),
+                        fontSize: ds.fontSize(typeScale.secondary),
                         marginTop: ds.spacing(4),
                       }}
                     >
@@ -2748,7 +2750,7 @@ function FulfillmentScreen() {
                       <Text
                         style={{
                           color: glassColors.infoText,
-                          fontSize: ds.fontSize(12),
+                          fontSize: ds.fontSize(typeScale.secondary),
                           marginTop: ds.spacing(4),
                         }}
                       >
@@ -2758,7 +2760,7 @@ function FulfillmentScreen() {
                     <Text
                       style={{
                         color: glassColors.warningText,
-                        fontSize: ds.fontSize(12),
+                        fontSize: ds.fontSize(typeScale.secondary),
                         marginTop: ds.spacing(6),
                       }}
                     >
@@ -2787,8 +2789,8 @@ function FulfillmentScreen() {
                         <Text
                           style={{
                             color: glassColors.textOnPrimary,
-                            fontSize: ds.fontSize(12),
-                            fontWeight: '700',
+                            fontSize: ds.fontSize(typeScale.secondary),
+                            fontWeight: weight.bold,
                           }}
                         >
                           Add to...
@@ -2810,8 +2812,8 @@ function FulfillmentScreen() {
                         <Text
                           style={{
                             color: glassColors.textPrimary,
-                            fontSize: ds.fontSize(12),
-                            fontWeight: '700',
+                            fontSize: ds.fontSize(typeScale.secondary),
+                            fontWeight: weight.bold,
                           }}
                         >
                           Edit schedule
@@ -2822,7 +2824,7 @@ function FulfillmentScreen() {
                         onPress={() => handleRemoveOrderLater(item.id, item.itemName)}
                         activeOpacity={0.86}
                         style={{
-                          backgroundColor: '#FFF1EE',
+                          backgroundColor: color.tint,
                           borderWidth: glassHairlineWidth,
                           borderColor: glassColors.accentBorder,
                           borderRadius: glassRadii.button,
@@ -2834,8 +2836,8 @@ function FulfillmentScreen() {
                         <Text
                           style={{
                             color: glassColors.accent,
-                            fontSize: ds.fontSize(12),
-                            fontWeight: '700',
+                            fontSize: ds.fontSize(typeScale.secondary),
+                            fontWeight: weight.bold,
                           }}
                         >
                           Remove
@@ -2857,146 +2859,81 @@ function FulfillmentScreen() {
           onClose={() => setOverflowItem(null)}
         />
 
-        <Modal
+        <Sheet
           visible={Boolean(breakdownItem)}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setBreakdownItem(null)}
+          title="Employee Breakdown"
+          onClose={() => setBreakdownItem(null)}
         >
-          <Pressable className="flex-1 bg-black/35 justify-end" onPress={() => setBreakdownItem(null)}>
-            <Pressable
-              className="bg-white rounded-t-3xl px-4 pt-4 pb-5"
-              onPress={(event) => event.stopPropagation()}
-            >
-              <View className="flex-row items-center justify-between mb-3">
-                <View className="flex-1 pr-2">
-                  <Text className="text-lg font-bold text-gray-900">Employee Breakdown</Text>
-                  <Text className="text-xs text-gray-500 mt-0.5">
-                    {breakdownItem?.inventoryItem.name || ''}
-                  </Text>
-                </View>
-                <TouchableOpacity onPress={() => setBreakdownItem(null)} className="p-2">
-                  <Ionicons name="close" size={20} color={colors.gray[500]} />
-                </TouchableOpacity>
-              </View>
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
+            {breakdownItem?.inventoryItem.name || ''}
+          </Text>
 
-              <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
-                {breakdownRows.length === 0 ? (
-                  <View className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-5 items-center">
-                    <Text className="text-sm text-gray-500 text-center">
-                      No per-employee details are available for this line.
+          <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
+            {breakdownRows.length === 0 ? (
+              <View className="border px-4 py-5 items-center" style={{ borderRadius: radius.control, borderColor: color.hairlineStrong, backgroundColor: color.page }}>
+                <Text className="text-center" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>
+                  No per-employee details are available for this line.
+                </Text>
+              </View>
+            ) : (
+              breakdownRows.map((row, index) => (
+                <View
+                  key={`${row.name}-${index}`}
+                  className={`py-3 ${index < breakdownRows.length - 1 ? 'border-b' : ''}`} style={{ borderColor: index < breakdownRows.length - 1 ? color.hairline : undefined }}
+                >
+                  <View className="flex-row items-center justify-between">
+                    <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>{row.name}</Text>
+                    <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>
+                      {row.quantity} {breakdownItem?.unitType === 'pack'
+                        ? breakdownItem?.inventoryItem.pack_unit
+                        : breakdownItem?.inventoryItem.base_unit}
                     </Text>
                   </View>
-                ) : (
-                  breakdownRows.map((row, index) => (
-                    <View
-                      key={`${row.name}-${index}`}
-                      className={`py-3 ${
-                        index < breakdownRows.length - 1 ? 'border-b border-gray-100' : ''
-                      }`}
-                    >
-                      <View className="flex-row items-center justify-between">
-                        <Text className="text-sm font-semibold text-gray-900">{row.name}</Text>
-                        <Text className="text-sm font-semibold text-gray-700">
-                          {row.quantity} {breakdownItem?.unitType === 'pack'
-                            ? breakdownItem?.inventoryItem.pack_unit
-                            : breakdownItem?.inventoryItem.base_unit}
-                        </Text>
-                      </View>
-                      {row.locations.length > 0 && (
-                        <Text className="text-xs text-gray-500 mt-1">
-                          {row.locations.join(' • ')}
-                        </Text>
-                      )}
-                    </View>
-                  ))
-                )}
-              </ScrollView>
+                  {row.locations.length > 0 && (
+                    <Text className="mt-1" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
+                      {row.locations.join(' • ')}
+                    </Text>
+                  )}
+                </View>
+              ))
+            )}
+          </ScrollView>
+        </Sheet>
 
-              <TouchableOpacity
-                onPress={() => setBreakdownItem(null)}
-                className="mt-3 py-3 rounded-xl bg-gray-100 items-center"
-              >
-                <Text className="text-sm font-semibold text-gray-700">Close</Text>
-              </TouchableOpacity>
-            </Pressable>
-          </Pressable>
-        </Modal>
-
-        <Modal
+        <Sheet
           visible={Boolean(noteEditorItem)}
-          transparent
-          animationType="fade"
-          onRequestClose={() => {
+          title={noteEditorItem?.notes.length ? 'Edit Note' : 'Add Note'}
+          onClose={() => {
             setNoteEditorItem(null);
             setNoteDraft('');
           }}
+          primary={{ label: 'Save Note', onPress: handleSaveItemNote, loading: isSavingNote }}
         >
-          <Pressable
-            className="flex-1 bg-black/35 justify-end"
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
+            {noteEditorItem?.inventoryItem.name || ''}
+          </Text>
+
+          <TextInput
+            value={noteDraft}
+            onChangeText={setNoteDraft}
+            placeholder="Add supplier note..."
+            placeholderTextColor={colors.gray[400]}
+            multiline
+            maxLength={240}
+            textAlignVertical="top"
+            className="min-h-[110px] border px-3 py-3" style={{ borderRadius: radius.control, borderColor: color.hairlineStrong, backgroundColor: color.page, fontSize: ds.fontSize(typeScale.body), color: color.ink }}
+          />
+          <Text className="mt-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}>{noteDraft.length}/240</Text>
+
+          <Button
+            variant="secondary"
+            label="Cancel"
             onPress={() => {
               setNoteEditorItem(null);
               setNoteDraft('');
             }}
-          >
-            <Pressable className="bg-white rounded-t-3xl px-4 pt-4 pb-5" onPress={(event) => event.stopPropagation()}>
-              <View className="flex-row items-center justify-between mb-3">
-                <View className="flex-1 pr-2">
-                  <Text className="text-lg font-bold text-gray-900">
-                    {noteEditorItem?.notes.length ? 'Edit Note' : 'Add Note'}
-                  </Text>
-                  <Text className="text-xs text-gray-500 mt-0.5">
-                    {noteEditorItem?.inventoryItem.name || ''}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => {
-                    setNoteEditorItem(null);
-                    setNoteDraft('');
-                  }}
-                  className="p-2"
-                >
-                  <Ionicons name="close" size={20} color={colors.gray[500]} />
-                </TouchableOpacity>
-              </View>
-
-              <TextInput
-                value={noteDraft}
-                onChangeText={setNoteDraft}
-                placeholder="Add supplier note..."
-                placeholderTextColor={colors.gray[400]}
-                multiline
-                maxLength={240}
-                textAlignVertical="top"
-                className="min-h-[110px] rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-sm text-gray-900"
-              />
-              <Text className="text-xs text-gray-400 mt-2">{noteDraft.length}/240</Text>
-
-              <View className="flex-row mt-4">
-                <TouchableOpacity
-                  onPress={() => {
-                    setNoteEditorItem(null);
-                    setNoteDraft('');
-                  }}
-                  className="flex-1 py-3 rounded-xl bg-gray-100 items-center justify-center mr-2"
-                >
-                  <Text className="text-sm font-semibold text-gray-700">Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleSaveItemNote}
-                  disabled={isSavingNote}
-                  className={`flex-1 py-3 rounded-xl items-center justify-center ${
-                    isSavingNote ? 'bg-primary-300' : 'bg-primary-500'
-                  }`}
-                >
-                  <Text className="text-sm font-semibold text-white">
-                    {isSavingNote ? 'Saving...' : 'Save Note'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </Pressable>
-          </Pressable>
-        </Modal>
+          />
+        </Sheet>
 
         <SupplierPickerBottomSheet
           visible={Boolean(supplierPickerItem)}

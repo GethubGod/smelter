@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   Text,
@@ -33,6 +32,8 @@ import {
   INVENTORY_SELECT,
   mapInventoryRow,
 } from './quickOrderConfig/types';
+import { typeScale, weight } from '@/theme/tokens';
+import { Loading } from '@/components/ui/Loading';
 
 const TAB_LABELS: Record<ConfigTab, string> = {
   aliases: 'Aliases',
@@ -191,8 +192,8 @@ export function QuickOrderConfigScreen() {
               <Text
                 style={{
                   color: colors.statusRed,
-                  fontSize: ds.fontSize(13),
-                  fontWeight: '700',
+                  fontSize: ds.fontSize(typeScale.secondary),
+                  fontWeight: weight.bold,
                 }}
               >
                 {errorMessage}
@@ -233,8 +234,8 @@ export function QuickOrderConfigScreen() {
                     adjustsFontSizeToFit
                     style={{
                       color: isActive ? colors.textOnPrimary : glassColors.textPrimary,
-                      fontSize: ds.fontSize(14),
-                      fontWeight: '700',
+                      fontSize: ds.fontSize(typeScale.body),
+                      fontWeight: weight.bold,
                     }}
                   >
                     {TAB_LABELS[tab]}
@@ -246,7 +247,7 @@ export function QuickOrderConfigScreen() {
 
           {isLoading ? (
             <View style={{ paddingVertical: ds.spacing(60), alignItems: 'center' }}>
-              <ActivityIndicator color={colors.primary} />
+              <Loading size="inline" color={colors.primary} />
             </View>
           ) : activeTab === 'aliases' ? (
             <AliasesTab items={items} setItems={setItems} />

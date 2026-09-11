@@ -32,7 +32,7 @@ import {
   glassHairlineWidth,
   glassRadii,
 } from '@/theme/design';
-import { color, typeScale } from '@/theme/tokens';
+import { color, typeScale, weight } from '@/theme/tokens';
 import {
   CATEGORY_ORDER,
   getCategoryShortLabel,
@@ -128,7 +128,7 @@ const SuggestedItemCard = memo(function SuggestedItemCard({
           <Text
             style={{
               fontSize: ds.fontSize(typeScale.body),
-              fontWeight: '600',
+              fontWeight: weight.semibold,
               color: glassColors.textPrimary,
             }}
             numberOfLines={2}
@@ -196,7 +196,7 @@ const BrowsePreviewRow = memo(function BrowsePreviewRow({
         <Text
           style={{
             fontSize: ds.fontSize(typeScale.body),
-            fontWeight: '600',
+            fontWeight: weight.semibold,
             color: glassColors.textPrimary,
           }}
           numberOfLines={1}
@@ -281,7 +281,7 @@ const QuickActionRow = memo(function QuickActionRow({
         <Text
           style={{
             fontSize: ds.fontSize(typeScale.body),
-            fontWeight: '600',
+            fontWeight: weight.semibold,
             color: glassColors.textPrimary,
           }}
         >
@@ -840,7 +840,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
                 <Text
                   style={{
                     fontSize: ds.fontSize(typeScale.caption),
-                    fontWeight: '600',
+                    fontWeight: weight.semibold,
                     color: glassColors.accent,
                     textTransform: 'uppercase',
                     letterSpacing: 0.8,
@@ -980,7 +980,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
                     <Text
                       style={{
                         fontSize: ds.fontSize(typeScale.title),
-                        fontWeight: '700',
+                        fontWeight: weight.bold,
                         color: glassColors.textPrimary,
                         letterSpacing: -0.25,
                       }}
@@ -1015,7 +1015,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
                   <Text
                     style={{
                       fontSize: ds.fontSize(typeScale.body),
-                      fontWeight: '700',
+                      fontWeight: weight.bold,
                       color: glassColors.textOnPrimary,
                     }}
                   >
@@ -1121,7 +1121,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
                   <Text
                     style={{
                       fontSize: ds.fontSize(typeScale.secondary),
-                      fontWeight: '600',
+                      fontWeight: weight.semibold,
                       color: glassColors.textPrimary,
                     }}
                   >
@@ -1164,7 +1164,7 @@ export function HomeScreenView({ mode }: HomeScreenViewProps) {
                 <Text
                   style={{
                     color: glassColors.accent,
-                    fontWeight: '600',
+                    fontWeight: weight.semibold,
                   }}
                 >
                   View all

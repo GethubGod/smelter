@@ -1,6 +1,7 @@
 import { ScrollView, TouchableOpacity, Text, View } from 'react-native';
 import { getCategoryTint, glassColors, glassHairlineWidth, glassRadii } from '@/theme/design';
 import { getCategoryShortLabel } from '@/features/browse/config';
+import { typeScale, weight } from '@/theme/tokens';
 
 interface CategoryFilterProps {
   categories: string[];
@@ -41,8 +42,8 @@ export function CategoryFilter({
         >
           <Text
             style={{
-              fontWeight: '600',
-              fontSize: 14,
+              fontWeight: weight.semibold,
+              fontSize: typeScale.body,
               textAlign: 'center',
               color:
                 selectedCategory === null
@@ -76,8 +77,8 @@ export function CategoryFilter({
               <Text
                 style={{
                   color: isSelected ? glassColors.textOnPrimary : tint.icon,
-                  fontWeight: '600',
-                  fontSize: 14,
+                  fontWeight: weight.semibold,
+                  fontSize: typeScale.body,
                   textAlign: 'center',
                 }}
                 numberOfLines={1}

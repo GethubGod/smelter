@@ -24,6 +24,7 @@ import {
   normalizeAliasKey,
   startOfWeekIso,
 } from './types';
+import { typeScale, weight } from '@/theme/tokens';
 
 const HIGHLIGHT_THRESHOLD = 3;
 
@@ -149,8 +150,8 @@ export function WeeklyLearningTab({
 
       <Text
         style={{
-          fontSize: ds.fontSize(22),
-          fontWeight: '800',
+          fontSize: ds.fontSize(typeScale.title),
+          fontWeight: weight.bold,
           color: glassColors.textPrimary,
           marginBottom: ds.spacing(12),
         }}
@@ -173,7 +174,7 @@ export function WeeklyLearningTab({
           <Text
             style={{
               color: glassColors.textSecondary,
-              fontSize: ds.fontSize(14),
+              fontSize: ds.fontSize(typeScale.body),
               textAlign: 'center',
               paddingVertical: ds.spacing(40),
             }}
@@ -202,10 +203,10 @@ function StatCard({ value, label }: { value: number; label: string }) {
     >
       <Text
         style={{
-          fontSize: ds.fontSize(34),
-          fontWeight: '800',
+          fontSize: ds.fontSize(typeScale.display),
+          fontWeight: weight.bold,
           color: glassColors.textPrimary,
-          lineHeight: ds.fontSize(40),
+          lineHeight: ds.fontSize(typeScale.display),
         }}
       >
         {value}
@@ -213,9 +214,9 @@ function StatCard({ value, label }: { value: number; label: string }) {
       <Text
         style={{
           marginTop: ds.spacing(4),
-          fontSize: ds.fontSize(13),
+          fontSize: ds.fontSize(typeScale.secondary),
           color: glassColors.textSecondary,
-          fontWeight: '500',
+          fontWeight: weight.semibold,
         }}
       >
         {label}
@@ -263,8 +264,8 @@ function SuggestionCard({ group, saving, onAddAlias, onIgnore }: SuggestionCardP
           <Text
             style={{
               color: pillText,
-              fontSize: ds.fontSize(12),
-              fontWeight: '700',
+              fontSize: ds.fontSize(typeScale.secondary),
+              fontWeight: weight.bold,
             }}
           >
             Corrected {group.count} {group.count === 1 ? 'time' : 'times'}
@@ -286,7 +287,7 @@ function SuggestionCard({ group, saving, onAddAlias, onIgnore }: SuggestionCardP
             style={{
               width: ds.spacing(72),
               color: glassColors.textSecondary,
-              fontSize: ds.fontSize(13),
+              fontSize: ds.fontSize(typeScale.secondary),
             }}
           >
             Typed
@@ -295,8 +296,8 @@ function SuggestionCard({ group, saving, onAddAlias, onIgnore }: SuggestionCardP
             style={{
               flex: 1,
               color: glassColors.textPrimary,
-              fontSize: ds.fontSize(15),
-              fontWeight: '700',
+              fontSize: ds.fontSize(typeScale.body),
+              fontWeight: weight.bold,
             }}
           >
             {group.rawToken}
@@ -307,7 +308,7 @@ function SuggestionCard({ group, saving, onAddAlias, onIgnore }: SuggestionCardP
             style={{
               width: ds.spacing(72),
               color: glassColors.textSecondary,
-              fontSize: ds.fontSize(13),
+              fontSize: ds.fontSize(typeScale.secondary),
             }}
           >
             Fixed to
@@ -316,8 +317,8 @@ function SuggestionCard({ group, saving, onAddAlias, onIgnore }: SuggestionCardP
             style={{
               flex: 1,
               color: glassColors.textPrimary,
-              fontSize: ds.fontSize(15),
-              fontWeight: '700',
+              fontSize: ds.fontSize(typeScale.body),
+              fontWeight: weight.bold,
             }}
           >
             {group.correctedItemName}
@@ -342,8 +343,8 @@ function SuggestionCard({ group, saving, onAddAlias, onIgnore }: SuggestionCardP
           <Text
             style={{
               color: colors.textOnPrimary,
-              fontSize: ds.fontSize(14),
-              fontWeight: '700',
+              fontSize: ds.fontSize(typeScale.body),
+              fontWeight: weight.bold,
             }}
           >
             Add as alias
@@ -367,8 +368,8 @@ function SuggestionCard({ group, saving, onAddAlias, onIgnore }: SuggestionCardP
           <Text
             style={{
               color: glassColors.textPrimary,
-              fontSize: ds.fontSize(14),
-              fontWeight: '700',
+              fontSize: ds.fontSize(typeScale.body),
+              fontWeight: weight.bold,
             }}
           >
             Ignore

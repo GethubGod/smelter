@@ -27,8 +27,8 @@ const ROOT_IGNORES = [
  * list, including every new file, still fails outright.
  *
  * The backlog is not hidden. `npm run lint:drift` turns the rule back on for
- * every one of these files and prints the full count. Today that is 2301
- * violations across 74 files. It was 819 across 115 until the rule learned to
+ * every one of these files and prints the full count. Today that is 79
+ * violations across 12 files. It was 819 across 115 until the rule learned to
  * see numbers passed through the scaling helpers (`ds.fontSize(17)`) and
  * NativeWind utilities (`bg-gray-50`, `text-lg`, `rounded-xl`); those were
  * always drift, they were simply invisible.
@@ -41,87 +41,20 @@ const ROOT_IGNORES = [
 const DRIFT_ALLOWLIST = [
   // app (1 file, 2)
   'app/_layout.tsx',
-  // app/(manager) (12 files, 1253)
-  'app/(manager)/employee-reminders-delivery.tsx',
-  'app/(manager)/employee-reminders-recurring.tsx',
-  'app/(manager)/employee-reminders-settings.tsx',
-  'app/(manager)/employee-reminders.tsx',
-  'app/(manager)/export-fish-order.tsx',
-  'app/(manager)/fulfillment-confirmation.tsx',
-  'app/(manager)/fulfillment-history-detail.tsx',
-  'app/(manager)/fulfillment-history.tsx',
-  'app/(manager)/fulfillment.tsx',
+  // app/(manager) (1 file, 6)
   'app/(manager)/inventory.tsx',
-  'app/(manager)/orders.tsx',
-  'app/(manager)/profile.tsx',
-  // src/components (15 files, 163)
-  'src/components/BrowseCategoryScroller.tsx',
-  'src/components/CategoryFilter.tsx',
-  'src/components/ConfirmLocationBottomSheet.tsx',
-  'src/components/EmptyStateCard.tsx',
-  'src/components/ErrorBoundary.tsx',
-  'src/components/FloatingLocationSelector.tsx',
-  'src/components/HeaderCartButton.tsx',
-  'src/components/IdentityHeader.tsx',
-  'src/components/InventoryItemCard.tsx',
-  'src/components/ItemActionSheet.tsx',
-  'src/components/LocationSelectorButton.tsx',
-  'src/components/OrderCard.tsx',
-  'src/components/QrScannerModal.tsx',
-  'src/components/SectionHeader.tsx',
-  'src/components/StatusFilter.tsx',
-  // src/components/navigation (3 files, 13)
-  'src/components/navigation/FloatingPillTabBar.tsx',
-  'src/components/navigation/TabButton.tsx',
-  'src/components/navigation/tabBarConfig.ts',
-  // src/components/tuna-specialist (3 files, 29)
+  // src/components/tuna-specialist (1 file, 2)
   'src/components/tuna-specialist/ConversationHistory.tsx',
-  'src/components/tuna-specialist/DebugPanel.tsx',
-  'src/components/tuna-specialist/SoundVisualizer.tsx',
   // src/features/browse (2 files, 37)
   'src/features/browse/BrowseInventoryScreenView.tsx',
   'src/features/browse/BrowseItemRow.tsx',
-  // src/features/fulfillment/components (12 files, 121)
-  'src/features/fulfillment/components/FulfillmentConfirmItemRow.tsx',
-  'src/features/fulfillment/components/FulfillmentExpandedSupplierItems.tsx',
-  'src/features/fulfillment/components/FulfillmentHeader.tsx',
-  'src/features/fulfillment/components/FulfillmentOrderLaterCard.tsx',
-  'src/features/fulfillment/components/FulfillmentReminderBanner.tsx',
-  'src/features/fulfillment/components/FulfillmentSupplierCard.tsx',
-  'src/features/fulfillment/components/FulfillmentSupplierSectionLabel.tsx',
-  'src/features/fulfillment/components/FulfillmentSuppliersCard.tsx',
-  'src/features/fulfillment/components/OrderLaterAddToSheet.tsx',
-  'src/features/fulfillment/components/OrderLaterScheduleModal.tsx',
-  'src/features/fulfillment/components/QuantityExportSelector.tsx',
-  'src/features/fulfillment/components/SupplierPickerBottomSheet.tsx',
-  // src/features/fulfillment/sendAll (1 file, 25)
-  'src/features/fulfillment/sendAll/SendAllScreen.tsx',
-  // src/features/inventory (1 file, 36)
-  'src/features/inventory/ManagerInventoryRow.tsx',
-  // src/features/ordering (17 files, 501)
-  'src/features/ordering/ComposerSuggestionPills.tsx',
-  'src/features/ordering/NeedsInputActionButtons.tsx',
-  'src/features/ordering/PreviousQuantitySuggestionCard.tsx',
-  'src/features/ordering/QuantityStepper.tsx',
-  'src/features/ordering/QuickOrderComposerBar.tsx',
-  'src/features/ordering/QuickOrderConfigScreen.tsx',
+  // src/features/ordering (4 files, 8)
   'src/features/ordering/QuickOrderItemEditModal.tsx',
-  'src/features/ordering/QuickOrderItemRow.tsx',
-  'src/features/ordering/QuickOrderListCard.tsx',
   'src/features/ordering/QuickOrderQuantitySheet.tsx',
   'src/features/ordering/QuickOrderReviewQueueScreen.tsx',
-  'src/features/ordering/QuickOrderScreen.tsx',
-  'src/features/ordering/QuickOrderUserMessage.tsx',
-  'src/features/ordering/QuickOrderWelcomeMessage.tsx',
   'src/features/ordering/QuickSearchScreenView.tsx',
-  'src/features/ordering/RollingSpectrogram.tsx',
-  'src/features/ordering/UnitSegmentedControl.tsx',
-  // src/features/ordering/quickOrderConfig (5 files, 99)
-  'src/features/ordering/quickOrderConfig/AliasesTab.tsx',
+  // src/features/ordering/quickOrderConfig (1 file, 2)
   'src/features/ordering/quickOrderConfig/ExampleEditorModal.tsx',
-  'src/features/ordering/quickOrderConfig/ExamplesTab.tsx',
-  'src/features/ordering/quickOrderConfig/ImportOrderHistoryTab.tsx',
-  'src/features/ordering/quickOrderConfig/WeeklyLearningTab.tsx',
   // src/features/settings (1 file, 11)
   'src/features/settings/SupplierContactsScreen.tsx',
   // src/features/smart (1 file, 11)

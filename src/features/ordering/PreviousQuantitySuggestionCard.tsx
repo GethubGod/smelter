@@ -1,10 +1,10 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerSelectionHaptic } from '@/lib/haptics';
 import { colors, quickOrderAccent } from '@/theme/design';
 import type { PreviousQuantitySuggestion } from './quickOrderHistorySuggestions';
 import { formatQuantityWithUnit } from './quickOrderQuantityFlow';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 type PreviousQuantitySuggestionCardProps = {
   suggestion: PreviousQuantitySuggestion;
@@ -42,11 +42,9 @@ function formatSuggestionHeading(suggestion: PreviousQuantitySuggestion): string
  * All styles are inline to avoid NativeWind / StyleSheet.create conflicts.
  */
 export function PreviousQuantitySuggestionCard({ suggestion, onUse, disabled = false }: PreviousQuantitySuggestionCardProps) {
-  const ds = useScaledStyles();
   const heading = formatSuggestionHeading(suggestion);
   const value = formatSuggestionValue(suggestion);
 
-  const cardRadius = Math.max(ds.radius(18), 16);
 
   return (
     <View
@@ -57,12 +55,12 @@ export function PreviousQuantitySuggestionCard({ suggestion, onUse, disabled = f
         alignItems: 'center',
         justifyContent: 'space-between',
         backgroundColor: colors.white,
-        borderRadius: cardRadius,
+        borderRadius: radius.card,
         minHeight: 74,
         paddingVertical: 13,
         paddingLeft: 18,
         paddingRight: 16,
-        shadowColor: '#000000',
+        shadowColor: color.ink,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 6,
@@ -75,9 +73,9 @@ export function PreviousQuantitySuggestionCard({ suggestion, onUse, disabled = f
           numberOfLines={1}
           allowFontScaling={false}
           style={{
-            fontSize: 11,
-            fontWeight: '700',
-            color: '#77777E',
+            fontSize: typeScale.caption,
+            fontWeight: weight.bold,
+            color: color.ink3,
             letterSpacing: 1.4,
             textTransform: 'uppercase',
           }}
@@ -88,8 +86,8 @@ export function PreviousQuantitySuggestionCard({ suggestion, onUse, disabled = f
           numberOfLines={1}
           allowFontScaling={false}
           style={{
-            fontSize: 20,
-            fontWeight: '800',
+            fontSize: typeScale.title,
+            fontWeight: weight.bold,
             color: colors.textPrimary,
             marginTop: 4,
             letterSpacing: 0,
@@ -112,7 +110,7 @@ export function PreviousQuantitySuggestionCard({ suggestion, onUse, disabled = f
         hitSlop={8}
         style={{
           backgroundColor: quickOrderAccent,
-          borderRadius: 999,
+          borderRadius: radius.pill,
           paddingHorizontal: 19,
           paddingVertical: 11,
           minWidth: 98,
@@ -126,8 +124,8 @@ export function PreviousQuantitySuggestionCard({ suggestion, onUse, disabled = f
         <Text
           allowFontScaling={false}
           style={{
-            fontSize: 15,
-            fontWeight: '800',
+            fontSize: typeScale.body,
+            fontWeight: weight.bold,
             color: colors.textOnPrimary,
             letterSpacing: 0,
           }}

@@ -7,8 +7,12 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/constants';
+// Imported from the file, not the barrel: the row is rendered in a list and
+// the barrel would drag ScreenHeader and its safe-area dependency in with it.
+import { StatusPill, type StatusTone } from '@/components/ui/StatusPill';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import type { InventoryWithStock } from '@/lib/api/stock';
+import { color, radius, size, typeScale } from '@/theme/tokens';
 
 export type ManagerInventoryStatus = 'critical' | 'low' | 'good';
 
@@ -43,11 +47,31 @@ const CATEGORY_EMOJI: Record<string, string> = {
   packaging: '📦',
 };
 
-const STATUS_COLORS: Record<ManagerInventoryStatus, string> = {
-  critical: colors.error,
-  low: colors.warning,
-  good: colors.success,
+// Stock state is a status, so it reads as a dot plus a word through
+// StatusPill. Colour alone is unreadable in greyscale and to a colour-blind
+// manager, and the fill bar below repeats the same tone.
+const STATUS_TONE: Record<ManagerInventoryStatus, StatusTone> = {
+  critical: 'cancelled',
+  low: 'submitted',
+  good: 'fulfilled',
 };
+
+const STATUS_LABEL: Record<ManagerInventoryStatus, string> = {
+  critical: 'Critical',
+  low: 'Low',
+  good: 'Good',
+};
+
+const STATUS_COLORS: Record<ManagerInventoryStatus, string> = {
+  critical: color.alert,
+  low: color.warning,
+  good: color.good,
+};
+
+function touchSlop(controlSize: number) {
+  const slop = Math.max(0, Math.ceil((size.touchMin - controlSize) / 2));
+  return { top: slop, bottom: slop, left: slop, right: slop };
+}
 
 function getRelativeTime(timestamp: string | null): string {
   if (!timestamp) return 'Never updated';
@@ -75,6 +99,13 @@ function ManagerInventoryRowInner({
   const statusColor = STATUS_COLORS[item.status];
   const reorderQty = Math.max(item.max_quantity - item.current_quantity, 0);
 
+  // Both reorder controls keep their compact look and reach the 44pt minimum
+  // through hitSlop, the same trade the Button and Chip primitives make.
+  const compactControl = Math.max(36, ds.icon(32));
+  const reorderSlop = touchSlop(compactControl);
+  const listControl = Math.max(32, ds.icon(28));
+  const listSlop = touchSlop(listControl);
+
   const handlePress = useCallback(() => {
     if (isBulkMode) {
       onToggleBulk(item.id);
@@ -99,8 +130,8 @@ function ManagerInventoryRowInner({
     return (
       <TouchableOpacity
         activeOpacity={0.9}
-        className="bg-white border border-gray-100 rounded-2xl overflow-hidden"
-        style={{ marginBottom: ds.spacing(8) }}
+        className="border overflow-hidden"
+        style={{ backgroundColor: color.card, borderColor: color.hairline, borderRadius: radius.card, marginBottom: ds.spacing(8) }}
         onPress={handlePress}
         onLongPress={handleLongPress}
       >
@@ -119,44 +150,37 @@ function ManagerInventoryRowInner({
               style={{ marginRight: ds.spacing(8) }}
             />
           ) : null}
-          <Text style={{ fontSize: ds.fontSize(18), marginRight: ds.spacing(8) }}>
+          <Text style={{ fontSize: ds.fontSize(typeScale.title), marginRight: ds.spacing(8) }}>
             {CATEGORY_EMOJI[item.inventory_item.category] ?? '📦'}
           </Text>
           <View className="flex-1">
             <Text
-              className="font-semibold text-gray-900"
-              style={{ fontSize: ds.fontSize(14) }}
+              className="font-semibold"
+              style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}
               numberOfLines={1}
             >
               {item.inventory_item.name}
             </Text>
-            <Text className="text-gray-500" style={{ fontSize: ds.fontSize(12) }}>
+            <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>
               {item.current_quantity} / {item.max_quantity} {item.unit_type}
             </Text>
           </View>
-          <View className="flex-row items-center">
-            <View
-              className="rounded-full"
-              style={{
-                width: ds.spacing(10),
-                height: ds.spacing(10),
-                backgroundColor: statusColor,
-                marginRight: ds.spacing(8),
-              }}
-            />
+          <View className="flex-row items-center" style={{ gap: ds.spacing(8) }}>
+            <StatusPill status={STATUS_TONE[item.status]} label={STATUS_LABEL[item.status]} />
             {item.status === 'critical' && reorderQty > 0 && !isBulkMode ? (
               <TouchableOpacity
-                className={`rounded-full items-center justify-center border ${added ? 'border-green-500' : 'border-orange-500'}`}
-                style={{
-                  width: Math.max(36, ds.icon(32)),
-                  height: Math.max(36, ds.icon(32)),
-                }}
+                className="items-center justify-center border"
+                accessibilityRole="button"
+                accessibilityLabel={added ? 'Added to reorder' : 'Add to reorder'}
+                hitSlop={reorderSlop}
+                style={{ borderRadius: radius.pill, borderColor: added ? color.accent : color.hairlineStrong, width: compactControl,
+                  height: compactControl }}
                 onPress={handleAddToReorder}
               >
                 <Ionicons
                   name={added ? 'checkmark' : 'add'}
                   size={ds.icon(16)}
-                  color={added ? colors.success : colors.primary[500]}
+                  color={added ? color.accent : color.ink2}
                 />
               </TouchableOpacity>
             ) : null}
@@ -175,16 +199,14 @@ function ManagerInventoryRowInner({
       onLongPress={handleLongPress}
     >
       <View
-        className="bg-white rounded-2xl border border-gray-100"
-        style={{
-          paddingHorizontal: ds.spacing(16),
+        className="border"
+        style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline, paddingHorizontal: ds.spacing(16),
           paddingVertical: ds.spacing(14),
           shadowColor: colors.background,
           shadowOffset: { width: 0, height: 1 },
           shadowOpacity: 0.05,
           shadowRadius: 2,
-          elevation: 1,
-        }}
+          elevation: 1 }}
       >
         <View className="flex-row items-start justify-between">
           <View className="flex-row items-center flex-1" style={{ paddingRight: ds.spacing(8) }}>
@@ -196,50 +218,42 @@ function ManagerInventoryRowInner({
                 style={{ marginRight: ds.spacing(8) }}
               />
             ) : null}
-            <Text style={{ fontSize: ds.fontSize(18), marginRight: ds.spacing(8) }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.title), marginRight: ds.spacing(8) }}>
               {CATEGORY_EMOJI[item.inventory_item.category] ?? '📦'}
             </Text>
             <Text
-              className="font-semibold text-gray-900"
-              style={{ fontSize: ds.fontSize(15) }}
+              className="font-semibold"
+              style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}
               numberOfLines={1}
             >
               {item.inventory_item.name}
             </Text>
           </View>
-          <View
-            className="rounded-full"
-            style={{
-              width: ds.spacing(10),
-              height: ds.spacing(10),
-              backgroundColor: statusColor,
-              marginTop: ds.spacing(4),
-            }}
-          />
+          <StatusPill status={STATUS_TONE[item.status]} label={STATUS_LABEL[item.status]} />
         </View>
 
         <Text
-          className="text-gray-500"
-          style={{ fontSize: ds.fontSize(12), marginTop: ds.spacing(4) }}
+
+          style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(4) }}
         >
           {item.areaLabel} • {item.location.name}
         </Text>
 
         <View style={{ marginTop: ds.spacing(12) }}>
           <View
-            className="rounded-full bg-gray-200 overflow-hidden"
-            style={{ height: ds.spacing(6) }}
+            className="overflow-hidden"
+            style={{ borderRadius: radius.pill, backgroundColor: color.well, height: ds.spacing(6) }}
           >
             <View
-              className="h-full rounded-full"
-              style={{ width: `${Math.round(item.fillPercent)}%`, backgroundColor: statusColor }}
+              className="h-full"
+              style={{ borderRadius: radius.pill, width: `${Math.round(item.fillPercent)}%`, backgroundColor: statusColor }}
             />
           </View>
           <View className="flex-row justify-between" style={{ marginTop: ds.spacing(6) }}>
-            <Text className="text-gray-600" style={{ fontSize: ds.fontSize(12) }}>
+            <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>
               {item.current_quantity} {item.unit_type}
             </Text>
-            <Text className="text-gray-500" style={{ fontSize: ds.fontSize(12) }}>
+            <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>
               Min {item.min_quantity} • Max {item.max_quantity}
             </Text>
           </View>
@@ -249,25 +263,26 @@ function ManagerInventoryRowInner({
           className="flex-row items-center justify-between"
           style={{ marginTop: ds.spacing(10) }}
         >
-          <Text className="text-gray-400" style={{ fontSize: ds.fontSize(11) }}>
+          <Text style={{ color: color.ink3, fontSize: ds.fontSize(typeScale.caption) }}>
             {relativeTime === 'Never updated' ? relativeTime : `Updated ${relativeTime}`}
           </Text>
           {item.status === 'critical' && reorderQty > 0 && !isBulkMode ? (
             <TouchableOpacity
-              className={`rounded-full border ${added ? 'border-green-500' : 'border-orange-500'}`}
-              style={{
-                paddingHorizontal: ds.spacing(12),
+              className="border"
+              accessibilityRole="button"
+              accessibilityLabel={added ? 'Added to reorder' : `Reorder ${reorderQty}`}
+              hitSlop={listSlop}
+              style={{ borderRadius: radius.pill, borderColor: added ? color.accent : color.hairlineStrong, paddingHorizontal: ds.spacing(12),
                 paddingVertical: ds.spacing(6),
-                minHeight: Math.max(32, ds.icon(28)),
-                justifyContent: 'center',
-              }}
+                minHeight: listControl,
+                justifyContent: 'center' }}
               onPress={handleAddToReorder}
             >
               <Text
-                className={`font-semibold ${added ? 'text-green-600' : 'text-orange-600'}`}
-                style={{ fontSize: ds.fontSize(12) }}
+                className="font-semibold"
+                style={{ color: added ? color.accent : color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}
               >
-                {added ? '✓ Added' : `Reorder ${reorderQty}`}
+                {added ? 'Added' : `Reorder ${reorderQty}`}
               </Text>
             </TouchableOpacity>
           ) : null}

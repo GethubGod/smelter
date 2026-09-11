@@ -21,7 +21,7 @@ import {
   glassRadii,
   glassSpacing,
 } from '@/theme/design';
-import { typeScale } from '@/theme/tokens';
+import { typeScale, weight } from '@/theme/tokens';
 
 interface HomeScreenScrollProps {
   children: ReactNode;
@@ -154,7 +154,7 @@ export const HomeModuleCard = memo(function HomeModuleCard({
           <Text
             style={{
               fontSize: ds.fontSize(typeScale.body),
-              fontWeight: '700',
+              fontWeight: weight.bold,
               color: glassColors.textPrimary,
             }}
           >
@@ -165,7 +165,7 @@ export const HomeModuleCard = memo(function HomeModuleCard({
               <Text
                 style={{
                   fontSize: ds.fontSize(typeScale.secondary),
-                  fontWeight: '700',
+                  fontWeight: weight.bold,
                   color: glassColors.accent,
                 }}
               >
@@ -219,7 +219,7 @@ export const HomeModuleState = memo(function HomeModuleState({
         style={{
           marginTop: ds.spacing(12),
           fontSize: ds.fontSize(typeScale.body),
-          fontWeight: '600',
+          fontWeight: weight.semibold,
           color: glassColors.textPrimary,
         }}
       >
@@ -253,7 +253,7 @@ export const HomeModuleState = memo(function HomeModuleState({
           <Text
             style={{
               fontSize: ds.fontSize(typeScale.secondary),
-              fontWeight: '700',
+              fontWeight: weight.bold,
               color: glassColors.textOnPrimary,
             }}
           >

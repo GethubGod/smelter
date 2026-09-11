@@ -7,9 +7,11 @@ import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { colors } from '@/constants';
 import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
+import { Button, ScreenHeader, StatusPill } from '@/components/ui';
 import { useAuthStore, useOrderStore } from '@/store';
 import { supabase } from '@/lib/supabase';
 import { useModuleAccessGuard } from '@/hooks';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 function formatQuantity(value: number): string {
   if (!Number.isFinite(value)) return '0';
@@ -200,20 +202,17 @@ function FulfillmentHistoryDetailScreen() {
 
   if (!isLoading && !pastOrder) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50" edges={['top', 'left', 'right']}>
+      <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }} edges={['top', 'left', 'right']}>
         <ManagerScaleContainer>
-          <View className="bg-white px-4 py-3 border-b border-gray-100 flex-row items-center">
-            <TouchableOpacity
-              onPress={() => router.back()}
-              className="p-2 mr-2"
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="arrow-back" size={20} color={colors.gray[700]} />
-            </TouchableOpacity>
-            <Text className="text-lg font-bold text-gray-900">Past Order</Text>
-          </View>
+          <ScreenHeader
+            title="Past Order"
+            mode="pushed"
+            onBack={() => router.back()}
+            includeSafeArea={false}
+            style={{ backgroundColor: color.card, borderBottomWidth: 1, borderColor: color.hairline }}
+          />
           <View className="flex-1 items-center justify-center px-8">
-            <Text className="text-gray-500 text-base">Order not found.</Text>
+            <Text style={{ color: color.ink2, fontSize: typeScale.body }}>Order not found.</Text>
           </View>
         </ManagerScaleContainer>
       </SafeAreaView>
@@ -221,68 +220,59 @@ function FulfillmentHistoryDetailScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }} edges={['top', 'left', 'right', 'bottom']}>
       <ManagerScaleContainer>
-        <View className="bg-white px-4 py-3 border-b border-gray-100 flex-row items-center">
-          <TouchableOpacity
-            onPress={() => router.back()}
-            className="p-2 mr-2"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="arrow-back" size={20} color={colors.gray[700]} />
-          </TouchableOpacity>
-          <View className="flex-1">
-            <View className="flex-row items-center">
-              <Text className="text-lg font-bold text-gray-900">{supplierLabel}</Text>
-              {pastOrder?.syncStatus === 'pending_sync' && (
-                <View className="ml-2 rounded-full border border-orange-300 bg-orange-100 px-2 py-0.5">
-                  <Text className="text-[10px] font-semibold text-orange-800">Pending sync</Text>
-                </View>
-              )}
-            </View>
-            <Text className="text-xs text-gray-500">
-              {pastOrder ? new Date(pastOrder.createdAt).toLocaleString() : 'Loading...'}
-            </Text>
-          </View>
-        </View>
+        <ScreenHeader
+          title={supplierLabel}
+          subtitle={pastOrder ? new Date(pastOrder.createdAt).toLocaleString() : 'Loading...'}
+          mode="pushed"
+          onBack={() => router.back()}
+          includeSafeArea={false}
+          right={
+            pastOrder?.syncStatus === 'pending_sync' ? (
+              <StatusPill status="submitted" label="Pending sync" />
+            ) : undefined
+          }
+          style={{ backgroundColor: color.card, borderBottomWidth: 1, borderColor: color.hairline }}
+        />
 
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 24 }}>
-          <View className="bg-white rounded-2xl border border-gray-100 p-4 mb-4">
-            <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Summary</Text>
-            <Text className="text-sm text-gray-700">
+          <View className="border p-4 mb-4" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline }}>
+            <Text className="font-semibold uppercase tracking-wide mb-2" style={{ fontSize: typeScale.secondary, color: color.ink2 }}>Summary</Text>
+            <Text style={{ fontSize: typeScale.body, color: color.ink2 }}>
               {(pastOrder?.itemCount ?? items.length)} line
               {(pastOrder?.itemCount ?? items.length) === 1 ? '' : 's'} •{' '}
               {(pastOrder?.remainingCount ?? 0)} remaining • Sent via{' '}
               {pastOrder?.shareMethod === 'copy' ? 'copy' : 'share'}
             </Text>
             {pastOrder?.syncError && (
-              <Text className="text-xs text-orange-700 mt-2">{pastOrder.syncError}</Text>
+              <Text className="mt-2" style={{ fontSize: typeScale.secondary, color: color.warning }}>{pastOrder.syncError}</Text>
             )}
           </View>
 
-          <View className="bg-white rounded-2xl border border-gray-100 p-4 mb-4">
-            <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Items</Text>
+          <View className="border p-4 mb-4" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline }}>
+            <Text className="font-semibold uppercase tracking-wide mb-3" style={{ fontSize: typeScale.secondary, color: color.ink2 }}>Items</Text>
             {items.length === 0 ? (
-              <Text className="text-sm text-gray-500">No item snapshot available.</Text>
+              <Text style={{ fontSize: typeScale.body, color: color.ink2 }}>No item snapshot available.</Text>
             ) : (
               items.map((item, index) => {
                 const locationLabel = item.locationName || item.locationGroup || '';
                 return (
                   <View
                     key={item.id}
-                    className={`py-2.5 ${index < items.length - 1 ? 'border-b border-gray-100' : ''}`}
+                    className={`py-2.5 ${index < items.length - 1 ? 'border-b' : ''}`} style={{ borderColor: index < items.length - 1 ? color.hairline : undefined }}
                   >
                     <View className="flex-row items-center justify-between">
-                      <Text className="text-sm font-medium text-gray-900 flex-1 pr-3">{item.itemName}</Text>
-                      <Text className="text-sm font-semibold text-gray-700">
+                      <Text className="flex-1 pr-3" style={{ fontSize: typeScale.body, fontWeight: weight.semibold, color: color.ink }}>{item.itemName}</Text>
+                      <Text className="font-semibold" style={{ fontSize: typeScale.body, color: color.ink2 }}>
                         {formatQuantity(item.quantity)} {item.unit}
                       </Text>
                     </View>
                     {locationLabel.length > 0 && (
-                      <Text className="text-xs text-gray-500 mt-1">{locationLabel}</Text>
+                      <Text className="mt-1" style={{ fontSize: typeScale.secondary, color: color.ink2 }}>{locationLabel}</Text>
                     )}
                     {item.note && (
-                      <Text className="text-xs text-blue-700 mt-1">Note: {item.note}</Text>
+                      <Text className="mt-1" style={{ fontSize: typeScale.secondary, color: color.accent }}>Note: {item.note}</Text>
                     )}
                   </View>
                 );
@@ -290,51 +280,46 @@ function FulfillmentHistoryDetailScreen() {
             )}
           </View>
 
-          <View className="bg-white rounded-2xl border border-gray-100 p-4 mb-4">
-            <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Message</Text>
-            <View className="bg-gray-50 rounded-xl p-3">
-              <Text className="text-sm text-gray-800 leading-5">
+          <View className="border p-4 mb-4" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline }}>
+            <Text className="font-semibold uppercase tracking-wide mb-3" style={{ fontSize: typeScale.secondary, color: color.ink2 }}>Message</Text>
+            <View className="p-3" style={{ backgroundColor: color.page, borderRadius: radius.control }}>
+              <Text className="leading-5" style={{ fontSize: typeScale.body, color: color.ink }}>
                 {pastOrder?.messageText || 'No message available.'}
               </Text>
             </View>
           </View>
         </ScrollView>
 
-        <View className="bg-white border-t border-gray-200 px-4 py-4">
+        <View className="border-t px-4 py-4" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
+          {/* Secondary, not green: Share Again is the primary action here, and
+              the good tone is a status colour, never an action colour. */}
           {items.length > 0 && (
-            <TouchableOpacity
-              onPress={handleReorder}
+            <Button
+              label={isReordering ? 'Creating Reorder...' : 'Reorder'}
+              variant="secondary"
+              icon="refresh-outline"
+              loading={isReordering}
               disabled={isReordering || !pastOrder}
-              className={`rounded-xl py-3 items-center justify-center flex-row mb-3 ${
-                isReordering ? 'bg-gray-200' : 'bg-green-500'
-              }`}
-            >
-              <Ionicons
-                name="refresh-outline"
-                size={17}
-                color={isReordering ? colors.gray[400] : 'white'}
-              />
-              <Text className={`font-semibold ml-2 ${isReordering ? 'text-gray-400' : 'text-white'}`}>
-                {isReordering ? 'Creating Reorder...' : 'Reorder'}
-              </Text>
-            </TouchableOpacity>
+              onPress={handleReorder}
+              style={{ marginBottom: 12 }}
+            />
           )}
           <View className="flex-row">
             <TouchableOpacity
               onPress={copyMessage}
-              className="flex-1 rounded-xl py-3 items-center justify-center bg-gray-100 mr-3 flex-row"
+              className="flex-1 py-3 items-center justify-center mr-3 flex-row" style={{ borderRadius: radius.control, backgroundColor: color.well }}
               disabled={!pastOrder}
             >
               <Ionicons name="copy-outline" size={17} color={colors.gray[700]} />
-              <Text className="text-gray-700 font-semibold ml-2">Copy</Text>
+              <Text className="font-semibold ml-2" style={{ color: color.ink2 }}>Copy</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={shareMessage}
-              className="flex-1 rounded-xl py-3 items-center justify-center bg-primary-500 flex-row"
+              className="flex-1 py-3 items-center justify-center flex-row" style={{ borderRadius: radius.control, backgroundColor: color.accent }}
               disabled={!pastOrder}
             >
               <Ionicons name="share-social-outline" size={17} color="white" />
-              <Text className="text-white font-semibold ml-2">Share Again</Text>
+              <Text className="font-semibold ml-2" style={{ color: color.onAccent }}>Share Again</Text>
             </TouchableOpacity>
           </View>
         </View>

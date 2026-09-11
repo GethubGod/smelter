@@ -4,6 +4,7 @@ import { triggerImpactHaptic, ImpactFeedbackStyle } from '@/lib/haptics';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { glassColors, glassHairlineWidth } from '@/theme/design';
 import { segmentedControlColors } from '@/theme/segmentedControls';
+import { radius, typeScale, weight } from '@/theme/tokens';
 
 type UnitType = 'base' | 'pack';
 
@@ -36,7 +37,7 @@ function UnitPillToggle({
       <View
         style={{
           minHeight: 42,
-          borderRadius: 13,
+          borderRadius: radius.card,
           borderWidth: glassHairlineWidth,
           borderColor: glassColors.cardBorder,
           backgroundColor: segmentedControlColors.inactiveBackground,
@@ -48,8 +49,8 @@ function UnitPillToggle({
       >
         <Text
           style={{
-            fontSize: ds.fontSize(14),
-            fontWeight: '700',
+            fontSize: ds.fontSize(typeScale.body),
+            fontWeight: weight.bold,
             color: glassColors.textSecondary,
           }}
           numberOfLines={1}
@@ -66,7 +67,7 @@ function UnitPillToggle({
         minHeight: 42,
         flexDirection: 'row',
         alignItems: 'stretch',
-        borderRadius: 13,
+        borderRadius: radius.card,
         backgroundColor: segmentedControlColors.inactiveBackground,
         overflow: 'hidden',
         borderWidth: glassHairlineWidth,
@@ -97,8 +98,8 @@ function UnitPillToggle({
           >
             <Text
               style={{
-                fontSize: ds.fontSize(14),
-                fontWeight: '700',
+                fontSize: ds.fontSize(typeScale.body),
+                fontWeight: weight.bold,
                 color: isActive
                   ? segmentedControlColors.activeText
                   : segmentedControlColors.inactiveText,

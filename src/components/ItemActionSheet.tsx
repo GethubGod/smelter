@@ -5,16 +5,16 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radii ,
+import { colors,
   glassColors,
   glassHairlineWidth,
   glassRadii,
 } from '@/theme/design';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { BottomSheetShell } from './BottomSheetShell';
+import { Sheet } from './ui/Sheet';
 import { GlassSurface } from './ui/GlassSurface';
+import { color, typeScale, weight } from '@/theme/tokens';
 
 export interface ItemActionSheetItem {
   id: string;
@@ -52,42 +52,26 @@ export function ItemActionSheet({
   showCancelAction = true,
 }: ItemActionSheetProps) {
   const ds = useScaledStyles();
-  const insets = useSafeAreaInsets();
   const hasActions = sections.some((section) => section.items.length > 0);
 
   return (
-    <BottomSheetShell
+    <Sheet
       visible={visible}
+      title={title}
       onClose={onClose}
-      bottomPadding={Math.max(ds.spacing(10), insets.bottom + ds.spacing(8))}
+      primary={
+        showCancelAction
+          ? { label: cancelLabel, onPress: onClose, variant: 'secondary' }
+          : undefined
+      }
     >
-      <View style={{ paddingHorizontal: ds.spacing(6), paddingBottom: ds.spacing(12) }}>
-        <View
+      {subtitle ? (
+        <GlassSurface
+          intensity="subtle"
           style={{
-            flexDirection: 'row',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
+            borderRadius: glassRadii.surface,
           }}
         >
-          <View style={{ flex: 1, paddingRight: ds.spacing(12) }}>
-            <Text
-              style={{
-                fontSize: ds.fontSize(20),
-                fontWeight: '700',
-                color: glassColors.textPrimary,
-                letterSpacing: -0.3,
-              }}
-            >
-              {title}
-            </Text>
-            {subtitle ? (
-              <GlassSurface
-                intensity="subtle"
-                style={{
-                  marginTop: ds.spacing(12),
-                  borderRadius: glassRadii.surface,
-                }}
-              >
                 <View
                   style={{
                     flexDirection: 'row',
@@ -111,8 +95,8 @@ export function ItemActionSheet({
                   <View style={{ flex: 1, marginLeft: ds.spacing(12) }}>
                     <Text
                       style={{
-                        fontSize: ds.fontSize(11),
-                        fontWeight: '700',
+                        fontSize: ds.fontSize(typeScale.caption),
+                        fontWeight: weight.bold,
                         letterSpacing: 0.7,
                         textTransform: 'uppercase',
                         color: glassColors.textSecondary,
@@ -123,39 +107,17 @@ export function ItemActionSheet({
                     <Text
                       style={{
                         marginTop: ds.spacing(4),
-                        fontSize: ds.fontSize(14),
+                        fontSize: ds.fontSize(typeScale.body),
                         color: glassColors.textPrimary,
-                        lineHeight: ds.fontSize(19),
+                        lineHeight: ds.fontSize(typeScale.title),
                       }}
                     >
                       {subtitle}
                     </Text>
                   </View>
                 </View>
-              </GlassSurface>
-            ) : null}
-          </View>
-
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Close actions"
-            onPress={onClose}
-            activeOpacity={0.8}
-            style={{
-              width: ds.icon(36),
-              height: ds.icon(36),
-              borderRadius: ds.icon(18),
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: glassColors.mediumFill,
-              borderWidth: glassHairlineWidth,
-              borderColor: glassColors.cardBorder,
-            }}
-          >
-            <Ionicons name="close" size={ds.icon(18)} color={glassColors.textPrimary} />
-          </TouchableOpacity>
-        </View>
-      </View>
+        </GlassSurface>
+      ) : null}
 
       <ScrollView
         style={{ maxHeight: ds.spacing(432) }}
@@ -172,10 +134,10 @@ export function ItemActionSheet({
                 {section.title ? (
                   <Text
                     style={{
-                      fontSize: ds.fontSize(11),
+                      fontSize: ds.fontSize(typeScale.caption),
                       marginBottom: ds.spacing(8),
                       marginLeft: ds.spacing(6),
-                      fontWeight: '700',
+                      fontWeight: weight.bold,
                       letterSpacing: 0.8,
                       textTransform: 'uppercase',
                       color: glassColors.textSecondary,
@@ -207,7 +169,7 @@ export function ItemActionSheet({
                         style={{
                           borderRadius: glassRadii.button,
                           borderWidth: 1,
-                          borderColor: item.destructive ? 'rgba(239, 68, 68, 0.4)' : glassColors.cardBorder,
+                          borderColor: item.destructive ? color.alert : glassColors.cardBorder,
                           overflow: 'hidden',
                         }}
                       >
@@ -235,7 +197,7 @@ export function ItemActionSheet({
                                 backgroundColor: iconBackground,
                                 borderWidth: glassHairlineWidth,
                                 borderColor: item.destructive
-                                  ? 'rgba(163, 45, 45, 0.12)'
+                                  ? color.alertBg
                                   : glassColors.cardBorder,
                               }}
                             >
@@ -247,8 +209,8 @@ export function ItemActionSheet({
                           <View style={{ flex: 1, marginLeft: ds.spacing(12), paddingTop: ds.spacing(2) }}>
                             <Text
                               style={{
-                                fontSize: ds.fontSize(15),
-                                fontWeight: '600',
+                                fontSize: ds.fontSize(typeScale.body),
+                                fontWeight: weight.semibold,
                                 color: labelColor,
                               }}
                             >
@@ -257,10 +219,10 @@ export function ItemActionSheet({
                             {item.detail ? (
                               <Text
                                 style={{
-                                  fontSize: ds.fontSize(13),
+                                  fontSize: ds.fontSize(typeScale.secondary),
                                   marginTop: ds.spacing(4),
                                   color: glassColors.textSecondary,
-                                  lineHeight: ds.fontSize(18),
+                                  lineHeight: ds.fontSize(typeScale.title),
                                 }}
                               >
                                 {item.detail}
@@ -295,7 +257,7 @@ export function ItemActionSheet({
           >
             <Text
               style={{
-                fontSize: ds.fontSize(14),
+                fontSize: ds.fontSize(typeScale.body),
                 color: colors.textSecondary,
                 textAlign: 'center',
               }}
@@ -305,38 +267,7 @@ export function ItemActionSheet({
           </GlassSurface>
         )}
 
-        {showCancelAction ? (
-          <GlassSurface
-            intensity="medium"
-            style={{
-              marginTop: ds.spacing(12),
-              borderRadius: radii.submitButton,
-            }}
-          >
-            <TouchableOpacity
-              onPress={onClose}
-              activeOpacity={0.8}
-              style={{
-                minHeight: ds.buttonH,
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingHorizontal: ds.spacing(16),
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: ds.fontSize(15),
-                  fontWeight: '600',
-                  color: colors.textPrimary,
-                  textAlign: 'center',
-                }}
-              >
-                {cancelLabel}
-              </Text>
-            </TouchableOpacity>
-          </GlassSurface>
-        ) : null}
       </ScrollView>
-    </BottomSheetShell>
+    </Sheet>
   );
 }

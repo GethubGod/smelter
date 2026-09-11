@@ -7,12 +7,13 @@ import {
   glassRadii,
 } from '@/theme/design';
 import type { FulfillmentSupplierPreviewItem } from './FulfillmentSupplierCard';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 const BADGE_PALETTE = [
-  { background: '#EAF1FF', text: '#5A84EF' },
-  { background: '#FFF1DE', text: '#D38A1E' },
-  { background: '#EEF8EF', text: '#41A868' },
-  { background: '#F3ECFB', text: '#8B5FB6' },
+  { background: color.well, text: color.ink2 },
+  { background: color.well, text: color.ink2 },
+  { background: color.well, text: color.ink2 },
+  { background: color.well, text: color.ink2 },
 ] as const;
 
 interface FulfillmentExpandedSupplierItemsProps {
@@ -40,10 +41,10 @@ export function FulfillmentExpandedSupplierItems({
             disabled={!item.onPress}
             activeOpacity={0.96}
             style={{
-              backgroundColor: '#FFFFFF',
-              borderRadius: 12,
+              backgroundColor: color.card,
+              borderRadius: radius.control,
               borderWidth: glassHairlineWidth,
-              borderColor: '#EFEFEF',
+              borderColor: color.hairline,
               paddingHorizontal: ds.spacing(16),
               paddingVertical: ds.spacing(16),
               marginTop: index === 0 ? 0 : ds.spacing(10),
@@ -56,8 +57,8 @@ export function FulfillmentExpandedSupplierItems({
                     numberOfLines={1}
                     style={{
                       color: glassColors.textPrimary,
-                      fontSize: ds.fontSize(15),
-                      fontWeight: '700',
+                      fontSize: ds.fontSize(typeScale.body),
+                      fontWeight: weight.bold,
                       flexShrink: 1,
                     }}
                   >
@@ -66,8 +67,8 @@ export function FulfillmentExpandedSupplierItems({
                   <Text
                     style={{
                       color: glassColors.textSecondary,
-                      fontSize: ds.fontSize(13),
-                      fontWeight: '500',
+                      fontSize: ds.fontSize(typeScale.secondary),
+                      fontWeight: weight.semibold,
                       marginLeft: ds.spacing(6),
                     }}
                   >
@@ -79,7 +80,7 @@ export function FulfillmentExpandedSupplierItems({
                   <Text
                     style={{
                       color: glassColors.textSecondary,
-                      fontSize: ds.fontSize(12),
+                      fontSize: ds.fontSize(typeScale.secondary),
                       marginTop: ds.spacing(6),
                     }}
                   >
@@ -94,7 +95,7 @@ export function FulfillmentExpandedSupplierItems({
                     minWidth: 22,
                     height: 22,
                     paddingHorizontal: ds.spacing(6),
-                    borderRadius: 11,
+                    borderRadius: radius.control,
                     backgroundColor: palette.background,
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -103,8 +104,8 @@ export function FulfillmentExpandedSupplierItems({
                   <Text
                     style={{
                       color: palette.text,
-                      fontSize: ds.fontSize(9),
-                      fontWeight: '700',
+                      fontSize: ds.fontSize(typeScale.caption),
+                      fontWeight: weight.bold,
                     }}
                   >
                     {item.badgeLabel}
@@ -129,7 +130,7 @@ export function FulfillmentExpandedSupplierItems({
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
-          shadowColor: 'rgba(15, 23, 42, 0.22)',
+          shadowColor: color.ink,
           shadowOpacity: 0.12,
           shadowRadius: 12,
           shadowOffset: { width: 0, height: 6 },
@@ -139,8 +140,8 @@ export function FulfillmentExpandedSupplierItems({
         <Text
           style={{
             color: glassColors.textOnPrimary,
-            fontSize: ds.fontSize(17),
-            fontWeight: '700',
+            fontSize: ds.fontSize(typeScale.title),
+            fontWeight: weight.bold,
           }}
         >
           {orderLabel}

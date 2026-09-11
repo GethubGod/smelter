@@ -18,6 +18,7 @@ import { colors } from '@/constants';
 import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
 import { EmptyStateCard } from '@/components/EmptyStateCard';
 import { parseFishOrderExportParams, type FishOrderExport, type FishOrderExportParams, type FishItemOrder, type LocationQuantity } from '@/features/fulfillment/fishOrderExportParams';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 export default function ExportFishOrderScreen() {
   const params = useLocalSearchParams<FishOrderExportParams>();
@@ -27,7 +28,7 @@ export default function ExportFishOrderScreen() {
     return (
       <>
         <Stack.Screen options={{ headerShown: true, title: 'Fish Order', headerBackTitle: 'Back' }} />
-        <SafeAreaView className="flex-1 bg-gray-50" edges={['bottom']}>
+        <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }} edges={['bottom']}>
           <ManagerScaleContainer>
             <View style={{ padding: 16 }}>
               <EmptyStateCard
@@ -182,36 +183,34 @@ function FishOrderExportEditor({ order }: { order: FishOrderExport }) {
           headerBackTitle: 'Back',
           headerTintColor: colors.primary[500],
           headerStyle: { backgroundColor: colors.white },
-          headerTitleStyle: { color: colors.text, fontWeight: '600' },
+          headerTitleStyle: { color: colors.text, fontWeight: weight.semibold },
         }}
       />
-      <SafeAreaView className="flex-1 bg-gray-50" edges={['bottom']}>
+      <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }} edges={['bottom']}>
         <ManagerScaleContainer>
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
           {/* Header */}
           <View
-            className="bg-white rounded-2xl p-4 mb-4 border border-gray-200"
-            style={{
-              shadowColor: colors.background,
+            className="p-4 mb-4 border"
+            style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairlineStrong, shadowColor: colors.background,
               shadowOffset: { width: 0, height: 1 },
               shadowOpacity: 0.05,
               shadowRadius: 4,
-              elevation: 2,
-            }}
+              elevation: 2 }}
           >
             {isMultiItemFormat ? (
               <>
                 <View className="flex-row items-center mb-2">
-                  <View className="bg-primary-500 w-10 h-10 rounded-full items-center justify-center mr-3">
-                    <Text className="text-white font-bold">{locationShortCode}</Text>
+                  <View className="w-10 h-10 items-center justify-center mr-3" style={{ backgroundColor: color.accent, borderRadius: radius.pill }}>
+                    <Text className="font-bold" style={{ color: color.onAccent }}>{locationShortCode}</Text>
                   </View>
-                  <Text className="text-xl font-bold text-gray-900 flex-1">
+                  <Text className="font-bold flex-1" style={{ fontSize: typeScale.title, color: color.ink }}>
                     {locationName}
                   </Text>
                 </View>
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-gray-500">Fish Items</Text>
-                  <Text className="text-2xl font-bold text-primary-600">
+                  <Text style={{ color: color.ink2 }}>Fish Items</Text>
+                  <Text className="font-bold" style={{ fontSize: typeScale.display, color: color.accent }}>
                     {fishItems.length} items
                   </Text>
                 </View>
@@ -219,14 +218,14 @@ function FishOrderExportEditor({ order }: { order: FishOrderExport }) {
             ) : (
               <>
                 <View className="flex-row items-center mb-2">
-                  <Text className="text-2xl mr-2">🐟</Text>
-                  <Text className="text-xl font-bold text-gray-900 flex-1">
+                  <Text className="mr-2" style={{ fontSize: typeScale.display }}>🐟</Text>
+                  <Text className="font-bold flex-1" style={{ fontSize: typeScale.title, color: color.ink }}>
                     {legacyItemName}
                   </Text>
                 </View>
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-gray-500">Total Order</Text>
-                  <Text className="text-2xl font-bold text-primary-600">
+                  <Text style={{ color: color.ink2 }}>Total Order</Text>
+                  <Text className="font-bold" style={{ fontSize: typeScale.display, color: color.accent }}>
                     {totalQuantity} {legacyItemUnit}
                   </Text>
                 </View>
@@ -235,7 +234,7 @@ function FishOrderExportEditor({ order }: { order: FishOrderExport }) {
           </View>
 
           {/* Editable Quantities */}
-          <Text className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 px-1">
+          <Text className="font-semibold uppercase tracking-wide mb-3 px-1" style={{ fontSize: typeScale.body, color: color.ink2 }}>
             {isMultiItemFormat ? 'Adjust Quantities' : 'Adjust Quantities by Location'}
           </Text>
 
@@ -244,26 +243,24 @@ function FishOrderExportEditor({ order }: { order: FishOrderExport }) {
             fishItems.map((item, index) => (
               <View
                 key={item.itemId}
-                className="bg-white rounded-xl p-4 mb-3 border border-gray-200 flex-row items-center"
-                style={{
-                  shadowColor: colors.background,
+                className="p-4 mb-3 border flex-row items-center"
+                style={{ backgroundColor: color.card, borderRadius: radius.control, borderColor: color.hairlineStrong, shadowColor: colors.background,
                   shadowOffset: { width: 0, height: 1 },
                   shadowOpacity: 0.05,
                   shadowRadius: 4,
-                  elevation: 2,
-                }}
+                  elevation: 2 }}
               >
                 {/* Item Info */}
-                <Text className="text-lg mr-2">🐟</Text>
+                <Text className="mr-2" style={{ fontSize: typeScale.title }}>🐟</Text>
                 <View className="flex-1">
-                  <Text className="font-semibold text-gray-900">{item.itemName}</Text>
-                  <Text className="text-sm text-gray-500">{item.unit}</Text>
+                  <Text className="font-semibold" style={{ color: color.ink }}>{item.itemName}</Text>
+                  <Text style={{ fontSize: typeScale.body, color: color.ink2 }}>{item.unit}</Text>
                 </View>
 
                 {/* Quantity Controls */}
                 <View className="flex-row items-center">
                   <TouchableOpacity
-                    className="w-10 h-10 bg-gray-100 rounded-l-xl items-center justify-center"
+                    className="w-10 h-10 items-center justify-center" style={{ backgroundColor: color.well, borderTopLeftRadius: radius.control, borderBottomLeftRadius: radius.control }}
                     onPress={() => updateFishItemQuantity(index, item.quantity - 1)}
                     activeOpacity={0.7}
                   >
@@ -271,7 +268,7 @@ function FishOrderExportEditor({ order }: { order: FishOrderExport }) {
                   </TouchableOpacity>
 
                   <TextInput
-                    className="w-16 h-10 bg-gray-50 text-center text-lg font-bold text-gray-900"
+                    className="w-16 h-10 text-center font-bold" style={{ backgroundColor: color.page, fontSize: typeScale.title, color: color.ink }}
                     value={item.quantity.toString()}
                     onChangeText={(text) => {
                       const num = parseInt(text, 10);
@@ -284,7 +281,7 @@ function FishOrderExportEditor({ order }: { order: FishOrderExport }) {
                   />
 
                   <TouchableOpacity
-                    className="w-10 h-10 bg-gray-100 rounded-r-xl items-center justify-center"
+                    className="w-10 h-10 items-center justify-center" style={{ backgroundColor: color.well, borderTopRightRadius: radius.control, borderBottomRightRadius: radius.control }}
                     onPress={() => updateFishItemQuantity(index, item.quantity + 1)}
                     activeOpacity={0.7}
                   >
@@ -298,25 +295,23 @@ function FishOrderExportEditor({ order }: { order: FishOrderExport }) {
             locationQuantities.map((loc, index) => (
               <View
                 key={index}
-                className="bg-white rounded-xl p-4 mb-3 border border-gray-200 flex-row items-center"
-                style={{
-                  shadowColor: colors.background,
+                className="p-4 mb-3 border flex-row items-center"
+                style={{ backgroundColor: color.card, borderRadius: radius.control, borderColor: color.hairlineStrong, shadowColor: colors.background,
                   shadowOffset: { width: 0, height: 1 },
                   shadowOpacity: 0.05,
                   shadowRadius: 4,
-                  elevation: 2,
-                }}
+                  elevation: 2 }}
               >
                 {/* Location Info */}
                 <View className="flex-1">
-                  <Text className="font-semibold text-gray-900">{loc.name}</Text>
-                  <Text className="text-sm text-gray-500">{loc.shortCode}</Text>
+                  <Text className="font-semibold" style={{ color: color.ink }}>{loc.name}</Text>
+                  <Text style={{ fontSize: typeScale.body, color: color.ink2 }}>{loc.shortCode}</Text>
                 </View>
 
                 {/* Quantity Controls */}
                 <View className="flex-row items-center">
                   <TouchableOpacity
-                    className="w-10 h-10 bg-gray-100 rounded-l-xl items-center justify-center"
+                    className="w-10 h-10 items-center justify-center" style={{ backgroundColor: color.well, borderTopLeftRadius: radius.control, borderBottomLeftRadius: radius.control }}
                     onPress={() => updateQuantity(index, loc.quantity - 1)}
                     activeOpacity={0.7}
                   >
@@ -324,7 +319,7 @@ function FishOrderExportEditor({ order }: { order: FishOrderExport }) {
                   </TouchableOpacity>
 
                   <TextInput
-                    className="w-16 h-10 bg-gray-50 text-center text-lg font-bold text-gray-900"
+                    className="w-16 h-10 text-center font-bold" style={{ backgroundColor: color.page, fontSize: typeScale.title, color: color.ink }}
                     value={loc.quantity.toString()}
                     onChangeText={(text) => {
                       const num = parseInt(text, 10);
@@ -337,7 +332,7 @@ function FishOrderExportEditor({ order }: { order: FishOrderExport }) {
                   />
 
                   <TouchableOpacity
-                    className="w-10 h-10 bg-gray-100 rounded-r-xl items-center justify-center"
+                    className="w-10 h-10 items-center justify-center" style={{ backgroundColor: color.well, borderTopRightRadius: radius.control, borderBottomRightRadius: radius.control }}
                     onPress={() => updateQuantity(index, loc.quantity + 1)}
                     activeOpacity={0.7}
                   >
@@ -346,59 +341,57 @@ function FishOrderExportEditor({ order }: { order: FishOrderExport }) {
                 </View>
 
                 {/* Unit Label */}
-                <Text className="text-sm text-gray-500 ml-2 w-12">{legacyItemUnit}</Text>
+                <Text className="ml-2 w-12" style={{ fontSize: typeScale.body, color: color.ink2 }}>{legacyItemUnit}</Text>
               </View>
             ))
           )}
 
           {/* Message Preview */}
-          <Text className="text-sm font-semibold text-gray-500 uppercase tracking-wide mt-4 mb-3 px-1">
+          <Text className="font-semibold uppercase tracking-wide mt-4 mb-3 px-1" style={{ fontSize: typeScale.body, color: color.ink2 }}>
             Message Preview
           </Text>
 
           <View
-            className="bg-white rounded-xl p-4 border border-gray-200"
-            style={{
-              shadowColor: colors.background,
+            className="p-4 border"
+            style={{ backgroundColor: color.card, borderRadius: radius.control, borderColor: color.hairlineStrong, shadowColor: colors.background,
               shadowOffset: { width: 0, height: 1 },
               shadowOpacity: 0.05,
               shadowRadius: 4,
-              elevation: 2,
-            }}
+              elevation: 2 }}
           >
-            <Text className="text-gray-700 text-sm leading-6 font-mono">
+            <Text className="leading-6 font-mono" style={{ color: color.ink2, fontSize: typeScale.body }}>
               {canExport ? messageText : 'Set a quantity greater than zero before exporting.'}
             </Text>
           </View>
         </ScrollView>
 
         {/* Bottom Action Buttons */}
-        <View className="bg-white border-t border-gray-200 px-4 py-4">
+        <View className="border-t px-4 py-4" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
           <View className="flex-row space-x-3">
             {/* Copy to Clipboard */}
             <TouchableOpacity
-              className="flex-1 bg-gray-100 rounded-xl py-4 flex-row items-center justify-center"
+              className="flex-1 py-4 flex-row items-center justify-center"
               disabled={!canExport}
               accessibilityState={{ disabled: !canExport }}
-              style={{ opacity: canExport ? 1 : 0.5 }}
+              style={{ backgroundColor: color.well, borderRadius: radius.control, opacity: canExport ? 1 : 0.5 }}
               onPress={handleCopyToClipboard}
               activeOpacity={0.8}
             >
               <Ionicons name="copy-outline" size={20} color={colors.gray[700]} />
-              <Text className="text-gray-700 font-semibold ml-2">Copy</Text>
+              <Text className="font-semibold ml-2" style={{ color: color.ink2 }}>Copy</Text>
             </TouchableOpacity>
 
             {/* Share */}
             <TouchableOpacity
-              className="flex-1 bg-primary-500 rounded-xl py-4 flex-row items-center justify-center"
+              className="flex-1 py-4 flex-row items-center justify-center"
               disabled={!canExport}
               accessibilityState={{ disabled: !canExport }}
-              style={{ opacity: canExport ? 1 : 0.5 }}
+              style={{ backgroundColor: color.accent, borderRadius: radius.control, opacity: canExport ? 1 : 0.5 }}
               onPress={handleShare}
               activeOpacity={0.8}
             >
               <Ionicons name="share-outline" size={20} color="white" />
-              <Text className="text-white font-semibold ml-2">Share</Text>
+              <Text className="font-semibold ml-2" style={{ color: color.onAccent }}>Share</Text>
             </TouchableOpacity>
           </View>
         </View>

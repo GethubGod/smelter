@@ -18,7 +18,8 @@ import * as SMS from 'expo-sms';
 import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore, useOrderStore, useSettingsStore } from '@/store';
 import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
-import { GlassSurface, LoadingIndicator, StackScreenHeader } from '@/components';
+import { GlassSurface, StackScreenHeader } from '@/components';
+import { Loading } from '@/components/ui';
 import { buildSupplierConfirmationData } from '@/services/fulfillmentDataSource';
 import type {
   ConfirmationRegularItemData,
@@ -61,6 +62,7 @@ import {
   glassSpacing,
 } from '@/theme/design';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
+import { color, typeScale, weight } from '@/theme/tokens';
 
 interface SendAllCard {
   supplierId: string;
@@ -664,8 +666,8 @@ export function SendAllScreen() {
       <Text
         style={{
           marginLeft: ds.spacing(6),
-          fontSize: ds.fontSize(13),
-          fontWeight: '600',
+          fontSize: ds.fontSize(typeScale.secondary),
+          fontWeight: weight.semibold,
           color: glassColors.textPrimary,
         }}
       >
@@ -692,11 +694,11 @@ export function SendAllScreen() {
 
         {isLoading ? (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <LoadingIndicator size="small" color={glassColors.accent} />
+            <Loading size="inline" color={glassColors.accent} label="Loading send all" />
             <Text
               style={{
                 marginTop: ds.spacing(12),
-                fontSize: ds.fontSize(13),
+                fontSize: ds.fontSize(typeScale.secondary),
                 color: glassColors.textSecondary,
               }}
             >
@@ -709,7 +711,7 @@ export function SendAllScreen() {
             <Text
               style={{
                 marginTop: ds.spacing(10),
-                fontSize: ds.fontSize(14),
+                fontSize: ds.fontSize(typeScale.body),
                 color: glassColors.textSecondary,
                 textAlign: 'center',
               }}
@@ -723,8 +725,8 @@ export function SendAllScreen() {
             <Text
               style={{
                 marginTop: ds.spacing(10),
-                fontSize: ds.fontSize(15),
-                fontWeight: '600',
+                fontSize: ds.fontSize(typeScale.body),
+                fontWeight: weight.semibold,
                 color: glassColors.textPrimary,
                 textAlign: 'center',
               }}
@@ -734,7 +736,7 @@ export function SendAllScreen() {
             <Text
               style={{
                 marginTop: ds.spacing(6),
-                fontSize: ds.fontSize(13),
+                fontSize: ds.fontSize(typeScale.secondary),
                 color: glassColors.textSecondary,
                 textAlign: 'center',
               }}
@@ -763,8 +765,8 @@ export function SendAllScreen() {
                 <Text
                   style={{
                     flex: 1,
-                    fontSize: ds.fontSize(18),
-                    fontWeight: '700',
+                    fontSize: ds.fontSize(typeScale.title),
+                    fontWeight: weight.bold,
                     color: glassColors.textPrimary,
                     letterSpacing: -0.3,
                   }}
@@ -792,8 +794,8 @@ export function SendAllScreen() {
                   <Text
                     style={{
                       marginLeft: ds.spacing(5),
-                      fontSize: ds.fontSize(11),
-                      fontWeight: '700',
+                      fontSize: ds.fontSize(typeScale.caption),
+                      fontWeight: weight.bold,
                       color: glassColors.accent,
                     }}
                   >
@@ -806,7 +808,7 @@ export function SendAllScreen() {
                 <Text
                   style={{
                     marginTop: ds.spacing(4),
-                    fontSize: ds.fontSize(12),
+                    fontSize: ds.fontSize(typeScale.secondary),
                     color: glassColors.textSecondary,
                   }}
                 >
@@ -817,7 +819,7 @@ export function SendAllScreen() {
                 <Text
                   style={{
                     marginTop: ds.spacing(4),
-                    fontSize: ds.fontSize(12),
+                    fontSize: ds.fontSize(typeScale.secondary),
                     color: glassColors.textSecondary,
                   }}
                 >
@@ -840,8 +842,8 @@ export function SendAllScreen() {
                 <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false}>
                   <Text
                     style={{
-                      fontSize: ds.fontSize(13),
-                      lineHeight: ds.fontSize(19),
+                      fontSize: ds.fontSize(typeScale.secondary),
+                      lineHeight: ds.fontSize(typeScale.title),
                       color: glassColors.textPrimary,
                     }}
                   >
@@ -855,17 +857,17 @@ export function SendAllScreen() {
                   style={{
                     marginTop: ds.spacing(12),
                     borderRadius: glassRadii.button,
-                    backgroundColor: '#FFF7E6',
+                    backgroundColor: color.warningBg,
                     borderWidth: glassHairlineWidth,
-                    borderColor: '#F5D9A8',
+                    borderColor: color.warning,
                     paddingHorizontal: ds.spacing(12),
                     paddingVertical: ds.spacing(10),
                   }}
                 >
-                  <Text style={{ fontSize: ds.fontSize(13), fontWeight: '600', color: glassColors.warningText }}>
+                  <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: glassColors.warningText }}>
                     {activeUnresolvedCount} remaining item{activeUnresolvedCount === 1 ? '' : 's'} need a final quantity
                   </Text>
-                  <Text style={{ marginTop: ds.spacing(3), fontSize: ds.fontSize(12), color: glassColors.textSecondary }}>
+                  <Text style={{ marginTop: ds.spacing(3), fontSize: ds.fontSize(typeScale.secondary), color: glassColors.textSecondary }}>
                     Review this order to set quantities before sending.
                   </Text>
                 </View>
@@ -886,8 +888,8 @@ export function SendAllScreen() {
                   >
                     <Text
                       style={{
-                        fontSize: ds.fontSize(13),
-                        fontWeight: '600',
+                        fontSize: ds.fontSize(typeScale.secondary),
+                        fontWeight: weight.semibold,
                         color: glassColors.dangerText,
                       }}
                     >
@@ -896,7 +898,7 @@ export function SendAllScreen() {
                     <Text
                       style={{
                         marginTop: ds.spacing(3),
-                        fontSize: ds.fontSize(12),
+                        fontSize: ds.fontSize(typeScale.secondary),
                         color: glassColors.textSecondary,
                       }}
                     >
@@ -921,8 +923,8 @@ export function SendAllScreen() {
                     <Text
                       style={{
                         marginLeft: ds.spacing(8),
-                        fontSize: ds.fontSize(15),
-                        fontWeight: '700',
+                        fontSize: ds.fontSize(typeScale.body),
+                        fontWeight: weight.bold,
                         color: glassColors.textOnPrimary,
                       }}
                     >
@@ -948,8 +950,8 @@ export function SendAllScreen() {
                   <Text
                     style={{
                       marginLeft: ds.spacing(8),
-                      fontSize: ds.fontSize(15),
-                      fontWeight: '700',
+                      fontSize: ds.fontSize(typeScale.body),
+                      fontWeight: weight.bold,
                       color: glassColors.textOnPrimary,
                     }}
                   >
@@ -976,8 +978,8 @@ export function SendAllScreen() {
                   <Text
                     style={{
                       marginLeft: ds.spacing(8),
-                      fontSize: ds.fontSize(15),
-                      fontWeight: '700',
+                      fontSize: ds.fontSize(typeScale.body),
+                      fontWeight: weight.bold,
                       color: glassColors.textOnPrimary,
                     }}
                     numberOfLines={1}
@@ -1048,7 +1050,7 @@ export function SendAllScreen() {
                     <Text
                       style={{
                         marginLeft: ds.spacing(10),
-                        fontSize: ds.fontSize(13),
+                        fontSize: ds.fontSize(typeScale.secondary),
                         fontWeight: isActive ? '700' : '500',
                         color: isActive ? glassColors.textPrimary : glassColors.textSecondary,
                       }}
@@ -1060,7 +1062,7 @@ export function SendAllScreen() {
                       <Text
                         style={{
                           marginLeft: ds.spacing(8),
-                          fontSize: ds.fontSize(11),
+                          fontSize: ds.fontSize(typeScale.caption),
                           color: glassColors.textMuted,
                         }}
                       >
@@ -1078,8 +1080,8 @@ export function SendAllScreen() {
             <Text
               style={{
                 marginTop: ds.spacing(12),
-                fontSize: ds.fontSize(18),
-                fontWeight: '700',
+                fontSize: ds.fontSize(typeScale.title),
+                fontWeight: weight.bold,
                 color: glassColors.textPrimary,
                 textAlign: 'center',
               }}
@@ -1090,7 +1092,7 @@ export function SendAllScreen() {
               <Text
                 style={{
                   marginTop: ds.spacing(6),
-                  fontSize: ds.fontSize(13),
+                  fontSize: ds.fontSize(typeScale.secondary),
                   color: glassColors.textSecondary,
                   textAlign: 'center',
                 }}
@@ -1114,8 +1116,8 @@ export function SendAllScreen() {
             >
               <Text
                 style={{
-                  fontSize: ds.fontSize(15),
-                  fontWeight: '700',
+                  fontSize: ds.fontSize(typeScale.body),
+                  fontWeight: weight.bold,
                   color: glassColors.textOnPrimary,
                 }}
               >

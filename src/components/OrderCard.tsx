@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Order } from '@/types';
 import { statusColors, ORDER_STATUS_LABELS, colors } from '@/constants';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 interface OrderCardProps {
   order: Order;
@@ -40,28 +41,28 @@ export function OrderCard({ order }: OrderCardProps) {
 
   return (
     <TouchableOpacity
-      className="bg-white rounded-card p-4 shadow-sm"
+      className="p-4 shadow-sm" style={{ backgroundColor: color.card, borderRadius: radius.card }}
       onPress={() => router.push(`/orders/${order.id}`)}
       activeOpacity={0.7}
     >
       {/* Header */}
       <View className="flex-row justify-between items-start mb-3">
         <View>
-          <Text className="text-gray-900 font-bold text-lg">
+          <Text className="font-bold" style={{ color: color.ink, fontSize: typeScale.title }}>
             Order #{order.order_number}
           </Text>
-          <Text className="text-gray-500 text-sm mt-1">
+          <Text className="mt-1" style={{ color: color.ink2, fontSize: typeScale.body }}>
             {formatDate(order.created_at)}
           </Text>
         </View>
         <View
-          className="flex-row items-center px-3 py-1 rounded-full"
-          style={{ backgroundColor: statusPalette.bg }}
+          className="flex-row items-center px-3 py-1"
+          style={{ borderRadius: radius.pill, backgroundColor: statusPalette.bg }}
         >
           <Ionicons name={getStatusIcon()} size={14} color={statusPalette.text} />
           <Text
-            className="ml-1 font-medium text-sm"
-            style={{ color: statusPalette.text }}
+            className="ml-1"
+            style={{ fontWeight: weight.semibold, fontSize: typeScale.body, color: statusPalette.text }}
           >
             {statusLabel}
           </Text>
@@ -69,13 +70,13 @@ export function OrderCard({ order }: OrderCardProps) {
       </View>
 
       {/* Footer */}
-      <View className="flex-row items-center justify-between pt-3 border-t border-gray-100">
+      <View className="flex-row items-center justify-between pt-3 border-t" style={{ borderColor: color.hairline }}>
         <View className="flex-row items-center">
           <Ionicons name="chevron-forward" size={20} color={colors.gray[400]} />
-          <Text className="text-gray-400 text-sm ml-1">View Details</Text>
+          <Text className="ml-1" style={{ color: color.ink3, fontSize: typeScale.body }}>View Details</Text>
         </View>
         {order.fulfilled_at && (
-          <Text className="text-gray-400 text-xs">
+          <Text style={{ color: color.ink3, fontSize: typeScale.secondary }}>
             Fulfilled: {formatDate(order.fulfilled_at)}
           </Text>
         )}

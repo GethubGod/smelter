@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import {
-  ActivityIndicator,
   LayoutChangeEvent,
   StyleSheet,
   Text,
@@ -39,6 +38,8 @@ import {
   normalizeQuickOrderUnit,
   type ParsedQuickOrderItem,
 } from "./quickOrderItems";
+import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { Loading } from '@/components/ui/Loading';
 
 const CARD_PADDING = 13;
 const CARD_SECTION_GAP = 7;
@@ -285,14 +286,14 @@ export function QuickOrderListCard({
         style={[
           styles.card,
           {
-            borderRadius: ds.radius(22),
+            borderRadius: radius.sheet,
             padding: ds.spacing(CARD_PADDING),
           },
         ]}
       >
         {/* 1. Header — title, plus the location switcher + clear affordances. */}
         <View style={styles.header}>
-          <Text style={[styles.title, { fontSize: ds.fontSize(17) }]}>
+          <Text style={[styles.title, { fontSize: ds.fontSize(typeScale.title) }]}>
             Order list
           </Text>
           {showLocationPill || onClear ? (
@@ -313,7 +314,7 @@ export function QuickOrderListCard({
                       height: ds.spacing(LOCATION_PILL_HEIGHT),
                       paddingLeft: ds.spacing(10),
                       paddingRight: ds.spacing(8),
-                      borderRadius: ds.radius(999),
+                      borderRadius: radius.pill,
                     },
                   ]}
                 >
@@ -324,7 +325,7 @@ export function QuickOrderListCard({
                     ]}
                   />
                   <Text
-                    style={[styles.locationLabel, { fontSize: ds.fontSize(14) }]}
+                    style={[styles.locationLabel, { fontSize: ds.fontSize(typeScale.body) }]}
                     numberOfLines={1}
                   >
                     {locationShortLabel}
@@ -351,7 +352,7 @@ export function QuickOrderListCard({
                       width: ds.spacing(LOCATION_PILL_HEIGHT),
                       height: ds.spacing(LOCATION_PILL_HEIGHT),
                       marginLeft: ds.spacing(8),
-                      borderRadius: ds.radius(999),
+                      borderRadius: radius.pill,
                     },
                   ]}
                 >
@@ -384,7 +385,7 @@ export function QuickOrderListCard({
               ]}
             >
               <Text
-                style={[styles.emptyText, { fontSize: ds.fontSize(14) }]}
+                style={[styles.emptyText, { fontSize: ds.fontSize(typeScale.body) }]}
                 numberOfLines={2}
               >
                 Items you add will appear here
@@ -460,7 +461,7 @@ export function QuickOrderListCard({
                   {
                     paddingHorizontal: ds.spacing(10),
                     paddingVertical: ds.spacing(5),
-                    borderRadius: ds.radius(999),
+                    borderRadius: radius.pill,
                   },
                 ]}
               >
@@ -470,7 +471,7 @@ export function QuickOrderListCard({
                     issueCount > 0
                       ? styles.statusBadgeTextAmber
                       : styles.statusBadgeTextGreen,
-                    { fontSize: ds.fontSize(13) },
+                    { fontSize: ds.fontSize(typeScale.secondary) },
                   ]}
                   numberOfLines={1}
                 >
@@ -483,8 +484,8 @@ export function QuickOrderListCard({
             <ConfirmButton
               state={confirmState}
               onPress={handleConfirmPress}
-              radius={ds.radius(999)}
-              fontSize={ds.fontSize(15)}
+              radius={radius.pill}
+              fontSize={ds.fontSize(typeScale.body)}
               iconSize={ds.icon(18)}
               height={ds.spacing(CTA_HEIGHT)}
               paddingHorizontal={ds.spacing(34)}
@@ -656,17 +657,13 @@ function ConfirmButton({
       }}
     >
       {state === "confirming" ? (
-        <ActivityIndicator
-          color={variant.foreground}
-          style={{ marginRight: 6 }}
-          size="small"
-        />
+        <Loading size="inline" color={variant.foreground} style={{ marginRight: 6 }} />
       ) : null}
       <Text
         style={{
           color: variant.foreground,
           fontSize,
-          fontWeight: "800",
+          fontWeight: weight.bold,
           letterSpacing: 0,
           textAlign: "center",
         }}
@@ -698,26 +695,26 @@ type FooterVariant = {
 const FOOTER_VARIANT: Record<ConfirmState, FooterVariant> = {
   ready: {
     background: quickOrderAccent,
-    foreground: "#FFFFFF",
+    foreground: color.card,
     border: quickOrderAccent,
     borderWidth: 0,
   },
   confirming: {
     background: quickOrderAccent,
-    foreground: "#FFFFFF",
+    foreground: color.card,
     border: quickOrderAccent,
     borderWidth: 0,
   },
   "needs-fixing": {
-    background: "#FEEBC8",
-    foreground: "#C2410C",
-    border: "#C2410C",
+    background: color.warningBg,
+    foreground: color.warning,
+    border: color.warning,
     borderWidth: 1,
   },
   empty: {
-    background: "#E5E5EA",
-    foreground: "#6E6E73",
-    border: "#D1D1D6",
+    background: color.well,
+    foreground: color.ink2,
+    border: color.hairlineStrong,
     borderWidth: glassHairlineWidth,
   },
 };
@@ -747,7 +744,7 @@ const styles = StyleSheet.create({
   title: {
     flexShrink: 0,
     color: colors.textPrimary,
-    fontWeight: "800",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   headerActions: {
@@ -760,7 +757,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flexShrink: 1,
-    backgroundColor: "#F2F2F7",
+    backgroundColor: color.well,
     borderWidth: glassHairlineWidth,
     borderColor: glassColors.cardBorder,
   },
@@ -773,13 +770,13 @@ const styles = StyleSheet.create({
   locationLabel: {
     flexShrink: 1,
     color: glassColors.textPrimary,
-    fontWeight: "700",
+    fontWeight: weight.bold,
     letterSpacing: -0.2,
   },
   trashButton: {
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F2F2F7",
+    backgroundColor: color.well,
   },
   dropdownOverlay: {
     position: "absolute",
@@ -794,7 +791,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: grayScale[500],
-    fontWeight: "600",
+    fontWeight: weight.semibold,
     letterSpacing: 0,
   },
   scrollbarTrack: {
@@ -802,34 +799,34 @@ const styles = StyleSheet.create({
     top: 2,
     bottom: 2,
     right: 2,
-    backgroundColor: "rgba(60, 60, 67, 0.12)",
+    backgroundColor: color.well,
     overflow: "hidden",
   },
   scrollbarThumb: {
     position: "absolute",
     left: 0,
     right: 0,
-    backgroundColor: "rgba(60, 60, 67, 0.55)",
+    backgroundColor: color.ink3,
   },
   statusBadge: {
     alignItems: "center",
     justifyContent: "center",
   },
   statusBadgeAmber: {
-    backgroundColor: "#FEF3C7",
+    backgroundColor: color.warningBg,
   },
   statusBadgeGreen: {
-    backgroundColor: "#DCFCE7",
+    backgroundColor: color.goodBg,
   },
   statusBadgeText: {
-    fontWeight: "700",
+    fontWeight: weight.bold,
     letterSpacing: 0,
   },
   statusBadgeTextAmber: {
-    color: "#92400E",
+    color: color.warning,
   },
   statusBadgeTextGreen: {
-    color: "#166534",
+    color: color.good,
   },
   footer: {
     flexDirection: "row",

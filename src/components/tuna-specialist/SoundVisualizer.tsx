@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Animated, Easing } from 'react-native';
 import { colors } from '@/constants';
+import { radius } from '@/theme/tokens';
 
 type VisualizerState = 'idle' | 'listening' | 'processing' | 'speaking';
 
@@ -613,7 +614,7 @@ export function SoundVisualizer({ state }: SoundVisualizerProps) {
           position: 'absolute',
           width: 220,
           height: 220,
-          borderRadius: 110,
+          borderRadius: radius.pill,
           opacity: outermostOpacity,
           transform: [{ scale: outermostScale }],
         }}
@@ -627,7 +628,7 @@ export function SoundVisualizer({ state }: SoundVisualizerProps) {
           position: 'absolute',
           width: 180,
           height: 180,
-          borderRadius: 90,
+          borderRadius: radius.pill,
           opacity: outerOpacity,
           transform: [{ scale: outerScale }],
         }}
@@ -641,7 +642,7 @@ export function SoundVisualizer({ state }: SoundVisualizerProps) {
           position: 'absolute',
           width: 140,
           height: 140,
-          borderRadius: 70,
+          borderRadius: radius.pill,
           opacity: middleOpacity,
           transform: [
             { scale: middleScale },
@@ -658,7 +659,7 @@ export function SoundVisualizer({ state }: SoundVisualizerProps) {
           position: 'absolute',
           width: 110,
           height: 110,
-          borderRadius: 55,
+          borderRadius: radius.pill,
           opacity: innerGlowOpacity,
           transform: [{ scale: innerGlowScale }],
         }}

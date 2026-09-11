@@ -7,6 +7,7 @@ import {
   glassColors,
   glassRadii,
 } from '@/theme/design';
+import { color, typeScale, weight } from '@/theme/tokens';
 
 interface HeaderCartButtonProps {
   count: number;
@@ -62,15 +63,15 @@ export function HeaderCartButton({
             justifyContent: 'center',
             backgroundColor: glassColors.accent,
             borderWidth: 2,
-            borderColor: '#FFFFFF',
+            borderColor: color.card,
             zIndex: 1,
           }}
         >
           <Text
             style={{
               color: glassColors.textOnPrimary,
-              fontSize: ds.fontSize(13),
-              fontWeight: '700',
+              fontSize: ds.fontSize(typeScale.secondary),
+              fontWeight: weight.bold,
             }}
           >
             {count > 99 ? '99+' : count}

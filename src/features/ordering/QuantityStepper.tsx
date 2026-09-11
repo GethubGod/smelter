@@ -3,6 +3,7 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { triggerSelectionHaptic } from '@/lib/haptics';
 import { colors, quickOrderAccent, quickOrderAccentPale } from '@/theme/design';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 type QuantityStepperProps = {
   value: number;
@@ -15,7 +16,7 @@ type QuantityStepperProps = {
 };
 
 const QUICK_INCREMENTS = [1, 5, 10] as const;
-const NEUTRAL_PILL = '#F1EADF';
+const NEUTRAL_PILL = color.well;
 
 function formatStepperValue(value: number): string {
   if (!Number.isFinite(value)) return '0';
@@ -77,10 +78,10 @@ export function QuantityStepper({ value, unitLabel, onChange, min = 0, disabled 
         width: '100%',
         alignSelf: 'stretch',
         backgroundColor: colors.white,
-        borderRadius: 20,
+        borderRadius: radius.card,
         paddingVertical: 20,
         paddingHorizontal: 20,
-        shadowColor: '#000000',
+        shadowColor: color.ink,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.06,
         shadowRadius: 10,
@@ -132,8 +133,8 @@ export function QuantityStepper({ value, unitLabel, onChange, min = 0, disabled 
               placeholderTextColor={colors.textMuted}
               allowFontScaling={false}
               style={{
-                fontSize: 44,
-                fontWeight: '800',
+                fontSize: typeScale.display,
+                fontWeight: weight.bold,
                 color: colors.textPrimary,
                 letterSpacing: 0,
                 textAlign: 'center',
@@ -149,8 +150,8 @@ export function QuantityStepper({ value, unitLabel, onChange, min = 0, disabled 
               adjustsFontSizeToFit
               minimumFontScale={0.55}
               style={{
-                fontSize: 44,
-                fontWeight: '800',
+                fontSize: typeScale.display,
+                fontWeight: weight.bold,
                 color: colors.textPrimary,
                 letterSpacing: 0,
                 maxWidth: 130,
@@ -163,8 +164,8 @@ export function QuantityStepper({ value, unitLabel, onChange, min = 0, disabled 
             numberOfLines={1}
             allowFontScaling={false}
             style={{
-              fontSize: 15,
-              fontWeight: '500',
+              fontSize: typeScale.body,
+              fontWeight: weight.semibold,
               color: colors.textSecondary,
               marginTop: 4,
               letterSpacing: 0,
@@ -209,7 +210,7 @@ export function QuantityStepper({ value, unitLabel, onChange, min = 0, disabled 
             style={{
               flex: 1,
               minWidth: 0,
-              borderRadius: 999,
+              borderRadius: radius.pill,
               minHeight: 36,
               paddingVertical: 8,
               paddingHorizontal: 6,
@@ -222,9 +223,9 @@ export function QuantityStepper({ value, unitLabel, onChange, min = 0, disabled 
             <Text
               allowFontScaling={false}
               style={{
-                fontSize: 14,
-                fontWeight: '800',
-                color: '#5D5D63',
+                fontSize: typeScale.body,
+                fontWeight: weight.bold,
+                color: color.ink2,
                 letterSpacing: 0,
               }}
             >
@@ -250,7 +251,7 @@ export function QuantityStepper({ value, unitLabel, onChange, min = 0, disabled 
           style={{
             flex: 1,
             minWidth: 0,
-            borderRadius: 999,
+            borderRadius: radius.pill,
             minHeight: 36,
             paddingVertical: 8,
             paddingHorizontal: 6,
@@ -263,9 +264,9 @@ export function QuantityStepper({ value, unitLabel, onChange, min = 0, disabled 
           <Text
             allowFontScaling={false}
             style={{
-              fontSize: 14,
-              fontWeight: '800',
-              color: typing ? quickOrderAccent : '#5D5D63',
+              fontSize: typeScale.body,
+              fontWeight: weight.bold,
+              color: typing ? quickOrderAccent : color.ink2,
               letterSpacing: 0,
             }}
           >

@@ -7,6 +7,7 @@ import {
   glassColors,
   glassRadii,
 } from '@/theme/design';
+import { typeScale, weight } from '@/theme/tokens';
 
 interface LocationSelectorButtonProps {
   label: string;
@@ -51,8 +52,8 @@ export function LocationSelectorButton({
         <Text
           style={{
             flex: 1,
-            fontSize: ds.fontSize(16),
-            fontWeight: '700',
+            fontSize: ds.fontSize(typeScale.body),
+            fontWeight: weight.bold,
             color: glassColors.textPrimary,
             marginRight: ds.spacing(8),
           }}

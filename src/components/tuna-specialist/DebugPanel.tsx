@@ -9,6 +9,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTunaSpecialistStore } from '@/store';
 import { colors } from '@/constants';
+import { radius, typeScale, weight } from '@/theme/tokens';
 
 const SENSITIVE_KEY_PATTERN =
   /(transcript|message|text|token|id|email|name|raw|reply|speech|body|history)/i;
@@ -86,14 +87,14 @@ export function DebugPanel({ locationShortCode }: DebugPanelProps) {
     <View
       style={{
         backgroundColor: colors.card,
-        borderRadius: 16,
+        borderRadius: radius.card,
         padding: 14,
         margin: 12,
         borderWidth: 1,
         borderColor: colors.divider,
       }}
     >
-      <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primary[700], marginBottom: 10 }}>
+      <Text style={{ fontSize: typeScale.secondary, fontWeight: weight.bold, color: colors.primary[700], marginBottom: 10 }}>
         Debug Panel
       </Text>
 
@@ -108,7 +109,7 @@ export function DebugPanel({ locationShortCode }: DebugPanelProps) {
       </View>
 
       {/* Quick test transcripts */}
-      <Text style={{ fontSize: 11, color: colors.gray[600], marginBottom: 6 }}>
+      <Text style={{ fontSize: typeScale.caption, color: colors.gray[600], marginBottom: 6 }}>
         Test Transcripts
       </Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
@@ -119,12 +120,12 @@ export function DebugPanel({ locationShortCode }: DebugPanelProps) {
             disabled={isProcessing}
             style={{
               backgroundColor: isProcessing ? colors.gray[100] : colors.primary[50],
-              borderRadius: 8,
+              borderRadius: radius.control,
               paddingHorizontal: 10,
               paddingVertical: 6,
             }}
           >
-            <Text style={{ fontSize: 11, color: isProcessing ? colors.gray[600] : colors.primary[700], fontWeight: '600' }}>
+            <Text style={{ fontSize: typeScale.caption, color: isProcessing ? colors.gray[600] : colors.primary[700], fontWeight: weight.semibold }}>
               {t.label}
             </Text>
           </TouchableOpacity>
@@ -141,11 +142,11 @@ export function DebugPanel({ locationShortCode }: DebugPanelProps) {
           style={{
             flex: 1,
             backgroundColor: colors.gray[100],
-            borderRadius: 8,
+            borderRadius: radius.control,
             paddingHorizontal: 10,
             paddingVertical: 8,
             color: colors.text,
-            fontSize: 13,
+            fontSize: typeScale.secondary,
           }}
           returnKeyType="send"
           onSubmitEditing={() => {
@@ -161,7 +162,7 @@ export function DebugPanel({ locationShortCode }: DebugPanelProps) {
           disabled={isProcessing || !customText.trim()}
           style={{
             backgroundColor: isProcessing || !customText.trim() ? colors.gray[100] : colors.primary[500],
-            borderRadius: 8,
+            borderRadius: radius.control,
             paddingHorizontal: 14,
             justifyContent: 'center',
           }}
@@ -182,7 +183,7 @@ export function DebugPanel({ locationShortCode }: DebugPanelProps) {
               size={14}
               color={colors.gray[600]}
             />
-            <Text style={{ fontSize: 11, color: colors.gray[600], marginLeft: 4 }}>
+            <Text style={{ fontSize: typeScale.caption, color: colors.gray[600], marginLeft: 4 }}>
               Raw Response
             </Text>
           </TouchableOpacity>
@@ -192,11 +193,11 @@ export function DebugPanel({ locationShortCode }: DebugPanelProps) {
               style={{
                 maxHeight: 200,
                 backgroundColor: colors.gray[100],
-                borderRadius: 8,
+                borderRadius: radius.control,
                 padding: 8,
               }}
             >
-              <Text style={{ fontSize: 10, color: colors.gray[500], fontFamily: 'monospace' }}>
+              <Text style={{ fontSize: typeScale.caption, color: colors.gray[500], fontFamily: 'monospace' }}>
                 {formatRedactedRawResponse(lastRawResponse)}
               </Text>
             </ScrollView>
@@ -212,16 +213,16 @@ function StateBadge({ label, active }: { label: string; active: boolean }) {
     <View
       style={{
         backgroundColor: active ? colors.successBg : colors.gray[100],
-        borderRadius: 6,
+        borderRadius: radius.pill,
         paddingHorizontal: 8,
         paddingVertical: 3,
       }}
     >
       <Text
         style={{
-          fontSize: 10,
+          fontSize: typeScale.caption,
           color: active ? colors.success : colors.gray[600],
-          fontWeight: '600',
+          fontWeight: weight.semibold,
         }}
       >
         {label}

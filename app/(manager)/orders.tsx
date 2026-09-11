@@ -16,12 +16,25 @@ import * as Haptics from 'expo-haptics';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store';
 import { Order, OrderStatus, Location } from '@/types';
-import {statusColors, ORDER_STATUS_LABELS, colors } from '@/constants';
+import { ORDER_STATUS_LABELS, colors } from '@/constants';
 import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
 import { BrandLogo } from '@/components';
+import { Chip, ScreenHeader, StatusPill, type StatusTone } from '@/components/ui';
 import { useManagedRefresh } from '@/hooks/useManagedRefresh';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 type FilterStatus = OrderStatus | 'all';
+
+// Status colour lives in StatusPill and nowhere else. `cancel_requested` has no
+// tone of its own; it reads as cancelled until the request is resolved.
+const STATUS_TONE: Record<OrderStatus, StatusTone> = {
+  draft: 'draft',
+  submitted: 'submitted',
+  processing: 'processing',
+  fulfilled: 'fulfilled',
+  cancelled: 'cancelled',
+  cancel_requested: 'cancelled',
+};
 
 // Labels come from the shared map so the filter chips, the order cards, and
 // order history never disagree about what a status is called.
@@ -183,61 +196,49 @@ export default function ManagerOrdersScreen() {
   };
 
   const renderOrder = ({ item: order }: { item: Order }) => {
-    const statusTone = statusColors[order.status];
     const orderUser = (order as any).user;
     const orderLocation = (order as any).location;
     const itemCount = getItemCount(order);
 
     return (
       <TouchableOpacity
-        className="bg-white rounded-2xl p-4 mb-3 border border-gray-100"
-        style={{
-          backgroundColor: colors.card,
-          borderColor: colors.divider,
-          shadowColor: colors.background,
+        className="p-4 mb-3 border"
+        style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline,
           shadowOffset: { width: 0, height: 0 },
           shadowOpacity: 0,
           shadowRadius: 0,
-          elevation: 0,
-        }}
+          elevation: 0 }}
         onPress={() => router.push(`/orders/${order.id}`)}
         activeOpacity={0.7}
       >
         <View className="flex-row justify-between items-start mb-3">
-          <Text className="text-lg font-bold text-gray-900">
+          <Text className="font-bold" style={{ fontSize: typeScale.title, color: color.ink }}>
             Order #{order.order_number}
           </Text>
-          <View
-            className="px-3 py-1 rounded-full"
-            style={{ backgroundColor: statusTone.bg }}
-          >
-            <Text
-              className="text-sm font-semibold"
-              style={{ color: statusTone.text }}
-            >
-              {ORDER_STATUS_LABELS[order.status]}
-            </Text>
-          </View>
+          <StatusPill
+            status={STATUS_TONE[order.status]}
+            label={ORDER_STATUS_LABELS[order.status]}
+          />
         </View>
 
         <View className="space-y-2">
           <View className="flex-row items-center">
             <Ionicons name="person-outline" size={16} color={colors.gray[600]} />
-            <Text className="text-gray-700 ml-2 font-medium">
+            <Text className="ml-2" style={{ color: color.ink2, fontWeight: weight.semibold }}>
               {orderUser?.name || 'Unknown User'}
             </Text>
           </View>
 
           <View className="flex-row items-center mt-1">
             <Ionicons name="location-outline" size={16} color={colors.gray[600]} />
-            <Text className="text-gray-600 ml-2">
+            <Text className="ml-2" style={{ color: color.ink2 }}>
               {orderLocation?.name || 'Unknown Location'}
             </Text>
           </View>
 
           <View className="flex-row items-center mt-1">
             <Ionicons name="time-outline" size={16} color={colors.gray[600]} />
-            <Text className="text-gray-500 ml-2">
+            <Text className="ml-2" style={{ color: color.ink2 }}>
               {formatDate(order.created_at)} • {itemCount} item{itemCount !== 1 ? 's' : ''}
             </Text>
           </View>
@@ -249,69 +250,61 @@ export default function ManagerOrdersScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top', 'left', 'right']}>
       <ManagerScaleContainer>
-      {/* Header */}
-      <View
-        className="px-4 py-3 flex-row items-center justify-between"
-        style={{ backgroundColor: colors.background, borderBottomWidth: 1, borderBottomColor: colors.divider }}
-      >
-        <View className="flex-row items-center">
-          <TouchableOpacity
-            className="w-10 h-10 items-center justify-center -ml-2"
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color={colors.gray[700]} />
-          </TouchableOpacity>
-          <Text className="text-xl font-bold text-gray-900 ml-2">Orders</Text>
-        </View>
+      <ScreenHeader
+        title="Orders"
+        mode="pushed"
+        onBack={() => router.back()}
+        includeSafeArea={false}
+        right={
+          <View className="flex-row items-center">
+            <TouchableOpacity
+              className="px-3 py-2 flex-row items-center mr-2" style={{ backgroundColor: color.warningBg, borderRadius: radius.pill }}
+              onPress={() => router.push('/(manager)/orders/pending')}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="sparkles-outline" size={14} color={colors.primary[500]} />
+              <Text className="ml-2" style={{ color: color.ink, fontWeight: weight.semibold }}>Pending Review</Text>
+            </TouchableOpacity>
 
-        <View className="flex-row items-center">
-          <TouchableOpacity
-            className="bg-orange-50 rounded-full px-3 py-2 flex-row items-center mr-2"
-            onPress={() => router.push('/(manager)/orders/pending')}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="sparkles-outline" size={14} color={colors.primary[500]} />
-            <Text className="text-gray-900 font-medium ml-2">Pending Review</Text>
-          </TouchableOpacity>
-
-          {/* Location Selector */}
-          <TouchableOpacity
-            className="bg-gray-100 rounded-full px-3 py-2 flex-row items-center"
-            onPress={() => {
-              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-              setShowLocationPicker((prev) => !prev);
-            }}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="location" size={14} color={colors.primary[500]} />
-            <Text className="text-gray-900 font-medium ml-2" numberOfLines={1}>
-              {selectedLocation?.name || 'All Locations'}
-            </Text>
-            <Ionicons
-              name={showLocationPicker ? 'chevron-up' : 'chevron-down'}
-              size={14}
-              color={colors.gray[600]}
-              className="ml-1.5"
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
+            {/* Location Selector */}
+            <TouchableOpacity
+              className="px-3 py-2 flex-row items-center" style={{ backgroundColor: color.well, borderRadius: radius.pill }}
+              onPress={() => {
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                setShowLocationPicker((prev) => !prev);
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="location" size={14} color={colors.primary[500]} />
+              <Text className="ml-2" style={{ color: color.ink, fontWeight: weight.semibold }} numberOfLines={1}>
+                {selectedLocation?.name || 'All Locations'}
+              </Text>
+              <Ionicons
+                name={showLocationPicker ? 'chevron-up' : 'chevron-down'}
+                size={14}
+                color={colors.gray[600]}
+                className="ml-1.5"
+              />
+            </TouchableOpacity>
+          </View>
+        }
+      />
 
       {showLocationPicker && (
         <View style={{ backgroundColor: colors.background, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
           <View
-            className="mt-1 rounded-2xl overflow-hidden mx-4 mb-2"
-            style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.divider }}
+            className="mt-1 overflow-hidden mx-4 mb-2"
+            style={{ borderRadius: radius.card, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.divider }}
           >
             <TouchableOpacity
               className="flex-row items-center px-4 py-3"
               onPress={() => handleSelectLocation(null)}
               activeOpacity={0.7}
             >
-              <View className="w-9 h-9 rounded-full bg-primary-100 items-center justify-center mr-3">
+              <View className="w-9 h-9 items-center justify-center mr-3" style={{ borderRadius: radius.pill, backgroundColor: color.tint }}>
                 <Ionicons name="globe" size={18} color={colors.primary[500]} />
               </View>
-              <Text className="flex-1 text-gray-900 font-medium">All Locations</Text>
+              <Text className="flex-1" style={{ color: color.ink, fontWeight: weight.semibold }}>All Locations</Text>
               {!selectedLocation && <Ionicons name="checkmark" size={18} color={colors.primary[500]} />}
             </TouchableOpacity>
 
@@ -320,18 +313,16 @@ export default function ManagerOrdersScreen() {
               return (
                 <TouchableOpacity
                   key={loc.id}
-                  className="flex-row items-center px-4 py-3 border-t border-gray-100"
+                  className="flex-row items-center px-4 py-3 border-t" style={{ borderColor: color.hairline }}
                   onPress={() => handleSelectLocation(loc)}
                   activeOpacity={0.7}
                 >
                   <View
-                    className={`w-9 h-9 rounded-full items-center justify-center mr-3 ${
-                      isSelected ? 'bg-primary-500' : 'bg-gray-200'
-                    }`}
+                    className="w-9 h-9 items-center justify-center mr-3" style={{ borderRadius: radius.pill, backgroundColor: isSelected ? color.accent : color.well }}
                   >
                     <BrandLogo variant="inline" size={18} />
                   </View>
-                  <Text className="flex-1 text-gray-900 font-medium">{loc.name}</Text>
+                  <Text className="flex-1" style={{ color: color.ink, fontWeight: weight.semibold }}>{loc.name}</Text>
                   {isSelected && <Ionicons name="checkmark" size={18} color={colors.primary[500]} />}
                 </TouchableOpacity>
               );
@@ -341,7 +332,7 @@ export default function ManagerOrdersScreen() {
       )}
 
       {/* Status Filter Tabs */}
-      <View className="bg-white border-b border-gray-200">
+      <View className="border-b" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
         <FlatList
           horizontal
           data={filterStatuses}
@@ -349,52 +340,19 @@ export default function ManagerOrdersScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 12 }}
           renderItem={({ item: filter }) => {
-            const isSelected = selectedStatus === filter.key;
             const count = statusCounts[filter.key] || 0;
-            const filterColor = filter.key !== 'all' ? statusColors[filter.key] : null;
 
+            // A filter is a control, not a state, so it stays neutral: the
+            // accent marks the selected one and status colour stays on cards.
             return (
-              <TouchableOpacity
-                className="px-4 py-2 rounded-full mr-2 flex-row items-center"
-                style={{
-                  backgroundColor: isSelected
-                    ? filterColor?.text || colors.primary[500]
-                    : filterColor?.bg || colors.neutralBg,
-                }}
-                onPress={() => handleSelectStatus(filter.key)}
-              >
-                <Text
-                  className="font-semibold"
-                  style={{
-                    color: isSelected
-                      ? colors.white
-                      : filterColor?.text || colors.gray[700],
-                  }}
-                >
-                  {filter.label}
-                </Text>
-                {count > 0 && (
-                  <View
-                    className="ml-1.5 px-1.5 py-0.5 rounded-full"
-                    style={{
-                      backgroundColor: isSelected
-                        ? colors.overlay
-                        : colors.divider,
-                    }}
-                  >
-                    <Text
-                      className="text-xs font-bold"
-                      style={{
-                        color: isSelected
-                          ? colors.white
-                          : filterColor?.text || colors.gray[700],
-                      }}
-                    >
-                      {count}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
+              <View style={{ marginRight: 8 }}>
+                <Chip
+                  label={filter.label}
+                  selected={selectedStatus === filter.key}
+                  count={count > 0 ? count : undefined}
+                  onPress={() => handleSelectStatus(filter.key)}
+                />
+              </View>
             );
           }}
         />
@@ -409,7 +367,7 @@ export default function ManagerOrdersScreen() {
         ListEmptyComponent={() => (
           <View className="flex-1 items-center justify-center py-16">
             <Ionicons name="receipt-outline" size={48} color={colors.gray[300]} />
-            <Text className="text-gray-400 mt-4 text-center">
+            <Text className="mt-4 text-center" style={{ color: color.ink3 }}>
               {selectedStatus !== 'all'
                 ? `No ${ORDER_STATUS_LABELS[selectedStatus]?.toLowerCase() || selectedStatus} orders`
                 : 'No orders found'}

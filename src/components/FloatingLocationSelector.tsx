@@ -18,6 +18,7 @@ import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerConfirmationHaptic } from '@/lib/haptics';
 import { glassColors, glassHairlineWidth, glassSpacing } from '@/theme/design';
 import type { Location } from '@/types';
+import { auth, color, radius, typeScale, weight } from '@/theme/tokens';
 
 const CLOSED_HEIGHT = 76;
 const OPEN_HEADER_HEIGHT = 62;
@@ -32,7 +33,7 @@ const CLOSED_CONFIRMATION_MS = 1200;
 const SELECTION_FEEDBACK_DELAY_MS = 150;
 const REDUCED_MOTION_SELECTION_DELAY_MS = 90;
 const SHADOW_STYLE = {
-  shadowColor: '#000000',
+  shadowColor: color.ink,
   shadowOffset: { width: 0, height: 16 },
   shadowOpacity: 0.22,
   shadowRadius: 24,
@@ -81,32 +82,32 @@ function getLocationTone(location: Location | null): LocationTone {
   if (kind === 'sushi') {
     return {
       dot: glassColors.accent,
-      halo: 'rgba(232,80,58,0.18)',
-      border: 'rgba(232,80,58,0.42)',
-      selectedBackground: 'rgba(232,80,58,0.16)',
-      selectedBorder: 'rgba(232,80,58,0.38)',
-      surface: 'rgba(232,80,58,0.12)',
+      halo: color.tint,
+      border: color.accent,
+      selectedBackground: color.tint,
+      selectedBorder: color.accent,
+      surface: color.tint,
     };
   }
 
   if (kind === 'poki') {
     return {
       dot: glassColors.successText,
-      halo: 'rgba(34,197,94,0.18)',
-      border: 'rgba(34,197,94,0.38)',
-      selectedBackground: 'rgba(34,197,94,0.14)',
-      selectedBorder: 'rgba(34,197,94,0.36)',
-      surface: 'rgba(34,197,94,0.12)',
+      halo: color.goodBg,
+      border: color.good,
+      selectedBackground: color.goodBg,
+      selectedBorder: color.good,
+      surface: color.goodBg,
     };
   }
 
   return {
-    dot: '#FFFFFF',
-    halo: 'rgba(255,255,255,0.14)',
-    border: 'rgba(255,255,255,0.24)',
-    selectedBackground: 'rgba(255,255,255,0.08)',
-    selectedBorder: 'rgba(255,255,255,0.18)',
-    surface: 'rgba(255,255,255,0.12)',
+    dot: color.card,
+    halo: auth.wellBorder,
+    border: auth.wellBorder,
+    selectedBackground: auth.well,
+    selectedBorder: auth.wellBorder,
+    surface: auth.well,
   };
 }
 
@@ -452,7 +453,7 @@ export function FloatingLocationSelector({
           style={[
             StyleSheet.absoluteFillObject,
             {
-              backgroundColor: '#000000',
+              backgroundColor: color.ink,
             },
           ]}
         />
@@ -497,7 +498,7 @@ export function FloatingLocationSelector({
                   backgroundColor: selectedLocationTone.surface,
                   borderColor: showConfirmation
                     ? selectedLocationTone.border
-                    : 'rgba(255,255,255,0.06)',
+                    : auth.well,
                   shadowColor: selectedLocationTone.dot,
                   shadowOpacity: showConfirmation ? 0.34 : 0,
                 },
@@ -544,7 +545,7 @@ export function FloatingLocationSelector({
             <Ionicons
               name={isOpen ? 'chevron-down' : 'chevron-up'}
               size={20}
-              color="rgba(255,255,255,0.72)"
+              color={auth.dim}
             />
           </TouchableOpacity>
         </Animated.View>
@@ -571,7 +572,7 @@ export function FloatingLocationSelector({
               onPress={toggleSelector}
               style={styles.headerButton}
             >
-              <Ionicons name="chevron-down" size={18} color="#FFFFFF" />
+              <Ionicons name="chevron-down" size={18} color={color.card} />
             </TouchableOpacity>
           </View>
 
@@ -580,7 +581,7 @@ export function FloatingLocationSelector({
               <Ionicons
                 name="location-outline"
                 size={22}
-                color="rgba(255,255,255,0.78)"
+                color={auth.dim}
               />
               <Text style={styles.emptyStateTitle}>No locations available</Text>
               <Text style={styles.emptyStateBody}>
@@ -637,7 +638,7 @@ export function FloatingLocationSelector({
                             backgroundColor: locationTone.surface,
                             borderColor: isSelected
                               ? locationTone.border
-                              : 'rgba(255,255,255,0.06)',
+                              : auth.well,
                           },
                           isPendingSelection
                             ? { transform: [{ scale: pendingIndicatorScale }] }
@@ -685,13 +686,13 @@ export function FloatingLocationSelector({
                             { backgroundColor: locationTone.dot },
                           ]}
                         >
-                          <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                          <Ionicons name="checkmark" size={16} color={color.card} />
                         </View>
                       ) : (
                         <Ionicons
                           name="chevron-forward"
                           size={16}
-                          color="rgba(255,255,255,0.42)"
+                          color={auth.dim}
                         />
                       )}
                     </TouchableOpacity>
@@ -710,9 +711,9 @@ const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     overflow: 'hidden',
-    backgroundColor: 'rgba(24, 24, 27, 0.98)',
+    backgroundColor: color.ink,
     borderWidth: glassHairlineWidth,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: auth.well,
   },
   closedContent: {
     ...StyleSheet.absoluteFillObject,
@@ -727,7 +728,7 @@ const styles = StyleSheet.create({
   indicatorShell: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: radius.card,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: glassHairlineWidth,
@@ -737,7 +738,7 @@ const styles = StyleSheet.create({
   locationDot: {
     width: 14,
     height: 14,
-    borderRadius: 7,
+    borderRadius: radius.control,
     shadowOffset: { width: 0, height: 0 },
     shadowRadius: 10,
     elevation: 2,
@@ -746,7 +747,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: radius.card,
     borderWidth: 1,
   },
   closedTextWrap: {
@@ -754,32 +755,32 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   closedEyebrow: {
-    color: 'rgba(255,255,255,0.56)',
-    fontSize: 11,
-    fontWeight: '700',
+    color: auth.dim,
+    fontSize: typeScale.caption,
+    fontWeight: weight.bold,
     letterSpacing: 0.9,
     textTransform: 'uppercase',
   },
   closedLabel: {
     marginTop: 4,
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
+    color: color.card,
+    fontSize: typeScale.title,
+    fontWeight: weight.bold,
   },
   countPill: {
     minWidth: 28,
     height: 28,
     paddingHorizontal: 8,
-    borderRadius: 14,
+    borderRadius: radius.card,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: auth.well,
     marginRight: 10,
   },
   countPillText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
+    color: color.card,
+    fontSize: typeScale.secondary,
+    fontWeight: weight.bold,
   },
   openContent: {
     flex: 1,
@@ -795,17 +796,17 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   openTitle: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '700',
+    color: color.card,
+    fontSize: typeScale.title,
+    fontWeight: weight.bold,
   },
   headerButton: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: radius.card,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: auth.well,
   },
   rowsContent: {
     paddingHorizontal: 4,
@@ -815,11 +816,11 @@ const styles = StyleSheet.create({
     minHeight: ROW_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 22,
+    borderRadius: radius.sheet,
     paddingHorizontal: 16,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: auth.well,
     borderWidth: glassHairlineWidth,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: auth.well,
   },
   locationRowSpacing: {
     marginBottom: ROW_GAP,
@@ -827,7 +828,7 @@ const styles = StyleSheet.create({
   rowIndicatorShell: {
     width: 42,
     height: 42,
-    borderRadius: 21,
+    borderRadius: radius.sheet,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: glassHairlineWidth,
@@ -836,33 +837,33 @@ const styles = StyleSheet.create({
   rowLocationDot: {
     width: 15,
     height: 15,
-    borderRadius: 7.5,
+    borderRadius: radius.control,
     shadowOffset: { width: 0, height: 0 },
     shadowRadius: 10,
     elevation: 2,
   },
   locationName: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    color: color.card,
+    fontSize: typeScale.body,
+    fontWeight: weight.semibold,
   },
   selectedLocationName: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: color.card,
+    fontWeight: weight.bold,
   },
   locationMeta: {
     marginTop: 4,
-    color: 'rgba(255,255,255,0.56)',
-    fontSize: 13,
-    fontWeight: '500',
+    color: auth.dim,
+    fontSize: typeScale.secondary,
+    fontWeight: weight.semibold,
   },
   selectedLocationMeta: {
-    color: 'rgba(255,255,255,0.8)',
+    color: auth.dim,
   },
   selectedIndicator: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: radius.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -874,14 +875,14 @@ const styles = StyleSheet.create({
   },
   emptyStateTitle: {
     marginTop: 10,
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
+    color: color.card,
+    fontSize: typeScale.body,
+    fontWeight: weight.bold,
   },
   emptyStateBody: {
     marginTop: 6,
-    color: 'rgba(255,255,255,0.58)',
-    fontSize: 12,
+    color: auth.dim,
+    fontSize: typeScale.secondary,
     textAlign: 'center',
     lineHeight: 18,
   },
