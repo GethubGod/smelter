@@ -135,31 +135,6 @@ export function QrScannerModal({ visible, onClose, onScan }: QrScannerModalProps
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: colors.scrimStrong,
-    justifyContent: 'center',
-    padding: 20,
-  },
-  container: {
-    backgroundColor: colors.background,
-    borderRadius: radius.sheet,
-    overflow: 'hidden',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[100],
-  },
-  title: {
-    fontSize: typeScale.title,
-    fontWeight: weight.bold,
-    color: colors.text,
-  },
   cameraContainer: {
     height: 320,
     backgroundColor: colors.text,

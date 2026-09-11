@@ -1,86 +1,19 @@
 // Screen 04 — Secure your app. Two option rows: restaurant PIN (primary)
 // and create-a-password (secondary). Both ship (confirmed decision).
 //
-// The contract's Card and ListRow are light-surface only, so these rows are
-// composed from the auth tokens here. See the PR body for the gap note.
+// The rows are the contract's Card and ListRow in their dark variant; the
+// recommended option is the selected Card. See the PR body for the note on
+// the additive `onDark` and `selected` props.
 
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { PinDigitsIcon } from '@/components/icons/PinDigitsIcon';
+import { Card, ListRow } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { auth, color, radius, size, space, tracking, typeScale, weight } from '@/theme/tokens';
+import { auth, color, size, space, tracking, typeScale, weight } from '@/theme/tokens';
 import { AuthScreenShell } from './components/AuthScreenShell';
 import { StepProgress } from './components/StepProgress';
 import { useOnboardingStore } from './onboardingStore';
-
-interface OptionRowProps {
-  title: string;
-  subtitle: string;
-  icon: React.ReactNode;
-  highlighted?: boolean;
-  onPress: () => void;
-}
-
-function OptionRow({ title, subtitle, icon, highlighted = false, onPress }: OptionRowProps) {
-  const ds = useScaledStyles();
-  const tile = Math.max(size.headerCircle, ds.icon(size.headerCircle));
-
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.82}
-      accessibilityRole="button"
-      accessibilityLabel={title}
-      accessibilityHint={subtitle}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: ds.spacing(space[3]),
-        backgroundColor: auth.well,
-        borderWidth: 1,
-        borderColor: highlighted ? color.accent : auth.wellBorder,
-        borderRadius: radius.card,
-        padding: ds.spacing(space[4]),
-        marginBottom: ds.spacing(space[3] - 2),
-      }}
-    >
-      <View
-        style={{
-          width: tile,
-          height: tile,
-          borderRadius: radius.control,
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: highlighted ? color.tint : auth.well,
-        }}
-      >
-        {icon}
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text
-          style={{
-            fontSize: ds.fontSize(typeScale.body),
-            fontWeight: weight.semibold,
-            color: auth.text,
-          }}
-        >
-          {title}
-        </Text>
-        <Text
-          style={{
-            fontSize: ds.fontSize(typeScale.secondary),
-            color: auth.dim,
-            marginTop: ds.spacing(space[1] / 2),
-          }}
-        >
-          {subtitle}
-        </Text>
-      </View>
-      <Ionicons name="chevron-forward" size={ds.icon(size.icon)} color={auth.dim} />
-    </TouchableOpacity>
-  );
-}
 
 export default function SecureAppScreen() {
   const router = useRouter();
@@ -117,19 +50,30 @@ export default function SecureAppScreen() {
         Pick one. You can change it later.
       </Text>
 
-      <OptionRow
-        title="Use your restaurant PIN"
-        subtitle="The same 4-digit code you use at the register"
-        icon={<PinDigitsIcon size={ds.icon(size.icon)} color={color.accent} />}
-        highlighted
-        onPress={() => router.push('/(auth)/secure-pin' as Parameters<typeof router.push>[0])}
-      />
-      <OptionRow
-        title="Create a password"
-        subtitle="Saves to iPhone autofill so you never retype it"
-        icon={<Ionicons name="lock-closed-outline" size={ds.icon(size.icon)} color={auth.text} />}
-        onPress={() => router.push('/(auth)/secure-password' as Parameters<typeof router.push>[0])}
-      />
+      <Card onDark selected style={{ marginBottom: ds.spacing(space[3] - 2) }}>
+        <ListRow
+          last
+          onDark
+          title="Use your restaurant PIN"
+          subtitle="The same 4-digit code you use at the register"
+          icon={<PinDigitsIcon size={ds.icon(size.icon)} color={color.accent} />}
+          chevron
+          onPress={() => router.push('/(auth)/secure-pin' as Parameters<typeof router.push>[0])}
+        />
+      </Card>
+      <Card onDark>
+        <ListRow
+          last
+          onDark
+          title="Create a password"
+          subtitle="Saves to iPhone autofill so you never retype it"
+          icon="lock-closed-outline"
+          chevron
+          onPress={() =>
+            router.push('/(auth)/secure-password' as Parameters<typeof router.push>[0])
+          }
+        />
+      </Card>
       <View style={{ flex: 1 }} />
     </AuthScreenShell>
   );

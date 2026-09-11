@@ -13,7 +13,7 @@ import {
   fetchInvitePreview,
   getInviteFailureReason,
 } from '@/services/invites';
-import { auth, space, tracking, typeScale, weight } from '@/theme/tokens';
+import { auth, size, space, tracking, typeScale, weight } from '@/theme/tokens';
 import { AuthScreenShell } from './components/AuthScreenShell';
 import { StepProgress } from './components/StepProgress';
 import { useOnboardingStore } from './onboardingStore';
@@ -60,7 +60,7 @@ export default function InviteHelloScreen() {
     };
   }, [token, setInvite]);
 
-  if (guard.isChecking) return <AuthLoadingScreen />;
+  if (guard.isChecking) return <AuthLoadingScreen onDark />;
   if (guard.authenticatedRedirectTo) return <Redirect href={guard.authenticatedRedirectTo} />;
 
   const titleStyle = {
@@ -129,7 +129,13 @@ export default function InviteHelloScreen() {
         <TouchableOpacity
           accessibilityRole="button"
           onPress={() => router.replace('/(auth)/welcome' as Parameters<typeof router.replace>[0])}
-          style={{ alignItems: 'center', marginBottom: ds.spacing(space[2] - 2) }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={{
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: ds.spacing(size.touchMin),
+            marginBottom: ds.spacing(space[2] - 2),
+          }}
         >
           <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: auth.dim }}>
             Ask the manager for a new link if this keeps happening

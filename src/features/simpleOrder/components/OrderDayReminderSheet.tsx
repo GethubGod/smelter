@@ -1,9 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomSheetShell } from '@/components/BottomSheetShell';
-import { Loading } from '@/components/ui';
+import { Loading, Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import {
   ImpactFeedbackStyle,
@@ -55,7 +53,6 @@ export function OrderDayReminderSheet({
   onRuleChanged,
 }: OrderDayReminderSheetProps) {
   const ds = useScaledStyles();
-  const insets = useSafeAreaInsets();
 
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -403,36 +400,8 @@ export function OrderDayReminderSheet({
   }
 
   return (
-    <BottomSheetShell
-      visible={visible}
-      onClose={onClose}
-      bottomPadding={Math.max(insets.bottom, ds.spacing(12))}
-    >
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          marginBottom: ds.spacing(10),
-        }}
-      >
-        <Ionicons
-          name="notifications-outline"
-          size={ds.icon(20)}
-          color={color.ink}
-          style={{ marginRight: ds.spacing(8) }}
-        />
-        <Text
-          style={{
-            fontSize: ds.fontSize(typeScale.title),
-            fontWeight: '700',
-            color: color.ink,
-          }}
-        >
-          Order-day reminder
-        </Text>
-      </View>
-
+    <Sheet visible={visible} title="Order-day reminder" onClose={onClose}>
       {body}
-    </BottomSheetShell>
+    </Sheet>
   );
 }

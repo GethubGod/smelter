@@ -31,7 +31,7 @@ export default function WelcomeScreen() {
   const [linkInput, setLinkInput] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  if (guard.isChecking) return <AuthLoadingScreen />;
+  if (guard.isChecking) return <AuthLoadingScreen onDark />;
   if (guard.authenticatedRedirectTo) return <Redirect href={guard.authenticatedRedirectTo} />;
 
   const handleShowPaste = async () => {

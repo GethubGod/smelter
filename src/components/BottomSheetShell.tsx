@@ -17,6 +17,12 @@ interface BottomSheetShellProps {
   children: React.ReactNode;
   horizontalPadding?: number;
   bottomPadding?: number;
+  /**
+   * Scrim tap and drag-to-dismiss. Set false while the sheet holds unsaved
+   * input so a graze on the backdrop cannot discard it; the sheet's own
+   * Cancel action stays the way out.
+   */
+  dismissible?: boolean;
 }
 
 export function BottomSheetShell({
@@ -26,6 +32,7 @@ export function BottomSheetShell({
   children,
   horizontalPadding,
   bottomPadding,
+  dismissible = true,
 }: BottomSheetShellProps) {
   const ds = useScaledStyles();
   const translateY = useRef(new Animated.Value(0)).current;
@@ -51,7 +58,9 @@ export function BottomSheetShell({
     () =>
       PanResponder.create({
         onMoveShouldSetPanResponder: (_, gestureState) =>
-          gestureState.dy > 6 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
+          dismissible &&
+          gestureState.dy > 6 &&
+          Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
         onPanResponderMove: (_, gestureState) => {
           if (gestureState.dy <= 0) return;
           translateY.setValue(gestureState.dy);
@@ -78,14 +87,14 @@ export function BottomSheetShell({
           }).start();
         },
       }),
-    [animateClose, ds, translateY]
+    [animateClose, dismissible, ds, translateY]
   );
 
   const content = (
       <Pressable
         accessible={false}
         style={{ flex: 1, backgroundColor: colors.scrim, justifyContent: 'flex-end' }}
-        onPress={onClose}
+        onPress={dismissible ? onClose : undefined}
       >
         <Animated.View
           style={{

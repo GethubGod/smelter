@@ -5,7 +5,6 @@ import {
   ScrollView,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,6 +12,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/constants';
 import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
+import { ScreenHeader } from '@/components/ui';
 import { useManagedRefresh } from '@/hooks/useManagedRefresh';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { ReminderDeliveryEvent, listReminderDeliveryEvents } from '@/services';
@@ -83,20 +83,14 @@ export default function EmployeeReminderDeliveryStatusScreen() {
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }} edges={['top', 'left', 'right']}>
       <ManagerScaleContainer>
-        <View className="border-b flex-row items-center" style={{ backgroundColor: color.card, borderColor: color.hairline, paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}>
-          <TouchableOpacity
-            onPress={() => router.replace('/(manager)/employee-reminders')}
-            style={{ padding: ds.spacing(8), marginRight: ds.spacing(8), minWidth: 44, minHeight: 44, justifyContent: 'center' }}
-          >
-            <Ionicons name="arrow-back" size={ds.icon(20)} color={colors.gray[700]} />
-          </TouchableOpacity>
-          <View>
-            <Text className="font-bold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.title) }}>Delivery Status</Text>
-            <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(2) }}>
-              Push and in-app reminder delivery history
-            </Text>
-          </View>
-        </View>
+        <ScreenHeader
+          title="Delivery Status"
+          subtitle="Push and in-app reminder delivery history"
+          mode="pushed"
+          onBack={() => router.replace('/(manager)/employee-reminders')}
+          includeSafeArea={false}
+          style={{ backgroundColor: color.card, borderBottomWidth: 1, borderColor: color.hairline }}
+        />
 
         <ScrollView
           className="flex-1"

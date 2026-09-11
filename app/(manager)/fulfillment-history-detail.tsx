@@ -7,6 +7,7 @@ import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { colors } from '@/constants';
 import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
+import { Button, ScreenHeader, StatusPill } from '@/components/ui';
 import { useAuthStore, useOrderStore } from '@/store';
 import { supabase } from '@/lib/supabase';
 import { useModuleAccessGuard } from '@/hooks';
@@ -203,16 +204,13 @@ function FulfillmentHistoryDetailScreen() {
     return (
       <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }} edges={['top', 'left', 'right']}>
         <ManagerScaleContainer>
-          <View className="px-4 py-3 border-b flex-row items-center" style={{ backgroundColor: color.card, borderColor: color.hairline }}>
-            <TouchableOpacity
-              onPress={() => router.back()}
-              className="p-2 mr-2"
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="arrow-back" size={20} color={colors.gray[700]} />
-            </TouchableOpacity>
-            <Text className="font-bold" style={{ fontSize: typeScale.title, color: color.ink }}>Past Order</Text>
-          </View>
+          <ScreenHeader
+            title="Past Order"
+            mode="pushed"
+            onBack={() => router.back()}
+            includeSafeArea={false}
+            style={{ backgroundColor: color.card, borderBottomWidth: 1, borderColor: color.hairline }}
+          />
           <View className="flex-1 items-center justify-center px-8">
             <Text style={{ color: color.ink2, fontSize: typeScale.body }}>Order not found.</Text>
           </View>
@@ -224,28 +222,19 @@ function FulfillmentHistoryDetailScreen() {
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }} edges={['top', 'left', 'right', 'bottom']}>
       <ManagerScaleContainer>
-        <View className="px-4 py-3 border-b flex-row items-center" style={{ backgroundColor: color.card, borderColor: color.hairline }}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            className="p-2 mr-2"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="arrow-back" size={20} color={colors.gray[700]} />
-          </TouchableOpacity>
-          <View className="flex-1">
-            <View className="flex-row items-center">
-              <Text className="font-bold" style={{ fontSize: typeScale.title, color: color.ink }}>{supplierLabel}</Text>
-              {pastOrder?.syncStatus === 'pending_sync' && (
-                <View className="ml-2 border px-2 py-0.5" style={{ borderRadius: radius.pill, borderColor: color.warning, backgroundColor: color.warningBg }}>
-                  <Text className="font-semibold" style={{ fontSize: typeScale.caption, color: color.warning }}>Pending sync</Text>
-                </View>
-              )}
-            </View>
-            <Text style={{ fontSize: typeScale.secondary, color: color.ink2 }}>
-              {pastOrder ? new Date(pastOrder.createdAt).toLocaleString() : 'Loading...'}
-            </Text>
-          </View>
-        </View>
+        <ScreenHeader
+          title={supplierLabel}
+          subtitle={pastOrder ? new Date(pastOrder.createdAt).toLocaleString() : 'Loading...'}
+          mode="pushed"
+          onBack={() => router.back()}
+          includeSafeArea={false}
+          right={
+            pastOrder?.syncStatus === 'pending_sync' ? (
+              <StatusPill status="submitted" label="Pending sync" />
+            ) : undefined
+          }
+          style={{ backgroundColor: color.card, borderBottomWidth: 1, borderColor: color.hairline }}
+        />
 
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 24 }}>
           <View className="border p-4 mb-4" style={{ backgroundColor: color.card, borderRadius: radius.card, borderColor: color.hairline }}>
@@ -302,21 +291,18 @@ function FulfillmentHistoryDetailScreen() {
         </ScrollView>
 
         <View className="border-t px-4 py-4" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
+          {/* Secondary, not green: Share Again is the primary action here, and
+              the good tone is a status colour, never an action colour. */}
           {items.length > 0 && (
-            <TouchableOpacity
-              onPress={handleReorder}
+            <Button
+              label={isReordering ? 'Creating Reorder...' : 'Reorder'}
+              variant="secondary"
+              icon="refresh-outline"
+              loading={isReordering}
               disabled={isReordering || !pastOrder}
-              className="py-3 items-center justify-center flex-row mb-3" style={{ borderRadius: radius.control, backgroundColor: isReordering ? color.well : color.good }}
-            >
-              <Ionicons
-                name="refresh-outline"
-                size={17}
-                color={isReordering ? colors.gray[400] : 'white'}
-              />
-              <Text className="font-semibold ml-2" style={{ color: isReordering ? color.ink3 : color.onAccent }}>
-                {isReordering ? 'Creating Reorder...' : 'Reorder'}
-              </Text>
-            </TouchableOpacity>
+              onPress={handleReorder}
+              style={{ marginBottom: 12 }}
+            />
           )}
           <View className="flex-row">
             <TouchableOpacity

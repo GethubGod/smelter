@@ -849,6 +849,9 @@ export function QuickOrderReviewQueueScreen() {
       visible={Boolean(rejectOrder)}
       title="Reject with note"
       onClose={closeRejectModal}
+      // A written note is unsaved work: closing clears it, so the scrim and the
+      // drag stop dismissing once there is anything to lose. Cancel still exits.
+      dismissible={rejectNote.trim().length === 0}
     >
       <Text style={[styles.metaText, { fontSize: ds.fontSize(typeScale.secondary), marginTop: ds.spacing(6) }]}>
         This cancels the order and notifies the employee.
@@ -1175,10 +1178,5 @@ const styles = StyleSheet.create({
   },
   footerSecondaryButton: {
     backgroundColor: colors.glassCircle,
-  },
-  rejectOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: colors.scrim,
   },
 });

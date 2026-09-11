@@ -27,8 +27,8 @@ const ROOT_IGNORES = [
  * list, including every new file, still fails outright.
  *
  * The backlog is not hidden. `npm run lint:drift` turns the rule back on for
- * every one of these files and prints the full count. Today that is 3334
- * violations across 157 files. It was 819 across 115 until the rule learned to
+ * every one of these files and prints the full count. Today that is 79
+ * violations across 12 files. It was 819 across 115 until the rule learned to
  * see numbers passed through the scaling helpers (`ds.fontSize(17)`) and
  * NativeWind utilities (`bg-gray-50`, `text-lg`, `rounded-xl`); those were
  * always drift, they were simply invisible.
@@ -39,38 +39,26 @@ const ROOT_IGNORES = [
  * add to it.
  */
 const DRIFT_ALLOWLIST = [
+  // app (1 file, 2)
   'app/_layout.tsx',
+  // app/(manager) (1 file, 6)
   'app/(manager)/inventory.tsx',
+  // src/components/tuna-specialist (1 file, 2)
   'src/components/tuna-specialist/ConversationHistory.tsx',
   // src/features/browse (2 files, 37)
   'src/features/browse/BrowseInventoryScreenView.tsx',
   'src/features/browse/BrowseItemRow.tsx',
+  // src/features/ordering (4 files, 8)
   'src/features/ordering/QuickOrderItemEditModal.tsx',
   'src/features/ordering/QuickOrderQuantitySheet.tsx',
   'src/features/ordering/QuickOrderReviewQueueScreen.tsx',
   'src/features/ordering/QuickSearchScreenView.tsx',
+  // src/features/ordering/quickOrderConfig (1 file, 2)
   'src/features/ordering/quickOrderConfig/ExampleEditorModal.tsx',
   // src/features/settings (1 file, 11)
   'src/features/settings/SupplierContactsScreen.tsx',
   // src/features/smart (1 file, 11)
   'src/features/smart/SmartOrderScreen.tsx',
-  // app (1 file, 9)
-  'app/orders/\[id\].tsx',
-  // app/(tabs) (1 file, 45)
-  // app/(manager) (1 file, 6): full-screen pageSheet forms (edit/move/add
-  // stock). Sheet/BottomSheetShell is a fixed-height bottom sheet with no
-  // internal scroll container; hosting these here would drop the scrolling
-  // form body. Needs a full-screen variant of the primitive, see #35.
-  // src/components/tuna-specialist (1 file, 2): full-screen pageSheet
-  // history view, same primitive gap as the inventory forms above, see #35.
-  // src/features/ordering (4 files, 8): two keyboard-aware bottom sheets
-  // (QuickOrderItemEditModal, QuickOrderQuantitySheet) that roll their own
-  // KeyboardAvoidingView + drag-to-dismiss, which BottomSheetShell does not
-  // support; and one full-screen pageSheet form
-  // (QuickOrderReviewQueueScreen's edit-and-approve modal, QuickSearchScreenView's
-  // quick-create modal). Same primitive gap as the inventory forms above, see #35.
-  // src/features/ordering/quickOrderConfig (1 file, 2): full-screen pageSheet
-  // form, same gap, see #35.
 ];
 
 module.exports = defineConfig([
