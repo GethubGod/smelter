@@ -34,11 +34,6 @@ const orderStoreMock = {
   setState: jest.fn(),
   persist: { clearStorage: jest.fn(async () => undefined) },
 };
-const draftStoreMock = {
-  getInitialState: jest.fn(() => ({})),
-  setState: jest.fn(),
-  persist: { clearStorage: jest.fn(async () => undefined) },
-};
 const inventoryStoreMock = {
   getInitialState: jest.fn(() => ({})),
   setState: jest.fn(),
@@ -110,7 +105,6 @@ jest.mock('@/lib/supabase', () => ({
 }));
 
 jest.mock('../store/orderStore', () => ({ useOrderStore: orderStoreMock, invalidatePendingOrderRequests: invalidatePendingOrderRequestsMock }));
-jest.mock('../store/draftStore', () => ({ useDraftStore: draftStoreMock }));
 jest.mock('../store/inventoryStore', () => ({
   useInventoryStore: inventoryStoreMock,
   invalidatePendingInventoryRequests: invalidatePendingInventoryRequestsMock,

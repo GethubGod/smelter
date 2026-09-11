@@ -8,13 +8,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import {
-  colors,
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-  grayScale,
-} from '@/theme/design';
+import { color, radius, space, typeScale, weight } from '@/theme/tokens';
 import type { Location } from '@/types';
 
 /**
@@ -75,26 +69,26 @@ const LocationRow = memo(function LocationRow({
         flexDirection: 'row',
         alignItems: 'center',
         height: ROW_HEIGHT,
-        paddingHorizontal: ds.spacing(16),
-        borderBottomWidth: isLast ? 0 : glassHairlineWidth,
-        borderBottomColor: isMuted ? grayScale[300] : glassColors.divider,
+        paddingHorizontal: ds.spacing(space[4]),
+        borderBottomWidth: isLast ? 0 : 1,
+        borderBottomColor: isMuted ? color.hairlineStrong : color.hairline,
       }}
     >
       <View
         style={{
           width: 8,
           height: 8,
-          borderRadius: glassRadii.round,
-          backgroundColor: isSelected ? glassColors.accent : glassColors.textMuted,
-          marginRight: ds.spacing(12),
+          borderRadius: radius.pill,
+          backgroundColor: isSelected ? color.accent : color.ink3,
+          marginRight: ds.spacing(space[3]),
         }}
       />
       <Text
         style={{
           flex: 1,
-          fontSize: ds.fontSize(15),
-          fontWeight: isSelected ? '700' : '600',
-          color: glassColors.textPrimary,
+          fontSize: ds.fontSize(typeScale.body),
+          fontWeight: isSelected ? weight.bold : weight.semibold,
+          color: color.ink,
         }}
         numberOfLines={1}
       >
@@ -104,7 +98,7 @@ const LocationRow = memo(function LocationRow({
         <Ionicons
           name="checkmark"
           size={ds.icon(18)}
-          color={glassColors.accent}
+          color={color.accent}
         />
       ) : null}
     </TouchableOpacity>
@@ -167,17 +161,17 @@ export const LocationSwitcherDropdown = memo(function LocationSwitcherDropdown({
         {
           // Same pale tone as the collapsed location pill so the open menu reads
           // as that pill grown larger, not a separate surface.
-          backgroundColor: isMuted ? '#F2F2F7' : colors.white,
+          backgroundColor: isMuted ? color.well : color.card,
           alignSelf: 'flex-end',
           minWidth: 280,
-          borderRadius: glassRadii.surface,
-          borderWidth: isMuted ? 0 : glassHairlineWidth,
-          borderColor: glassColors.cardBorder,
+          borderRadius: radius.card,
+          borderWidth: isMuted ? 0 : 1,
+          borderColor: color.hairline,
           overflow: 'hidden',
           // Pin growth to the top-right corner — where the pill lives — so the
           // expansion appears to originate from the pill.
           transformOrigin: 'top right',
-          shadowColor: 'rgba(15, 23, 42, 0.35)',
+          shadowColor: color.ink,
           shadowOpacity: isMuted ? 0.22 : 0.16,
           shadowRadius: 18,
           shadowOffset: { width: 0, height: 12 },

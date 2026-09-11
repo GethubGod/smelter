@@ -1,12 +1,13 @@
-// Screen 06 — Ready. "You're set, <Name>" -> routes into the app (whatever
-// the current tab layout resolves to for this account).
+// Screen 06 — Ready. "You're set, <Name>" routes into the app (whatever the
+// current tab layout resolves to for this account).
 
 import { Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { authTheme } from '@/theme/design';
+import { Button } from '@/components/ui';
+import { useScaledStyles } from '@/hooks/useScaledStyles';
+import { auth, color, radius, size, space, tracking, typeScale, weight } from '@/theme/tokens';
 import type { InviteLocationGroup } from '@/services/invites';
-import { AuthPrimaryButton } from './components/AuthPrimaryButton';
 import { AuthScreenShell } from './components/AuthScreenShell';
 import { useOnboardingStore } from './onboardingStore';
 
@@ -23,9 +24,11 @@ function readyLine(locationGroup: InviteLocationGroup): string {
 
 export default function ReadyScreen() {
   const router = useRouter();
+  const ds = useScaledStyles();
   const invitedName = useOnboardingStore((state) => state.invitedName);
   const locationGroup = useOnboardingStore((state) => state.locationGroup);
   const reset = useOnboardingStore((state) => state.reset);
+  const circle = ds.icon(size.emptyStateIcon);
 
   const handleEnter = () => {
     reset();
@@ -39,25 +42,42 @@ export default function ReadyScreen() {
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <View
           style={{
-            width: 60,
-            height: 60,
-            borderRadius: 30,
-            backgroundColor: authTheme.accent,
+            width: circle,
+            height: circle,
+            borderRadius: radius.pill,
+            backgroundColor: color.accent,
             alignItems: 'center',
             justifyContent: 'center',
-            marginBottom: 16,
+            marginBottom: ds.spacing(space[4]),
           }}
         >
-          <Ionicons name="checkmark" size={30} color={authTheme.text} />
+          <Ionicons name="checkmark" size={ds.icon(size.icon)} color={color.onAccent} />
         </View>
-        <Text style={{ fontSize: 23, fontWeight: '700', color: authTheme.text, marginBottom: 5 }}>
+        <Text
+          accessibilityRole="header"
+          style={{
+            fontSize: ds.fontSize(typeScale.display),
+            fontWeight: weight.bold,
+            letterSpacing: tracking.display,
+            color: auth.text,
+            textAlign: 'center',
+          }}
+        >
           {`You're set${invitedName ? `, ${invitedName}` : ''}`}
         </Text>
-        <Text style={{ fontSize: 14, color: authTheme.textDim, marginBottom: 24 }}>
+        <Text
+          style={{
+            fontSize: ds.fontSize(typeScale.secondary),
+            color: auth.dim,
+            textAlign: 'center',
+            marginTop: ds.spacing(space[2] - 2),
+            marginBottom: ds.spacing(space[6]),
+          }}
+        >
           {readyLine(locationGroup)}
         </Text>
         <View style={{ alignSelf: 'stretch' }}>
-          <AuthPrimaryButton label="See today's list" onPress={handleEnter} />
+          <Button label="See today's list" onPress={handleEnter} />
         </View>
       </View>
     </AuthScreenShell>

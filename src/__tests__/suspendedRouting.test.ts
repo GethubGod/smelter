@@ -20,9 +20,11 @@ interface AuthSnapshot {
   isInitialized: boolean;
   isLoading: boolean;
   signOut: () => Promise<void>;
+  initialize: () => Promise<void>;
 }
 
 const mockSignOut = jest.fn(async () => undefined);
+const mockInitialize = jest.fn(async () => undefined);
 
 const mockUseAuthStore = create<AuthSnapshot>(() => ({
   session: null,
@@ -32,20 +34,64 @@ const mockUseAuthStore = create<AuthSnapshot>(() => ({
   isInitialized: true,
   isLoading: false,
   signOut: mockSignOut,
+  initialize: mockInitialize,
 }));
 
-const mockRedirect = jest.fn();
+const mockUseDisplayStore = create<{ theme: 'light' | 'dark' | 'system'; reduceMotion: boolean }>(
+  () => ({ theme: 'light', reduceMotion: false })
+);
 
-jest.mock('@/store', () => ({ useAuthStore: mockUseAuthStore }));
+const mockRedirect = jest.fn();
+const mockUseOrderSubscription = jest.fn();
+const mockUseInventorySubscription = jest.fn();
+const mockRefreshPushToken = jest.fn(async () => undefined);
+const mockStartAutoRefresh = jest.fn();
+const mockStopAutoRefresh = jest.fn();
+
+jest.mock('@/store', () => ({
+  useAuthStore: mockUseAuthStore,
+  useDisplayStore: mockUseDisplayStore,
+}));
 jest.mock('expo-router', () => {
   const ReactActual = jest.requireActual<typeof import('react')>('react');
+  const Stack = ({ children }: { children?: React.ReactNode }) =>
+    ReactActual.createElement('Stack', null, children);
+  Stack.Screen = ({ name }: { name: string }) => ReactActual.createElement('StackScreen', { name });
   return {
+    Stack,
     Redirect: ({ href }: { href: string }) => {
       mockRedirect(href);
       return ReactActual.createElement('Redirect', { href });
     },
   };
 });
+jest.mock('@/hooks', () => ({
+  useOrderSubscription: mockUseOrderSubscription,
+  useInventorySubscription: mockUseInventorySubscription,
+}));
+jest.mock('@/services/notificationService', () => ({
+  refreshCurrentDevicePushTokenIfStale: mockRefreshPushToken,
+}));
+jest.mock('@/lib/supabase', () => ({
+  supabase: {
+    auth: { startAutoRefresh: mockStartAutoRefresh, stopAutoRefresh: mockStopAutoRefresh },
+  },
+  supabaseConfigError: null,
+}));
+// The #33 sweep routes app/suspended.tsx through the @/components/ui barrel,
+// which reads glass, radii and the glass* aliases at module scope. Spread the
+// real tokens so the barrel loads, and keep the two overrides this suite
+// asserts on.
+jest.mock('@/theme/design', () => ({
+  ...jest.requireActual<typeof import('@/theme/design')>('@/theme/design'),
+  colors: { background: '#fff', textPrimary: '#111', textMuted: '#666' },
+  authTheme: { background: '#000' },
+}));
+jest.mock('react-native-gesture-handler', () => ({
+  GestureHandlerRootView: 'GestureHandlerRootView',
+}));
+jest.mock('expo-status-bar', () => ({ StatusBar: 'StatusBar' }));
+jest.mock('../../global.css', () => ({}), { virtual: true });
 jest.mock('@/components', () => {
   const ReactActual = jest.requireActual<typeof import('react')>('react');
   return { AuthLoadingScreen: () => ReactActual.createElement('AuthLoadingScreen') };
@@ -56,17 +102,45 @@ jest.mock('react-native', () => ({
   TouchableOpacity: 'TouchableOpacity',
   Alert: { alert: jest.fn() },
   Platform: { OS: 'ios', select: (options: { default: unknown }) => options.default },
+  // The @/components/ui barrel reaches design.ts through Sheet.
+  StyleSheet: {
+    hairlineWidth: 1,
+    create: <T,>(styles: T) => styles,
+    flatten: <T,>(styles: T) => styles,
+  },
+  LogBox: { ignoreLogs: jest.fn() },
+  Appearance: { setColorScheme: jest.fn() },
+  AppState: {
+    currentState: 'active',
+    addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+  },
 }));
 jest.mock('react-native-safe-area-context', () => ({ SafeAreaView: 'SafeAreaView' }));
 jest.mock('@expo/vector-icons', () => ({ Ionicons: 'Ionicons' }));
 jest.mock('@/constants', () => ({
   colors: { background: '#fff', errorBg: '#fee', error: '#c00', text: '#111' },
 }));
+// The screen now composes the contract primitives (EmptyState, Button). They
+// read the display store through useScaledStyles and pull in the single
+// ActivityIndicator host, neither of which this stubbed react-native supports.
+jest.mock('@/hooks/useScaledStyles', () => ({
+  useScaledStyles: () => ({
+    spacing: (value: number) => value,
+    fontSize: (value: number) => value,
+    radius: (value: number) => value,
+    icon: (value: number) => value,
+  }),
+}));
+jest.mock('@/components/LoadingIndicator', () => ({ LoadingIndicator: 'LoadingIndicator' }));
 
 // eslint-disable-next-line import/first -- the mocked stores above must be initialized before the real screens load
 import Index from '../../app/index';
 // eslint-disable-next-line import/first -- same ordering requirement as the import above
 import SuspendedScreen from '../../app/suspended';
+// eslint-disable-next-line import/first -- same ordering requirement as the import above
+import RootLayout from '../../app/_layout';
+// eslint-disable-next-line import/first -- same ordering requirement as the import above
+import AuthLayout from '../../app/(auth)/_layout';
 
 const SUSPENDED_SESSION = {
   user: {
@@ -113,6 +187,7 @@ describe('suspended routing', () => {
       isInitialized: true,
       isLoading: false,
       signOut: mockSignOut,
+      initialize: mockInitialize,
     });
   });
 
@@ -194,5 +269,92 @@ describe('suspended routing', () => {
     expect(mockSignOut).not.toHaveBeenCalled();
 
     renderer.act(() => component.unmount());
+  });
+
+  describe('the root layout under a suspended session', () => {
+    // Sol review finding 2. The suspended relaunch keeps its session so the
+    // guards can route and so a reinstatement is seen live, but it must not
+    // run like an active session.
+    test('does not subscribe to orders or inventory and does not renew the push token', () => {
+      mockUseAuthStore.setState({
+        session: SUSPENDED_SESSION as AuthSnapshot['session'],
+        user: { id: 'user-1', role: 'employee' },
+        profile: suspendedProfile(),
+      });
+
+      const component = renderScreen(React.createElement(RootLayout));
+
+      expect(mockUseOrderSubscription).not.toHaveBeenCalled();
+      expect(mockUseInventorySubscription).not.toHaveBeenCalled();
+      expect(mockRefreshPushToken).not.toHaveBeenCalled();
+      // The auth store still initializes, so the auth listener and the profile
+      // subscription it installs keep watching for a reinstatement.
+      expect(mockStartAutoRefresh).toHaveBeenCalled();
+
+      renderer.act(() => component.unmount());
+    });
+
+    test('still subscribes and renews the push token for an active profile', () => {
+      mockUseAuthStore.setState({
+        session: SUSPENDED_SESSION as AuthSnapshot['session'],
+        user: { id: 'user-1', role: 'employee' },
+        profile: suspendedProfile({ is_suspended: false }),
+      });
+
+      const component = renderScreen(React.createElement(RootLayout));
+
+      expect(mockUseOrderSubscription).toHaveBeenCalled();
+      expect(mockUseInventorySubscription).toHaveBeenCalled();
+      expect(mockRefreshPushToken).toHaveBeenCalledWith('user-1');
+
+      renderer.act(() => component.unmount());
+    });
+  });
+
+  describe('the (auth) group guard', () => {
+    // Sol review finding 3. /ready, /secure, /secure-pin and /secure-password
+    // carry no guard of their own, so a deep link could show a suspended
+    // session an onboarding success screen. The group layout guards them all.
+    test('sends a suspended session that deep links into the group to /suspended', () => {
+      mockUseAuthStore.setState({
+        session: SUSPENDED_SESSION as AuthSnapshot['session'],
+        user: { id: 'user-1', role: 'employee' },
+        profile: suspendedProfile(),
+      });
+
+      const component = renderScreen(React.createElement(AuthLayout));
+
+      expect(mockRedirect).toHaveBeenCalledWith('/suspended');
+      expect(mockRedirect).toHaveBeenCalledTimes(1);
+      expect(mockSignOut).not.toHaveBeenCalled();
+
+      renderer.act(() => component.unmount());
+    });
+
+    test('leaves onboarding alone for an active profile', () => {
+      mockUseAuthStore.setState({
+        session: SUSPENDED_SESSION as AuthSnapshot['session'],
+        user: { id: 'user-1', role: 'employee' },
+        profile: suspendedProfile({ is_suspended: false }),
+      });
+
+      const component = renderScreen(React.createElement(AuthLayout));
+
+      expect(mockRedirect).not.toHaveBeenCalled();
+      // The #33 sweep collapsed the nine per-screen backgrounds into one
+      // contentStyle on the stack, so the group renders a bare Stack. The
+      // assertion is still that the group renders instead of redirecting.
+      expect(component.root.findAllByType('Stack' as unknown as React.ElementType).length).toBeGreaterThan(0);
+
+      renderer.act(() => component.unmount());
+    });
+
+    test('leaves a signed-out visitor alone', () => {
+      const component = renderScreen(React.createElement(AuthLayout));
+
+      expect(mockRedirect).not.toHaveBeenCalled();
+
+      renderer.act(() => component.unmount());
+    });
   });
 });

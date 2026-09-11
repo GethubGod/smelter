@@ -3,7 +3,6 @@ import {
   View,
   Text,
   FlatList,
-  TouchableOpacity,
   Alert,
   Platform,
 } from 'react-native';
@@ -13,14 +12,36 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useShallow } from 'zustand/react/shallow';
 import { useOrderStore, useAuthStore } from '@/store';
-import { OrderItemWithInventory } from '@/types';
-import { statusColors, ORDER_STATUS_LABELS, getCategoryLabel, categoryColors, colors } from '@/constants';
+import { OrderItemWithInventory, OrderStatus } from '@/types';
+import { ORDER_STATUS_LABELS, getCategoryLabel, categoryColors } from '@/constants';
 import { supabase } from '@/lib/supabase';
-import { LoadingIndicator } from '@/components';
+import {
+  Button,
+  Card,
+  EmptyState,
+  Loading,
+  ScreenHeader,
+  SectionLabel,
+  StatusPill,
+} from '@/components/ui';
 import { completePendingRemindersForUser } from '@/services/notificationService';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
+import { color, radius, space, typeScale, weight, type StatusTone } from '@/theme/tokens';
 
 const MANAGER_DASHBOARD_FALLBACK_ROUTE = '/(manager)';
+
+/**
+ * `cancel_requested` is a real order status but not one of the contract's five
+ * pills, so it borrows the submitted tone and keeps its own word.
+ */
+const STATUS_TONE: Record<OrderStatus, StatusTone> = {
+  draft: 'draft',
+  submitted: 'submitted',
+  processing: 'processing',
+  fulfilled: 'fulfilled',
+  cancelled: 'cancelled',
+  cancel_requested: 'submitted',
+};
 
 export default function OrderDetailScreen() {
   const ds = useScaledStyles();
@@ -234,31 +255,28 @@ export default function OrderDetailScreen() {
 
   if (!orderId) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} className="items-center justify-center px-6">
-        <Ionicons name="alert-circle-outline" size={30} color={colors.error} />
-        <Text className="text-gray-900 font-semibold mt-3 text-center">Invalid order link</Text>
-        <TouchableOpacity
-          className="mt-5 bg-primary-500 rounded-lg px-4 py-2"
-          onPress={handleBackPress}
-        >
-          <Text className="text-white font-semibold">Go Back</Text>
-        </TouchableOpacity>
+      <SafeAreaView style={{ flex: 1, backgroundColor: color.page }}>
+        <EmptyState
+          icon="alert-circle-outline"
+          tone="alert"
+          title="Invalid order link"
+          body="This link does not point at an order."
+          action={{ label: 'Go back', onPress: handleBackPress }}
+        />
       </SafeAreaView>
     );
   }
 
   if (loadError) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} className="items-center justify-center px-6">
-        <Ionicons name="warning-outline" size={30} color={colors.warning} />
-        <Text className="text-gray-900 font-semibold mt-3 text-center">Unable to load order</Text>
-        <Text className="text-gray-500 mt-2 text-center">{loadError}</Text>
-        <TouchableOpacity
-          className="mt-5 bg-primary-500 rounded-lg px-4 py-2"
-          onPress={handleBackPress}
-        >
-          <Text className="text-white font-semibold">Go Back</Text>
-        </TouchableOpacity>
+      <SafeAreaView style={{ flex: 1, backgroundColor: color.page }}>
+        <EmptyState
+          icon="alert-circle-outline"
+          tone="alert"
+          title="Unable to load order"
+          body={loadError}
+          action={{ label: 'Go back', onPress: handleBackPress }}
+        />
       </SafeAreaView>
     );
   }
@@ -267,13 +285,12 @@ export default function OrderDetailScreen() {
 
   if (isLoading || !isCurrentOrderLoaded || !currentOrder) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} className="items-center justify-center">
-        <LoadingIndicator size="large" showText text="Loading order..." />
+      <SafeAreaView style={{ flex: 1, backgroundColor: color.page }}>
+        <Loading label="Loading order" />
       </SafeAreaView>
     );
   }
 
-  const statusTone = statusColors[currentOrder.status];
   const isManagerView = user?.role === 'manager' && viewMode === 'manager';
   const isEmployeeView = !isManagerView;
   const canMarkProcessing = currentOrder.status === 'submitted' && isManagerView;
@@ -296,7 +313,8 @@ export default function OrderDetailScreen() {
   const canEmployeeCancelNow = showEmployeeCancellationAction && withinEmployeeCancelWindow;
 
   const renderOrderItem = ({ item }: { item: OrderItemWithInventory }) => {
-    const categoryColor = categoryColors[item.inventory_item.category] || colors.gray[600];
+    // Category tints stay a reserved set for inventory glyphs, per the contract.
+    const categoryColor = categoryColors[item.inventory_item.category] || color.ink2;
     const unitLabel =
       item.unit_type === 'base'
         ? item.inventory_item.base_unit
@@ -306,291 +324,285 @@ export default function OrderDetailScreen() {
       : null;
 
     return (
-      <View
-        className="bg-white rounded-2xl p-4 mb-3 border border-gray-100"
-        style={{
-          backgroundColor: colors.card,
-          borderColor: colors.divider,
-          shadowColor: colors.background,
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0,
-          shadowRadius: 0,
-          elevation: 0,
-        }}
-      >
-        <View className="flex-row justify-between items-start">
-          <View className="flex-1 mr-3">
-            <Text className="text-gray-900 font-semibold text-base">
+      <Card style={{ marginBottom: ds.spacing(space[3]) }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <View style={{ flex: 1, marginRight: ds.spacing(space[3]) }}>
+            <Text
+              style={{
+                fontSize: ds.fontSize(typeScale.body),
+                fontWeight: weight.semibold,
+                color: color.ink,
+              }}
+            >
               {item.inventory_item.name}
             </Text>
             <View
-              style={{ backgroundColor: categoryColor + '20' }}
-              className="px-2.5 py-1 rounded-lg self-start mt-2"
+              style={{
+                alignSelf: 'flex-start',
+                marginTop: ds.spacing(space[2]),
+                paddingHorizontal: ds.spacing(space[2] + 2),
+                paddingVertical: ds.spacing(space[1]),
+                borderRadius: radius.control,
+                backgroundColor: categoryColor + '20',
+              }}
             >
-              <Text style={{ color: categoryColor }} className="text-xs font-medium">
+              <Text
+                style={{
+                  fontSize: ds.fontSize(typeScale.caption),
+                  fontWeight: weight.semibold,
+                  color: categoryColor,
+                }}
+              >
                 {getCategoryLabel(item.inventory_item.category)}
               </Text>
             </View>
             {lineNote && (
-              <View style={{ marginTop: 8, backgroundColor: colors.infoBg, borderWidth: 1, borderColor: colors.infoBg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 }}>
-                <Text style={{ fontSize: 11, fontWeight: '600', color: colors.info }}>Note</Text>
-                <Text style={{ fontSize: 14, color: colors.info, marginTop: 2 }}>{lineNote}</Text>
+              <View
+                style={{
+                  marginTop: ds.spacing(space[2]),
+                  backgroundColor: color.well,
+                  borderRadius: radius.control,
+                  paddingHorizontal: ds.spacing(space[2] + 2),
+                  paddingVertical: ds.spacing(space[2]),
+                }}
+              >
+                <SectionLabel style={{ marginTop: 0, marginBottom: 0 }}>Note</SectionLabel>
+                <Text
+                  style={{
+                    marginTop: ds.spacing(space[1] / 2),
+                    fontSize: ds.fontSize(typeScale.secondary),
+                    color: color.ink2,
+                  }}
+                >
+                  {lineNote}
+                </Text>
               </View>
             )}
           </View>
-          <View className="items-end">
-            <Text className="text-gray-900 font-bold text-xl">
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text
+              style={{
+                fontSize: ds.fontSize(typeScale.title),
+                fontWeight: weight.bold,
+                color: color.ink,
+              }}
+            >
               {item.quantity}
             </Text>
-            <Text className="text-gray-500 text-sm">{unitLabel}</Text>
+            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
+              {unitLabel}
+            </Text>
           </View>
         </View>
-      </View>
+      </Card>
     );
   };
 
-  return (
-    <>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          headerBackVisible: false,
-          headerTitleAlign: 'center',
-          headerTintColor: colors.gray[700],
-          headerStyle: { backgroundColor: colors.background },
-          title: `Order #${currentOrder.order_number}`,
-          headerTitleStyle: { color: colors.text, fontSize: 17, fontWeight: '700' },
-          headerLeft: () => (
-            <TouchableOpacity
-              onPress={handleBackPress}
-              style={{
-                padding: ds.spacing(8),
-                minWidth: 44,
-                minHeight: 44,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="arrow-back" size={ds.icon(20)} color={colors.gray[700]} />
-            </TouchableOpacity>
-          ),
-        }}
-      />
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['left', 'right', 'bottom']}>
-        {/* Order Info Card */}
-        <View
-          className="mx-4 mt-4 bg-white rounded-2xl p-4 border border-gray-100"
+  const metaRow = (
+    icon: keyof typeof Ionicons.glyphMap,
+    label: string,
+    value: string,
+    first = false,
+  ) => (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: ds.spacing(space[3]),
+        paddingVertical: ds.spacing(space[2]),
+        borderTopWidth: first ? 0 : 1,
+        borderTopColor: color.hairline,
+      }}
+    >
+      <Ionicons name={icon} size={ds.icon(18)} color={color.ink2} />
+      <View style={{ flex: 1 }}>
+        <SectionLabel style={{ marginTop: 0, marginBottom: 0 }}>{label}</SectionLabel>
+        <Text
           style={{
-            backgroundColor: colors.card,
-            borderColor: colors.divider,
-            shadowColor: colors.background,
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 0,
-            shadowRadius: 0,
-            elevation: 0,
+            fontSize: ds.fontSize(typeScale.body),
+            fontWeight: weight.semibold,
+            color: color.ink,
           }}
         >
-          {/* Status Row */}
-          <View className="flex-row justify-between items-center mb-4">
-            <View>
-              <Text className="text-gray-500 text-xs uppercase tracking-wide mb-1">Status</Text>
-              <View
-                className="px-3 py-1.5 rounded-full"
-                style={{ backgroundColor: statusTone.bg }}
-              >
+          {value}
+        </Text>
+      </View>
+    </View>
+  );
+
+  return (
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <SafeAreaView style={{ flex: 1, backgroundColor: color.page }} edges={['top', 'left', 'right', 'bottom']}>
+        <ScreenHeader
+          mode="pushed"
+          title={`Order #${currentOrder.order_number}`}
+          onBack={handleBackPress}
+          includeSafeArea={false}
+        />
+
+        {/* Order info card */}
+        <View style={{ paddingHorizontal: ds.spacing(space[4]) }}>
+          <Card>
+            {/* Status row */}
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                gap: ds.spacing(space[3]),
+                marginBottom: ds.spacing(space[3]),
+              }}
+            >
+              <View>
+                <SectionLabel style={{ marginTop: 0 }}>Status</SectionLabel>
+                <StatusPill
+                  status={STATUS_TONE[currentOrder.status] ?? 'draft'}
+                  label={ORDER_STATUS_LABELS[currentOrder.status]}
+                />
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <SectionLabel style={{ marginTop: 0 }}>Created</SectionLabel>
                 <Text
-                  className="font-bold text-sm"
-                  style={{ color: statusTone.text }}
+                  style={{
+                    fontSize: ds.fontSize(typeScale.secondary),
+                    fontWeight: weight.semibold,
+                    color: color.ink,
+                  }}
                 >
-                  {ORDER_STATUS_LABELS[currentOrder.status]}
+                  {formatDate(currentOrder.created_at)}
                 </Text>
               </View>
             </View>
-            <View className="items-end">
-              <Text className="text-gray-500 text-xs uppercase tracking-wide mb-1">Created</Text>
-              <Text className="text-gray-900 font-medium">
-                {formatDate(currentOrder.created_at)}
-              </Text>
-            </View>
-          </View>
 
-          {/* Submitted By */}
-          <View className="flex-row items-center py-2 border-t border-gray-100">
-            <Ionicons name="person-outline" size={18} color={colors.gray[600]} />
-            <View className="ml-3">
-              <Text className="text-gray-500 text-xs">Submitted by</Text>
-              <Text className="text-gray-900 font-medium">
-                {currentOrder.user?.name || 'Unknown'}
-              </Text>
-            </View>
-          </View>
-
-          {/* Location */}
-          <View className="flex-row items-center py-2 border-t border-gray-100">
-            <Ionicons name="location-outline" size={18} color={colors.gray[600]} />
-            <View className="ml-3">
-              <Text className="text-gray-500 text-xs">Location</Text>
-              <Text className="text-gray-900 font-medium">
-                {currentOrder.location?.name || 'Unknown Location'}
-              </Text>
-            </View>
-          </View>
-
-          {/* Fulfilled Info */}
-          {isFulfilled && currentOrder.fulfilled_at && (
-            <View className="flex-row items-center py-2 border-t border-gray-100">
-              <Ionicons name="checkmark-circle" size={18} color={colors.success} />
-              <View className="ml-3">
-                <Text className="text-gray-500 text-xs">Fulfilled</Text>
-                <Text className="text-green-700 font-medium">
-                  {formatDate(currentOrder.fulfilled_at)}
-                  {fulfilledByUser && ` by ${fulfilledByUser}`}
-                </Text>
-              </View>
-            </View>
-          )}
+            {metaRow('person-outline', 'Submitted by', currentOrder.user?.name || 'Unknown', true)}
+            {metaRow('location-outline', 'Location', currentOrder.location?.name || 'Unknown Location')}
+            {isFulfilled && currentOrder.fulfilled_at
+              ? metaRow(
+                  'checkmark-circle-outline',
+                  'Fulfilled',
+                  `${formatDate(currentOrder.fulfilled_at)}${fulfilledByUser ? ` by ${fulfilledByUser}` : ''}`,
+                )
+              : null}
+          </Card>
         </View>
 
-        {/* Items Header */}
-        <View className="px-4 py-3 mt-2">
-          <Text className="text-gray-500 font-semibold text-xs uppercase tracking-wide">
-            Order Items ({currentOrder.order_items?.length || 0})
-          </Text>
+        {/* Items header */}
+        <View style={{ paddingHorizontal: ds.spacing(space[4]) }}>
+          <SectionLabel>
+            {`Order items (${currentOrder.order_items?.length || 0})`}
+          </SectionLabel>
         </View>
 
-        {/* Order Items List */}
+        {/* Order items list */}
         <FlatList
           data={currentOrder.order_items || []}
           renderItem={renderOrderItem}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
+          contentContainerStyle={{
+            paddingHorizontal: ds.spacing(space[4]),
+            paddingBottom: ds.spacing(space[4]),
+          }}
           ListEmptyComponent={() => (
-            <View className="items-center py-8">
-              <Ionicons name="cube-outline" size={40} color={colors.gray[300]} />
-              <Text className="text-gray-400 mt-2">No items in this order</Text>
-            </View>
+            <EmptyState icon="cube-outline" title="No items in this order" compact />
           )}
         />
 
-        {/* Action Buttons */}
+        {/* Action buttons */}
         {(canMarkProcessing || canMarkFulfilled || currentOrder.status === 'draft' || showEmployeeCancellationAction) && (
-          <View className="p-4 bg-white border-t border-gray-200">
-            {/* Draft Status - Employee can submit */}
+          <View
+            style={{
+              padding: ds.spacing(space[4]),
+              backgroundColor: color.card,
+              borderTopWidth: 1,
+              borderTopColor: color.hairline,
+              gap: ds.spacing(space[3]),
+            }}
+          >
+            {/* Draft status: the employee submits */}
             {currentOrder.status === 'draft' && (
-              <View className="flex-row">
-                <TouchableOpacity
-                  className="flex-1 bg-gray-200 rounded-xl py-4 items-center mr-2"
+              <View style={{ flexDirection: 'row', gap: ds.spacing(space[3]) }}>
+                <Button
+                  variant="secondary"
+                  label="Cancel"
                   onPress={handleCancel}
                   disabled={isUpdating}
-                >
-                  <Text className="text-gray-700 font-semibold">Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className="flex-1 bg-primary-500 rounded-xl py-4 items-center ml-2 flex-row justify-center"
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  label="Submit order"
+                  icon="send"
                   onPress={handleSubmit}
-                  disabled={isUpdating}
-                >
-                  {isUpdating ? (
-                    <LoadingIndicator size="small" />
-                  ) : (
-                    <>
-                      <Ionicons name="send" size={18} color="white" />
-                      <Text className="text-white font-semibold ml-2">Submit Order</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+                  loading={isUpdating}
+                  style={{ flex: 1 }}
+                />
               </View>
             )}
 
-            {/* Pending Status - Manager can mark as processing */}
+            {/* Submitted status: the manager starts processing */}
             {canMarkProcessing && (
-              <View className="flex-row">
+              <View style={{ flexDirection: 'row', gap: ds.spacing(space[3]) }}>
                 {canCancelAsManager && (
-                  <TouchableOpacity
-                    className="flex-1 bg-gray-200 rounded-xl py-4 items-center mr-2"
+                  <Button
+                    variant="secondary"
+                    label="Cancel"
                     onPress={handleCancel}
                     disabled={isUpdating}
-                  >
-                    <Text className="text-gray-700 font-semibold">Cancel</Text>
-                  </TouchableOpacity>
+                    style={{ flex: 1 }}
+                  />
                 )}
-                <TouchableOpacity
-                  className={`flex-1 bg-blue-500 rounded-xl py-4 items-center ${canCancelAsManager ? 'ml-2' : ''} flex-row justify-center`}
+                <Button
+                  label="Mark as processing"
+                  icon="play-circle"
                   onPress={handleMarkProcessing}
-                  disabled={isUpdating}
-                >
-                  {isUpdating ? (
-                    <LoadingIndicator size="small" />
-                  ) : (
-                    <>
-                      <Ionicons name="play-circle" size={18} color="white" />
-                      <Text className="text-white font-semibold ml-2">Mark as Processing</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+                  loading={isUpdating}
+                  style={{ flex: 1 }}
+                />
               </View>
             )}
 
-            {/* Processing Status - Manager can mark as fulfilled */}
+            {/* Processing status: the manager marks it fulfilled */}
             {canMarkFulfilled && (
-              <View className="flex-row">
+              <View style={{ flexDirection: 'row', gap: ds.spacing(space[3]) }}>
                 {canCancelAsManager && (
-                  <TouchableOpacity
-                    className="flex-1 bg-gray-200 rounded-xl py-4 items-center mr-2"
+                  <Button
+                    variant="secondary"
+                    label="Cancel"
                     onPress={handleCancel}
                     disabled={isUpdating}
-                  >
-                    <Text className="text-gray-700 font-semibold">Cancel</Text>
-                  </TouchableOpacity>
+                    style={{ flex: 1 }}
+                  />
                 )}
-                <TouchableOpacity
-                  className={`flex-1 bg-green-500 rounded-xl py-4 items-center ${canCancelAsManager ? 'ml-2' : ''} flex-row justify-center`}
+                <Button
+                  label="Mark as fulfilled"
+                  icon="checkmark-circle"
                   onPress={handleMarkFulfilled}
-                  disabled={isUpdating}
-                >
-                  {isUpdating ? (
-                    <LoadingIndicator size="small" />
-                  ) : (
-                    <>
-                      <Ionicons name="checkmark-circle" size={18} color="white" />
-                      <Text className="text-white font-semibold ml-2">Mark as Fulfilled</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+                  loading={isUpdating}
+                  style={{ flex: 1 }}
+                />
               </View>
             )}
 
             {/* Employee view action */}
             {showEmployeeCancellationAction && (
-              <View className="mt-3">
-                <TouchableOpacity
-                  className={`rounded-xl py-4 items-center flex-row justify-center ${
-                    canEmployeeCancelNow ? 'bg-red-500' : 'bg-gray-300'
-                  }`}
+              <View style={{ gap: ds.spacing(space[2]) }}>
+                <Button
+                  variant="destructive"
+                  label="Cancel order"
+                  icon="close-circle"
                   onPress={handleCancel}
-                  disabled={isUpdating || !canEmployeeCancelNow}
-                >
-                  {isUpdating ? (
-                    <LoadingIndicator size="small" />
-                  ) : (
-                    <>
-                      <Ionicons
-                        name="close-circle"
-                        size={18}
-                        color={canEmployeeCancelNow ? colors.white : colors.gray[600]}
-                      />
-                      <Text
-                        className="font-semibold ml-2"
-                        style={{ color: canEmployeeCancelNow ? colors.white : colors.gray[600] }}
-                      >
-                        Cancel Order
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+                  loading={isUpdating}
+                  disabled={!canEmployeeCancelNow}
+                  fullWidth
+                />
                 {!withinEmployeeCancelWindow && (
-                  <Text className="text-center text-gray-500 text-xs mt-2">
+                  <Text
+                    style={{
+                      textAlign: 'center',
+                      fontSize: ds.fontSize(typeScale.secondary),
+                      color: color.ink2,
+                    }}
+                  >
                     Cancellation is only available within 10 minutes of ordering.
                   </Text>
                 )}
@@ -599,27 +611,21 @@ export default function OrderDetailScreen() {
           </View>
         )}
 
-        {/* Fulfilled Status Message */}
-        {isFulfilled && (
-          <View className="p-4 bg-green-50 border-t border-green-100">
-            <View className="flex-row items-center justify-center">
-              <Ionicons name="checkmark-circle" size={20} color={colors.success} />
-              <Text className="text-green-700 font-semibold ml-2">
-                Order Complete
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {/* Cancelled Status Message */}
-        {currentOrder.status === 'cancelled' && (
-          <View className="p-4 bg-red-50 border-t border-red-100">
-            <View className="flex-row items-center justify-center">
-              <Ionicons name="close-circle" size={20} color={colors.error} />
-              <Text className="text-red-700 font-semibold ml-2">
-                Order Cancelled
-              </Text>
-            </View>
+        {/* Terminal status message */}
+        {(isFulfilled || isCancelled) && (
+          <View
+            style={{
+              padding: ds.spacing(space[4]),
+              alignItems: 'center',
+              backgroundColor: color.card,
+              borderTopWidth: 1,
+              borderTopColor: color.hairline,
+            }}
+          >
+            <StatusPill
+              status={isFulfilled ? 'fulfilled' : 'cancelled'}
+              label={isFulfilled ? 'Order complete' : 'Order cancelled'}
+            />
           </View>
         )}
       </SafeAreaView>

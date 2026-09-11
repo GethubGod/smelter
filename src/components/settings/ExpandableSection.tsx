@@ -8,11 +8,10 @@ import {
   UIManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/constants';
 import { useDisplayStore } from '@/store';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { GlassSurface } from '@/components/ui';
-import { glassColors, glassHairlineWidth, glassRadii } from '@/theme/design';
+import { Card } from '@/components/ui';
+import { color, radius, size, space, tracking, typeScale, weight } from '@/theme/tokens';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -22,23 +21,27 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 interface ExpandableSectionProps {
   title: string;
   icon: keyof typeof Ionicons.glyphMap;
-  iconColor: string;
-  iconBgColor: string;
   children: React.ReactNode;
   defaultExpanded?: boolean;
+  /**
+   * @deprecated The contract has one icon tile. Accepted so callers outside
+   * this sweep keep compiling; ignored.
+   */
+  iconColor?: string;
+  /** @deprecated See `iconColor`. */
+  iconBgColor?: string;
 }
 
 export function ExpandableSection({
   title,
   icon,
-  iconColor,
-  iconBgColor,
   children,
   defaultExpanded = false,
 }: ExpandableSectionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const reduceMotion = useDisplayStore((state) => state.reduceMotion);
   const ds = useScaledStyles();
+  const tile = ds.icon(32);
 
   const toggle = () => {
     if (!reduceMotion) {
@@ -48,55 +51,62 @@ export function ExpandableSection({
   };
 
   return (
-    <GlassSurface
-      intensity="subtle"
-      blurred={false}
+    <Card
+      flush
       style={{
-        marginHorizontal: ds.spacing(16),
-        marginBottom: ds.spacing(16),
-        borderRadius: glassRadii.surface,
+        marginHorizontal: ds.spacing(space[4]),
+        marginBottom: ds.spacing(space[4]),
+        paddingHorizontal: ds.spacing(space[4]),
+        overflow: 'hidden',
       }}
     >
-      {/* Header - always visible */}
       <TouchableOpacity
         onPress={toggle}
-        className="flex-row items-center"
-        style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(14), minHeight: Math.max(ds.rowH, 60) }}
         activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityState={{ expanded: isExpanded }}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: ds.spacing(space[3]),
+          minHeight: ds.spacing(size.touchMin),
+          paddingVertical: ds.spacing(space[3]),
+        }}
       >
         <View
-          className="items-center justify-center"
           style={{
-            width: Math.max(40, ds.icon(40)),
-            height: Math.max(40, ds.icon(40)),
-            borderRadius: ds.radius(12),
-            marginRight: ds.spacing(14),
-            backgroundColor: iconBgColor,
+            width: tile,
+            height: tile,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: radius.control,
+            backgroundColor: color.well,
           }}
         >
-          <Ionicons name={icon} size={ds.icon(22)} color={iconColor} />
+          <Ionicons name={icon} size={ds.icon(16)} color={color.ink2} />
         </View>
-        <Text className="flex-1 font-semibold text-gray-900" style={{ fontSize: ds.fontSize(18) }}>
+        <Text
+          style={{
+            flex: 1,
+            fontSize: ds.fontSize(typeScale.title),
+            fontWeight: weight.bold,
+            letterSpacing: tracking.title,
+            color: color.ink,
+          }}
+        >
           {title}
         </Text>
         <Ionicons
           name={isExpanded ? 'chevron-up' : 'chevron-down'}
-          size={ds.icon(20)}
-          color={colors.gray[400]}
+          size={ds.icon(18)}
+          color={color.ink3}
         />
       </TouchableOpacity>
 
-      {/* Content - conditionally rendered */}
-      {isExpanded && (
-        <View
-          style={{
-            borderTopWidth: glassHairlineWidth,
-            borderTopColor: glassColors.divider,
-          }}
-        >
-          {children}
-        </View>
-      )}
-    </GlassSurface>
+      {isExpanded ? (
+        <View style={{ borderTopWidth: 1, borderTopColor: color.hairline }}>{children}</View>
+      ) : null}
+    </Card>
   );
 }

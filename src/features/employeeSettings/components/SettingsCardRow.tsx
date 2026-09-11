@@ -1,10 +1,11 @@
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Button, Card, ListRow } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { glassHairlineWidth, tipsTheme } from '@/theme/design';
+import { space } from '@/theme/tokens';
 
-/** One row inside a white settings card, tips colorway. */
+/** One row inside a settings card. The contract `ListRow`. */
 
 interface SettingsCardRowProps {
   icon: React.ComponentProps<typeof Ionicons>['name'];
@@ -31,75 +32,54 @@ export function SettingsCardRow({
   accessibilityLabel,
 }: SettingsCardRowProps) {
   const ds = useScaledStyles();
-  const tint = destructive ? tipsTheme.alert : tipsTheme.ink;
 
-  const content = (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: ds.spacing(11),
-        paddingHorizontal: ds.spacing(16),
-        paddingVertical: ds.spacing(13),
-        minHeight: 52,
-        borderBottomWidth: isLast ? 0 : glassHairlineWidth,
-        borderBottomColor: 'rgba(0, 0, 0, 0.05)',
-      }}
-    >
-      <Ionicons name={icon} size={ds.icon(20)} color={tint} />
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={{ fontSize: ds.fontSize(14.5), fontWeight: '600', color: tint }}>
-          {title}
-        </Text>
-        {subtitle ? (
-          <Text style={{ fontSize: ds.fontSize(11.5), color: tipsTheme.ink3, marginTop: 1 }}>
-            {subtitle}
-          </Text>
-        ) : null}
+  // Action colour lives on buttons, never on a row title, so a destructive
+  // entry is the contract's destructive Button.
+  if (destructive) {
+    return (
+      <View style={{ paddingVertical: ds.spacing(space[3]) }}>
+        <Button
+          variant="destructive"
+          icon={icon}
+          label={title}
+          accessibilityHint={accessibilityLabel === title ? undefined : accessibilityLabel}
+          disabled={!onPress}
+          onPress={onPress ?? (() => undefined)}
+          fullWidth
+        />
       </View>
-      {rightElement}
-      {showChevron && !rightElement && onPress ? (
-        <Ionicons name="chevron-forward" size={ds.icon(16)} color={tipsTheme.ink3} />
-      ) : null}
-    </View>
-  );
-
-  if (!onPress) return content;
+    );
+  }
 
   return (
-    <TouchableOpacity
+    <ListRow
+      icon={icon}
+      title={title}
+      subtitle={subtitle ?? undefined}
       onPress={onPress}
-      activeOpacity={0.75}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel ?? title}
-    >
-      {content}
-    </TouchableOpacity>
+      right={rightElement}
+      chevron={showChevron && !rightElement && Boolean(onPress)}
+      last={isLast}
+    />
   );
 }
 
-/** White card wrapper for settings rows. */
+/** Card wrapper for settings rows. Rows carry their own padding. */
 export function SettingsCard({
   children,
   style,
 }: {
   children: React.ReactNode;
-  style?: object;
+  style?: StyleProp<ViewStyle>;
 }) {
+  const ds = useScaledStyles();
+
   return (
-    <View
-      style={[
-        {
-          backgroundColor: tipsTheme.card,
-          borderWidth: glassHairlineWidth,
-          borderColor: tipsTheme.hairline,
-          borderRadius: 18,
-          overflow: 'hidden',
-        },
-        style,
-      ]}
+    <Card
+      flush
+      style={[{ paddingHorizontal: ds.spacing(space[3] + 2), overflow: 'hidden' }, style]}
     >
       {children}
-    </View>
+    </Card>
   );
 }

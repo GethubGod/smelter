@@ -3,8 +3,6 @@ import {
   FlatList,
   Platform,
   RefreshControl,
-  Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { router } from 'expo-router';
@@ -13,19 +11,14 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import { useShallow } from 'zustand/react/shallow';
-import { LoadingIndicator } from '@/components';
-import { getFloatingPillClearance } from '@/components/navigation';
+import { EmptyState, Loading, getTabBarClearance } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import {
   ImpactFeedbackStyle,
   triggerImpactHaptic,
 } from '@/lib/haptics';
 import { useAuthStore } from '@/store';
-import {
-  glassColors,
-  glassRadii,
-  glassSpacing,
-} from '@/theme/design';
+import { color, space } from '@/theme/tokens';
 import type { Location } from '@/types';
 import { StockCheckHeader } from './components/StockCheckHeader';
 import { StockCheckProgressBar } from './components/StockCheckProgressBar';
@@ -149,31 +142,20 @@ function StockHomeScreenImpl() {
 
   // Stock check is an employee surface: the floating pill toolbar hovers over
   // the station list, so the last card has to scroll clear of it.
-  const floatingChromeClearance = getFloatingPillClearance(insets.bottom);
+  const floatingChromeClearance = getTabBarClearance(insets.bottom);
 
   if (!location?.id) {
     return (
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: glassColors.background }}
+        style={{ flex: 1, backgroundColor: color.page }}
         edges={['top', 'left', 'right']}
       >
-        <View
-          style={{
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingHorizontal: glassSpacing.screen,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: ds.fontSize(15),
-              color: glassColors.textSecondary,
-              textAlign: 'center',
-            }}
-          >
-            Choose a location to start a stock check.
-          </Text>
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <EmptyState
+            icon="location-outline"
+            title="No location selected"
+            body="Choose a location to start a stock check."
+          />
         </View>
       </SafeAreaView>
     );
@@ -182,18 +164,10 @@ function StockHomeScreenImpl() {
   if (isLoading && areas.length === 0) {
     return (
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: glassColors.background }}
+        style={{ flex: 1, backgroundColor: color.page }}
         edges={['top', 'left', 'right']}
       >
-        <View
-          style={{
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <LoadingIndicator showText text="Loading stock check..." />
-        </View>
+        <Loading label="Loading stock check" />
       </SafeAreaView>
     );
   }
@@ -201,58 +175,17 @@ function StockHomeScreenImpl() {
   if (loadError && areas.length === 0) {
     return (
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: glassColors.background }}
+        style={{ flex: 1, backgroundColor: color.page }}
         edges={['top', 'left', 'right']}
       >
-        <View
-          style={{
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingHorizontal: glassSpacing.screen,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: ds.fontSize(15),
-              fontWeight: '700',
-              color: glassColors.textPrimary,
-              textAlign: 'center',
-            }}
-          >
-            We couldn’t load your storage areas.
-          </Text>
-          <Text
-            style={{
-              marginTop: ds.spacing(6),
-              fontSize: ds.fontSize(13),
-              color: glassColors.textSecondary,
-              textAlign: 'center',
-            }}
-          >
-            {loadError}
-          </Text>
-          <TouchableOpacity
-            onPress={() => void loadLocation(location.id)}
-            activeOpacity={0.85}
-            style={{
-              marginTop: ds.spacing(16),
-              paddingHorizontal: ds.spacing(18),
-              paddingVertical: ds.spacing(10),
-              borderRadius: glassRadii.pill,
-              backgroundColor: glassColors.accent,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: ds.fontSize(14),
-                fontWeight: '700',
-                color: glassColors.textOnPrimary,
-              }}
-            >
-              Try again
-            </Text>
-          </TouchableOpacity>
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <EmptyState
+            icon="alert-circle-outline"
+            tone="alert"
+            title="We could not load your storage areas."
+            body={loadError}
+            action={{ label: 'Try again', onPress: () => void loadLocation(location.id) }}
+          />
         </View>
       </SafeAreaView>
     );
@@ -260,7 +193,7 @@ function StockHomeScreenImpl() {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: glassColors.background }}
+      style={{ flex: 1, backgroundColor: color.page }}
       edges={['top', 'left', 'right']}
     >
       <FlatList
@@ -272,13 +205,13 @@ function StockHomeScreenImpl() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={glassColors.accent}
+            tintColor={color.accent}
           />
         }
         contentContainerStyle={{
-          paddingHorizontal: glassSpacing.screen,
-          paddingTop: ds.spacing(4),
-          paddingBottom: floatingChromeClearance + ds.spacing(24),
+          paddingHorizontal: ds.spacing(space[4]),
+          paddingTop: ds.spacing(space[1]),
+          paddingBottom: floatingChromeClearance + ds.spacing(space[6]),
         }}
         ListHeaderComponent={
           <View style={{ zIndex: 10 }}>

@@ -1,10 +1,9 @@
 import React from 'react';
 import { Alert, Linking, Text } from 'react-native';
 import Constants from 'expo-constants';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomSheetShell } from '@/components/BottomSheetShell';
+import { Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { tipsTheme } from '@/theme/design';
+import { color, typeScale } from '@/theme/tokens';
 import { PRIVACY_URL, SUPPORT_URL, TERMS_URL } from '@/features/auth/legal';
 import { SettingsCard, SettingsCardRow } from './SettingsCardRow';
 
@@ -31,20 +30,15 @@ interface AboutLegalSheetProps {
 
 export function AboutLegalSheet({ visible, onClose, onShowLicenses }: AboutLegalSheetProps) {
   const ds = useScaledStyles();
-  const insets = useSafeAreaInsets();
   const appVersion = Constants.expoConfig?.version || '1.0.0';
 
   return (
-    <BottomSheetShell
-      visible={visible}
-      onClose={onClose}
-      bottomPadding={Math.max(insets.bottom, ds.spacing(14))}
-    >
-      <Text style={{ fontSize: ds.fontSize(20), fontWeight: '700', color: tipsTheme.ink }}>
-        About and legal
-      </Text>
+    <Sheet visible={visible} title="About and legal" onClose={onClose}>
       <Text
-        style={{ fontSize: ds.fontSize(13), color: tipsTheme.ink2, marginBottom: ds.spacing(12) }}
+        style={{
+          fontSize: ds.fontSize(typeScale.secondary),
+          color: color.ink2,
+        }}
       >
         Smelter {appVersion}
       </Text>
@@ -72,7 +66,7 @@ export function AboutLegalSheet({ visible, onClose, onShowLicenses }: AboutLegal
           isLast
         />
       </SettingsCard>
-    </BottomSheetShell>
+    </Sheet>
   );
 }
 
@@ -96,19 +90,14 @@ interface LicensesSheetProps {
 
 export function LicensesSheet({ visible, onClose }: LicensesSheetProps) {
   const ds = useScaledStyles();
-  const insets = useSafeAreaInsets();
 
   return (
-    <BottomSheetShell
-      visible={visible}
-      onClose={onClose}
-      bottomPadding={Math.max(insets.bottom, ds.spacing(14))}
-    >
-      <Text style={{ fontSize: ds.fontSize(20), fontWeight: '700', color: tipsTheme.ink }}>
-        Open-source licenses
-      </Text>
+    <Sheet visible={visible} title="Open-source licenses" onClose={onClose}>
       <Text
-        style={{ fontSize: ds.fontSize(13), color: tipsTheme.ink2, marginBottom: ds.spacing(12) }}
+        style={{
+          fontSize: ds.fontSize(typeScale.secondary),
+          color: color.ink2,
+        }}
       >
         This app is built with open-source software, including:
       </Text>
@@ -128,14 +117,13 @@ export function LicensesSheet({ visible, onClose }: LicensesSheetProps) {
 
       <Text
         style={{
-          fontSize: ds.fontSize(11.5),
-          color: tipsTheme.ink3,
-          marginTop: ds.spacing(10),
+          fontSize: ds.fontSize(typeScale.secondary),
+          color: color.ink3,
         }}
       >
         Plus other MIT-licensed packages listed in the app{'\u2019'}s package manifest.
         License texts are available from each project{'\u2019'}s repository.
       </Text>
-    </BottomSheetShell>
+    </Sheet>
   );
 }

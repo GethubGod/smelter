@@ -1,5 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetShell } from '@/components/BottomSheetShell';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { color, space, tracking, typeScale, weight } from '@/theme/tokens';
@@ -30,6 +31,10 @@ export interface SheetProps {
  * `BottomSheetShell` is the single host of the native `Modal` and owns the
  * handle, the scrim and the drag-to-dismiss gesture. This wrapper adds the
  * title and the one primary action so screens stop rolling their own.
+ *
+ * The sheet also clears the home indicator: screens that host the shell
+ * directly pass their own `bottomPadding`, so this keeps the same floor for
+ * every screen that moved onto the primitive.
  */
 export function Sheet({
   visible,
@@ -42,6 +47,7 @@ export function Sheet({
   testID,
 }: SheetProps) {
   const ds = useScaledStyles();
+  const insets = useSafeAreaInsets();
 
   return (
     <BottomSheetShell
@@ -49,6 +55,7 @@ export function Sheet({
       presentation={presentation}
       onClose={onClose}
       dismissible={dismissible}
+      bottomPadding={Math.max(insets.bottom, ds.spacing(space[3] + 2))}
     >
       <View testID={testID} style={{ gap: ds.spacing(space[3]) }}>
         <Text

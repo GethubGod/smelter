@@ -2,15 +2,16 @@
 // "New employee defaults" entry pinned at the bottom.
 
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { useShallow } from 'zustand/react/shallow';
-import { StackScreenHeader } from '@/components';
 import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
+import { Button, EmptyState, Loading, ScreenHeader } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
+import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
 import { useAuthStore } from '@/store';
-import { radii, tipsTheme } from '@/theme/design';
+import { color, space } from '@/theme/tokens';
 import { listManagedUsers, type ManagedUser } from '@/services/userManagement';
 import { getModulesForUser } from '@/services/userModules';
 import {
@@ -37,6 +38,7 @@ interface RosterEntry {
 
 export default function TeamScreen() {
   const ds = useScaledStyles();
+  const { backTo } = useSettingsNavigationContext();
   const { locations } = useAuthStore(useShallow((state) => ({ locations: state.locations })));
 
   const [roster, setRoster] = useState<RosterEntry[] | null>(null);
@@ -73,71 +75,62 @@ export default function TeamScreen() {
     }, [load]),
   );
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace(backTo);
+  };
+
   const defaultsSummary = defaults
     ? summarizeModules({ ...defaults, fulfillment: false } as EffectiveModules)
-    : 'Loading…';
+    : 'Loading';
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: tipsTheme.page }} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.page }} edges={['left', 'right']}>
       <ManagerScaleContainer>
-        <View style={{ backgroundColor: tipsTheme.page }}>
-          <StackScreenHeader
-            title="Team"
-            subtitle="Invites, features, and sign-in resets"
-            right={
-              <TouchableOpacity
-                onPress={() =>
-                  router.push(
-                    '/(manager)/manager-settings/team-invite' as Parameters<typeof router.push>[0],
-                  )
-                }
-                activeOpacity={0.82}
-                style={{
-                  backgroundColor: tipsTheme.accent,
-                  borderRadius: radii.pill,
-                  paddingHorizontal: ds.spacing(14),
-                  minHeight: Math.max(36, ds.buttonH - ds.spacing(14)),
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Text style={{ fontSize: ds.fontSize(12.5), fontWeight: '700', color: '#FFFFFF' }}>
-                  + Invite
-                </Text>
-              </TouchableOpacity>
-            }
-          />
-        </View>
+        <ScreenHeader
+          mode="pushed"
+          title="Team"
+          subtitle="Invites, features, and sign-in resets"
+          onBack={handleBack}
+          right={
+            <Button
+              size="small"
+              icon="add"
+              label="Invite"
+              onPress={() =>
+                router.push(
+                  '/(manager)/manager-settings/team-invite' as Parameters<typeof router.push>[0],
+                )
+              }
+            />
+          }
+        />
 
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{
-            paddingHorizontal: ds.spacing(20),
-            paddingTop: ds.spacing(8),
-            paddingBottom: ds.spacing(28),
+            paddingHorizontal: ds.spacing(space[4]),
+            paddingTop: ds.spacing(space[2]),
+            paddingBottom: ds.spacing(space[8]),
           }}
         >
           {error ? (
-            <View
-              style={{
-                backgroundColor: tipsTheme.tint,
-                borderRadius: 13,
-                padding: ds.spacing(12),
-                marginBottom: ds.spacing(10),
-              }}
-            >
-              <Text style={{ fontSize: ds.fontSize(12.5), color: tipsTheme.alert }}>{error}</Text>
-              <TouchableOpacity onPress={() => void load()} style={{ marginTop: ds.spacing(6) }}>
-                <Text style={{ fontSize: ds.fontSize(12.5), fontWeight: '700', color: tipsTheme.alert }}>
-                  Retry
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <EmptyState
+              icon="alert-circle-outline"
+              tone="alert"
+              title="Unable to load the team"
+              body={error}
+              action={{ label: 'Retry', onPress: () => void load() }}
+              compact
+            />
           ) : null}
 
           {roster === null && !error ? (
-            <View style={{ paddingVertical: ds.spacing(30), alignItems: 'center' }}>
-              <ActivityIndicator size="small" color={tipsTheme.accent} />
+            <View style={{ paddingVertical: ds.spacing(space[8]) }}>
+              <Loading size="inline" label="Loading the team" style={{ alignItems: 'center' }} />
             </View>
           ) : null}
 

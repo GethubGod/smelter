@@ -12,7 +12,6 @@ import {
   Platform,
   RefreshControl,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -22,9 +21,8 @@ import {
 } from 'react-native-safe-area-context';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useShallow } from 'zustand/react/shallow';
-import { LoadingIndicator } from '@/components';
+import { Button, EmptyState, Loading, getTabBarClearance } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import {
   triggerConfirmationHaptic,
@@ -32,11 +30,7 @@ import {
   ImpactFeedbackStyle,
 } from '@/lib/haptics';
 import { useAuthStore } from '@/store';
-import {
-  glassColors,
-  glassRadii,
-  glassSpacing,
-} from '@/theme/design';
+import { color, space, tracking, typeScale, weight } from '@/theme/tokens';
 import type { Location } from '@/types';
 import { StockCheckHeader } from './components/StockCheckHeader';
 import { StockCheckProgressBar } from './components/StockCheckProgressBar';
@@ -293,64 +287,39 @@ export function StockCheckScreenView({ stationId }: StockCheckScreenViewProps) {
 
   const ListEmptyComponent = useMemo(
     () => (
-      <View
-        style={{
-          paddingVertical: ds.spacing(40),
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Text
-          style={{
-            fontSize: ds.fontSize(14),
-            color: glassColors.textSecondary,
-          }}
-        >
-          {selectedArea
+      <EmptyState
+        icon={selectedArea ? 'cube-outline' : 'albums-outline'}
+        title={selectedArea ? 'No items here yet' : 'No station selected'}
+        body={
+          selectedArea
             ? 'No items configured for this area yet.'
-            : 'Select a storage area to begin.'}
-        </Text>
-      </View>
+            : 'Select a storage area to begin.'
+        }
+      />
     ),
-    [ds, selectedArea],
+    [selectedArea],
   );
 
   /* ────────────── Layout offsets ────────────────────────────────────── */
 
   // The route renders inside a hidden tab screen, so list content needs to
   // clear the tab bar directly now that the sticky confirm CTA is gone.
-  const tabBarBottomInset = Math.max(
-    insets.bottom,
-    glassSpacing.tabBarBottom,
-  );
-  const actualTabBarHeight = 60 + tabBarBottomInset;
-  const listPaddingBottom = actualTabBarHeight + ds.spacing(18);
+  const listPaddingBottom = getTabBarClearance(insets.bottom) + ds.spacing(space[5]);
 
   /* ───────── Loading & error states ─────────────────────────────────── */
 
   if (!location?.id) {
     return (
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: glassColors.background }}
+        style={{ flex: 1, backgroundColor: color.page }}
         edges={['top', 'left', 'right']}
       >
-        <View
-          style={{
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingHorizontal: glassSpacing.screen,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: ds.fontSize(15),
-              color: glassColors.textSecondary,
-              textAlign: 'center',
-            }}
-          >
-            Choose a location to start a stock check.
-          </Text>
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <EmptyState
+            icon="location-outline"
+            title="No location selected"
+            body="Choose a location to start a stock check."
+          />
         </View>
       </SafeAreaView>
     );
@@ -359,18 +328,10 @@ export function StockCheckScreenView({ stationId }: StockCheckScreenViewProps) {
   if (isLoading && areas.length === 0) {
     return (
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: glassColors.background }}
+        style={{ flex: 1, backgroundColor: color.page }}
         edges={['top', 'left', 'right']}
       >
-        <View
-          style={{
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <LoadingIndicator showText text="Loading stock check..." />
-        </View>
+        <Loading label="Loading stock check" />
       </SafeAreaView>
     );
   }
@@ -378,58 +339,20 @@ export function StockCheckScreenView({ stationId }: StockCheckScreenViewProps) {
   if (loadError && areas.length === 0) {
     return (
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: glassColors.background }}
+        style={{ flex: 1, backgroundColor: color.page }}
         edges={['top', 'left', 'right']}
       >
-        <View
-          style={{
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingHorizontal: glassSpacing.screen,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: ds.fontSize(15),
-              fontWeight: '600',
-              color: glassColors.textPrimary,
-              textAlign: 'center',
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <EmptyState
+            icon="alert-circle-outline"
+            tone="alert"
+            title="We could not load your storage areas."
+            body={loadError}
+            action={{
+              label: 'Try again',
+              onPress: () => location?.id && void loadLocation(location.id),
             }}
-          >
-            We couldn’t load your storage areas.
-          </Text>
-          <Text
-            style={{
-              marginTop: ds.spacing(6),
-              fontSize: ds.fontSize(13),
-              color: glassColors.textSecondary,
-              textAlign: 'center',
-            }}
-          >
-            {loadError}
-          </Text>
-          <TouchableOpacity
-            onPress={() => location?.id && void loadLocation(location.id)}
-            activeOpacity={0.85}
-            style={{
-              marginTop: ds.spacing(16),
-              paddingHorizontal: ds.spacing(18),
-              paddingVertical: ds.spacing(10),
-              borderRadius: glassRadii.pill,
-              backgroundColor: glassColors.accent,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: ds.fontSize(14),
-                fontWeight: '700',
-                color: glassColors.textOnPrimary,
-              }}
-            >
-              Try again
-            </Text>
-          </TouchableOpacity>
+          />
         </View>
       </SafeAreaView>
     );
@@ -440,7 +363,7 @@ export function StockCheckScreenView({ stationId }: StockCheckScreenViewProps) {
   return (
     <BottomSheetModalProvider>
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: glassColors.background }}
+      style={{ flex: 1, backgroundColor: color.page }}
       edges={['top', 'left', 'right']}
     >
       <KeyboardAvoidingView
@@ -456,9 +379,9 @@ export function StockCheckScreenView({ stationId }: StockCheckScreenViewProps) {
         */}
         <View
           style={{
-            paddingHorizontal: glassSpacing.screen,
-            paddingTop: ds.spacing(4),
-            backgroundColor: glassColors.background,
+            paddingHorizontal: ds.spacing(space[4]),
+            paddingTop: ds.spacing(space[1]),
+            backgroundColor: color.page,
             zIndex: 10,
           }}
         >
@@ -481,45 +404,27 @@ export function StockCheckScreenView({ stationId }: StockCheckScreenViewProps) {
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
-              paddingBottom: ds.spacing(12),
+              gap: ds.spacing(space[3]),
+              paddingBottom: ds.spacing(space[3]),
             }}
           >
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Continue stock check later"
+            <Button
+              variant="secondary"
+              size="small"
+              icon="chevron-back"
+              label="Continue later"
               onPress={handleContinueLater}
-              activeOpacity={0.75}
-              hitSlop={8}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                paddingVertical: ds.spacing(6),
-                paddingRight: ds.spacing(10),
-              }}
-            >
-              <Ionicons
-                name="chevron-back"
-                size={ds.icon(18)}
-                color={glassColors.textPrimary}
-              />
-              <Text
-                style={{
-                  fontSize: ds.fontSize(14),
-                  fontWeight: '800',
-                  color: glassColors.textPrimary,
-                }}
-              >
-                Continue later
-              </Text>
-            </TouchableOpacity>
+              accessibilityHint="Leaves the stock check and keeps your counts"
+            />
 
             <Text
               style={{
                 flex: 1,
                 textAlign: 'right',
-                fontSize: ds.fontSize(15),
-                fontWeight: '900',
-                color: glassColors.textPrimary,
+                fontSize: ds.fontSize(typeScale.body),
+                fontWeight: weight.bold,
+                letterSpacing: tracking.title,
+                color: color.ink,
               }}
               numberOfLines={1}
             >
@@ -534,8 +439,8 @@ export function StockCheckScreenView({ stationId }: StockCheckScreenViewProps) {
           renderItem={renderItem}
           keyExtractor={keyExtractor}
           contentContainerStyle={{
-            paddingHorizontal: glassSpacing.screen,
-            paddingTop: ds.spacing(8),
+            paddingHorizontal: ds.spacing(space[4]),
+            paddingTop: ds.spacing(space[2]),
             paddingBottom: listPaddingBottom,
           }}
           ItemSeparatorComponent={ItemSeparator}
@@ -554,7 +459,7 @@ export function StockCheckScreenView({ stationId }: StockCheckScreenViewProps) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor={glassColors.accent}
+              tintColor={color.accent}
             />
           }
           extraData={activeItemId}
@@ -582,5 +487,5 @@ export function StockCheckScreenView({ stationId }: StockCheckScreenViewProps) {
 }
 
 const ItemSeparator = memo(function ItemSeparator() {
-  return <View style={{ height: 10, backgroundColor: 'transparent' }} />;
+  return <View style={{ height: space[2] + 2, backgroundColor: 'transparent' }} />;
 });

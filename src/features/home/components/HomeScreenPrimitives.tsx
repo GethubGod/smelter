@@ -10,11 +10,11 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassSurface } from '@/components';
-import { Loading } from '@/components/ui';
 import {
   getFloatingPillClearance,
   getTabBarBottomInset,
 } from '@/components/navigation';
+import { Loading } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import {
   glassColors,
@@ -280,7 +280,7 @@ export const HomeModuleLoading = memo(function HomeModuleLoading({
         justifyContent: 'center',
       }}
     >
-      <Loading label={text} />
+      <Loading size="inline" label={text} />
     </View>
   );
 });
