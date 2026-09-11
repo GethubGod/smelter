@@ -7,29 +7,25 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
-  Modal,
-  Pressable,
   TextInput,
   KeyboardAvoidingView,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useShallow } from 'zustand/react/shallow';
 import { useOrderStore, useInventoryStore, useAuthStore } from '@/store';
 import type { CartItem } from '@/store';
 import type { CartContext } from '@/store/orderStore';
-import { colors } from '@/constants';
 import { Location, InventoryItem, UnitType } from '@/types';
 import {
   BrandLogo,
   ConfirmLocationBottomSheet,
-  GlassSurface,
   ItemActionSheet,
-  LoadingIndicator,
 } from '@/components';
 import type { ItemActionSheetSection } from '@/components';
+import { Button, Card, getTabBarClearance, Loading, Segment, Sheet, type SegmentOption } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { completePendingRemindersForUser } from '@/services/notificationService';
 import type { OrderingMode } from '@/features/ordering/types';
@@ -44,14 +40,7 @@ import { resolveLocationSwitchTarget } from './locationSwitch';
 import { EmptyCartReorderState } from './EmptyCartReorderState';
 import { OrderSubmissionConfirmationOverlay } from './OrderSubmissionConfirmationOverlay';
 import { triggerConfirmationHaptic } from '@/lib/haptics';
-import {
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-  glassSpacing,
-  glassTabBarHeight,
-} from '@/theme/design';
-import { segmentedControlColors } from '@/theme/segmentedControls';
+import { color, radius, space, typeScale, weight } from '@/theme/tokens';
 import {
   getInventoryUnitLabel,
   getInventoryUnitSummary,
@@ -121,6 +110,7 @@ export function CartScreenView({
   mode,
 }: CartScreenViewProps) {
   const ds = useScaledStyles();
+  const insets = useSafeAreaInsets();
   const context: CartContext = mode.scope;
   const browseRoute = mode.browseRoute;
   const pastOrdersRoute = mode.pastOrdersRoute;
@@ -529,6 +519,23 @@ export function CartScreenView({
     setShowItemNoteModal(true);
   }, [menuItem]);
 
+  const closeCartLocationSheet = useCallback(() => {
+    setShowCartLocationModal(false);
+    setCartLocationToMove(null);
+  }, []);
+
+  const closeItemNoteSheet = useCallback(() => {
+    setShowItemNoteModal(false);
+    setItemNoteDraft('');
+    setMenuTarget(null);
+  }, []);
+
+  const closeItemLocationSheet = useCallback(() => {
+    setShowItemLocationModal(false);
+    setItemLocationAction(null);
+    setMenuTarget(null);
+  }, []);
+
   const handleSaveItemNote = useCallback(() => {
     if (!menuItem) return;
     setCartItemNote(menuItem.locationId, menuItem.item.id, itemNoteDraft, context);
@@ -899,6 +906,13 @@ export function CartScreenView({
     const packUnitLabel = inventoryItem ? getInventoryUnitLabel(inventoryItem, 'pack') : 'pack';
     const baseUnitLabel = inventoryItem ? getInventoryUnitLabel(inventoryItem, 'base') : 'unit';
     const unitLabel = resolvedUnitType === 'pack' ? packUnitLabel : baseUnitLabel;
+    // `Segment` carries the radiogroup role, the labels, the selected state and
+    // the 44pt target. Units the item does not stock were unpressable before,
+    // so they are simply left out of the options.
+    const unitOptions: SegmentOption<UnitType>[] = [
+      ...(packEnabled ? [{ value: 'pack' as UnitType, label: packUnitLabel }] : []),
+      ...(baseEnabled ? [{ value: 'base' as UnitType, label: baseUnitLabel }] : []),
+    ];
     const unitSummary = inventoryItem ? getInventoryUnitSummary(inventoryItem) : `${baseUnitLabel}/${packUnitLabel}`;
     const key = `${locationId}-${item.id}`;
     const isExpanded = expandedItems.has(key);
@@ -907,8 +921,8 @@ export function CartScreenView({
       <View
         key={`${locationId}-${item.id}`}
         style={{
-          borderBottomWidth: glassHairlineWidth,
-          borderBottomColor: glassColors.divider,
+          borderBottomWidth: 1,
+          borderBottomColor: color.hairline,
         }}
       >
         {/* Compact Row — matches reference: name/unit left, stepper right */}
@@ -925,9 +939,9 @@ export function CartScreenView({
             <View className="flex-row items-center">
               <Text
                 style={{
-                  fontSize: ds.fontSize(17),
-                  fontWeight: '600',
-                  color: glassColors.textPrimary,
+                  fontSize: ds.fontSize(typeScale.title),
+                  fontWeight: weight.semibold,
+                  color: color.ink,
                   flexShrink: 1,
                 }}
                 numberOfLines={1}
@@ -938,15 +952,15 @@ export function CartScreenView({
               <Ionicons
                 name={isExpanded ? "chevron-up" : "chevron-down"}
                 size={ds.icon(16)}
-                color={glassColors.textSecondary}
+                color={color.ink2}
                 style={{ marginLeft: ds.spacing(6) }}
               />
             </View>
             <View className="flex-row items-center mt-1">
               <Text
                 style={{
-                  fontSize: ds.fontSize(14),
-                  color: glassColors.textSecondary,
+                  fontSize: ds.fontSize(typeScale.body),
+                  color: color.ink2,
                 }}
               >
                 per {unitLabel}
@@ -955,17 +969,17 @@ export function CartScreenView({
                 <View
                   style={{
                     marginLeft: ds.spacing(8),
-                    borderRadius: glassRadii.tag,
-                    backgroundColor: glassColors.warningSoft,
+                    borderRadius: radius.control,
+                    backgroundColor: color.warningBg,
                     paddingHorizontal: ds.spacing(8),
                     paddingVertical: ds.spacing(2),
                   }}
                 >
                   <Text
                     style={{
-                      fontSize: ds.fontSize(11),
-                      fontWeight: '500',
-                      color: glassColors.warningText,
+                      fontSize: ds.fontSize(typeScale.caption),
+                      fontWeight: weight.semibold,
+                      color: color.warning,
                     }}
                   >
                     Remaining
@@ -976,17 +990,17 @@ export function CartScreenView({
                 <View
                   style={{
                     marginLeft: ds.spacing(6),
-                    borderRadius: glassRadii.tag,
-                    backgroundColor: glassColors.infoSoft,
+                    borderRadius: radius.control,
+                    backgroundColor: color.well,
                     paddingHorizontal: ds.spacing(8),
                     paddingVertical: ds.spacing(2),
                   }}
                 >
                   <Text
                     style={{
-                      fontSize: ds.fontSize(11),
-                      fontWeight: '500',
-                      color: glassColors.infoText,
+                      fontSize: ds.fontSize(typeScale.caption),
+                      fontWeight: weight.semibold,
+                      color: color.ink2,
                     }}
                   >
                     Note
@@ -1003,22 +1017,22 @@ export function CartScreenView({
               style={{
                 width: 42,
                 height: 42,
-                borderRadius: 13,
+                borderRadius: radius.control,
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: '#E8E8E8',
+                backgroundColor: color.well,
               }}
               activeOpacity={0.7}
               hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
             >
-              <Ionicons name="remove" size={22} color={glassColors.textPrimary} />
+              <Ionicons name="remove" size={22} color={color.ink} />
             </TouchableOpacity>
 
             <Text
               style={{
-                fontSize: ds.fontSize(20),
-                fontWeight: '600',
-                color: glassColors.textPrimary,
+                fontSize: ds.fontSize(typeScale.title),
+                fontWeight: weight.semibold,
+                color: color.ink,
                 textAlign: 'center',
                 minWidth: 44,
                 marginHorizontal: ds.spacing(4),
@@ -1032,15 +1046,15 @@ export function CartScreenView({
               style={{
                 width: 42,
                 height: 42,
-                borderRadius: 13,
+                borderRadius: radius.control,
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: '#E8E8E8',
+                backgroundColor: color.well,
               }}
               activeOpacity={0.7}
               hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
             >
-              <Ionicons name="add" size={22} color={glassColors.textPrimary} />
+              <Ionicons name="add" size={22} color={color.ink} />
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -1050,61 +1064,16 @@ export function CartScreenView({
           <View style={{ paddingBottom: ds.spacing(10), paddingHorizontal: ds.spacing(4) }}>
             {/* Mode selector row + action buttons */}
             <View className="flex-row items-center justify-between" style={{ marginBottom: ds.spacing(8) }}>
-              <View
-                className="flex-row"
-                style={{
-                  backgroundColor: segmentedControlColors.inactiveBackground,
-                  borderRadius: 12,
-                  overflow: 'hidden',
-                }}
-              >
-                <TouchableOpacity
-                  onPress={() => applyItemModeChange(locationId, item, 'quantity')}
-                  style={{
-                    paddingHorizontal: ds.spacing(14),
-                    paddingVertical: ds.spacing(7),
-                    backgroundColor: !isRemainingMode
-                      ? segmentedControlColors.activeBackground
-                      : 'transparent',
-                  }}
-                  activeOpacity={0.75}
-                >
-                  <Text
-                    style={{
-                      fontSize: ds.fontSize(14),
-                      fontWeight: '600',
-                      color: !isRemainingMode
-                        ? segmentedControlColors.activeText
-                        : segmentedControlColors.inactiveText,
-                    }}
-                  >
-                    Order Qty
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => applyItemModeChange(locationId, item, 'remaining')}
-                  style={{
-                    paddingHorizontal: ds.spacing(14),
-                    paddingVertical: ds.spacing(7),
-                    backgroundColor: isRemainingMode
-                      ? segmentedControlColors.activeBackground
-                      : 'transparent',
-                  }}
-                  activeOpacity={0.75}
-                >
-                  <Text
-                    style={{
-                      fontSize: ds.fontSize(14),
-                      fontWeight: '600',
-                      color: isRemainingMode
-                        ? segmentedControlColors.activeText
-                        : segmentedControlColors.inactiveText,
-                    }}
-                  >
-                    Remaining
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              <Segment
+                accessibilityLabel="How this line is counted"
+                options={[
+                  { value: 'quantity', label: 'Order qty' },
+                  { value: 'remaining', label: 'Remaining' },
+                ]}
+                value={isRemainingMode ? 'remaining' : 'quantity'}
+                onChange={(next) => applyItemModeChange(locationId, item, next)}
+                style={{ flex: 1, marginRight: ds.spacing(space[2]) }}
+              />
 
               {/* Action buttons — menu + trash */}
               <View className="flex-row items-center">
@@ -1113,105 +1082,52 @@ export function CartScreenView({
                   style={{
                     width: 40,
                     height: 40,
-                    borderRadius: 12,
+                    borderRadius: radius.control,
                     justifyContent: 'center',
                     alignItems: 'center',
-                    backgroundColor: '#EEEEEE',
+                    backgroundColor: color.well,
                     marginRight: ds.spacing(6),
                   }}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Ionicons name="ellipsis-horizontal" size={20} color={glassColors.textPrimary} />
+                  <Ionicons name="ellipsis-horizontal" size={20} color={color.ink} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => handleRemoveItem(locationId, item.inventoryItemId, itemName, item.id)}
                   style={{
                     width: 40,
                     height: 40,
-                    borderRadius: 12,
+                    borderRadius: radius.control,
                     justifyContent: 'center',
                     alignItems: 'center',
-                    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                    backgroundColor: color.alertBg,
                   }}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Ionicons name="trash-outline" size={20} color="#DC2626" />
+                  <Ionicons name="trash-outline" size={20} color={color.alert} />
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* Unit toggle row */}
             <View className="flex-row items-center" style={{ marginBottom: ds.spacing(6) }}>
-              <View
-                className="flex-row"
-                style={{
-                  backgroundColor: segmentedControlColors.inactiveBackground,
-                  borderRadius: 12,
-                  overflow: 'hidden',
-                }}
-              >
-                <TouchableOpacity
-                  onPress={() => handleItemValueChange(locationId, item, value, 'pack')}
-                  style={{
-                    paddingHorizontal: ds.spacing(14),
-                    paddingVertical: ds.spacing(7),
-                    backgroundColor: resolvedUnitType === 'pack'
-                      ? segmentedControlColors.activeBackground
-                      : packEnabled
-                        ? 'transparent'
-                        : glassColors.mediumFill,
-                    opacity: packEnabled ? 1 : 0.55,
-                  }}
-                  activeOpacity={0.75}
-                  disabled={!packEnabled}
-                >
-                  <Text
-                    style={{
-                      fontSize: ds.fontSize(14),
-                      fontWeight: '600',
-                      color: resolvedUnitType === 'pack'
-                        ? segmentedControlColors.activeText
-                        : packEnabled
-                          ? segmentedControlColors.inactiveText
-                          : glassColors.textMuted,
-                    }}
-                  >
-                    {packUnitLabel}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => handleItemValueChange(locationId, item, value, 'base')}
-                  style={{
-                    paddingHorizontal: ds.spacing(14),
-                    paddingVertical: ds.spacing(7),
-                    backgroundColor: resolvedUnitType === 'base'
-                      ? segmentedControlColors.activeBackground
-                      : baseEnabled
-                        ? 'transparent'
-                        : glassColors.mediumFill,
-                    opacity: baseEnabled ? 1 : 0.55,
-                  }}
-                  activeOpacity={0.75}
-                  disabled={!baseEnabled}
-                >
-                  <Text
-                    style={{
-                      fontSize: ds.fontSize(14),
-                      fontWeight: '600',
-                      color: resolvedUnitType === 'base'
-                        ? segmentedControlColors.activeText
-                        : baseEnabled
-                          ? segmentedControlColors.inactiveText
-                          : glassColors.textMuted,
-                    }}
-                  >
-                    {baseUnitLabel}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              {unitOptions.length > 0 ? (
+                <Segment
+                  options={unitOptions}
+                  value={resolvedUnitType}
+                  onChange={(next) => handleItemValueChange(locationId, item, value, next)}
+                  accessibilityLabel={`Unit for ${itemName}`}
+                  style={{ flex: 1 }}
+                />
+              ) : null}
               {!isRemainingMode && (
                 <Text
-                  style={{ fontSize: ds.fontSize(13), color: glassColors.textSecondary, marginLeft: ds.spacing(10) }}
+                  style={{
+                    fontSize: ds.fontSize(typeScale.secondary),
+                    color: color.ink2,
+                    marginLeft: ds.spacing(10),
+                    flexShrink: 1,
+                  }}
                   numberOfLines={1}
                 >
                   {unitSummary}
@@ -1221,12 +1137,12 @@ export function CartScreenView({
 
             {/* Notes */}
             {item.note && (
-              <Text style={{ fontSize: ds.fontSize(13), color: glassColors.infoText, marginTop: ds.spacing(4) }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginTop: ds.spacing(4) }}>
                 Note: {item.note}
               </Text>
             )}
             {isRemainingMode && (
-              <Text style={{ fontSize: ds.fontSize(12), color: glassColors.textSecondary, marginTop: ds.spacing(4) }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginTop: ds.spacing(4) }}>
                 Confirm quantity before submitting
               </Text>
             )}
@@ -1252,12 +1168,7 @@ export function CartScreenView({
     const isSubmittingThisLocation = submittingLocation === location.id;
 
     return (
-      <GlassSurface
-        key={location.id}
-        intensity="subtle"
-        blurred={false}
-        style={{ marginBottom: ds.spacing(12), borderRadius: glassRadii.surface }}
-      >
+      <Card key={location.id} flush style={{ marginBottom: ds.spacing(12) }}>
         {/* Location Header */}
         <View style={{ paddingHorizontal: ds.spacing(16), paddingVertical: ds.spacing(12) }}>
           <View className="flex-row items-center justify-between">
@@ -1271,11 +1182,11 @@ export function CartScreenView({
                 style={{
                   width: ds.icon(40),
                   height: ds.icon(40),
-                  borderRadius: glassRadii.round,
+                  borderRadius: radius.pill,
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginRight: ds.spacing(12),
-                  backgroundColor: glassColors.mediumFill,
+                  backgroundColor: color.well,
                 }}
               >
                 <BrandLogo variant="inline" size={20} />
@@ -1283,7 +1194,7 @@ export function CartScreenView({
               <View className="flex-1">
                 <View className="flex-row items-center">
                   <Text
-                    style={{ fontSize: ds.fontSize(17), fontWeight: '700', color: glassColors.textPrimary }}
+                    style={{ fontSize: ds.fontSize(typeScale.title), fontWeight: '700', color: color.ink }}
                     className="flex-shrink"
                     numberOfLines={1}
                     ellipsizeMode="tail"
@@ -1293,11 +1204,11 @@ export function CartScreenView({
                   <Ionicons
                     name="chevron-down"
                     size={ds.icon(14)}
-                    color={colors.gray[500]}
+                    color={color.ink3}
                     style={{ marginLeft: ds.spacing(6) }}
                   />
                 </View>
-                <Text style={{ fontSize: ds.fontSize(13), color: glassColors.textSecondary }}>
+                <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
                   {itemCount} item{itemCount !== 1 ? 's' : ''} in cart
                 </Text>
               </View>
@@ -1307,7 +1218,7 @@ export function CartScreenView({
               style={{ paddingVertical: ds.spacing(6), paddingHorizontal: ds.spacing(8) }}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Text style={{ fontSize: ds.fontSize(14), color: glassColors.textSecondary, fontWeight: '500' }}>
+              <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2, fontWeight: weight.semibold }}>
                 Clear all
               </Text>
             </TouchableOpacity>
@@ -1328,33 +1239,33 @@ export function CartScreenView({
             height: Math.max(56, ds.buttonH + 8),
             marginHorizontal: ds.spacing(16),
             marginBottom: ds.spacing(16),
-            borderRadius: glassRadii.submitButton,
-            backgroundColor: !canSubmit ? glassColors.accentSoft : glassColors.accent,
+            borderRadius: radius.card,
+            backgroundColor: !canSubmit ? color.tint : color.accent,
           }}
         >
           {isSubmittingThisLocation ? (
             <>
-              <LoadingIndicator size="small" />
-              <Text style={{ fontSize: ds.fontSize(17), color: colors.white, fontWeight: '700', marginLeft: ds.spacing(8) }}>
+              <Loading size="inline" color={color.onAccent} label="Submitting" />
+              <Text style={{ fontSize: ds.fontSize(typeScale.title), color: color.card, fontWeight: '700', marginLeft: ds.spacing(8) }}>
                 Submitting...
               </Text>
             </>
           ) : (
             <>
-              <Ionicons name="send" size={ds.icon(20)} color={colors.white} />
-              <Text style={{ fontSize: ds.fontSize(17), color: colors.white, fontWeight: '700', marginLeft: ds.spacing(8) }}>
+              <Ionicons name="send" size={ds.icon(20)} color={color.card} />
+              <Text style={{ fontSize: ds.fontSize(typeScale.title), color: color.card, fontWeight: '700', marginLeft: ds.spacing(8) }}>
                 Submit Order
               </Text>
             </>
           )}
         </TouchableOpacity>
-      </GlassSurface>
+      </Card>
     );
   }, [ds, getCartWithDetails, renderCartItem, handleClearLocationCart, submittingLocation, handleOpenCartLocationModal, handleRequestSubmitOrder]);
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: glassColors.background }}
+      style={{ flex: 1, backgroundColor: color.page }}
       edges={['top', 'left', 'right']}
     >
       <View
@@ -1365,7 +1276,7 @@ export function CartScreenView({
         {/* Header */}
         <View
           style={{
-            paddingHorizontal: glassSpacing.screen,
+            paddingHorizontal: space[4],
             paddingTop: ds.spacing(12),
             paddingBottom: ds.spacing(12),
             flexDirection: 'row',
@@ -1384,8 +1295,8 @@ export function CartScreenView({
               style={{
                 width: Math.max(40, ds.icon(40)),
                 height: Math.max(40, ds.icon(40)),
-                borderRadius: glassRadii.round,
-                backgroundColor: glassColors.subtleFill,
+                borderRadius: radius.pill,
+                backgroundColor: color.well,
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginRight: ds.spacing(16),
@@ -1394,19 +1305,19 @@ export function CartScreenView({
               accessibilityRole="button"
               accessibilityLabel="Go back"
             >
-              <Ionicons name="arrow-back" size={ds.icon(22)} color={glassColors.textPrimary} />
+              <Ionicons name="arrow-back" size={ds.icon(22)} color={color.ink} />
             </TouchableOpacity>
           )}
           <View style={{ flex: 1, paddingRight: ds.spacing(12) }}>
-            <Text style={{ fontSize: ds.fontSize(30), fontWeight: '800', color: glassColors.textPrimary, letterSpacing: -0.6 }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.display), fontWeight: weight.bold, color: color.ink, letterSpacing: -0.6 }}>
               Cart
             </Text>
-            <Text style={{ marginTop: ds.spacing(4), fontSize: ds.fontSize(13), color: glassColors.textSecondary, fontWeight: '500' }}>
+            <Text style={{ marginTop: ds.spacing(4), fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, fontWeight: weight.semibold }}>
               {totalCartCountLabel}
             </Text>
           </View>
           {pastOrdersRoute && (
-            <GlassSurface intensity="subtle" style={{ borderRadius: glassRadii.pill }}>
+            <Card flush style={{ borderRadius: radius.pill, overflow: 'hidden' }}>
               <TouchableOpacity
                 onPress={() => router.push(pastOrdersRoute as any)}
                 className="flex-row items-center"
@@ -1416,12 +1327,12 @@ export function CartScreenView({
                 }}
                 activeOpacity={0.7}
               >
-                <Ionicons name="time-outline" size={ds.icon(18)} color={glassColors.textSecondary} />
-                <Text style={{ fontSize: ds.fontSize(15), marginLeft: ds.spacing(8), color: glassColors.textPrimary, fontWeight: '700' }}>
+                <Ionicons name="time-outline" size={ds.icon(18)} color={color.ink2} />
+                <Text style={{ fontSize: ds.fontSize(typeScale.body), marginLeft: ds.spacing(8), color: color.ink, fontWeight: '700' }}>
                   My Orders
                 </Text>
               </TouchableOpacity>
-            </GlassSurface>
+            </Card>
           )}
         </View>
 
@@ -1432,8 +1343,8 @@ export function CartScreenView({
             renderItem={({ item }) => renderLocationSection(item)}
             className="flex-1"
             contentContainerStyle={{
-              paddingHorizontal: glassSpacing.screen,
-              paddingBottom: glassTabBarHeight + ds.spacing(20),
+              paddingHorizontal: space[4],
+              paddingBottom: getTabBarClearance(insets.bottom) + ds.spacing(space[5]),
             }}
             keyboardShouldPersistTaps="handled"
             ListHeaderComponent={null}
@@ -1446,113 +1357,69 @@ export function CartScreenView({
         )}
       </View>
 
-      {/* Cart Location Modal */}
-      <Modal
+      {/* Cart Location Sheet */}
+      <Sheet
         visible={showCartLocationModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => {
-          setShowCartLocationModal(false);
-          setCartLocationToMove(null);
-        }}
+        title="Change cart location"
+        onClose={closeCartLocationSheet}
+        primary={{ label: 'Cancel', onPress: closeCartLocationSheet, variant: 'secondary' }}
       >
-        <Pressable
-          className="flex-1 justify-end"
-          style={{ backgroundColor: colors.scrim }}
-          onPress={() => {
-            setShowCartLocationModal(false);
-            setCartLocationToMove(null);
-          }}
+        <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>
+          Move all items from {cartLocationToMove?.name || 'this cart'}
+        </Text>
+
+        <ScrollView
+          style={{ maxHeight: ds.spacing(360) }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <Pressable
-            style={{
-              backgroundColor: glassColors.background,
-              borderTopLeftRadius: 28,
-              borderTopRightRadius: 28,
-              borderWidth: glassHairlineWidth,
-              borderColor: glassColors.cardBorder,
-            }}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <View className="items-center pt-3 pb-2">
-              <View style={{ width: 40, height: 4, backgroundColor: glassColors.mediumFill, borderRadius: glassRadii.round }} />
-            </View>
-
-            <View style={{ paddingHorizontal: ds.spacing(24) }} className="pb-8">
-              <Text style={{ fontSize: ds.fontSize(20), fontWeight: '700', color: glassColors.textPrimary, marginBottom: ds.spacing(8) }}>
-                Change Cart Location
-              </Text>
-              <Text style={{ fontSize: ds.fontSize(14), color: glassColors.textSecondary, marginBottom: ds.spacing(16) }}>
-                Move all items from {cartLocationToMove?.name || 'this cart'}
-              </Text>
-
-              <ScrollView
-                style={{ maxHeight: ds.spacing(360) }}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: ds.spacing(8) }}
-                keyboardShouldPersistTaps="handled"
-              >
-                {locations.map((loc) => {
-                  const isSelected = cartLocationToMove?.id === loc.id;
-                  return (
-                    <TouchableOpacity
-                      key={loc.id}
-                      style={{
-                        padding: ds.spacing(16),
-                        borderRadius: glassRadii.surface,
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        marginBottom: ds.spacing(12),
-                        borderWidth: glassHairlineWidth,
-                        borderColor: isSelected ? glassColors.accent : glassColors.cardBorder,
-                        backgroundColor: isSelected ? glassColors.accentSoft : glassColors.subtleFill,
-                      }}
-                      onPress={() => handleMoveCartLocation(loc.id, loc.name)}
-                      activeOpacity={0.7}
-                    >
-                      <View
-                        style={{
-                          width: ds.icon(44),
-                          height: ds.icon(44),
-                          borderRadius: ds.icon(22),
-                          backgroundColor: glassColors.mediumFill,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <BrandLogo variant="inline" size={18} />
-                      </View>
-                      <View className="flex-1 ml-4">
-                        <Text style={{ fontSize: ds.fontSize(16), fontWeight: '600', color: glassColors.textPrimary }}>
-                          {loc.name}
-                        </Text>
-                        {isSelected && (
-                          <Text style={{ fontSize: ds.fontSize(13), color: glassColors.accent }}>Current location</Text>
-                        )}
-                      </View>
-                      {isSelected && (
-                        <Ionicons name="checkmark-circle" size={ds.icon(20)} color={glassColors.accent[500]} />
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-
+          {locations.map((loc) => {
+            const isSelected = cartLocationToMove?.id === loc.id;
+            return (
               <TouchableOpacity
-                onPress={() => {
-                  setShowCartLocationModal(false);
-                  setCartLocationToMove(null);
+                key={loc.id}
+                style={{
+                  padding: ds.spacing(space[4]),
+                  borderRadius: radius.card,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: ds.spacing(space[4]),
+                  marginBottom: ds.spacing(space[3]),
+                  borderWidth: 1,
+                  borderColor: isSelected ? color.accent : color.hairline,
+                  backgroundColor: isSelected ? color.tint : color.well,
                 }}
-                className="py-4 mt-2"
+                onPress={() => handleMoveCartLocation(loc.id, loc.name)}
+                activeOpacity={0.7}
               >
-                <Text style={{ fontSize: ds.fontSize(14), color: glassColors.textSecondary, fontWeight: '500', textAlign: 'center' }}>
-                  Cancel
-                </Text>
+                <View
+                  style={{
+                    width: ds.icon(44),
+                    height: ds.icon(44),
+                    borderRadius: radius.pill,
+                    backgroundColor: color.well,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <BrandLogo variant="inline" size={18} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink }}>
+                    {loc.name}
+                  </Text>
+                  {isSelected && (
+                    <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.accent }}>Current location</Text>
+                  )}
+                </View>
+                {isSelected && (
+                  <Ionicons name="checkmark-circle" size={ds.icon(20)} color={color.accent} />
+                )}
               </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+            );
+          })}
+        </ScrollView>
+      </Sheet>
 
       <ConfirmLocationBottomSheet
         visible={requiresLocationConfirm && showConfirmLocationSheet}
@@ -1581,235 +1448,118 @@ export function CartScreenView({
         }}
       />
 
-      {/* Item Note Modal */}
-      <Modal
+      {/* Item note sheet */}
+      <Sheet
         visible={showItemNoteModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => {
-          setShowItemNoteModal(false);
-          setItemNoteDraft('');
-          setMenuTarget(null);
-        }}
+        title={menuItem?.item.note ? 'Edit note' : 'Add note'}
+        onClose={closeItemNoteSheet}
       >
-        <Pressable
-          className="flex-1"
-          style={{ backgroundColor: colors.scrimStrong }}
-          onPress={() => {
-            setShowItemNoteModal(false);
-            setItemNoteDraft('');
-            setMenuTarget(null);
-          }}
-        >
-          <KeyboardAvoidingView
-            style={{ flex: 1, justifyContent: 'flex-end' }}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={0}
-          >
-            <Pressable
-              style={{ paddingHorizontal: ds.spacing(24) }}
-              className="pt-4 pb-6"
-              onPress={(e) => e.stopPropagation()}
-            >
-              <GlassSurface
-                intensity="subtle"
-                blurred={false}
-                style={{
-                  borderTopLeftRadius: 28,
-                  borderTopRightRadius: 28,
-                  paddingHorizontal: ds.spacing(24),
-                  paddingTop: ds.spacing(16),
-                  paddingBottom: ds.spacing(24),
-                }}
-              >
-                <View className="items-center pb-3">
-                  <View style={{ width: 40, height: 4, backgroundColor: glassColors.mediumFill, borderRadius: glassRadii.round }} />
-                </View>
-                <Text style={{ fontSize: ds.fontSize(18), fontWeight: '700', color: glassColors.textPrimary, marginBottom: ds.spacing(4) }}>
-                  {menuItem?.item.note ? 'Edit Note' : 'Add Note'}
-                </Text>
-                <Text style={{ fontSize: ds.fontSize(13), color: glassColors.textSecondary, marginBottom: ds.spacing(16) }}>
-                  {menuItem?.item.inventoryItem?.name || 'Item'}
-                </Text>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginBottom: ds.spacing(space[3]) }}>
+            {menuItem?.item.inventoryItem?.name || 'Item'}
+          </Text>
 
-                <TextInput
-                  value={itemNoteDraft}
-                  onChangeText={setItemNoteDraft}
-                  placeholder="Add special request for manager..."
-                  placeholderTextColor={colors.gray[400]}
-                  multiline
-                  maxLength={240}
-                  textAlignVertical="top"
-                  style={{
-                    fontSize: ds.fontSize(14),
-                    borderRadius: glassRadii.surface,
-                    paddingHorizontal: ds.spacing(16),
-                    minHeight: 110,
-                    paddingVertical: ds.spacing(12),
-                    color: glassColors.textPrimary,
-                    backgroundColor: glassColors.mediumFill,
-                    borderWidth: glassHairlineWidth,
-                    borderColor: glassColors.cardBorder,
-                  }}
-                />
-                <Text style={{ fontSize: ds.fontSize(12), color: glassColors.textSecondary, marginTop: ds.spacing(8) }}>
-                  {itemNoteDraft.length}/240
-                </Text>
-
-                <View className="flex-row mt-5">
-                  <TouchableOpacity
-                    onPress={() => {
-                      setShowItemNoteModal(false);
-                      setItemNoteDraft('');
-                      setMenuTarget(null);
-                    }}
-                    style={{
-                      height: ds.buttonH,
-                      borderRadius: glassRadii.button,
-                      flex: 1,
-                      marginRight: ds.spacing(8),
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: glassColors.mediumFill,
-                      borderWidth: glassHairlineWidth,
-                      borderColor: glassColors.cardBorder,
-                    }}
-                  >
-                    <Text style={{ fontSize: ds.buttonFont, color: glassColors.textPrimary, fontWeight: '600' }}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={handleSaveItemNote}
-                    style={{
-                      height: ds.buttonH,
-                      borderRadius: glassRadii.button,
-                      flex: 1,
-                      marginLeft: ds.spacing(8),
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: glassColors.accent[500],
-                    }}
-                  >
-                    <Text style={{ fontSize: ds.buttonFont, color: glassColors.textOnPrimary, fontWeight: '600' }}>Save Note</Text>
-                  </TouchableOpacity>
-                </View>
-              </GlassSurface>
-            </Pressable>
-          </KeyboardAvoidingView>
-        </Pressable>
-      </Modal>
-
-      {/* Item Location Picker */}
-      <Modal
-        visible={showItemLocationModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => {
-          setShowItemLocationModal(false);
-          setItemLocationAction(null);
-          setMenuTarget(null);
-        }}
-      >
-        <Pressable
-          className="flex-1 justify-end"
-          style={{ backgroundColor: colors.scrim }}
-          onPress={() => {
-            setShowItemLocationModal(false);
-            setItemLocationAction(null);
-            setMenuTarget(null);
-          }}
-        >
-          <Pressable
+          <TextInput
+            value={itemNoteDraft}
+            onChangeText={setItemNoteDraft}
+            placeholder="Add a special request for the manager"
+            placeholderTextColor={color.ink3}
+            accessibilityLabel="Item note"
+            multiline
+            maxLength={240}
+            textAlignVertical="top"
             style={{
-              backgroundColor: glassColors.background,
-              borderTopLeftRadius: 28,
-              borderTopRightRadius: 28,
-              borderWidth: glassHairlineWidth,
-              borderColor: glassColors.cardBorder,
+              fontSize: ds.fontSize(typeScale.body),
+              borderRadius: radius.card,
+              paddingHorizontal: ds.spacing(space[4]),
+              minHeight: 110,
+              paddingVertical: ds.spacing(space[3]),
+              color: color.ink,
+              backgroundColor: color.well,
+              borderWidth: 1,
+              borderColor: color.hairline,
             }}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <View className="items-center pt-3 pb-2">
-              <View style={{ width: 40, height: 4, backgroundColor: glassColors.mediumFill, borderRadius: glassRadii.round }} />
-            </View>
+          />
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginTop: ds.spacing(space[2]) }}>
+            {itemNoteDraft.length}/240
+          </Text>
 
-            <View style={{ paddingHorizontal: ds.spacing(24) }} className="pb-8">
-              <Text style={{ fontSize: ds.fontSize(20), fontWeight: '700', color: glassColors.textPrimary, marginBottom: ds.spacing(8) }}>
-                {itemLocationAction === 'add' ? 'Add to Cart' : 'Move to Cart'}
-              </Text>
-              <Text style={{ fontSize: ds.fontSize(14), color: glassColors.textSecondary, marginBottom: ds.spacing(16) }}>
-                {menuItem?.item.inventoryItem?.name || 'Item'}
-              </Text>
+          {/* The action stays inside the keyboard-avoiding region: `Sheet.primary`
+              renders outside it, so with the note keyboard open Save sat behind
+              the keyboard. */}
+          <Button
+            label="Save note"
+            onPress={handleSaveItemNote}
+            style={{ marginTop: ds.spacing(space[3]) }}
+          />
+        </KeyboardAvoidingView>
+      </Sheet>
 
-              <ScrollView
-                style={{ maxHeight: ds.spacing(360) }}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: ds.spacing(8) }}
-                keyboardShouldPersistTaps="handled"
-              >
-                {selectableItemLocations.map((loc) => {
-                    const cartCount = getCartItems(loc.id, context).length;
-                    return (
-                      <TouchableOpacity
-                        key={loc.id}
-                        style={{
-                          padding: ds.spacing(16),
-                          borderRadius: glassRadii.surface,
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          marginBottom: ds.spacing(12),
-                          borderWidth: glassHairlineWidth,
-                          borderColor: glassColors.cardBorder,
-                          backgroundColor: glassColors.subtleFill,
-                        }}
-                        onPress={() => handleApplyItemLocation(loc.id)}
-                        activeOpacity={0.7}
-                      >
-                        <View
-                          style={{
-                            width: ds.icon(44),
-                            height: ds.icon(44),
-                            borderRadius: ds.icon(22),
-                            backgroundColor: glassColors.accentSoft,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <Text style={{ fontSize: ds.fontSize(13), color: glassColors.accent, fontWeight: '700' }}>
-                            {loc.short_code}
-                          </Text>
-                        </View>
-                        <View className="flex-1 ml-4">
-                          <Text style={{ fontSize: ds.fontSize(16), fontWeight: '600', color: glassColors.textPrimary }}>
-                            {loc.name}
-                          </Text>
-                          {cartCount > 0 && (
-                            <Text style={{ fontSize: ds.fontSize(13), color: glassColors.textSecondary }}>
-                              {cartCount} item{cartCount !== 1 ? 's' : ''} in cart
-                            </Text>
-                          )}
-                        </View>
-                        <Ionicons name="arrow-forward" size={ds.icon(20)} color={glassColors.accent[500]} />
-                      </TouchableOpacity>
-                    );
-                  })}
-              </ScrollView>
+      {/* Item location sheet */}
+      <Sheet
+        visible={showItemLocationModal}
+        title={itemLocationAction === 'add' ? 'Add to cart' : 'Move to cart'}
+        onClose={closeItemLocationSheet}
+        primary={{ label: 'Cancel', onPress: closeItemLocationSheet, variant: 'secondary' }}
+      >
+        <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>
+          {menuItem?.item.inventoryItem?.name || 'Item'}
+        </Text>
 
+        <ScrollView
+          style={{ maxHeight: ds.spacing(360) }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {selectableItemLocations.map((loc) => {
+            const cartCount = getCartItems(loc.id, context).length;
+            return (
               <TouchableOpacity
-                onPress={() => {
-                  setShowItemLocationModal(false);
-                  setItemLocationAction(null);
-                  setMenuTarget(null);
+                key={loc.id}
+                style={{
+                  padding: ds.spacing(space[4]),
+                  borderRadius: radius.card,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: ds.spacing(space[4]),
+                  marginBottom: ds.spacing(space[3]),
+                  borderWidth: 1,
+                  borderColor: color.hairline,
+                  backgroundColor: color.well,
                 }}
-                className="py-4 mt-2"
+                onPress={() => handleApplyItemLocation(loc.id)}
+                activeOpacity={0.7}
               >
-                <Text style={{ fontSize: ds.fontSize(14), color: glassColors.textSecondary, fontWeight: '500', textAlign: 'center' }}>
-                  Cancel
-                </Text>
+                <View
+                  style={{
+                    width: ds.icon(44),
+                    height: ds.icon(44),
+                    borderRadius: radius.pill,
+                    backgroundColor: color.tint,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.accent, fontWeight: weight.bold }}>
+                    {loc.short_code}
+                  </Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink }}>
+                    {loc.name}
+                  </Text>
+                  {cartCount > 0 && (
+                    <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
+                      {cartCount} item{cartCount !== 1 ? 's' : ''} in cart
+                    </Text>
+                  )}
+                </View>
+                <Ionicons name="arrow-forward" size={ds.icon(20)} color={color.accent} />
               </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+            );
+          })}
+        </ScrollView>
+      </Sheet>
 
       {statusToast && (
         <Animated.View
@@ -1824,13 +1574,13 @@ export function CartScreenView({
         >
           <View
             style={{
-              borderRadius: ds.radius(12),
+              borderRadius: radius.control,
               paddingHorizontal: ds.spacing(16),
               paddingVertical: ds.spacing(12),
-              backgroundColor: statusToast.type === 'error' ? colors.error : glassColors.textPrimary,
+              backgroundColor: statusToast.type === 'error' ? color.alert : color.ink,
             }}
           >
-            <Text style={{ fontSize: ds.fontSize(13), color: colors.white, textAlign: 'center', fontWeight: '500' }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.card, textAlign: 'center', fontWeight: weight.semibold }}>
               {statusToast.message}
             </Text>
           </View>

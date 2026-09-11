@@ -110,6 +110,27 @@ export function parInBase(input: {
 }
 
 /**
+ * Expresses the configured par level in an arbitrary wheel unit.
+ *
+ * Used by the "mark full" shortcut, which has to dial par-level stock into a
+ * wheel that may be showing a different unit than the row is denominated in.
+ * Pack conversions round up so the dialled-in amount is never short of par.
+ */
+export function parInUnit(input: {
+  parLevel: number;
+  countUnitType: UnitType;
+  packSize: number;
+  unit: UnitType;
+}): number {
+  const parBase = parInBase(input);
+  if (input.unit === 'pack') {
+    const ps = clampInt(input.packSize) || 1;
+    return Math.ceil(parBase / ps);
+  }
+  return parBase;
+}
+
+/**
  * Computes the order deficit for a given stock entry, expressed in the row's
  * count unit. That is the same unit as `par_level`, so the number reads
  * against the par shown on the sheet.

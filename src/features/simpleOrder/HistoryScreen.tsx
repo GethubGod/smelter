@@ -10,12 +10,16 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomSheetShell } from '@/components/BottomSheetShell';
-import { EmptyStateCard, LoadingIndicator } from '@/components';
-import { getFloatingPillClearance } from '@/components/navigation';
+import {
+  EmptyState,
+  Loading,
+  ScreenHeader,
+  Sheet,
+  getTabBarClearance,
+} from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { ImpactFeedbackStyle, triggerImpactHaptic } from '@/lib/haptics';
-import { glassHairlineWidth, radii, tipsTheme } from '@/theme/design';
+import { color, radius, space, typeScale } from '@/theme/tokens';
 import { useSimpleOrderUiStore } from '@/store/simpleOrderUiStore';
 import {
   formatHistoryDate,
@@ -78,7 +82,7 @@ export function HistoryScreen() {
     [setPendingReorder],
   );
 
-  const bottomPadding = getFloatingPillClearance(insets.bottom) + ds.spacing(12);
+  const bottomPadding = getTabBarClearance(insets.bottom) + ds.spacing(space[3]);
 
   const renderOrder = useCallback(
     ({ item }: { item: RecentOrder }) => {
@@ -97,10 +101,10 @@ export function HistoryScreen() {
             flexDirection: 'row',
             alignItems: 'center',
             gap: ds.spacing(12),
-            backgroundColor: tipsTheme.card,
-            borderWidth: glassHairlineWidth,
-            borderColor: tipsTheme.hairline,
-            borderRadius: 18,
+            backgroundColor: color.card,
+            borderWidth: 1,
+            borderColor: color.hairline,
+            borderRadius: radius.card,
             paddingHorizontal: ds.spacing(16),
             paddingVertical: ds.spacing(14),
             marginBottom: ds.spacing(10),
@@ -110,22 +114,22 @@ export function HistoryScreen() {
             style={{
               width: 38,
               height: 38,
-              borderRadius: radii.circle,
-              backgroundColor: tipsTheme.well,
+              borderRadius: radius.pill,
+              backgroundColor: color.well,
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Ionicons name="receipt-outline" size={ds.icon(18)} color={tipsTheme.ink} />
+            <Ionicons name="receipt-outline" size={ds.icon(18)} color={color.ink} />
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text
               numberOfLines={1}
-              style={{ fontSize: ds.fontSize(14.5), fontWeight: '700', color: tipsTheme.ink }}
+              style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: '700', color: color.ink }}
             >
               {formatHistoryDate(item.createdAt)}
             </Text>
-            <Text style={{ fontSize: ds.fontSize(12), color: tipsTheme.ink2, marginTop: 1 }}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginTop: 1 }}>
               {countBit}
               {timeBit ? ` · sent ${timeBit}` : ''}
             </Text>
@@ -138,14 +142,14 @@ export function HistoryScreen() {
               accessibilityLabel={`Reorder ${countBit}`}
               hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
               style={{
-                backgroundColor: tipsTheme.tint,
-                borderRadius: radii.pill,
+                backgroundColor: color.tint,
+                borderRadius: radius.pill,
                 paddingHorizontal: ds.spacing(13),
                 paddingVertical: ds.spacing(7),
               }}
             >
               <Text
-                style={{ fontSize: ds.fontSize(12), fontWeight: '700', color: tipsTheme.accent }}
+                style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: '700', color: color.accent }}
               >
                 Reorder
               </Text>
@@ -159,28 +163,24 @@ export function HistoryScreen() {
 
   let content: React.ReactNode;
   if (orders === null && !loadError) {
-    content = <LoadingIndicator />;
+    content = <Loading label="Loading past orders" />;
   } else if (loadError) {
     content = (
-      <View style={{ paddingTop: ds.spacing(24) }}>
-        <EmptyStateCard
-          icon="alert-circle-outline"
-          title="History unavailable"
-          message={loadError}
-          actionLabel="Try again"
-          onPressAction={() => void load()}
-        />
-      </View>
+      <EmptyState
+        icon="alert-circle-outline"
+        tone="alert"
+        title="History unavailable"
+        body={loadError}
+        action={{ label: 'Try again', onPress: () => void load() }}
+      />
     );
   } else if ((orders ?? []).length === 0) {
     content = (
-      <View style={{ paddingTop: ds.spacing(24) }}>
-        <EmptyStateCard
-          icon="receipt-outline"
-          title="No sent orders yet"
-          message="Orders appear here after they are sent to suppliers. Orders waiting for manager review show up once they are processed."
-        />
-      </View>
+      <EmptyState
+        icon="receipt-outline"
+        title="No sent orders yet"
+        body="Orders appear here after they are sent to suppliers. Orders waiting for manager review show up once they are processed."
+      />
     );
   } else {
     content = (
@@ -194,7 +194,7 @@ export function HistoryScreen() {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={() => void handleRefresh()}
-            tintColor={tipsTheme.accent}
+            tintColor={color.accent}
           />
         }
       />
@@ -202,80 +202,64 @@ export function HistoryScreen() {
   }
 
   return (
-    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: tipsTheme.page }}>
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: color.page }}>
       <View style={{ flex: 1, paddingHorizontal: ds.spacing(18) }}>
-        <View style={{ paddingTop: ds.spacing(2), paddingBottom: ds.spacing(10) }}>
-          <Text style={{ fontSize: ds.fontSize(24), fontWeight: '700', color: tipsTheme.ink }}>
-            Past orders
-          </Text>
-        </View>
+        <ScreenHeader
+          title="Past orders"
+          includeSafeArea={false}
+          style={{ paddingHorizontal: 0 }}
+        />
         {content}
       </View>
 
-      <BottomSheetShell
+      <Sheet
         visible={detailOrder !== null}
+        title={detailOrder ? formatHistoryDate(detailOrder.createdAt) : 'Order'}
         onClose={() => setDetailOrder(null)}
-        bottomPadding={Math.max(insets.bottom, ds.spacing(12))}
+        primary={
+          detailOrder && detailOrder.reorderItems.length > 0
+            ? {
+                label: 'Reorder these items',
+                onPress: () => {
+                  const order = detailOrder;
+                  setDetailOrder(null);
+                  handleReorder(order);
+                },
+              }
+            : undefined
+        }
       >
         {detailOrder ? (
           <>
-            <Text style={{ fontSize: ds.fontSize(20), fontWeight: '700', color: tipsTheme.ink }}>
-              {formatHistoryDate(detailOrder.createdAt)}
-            </Text>
             <Text
               style={{
-                fontSize: ds.fontSize(13),
-                color: tipsTheme.ink2,
-                marginBottom: ds.spacing(12),
+                fontSize: ds.fontSize(typeScale.secondary),
+                color: color.ink2,
               }}
             >
               {detailOrder.supplierName}
               {formatSentTime(detailOrder.createdAt)
-                ? ` · sent ${formatSentTime(detailOrder.createdAt)}`
+                ? ` \u00b7 sent ${formatSentTime(detailOrder.createdAt)}`
                 : ''}
             </Text>
             <ScrollView style={{ maxHeight: ds.spacing(320) }} showsVerticalScrollIndicator={false}>
               <View
                 style={{
-                  backgroundColor: tipsTheme.card,
-                  borderWidth: glassHairlineWidth,
-                  borderColor: tipsTheme.hairline,
-                  borderRadius: 16,
-                  padding: ds.spacing(14),
+                  backgroundColor: color.card,
+                  borderWidth: 1,
+                  borderColor: color.hairline,
+                  borderRadius: radius.card,
+                  padding: ds.spacing(space[3] + 2),
                 }}
               >
-                <Text style={{ fontSize: ds.fontSize(13), color: tipsTheme.ink, lineHeight: 19 }}>
+                <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink, lineHeight: 19 }}>
                   {detailOrder.messageText || 'No message text was archived for this order.'}
                 </Text>
               </View>
             </ScrollView>
-            {detailOrder.reorderItems.length > 0 ? (
-              <TouchableOpacity
-                onPress={() => {
-                  const order = detailOrder;
-                  setDetailOrder(null);
-                  handleReorder(order);
-                }}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel="Reorder these items"
-                style={{
-                  marginTop: ds.spacing(14),
-                  minHeight: 50,
-                  borderRadius: radii.pill,
-                  backgroundColor: tipsTheme.accent,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Text style={{ fontSize: ds.fontSize(15), fontWeight: '700', color: '#FFFFFF' }}>
-                  Reorder these items
-                </Text>
-              </TouchableOpacity>
-            ) : null}
           </>
         ) : null}
-      </BottomSheetShell>
+      </Sheet>
     </SafeAreaView>
   );
 }

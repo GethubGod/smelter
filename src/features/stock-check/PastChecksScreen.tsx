@@ -3,30 +3,22 @@ import {
   FlatList,
   Platform,
   RefreshControl,
-  Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import { useShallow } from 'zustand/react/shallow';
-import { LoadingIndicator } from '@/components';
+import { EmptyState, Loading, ScreenHeader, getTabBarClearance } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import {
   ImpactFeedbackStyle,
   triggerImpactHaptic,
 } from '@/lib/haptics';
 import { useAuthStore } from '@/store';
-import {
-  glassColors,
-  glassRadii,
-  glassSpacing,
-  glassTypography,
-} from '@/theme/design';
+import { color, space } from '@/theme/tokens';
 import {
   buildStationCardModel,
   StationCard,
@@ -114,59 +106,43 @@ function PastChecksScreenImpl() {
     [],
   );
 
-  const tabBarBottomInset = Math.max(
-    insets.bottom,
-    glassSpacing.tabBarBottom,
-  );
-  const actualTabBarHeight = 60 + tabBarBottomInset;
+  // The floating pill hovers over this list too, so the last card scrolls clear.
+  const floatingChromeClearance = getTabBarClearance(insets.bottom);
 
   const ListEmptyComponent = useMemo(
     () => (
-      <View
-        style={{
-          paddingVertical: ds.spacing(44),
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Text
-          style={{
-            fontSize: ds.fontSize(14),
-            fontWeight: '700',
-            color: glassColors.textSecondary,
-            textAlign: 'center',
-          }}
-        >
-          No completed checks yet.
-        </Text>
-      </View>
+      <EmptyState
+        icon="checkmark-done-outline"
+        title="No completed checks yet"
+        body="Stations you finish appear here."
+      />
     ),
-    [ds],
+    [],
+  );
+
+  const header = (
+    <ScreenHeader
+      mode="pushed"
+      title="Past checks"
+      onBack={handleBack}
+      backAccessibilityLabel="Back to stock check"
+      includeSafeArea={false}
+      style={{ paddingHorizontal: 0 }}
+    />
   );
 
   if (!location?.id) {
     return (
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: glassColors.background }}
+        style={{ flex: 1, backgroundColor: color.page }}
         edges={['top', 'left', 'right']}
       >
-        <View
-          style={{
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingHorizontal: glassSpacing.screen,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: ds.fontSize(15),
-              color: glassColors.textSecondary,
-              textAlign: 'center',
-            }}
-          >
-            Choose a location to view completed checks.
-          </Text>
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <EmptyState
+            icon="location-outline"
+            title="No location selected"
+            body="Choose a location to view completed checks."
+          />
         </View>
       </SafeAreaView>
     );
@@ -175,18 +151,10 @@ function PastChecksScreenImpl() {
   if (isLoading && areas.length === 0) {
     return (
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: glassColors.background }}
+        style={{ flex: 1, backgroundColor: color.page }}
         edges={['top', 'left', 'right']}
       >
-        <View
-          style={{
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <LoadingIndicator showText text="Loading past checks..." />
-        </View>
+        <Loading label="Loading past checks" />
       </SafeAreaView>
     );
   }
@@ -194,58 +162,17 @@ function PastChecksScreenImpl() {
   if (loadError && areas.length === 0) {
     return (
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: glassColors.background }}
+        style={{ flex: 1, backgroundColor: color.page }}
         edges={['top', 'left', 'right']}
       >
-        <View
-          style={{
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingHorizontal: glassSpacing.screen,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: ds.fontSize(15),
-              fontWeight: '700',
-              color: glassColors.textPrimary,
-              textAlign: 'center',
-            }}
-          >
-            We could not load your completed checks.
-          </Text>
-          <Text
-            style={{
-              marginTop: ds.spacing(6),
-              fontSize: ds.fontSize(13),
-              color: glassColors.textSecondary,
-              textAlign: 'center',
-            }}
-          >
-            {loadError}
-          </Text>
-          <TouchableOpacity
-            onPress={() => void loadLocation(location.id)}
-            activeOpacity={0.85}
-            style={{
-              marginTop: ds.spacing(16),
-              paddingHorizontal: ds.spacing(18),
-              paddingVertical: ds.spacing(10),
-              borderRadius: glassRadii.pill,
-              backgroundColor: glassColors.accent,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: ds.fontSize(14),
-                fontWeight: '700',
-                color: glassColors.textOnPrimary,
-              }}
-            >
-              Try again
-            </Text>
-          </TouchableOpacity>
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <EmptyState
+            icon="alert-circle-outline"
+            tone="alert"
+            title="We could not load your completed checks."
+            body={loadError}
+            action={{ label: 'Try again', onPress: () => void loadLocation(location.id) }}
+          />
         </View>
       </SafeAreaView>
     );
@@ -253,7 +180,7 @@ function PastChecksScreenImpl() {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: glassColors.background }}
+      style={{ flex: 1, backgroundColor: color.page }}
       edges={['top', 'left', 'right']}
     >
       <FlatList
@@ -265,60 +192,15 @@ function PastChecksScreenImpl() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={glassColors.accent}
+            tintColor={color.accent}
           />
         }
         contentContainerStyle={{
-          paddingHorizontal: glassSpacing.screen,
-          paddingTop: ds.spacing(4),
-          paddingBottom: actualTabBarHeight + ds.spacing(24),
+          paddingHorizontal: ds.spacing(space[4]),
+          paddingTop: ds.spacing(space[1]),
+          paddingBottom: floatingChromeClearance + ds.spacing(space[6]),
         }}
-        ListHeaderComponent={
-          <View style={{ paddingBottom: ds.spacing(16) }}>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Back to stock check"
-              onPress={handleBack}
-              activeOpacity={0.75}
-              hitSlop={8}
-              style={{
-                alignSelf: 'flex-start',
-                flexDirection: 'row',
-                alignItems: 'center',
-                minHeight: 42,
-                paddingRight: ds.spacing(12),
-              }}
-            >
-              <Ionicons
-                name="chevron-back"
-                size={ds.icon(20)}
-                color={glassColors.textPrimary}
-              />
-              <Text
-                style={{
-                  fontSize: ds.fontSize(14),
-                  fontWeight: '700',
-                  color: glassColors.textPrimary,
-                }}
-              >
-                Back
-              </Text>
-            </TouchableOpacity>
-            {/* Same size and weight as StackScreenHeader, so this title reads
-                as the same screen title the settings stack uses. */}
-            <Text
-              style={{
-                marginTop: ds.spacing(4),
-                fontSize: ds.fontSize(glassTypography.screenTitle),
-                fontWeight: '700',
-                color: glassColors.textPrimary,
-                letterSpacing: 0,
-              }}
-            >
-              Past Checks
-            </Text>
-          </View>
-        }
+        ListHeaderComponent={header}
         ListEmptyComponent={ListEmptyComponent}
         ItemSeparatorComponent={StationSeparator}
         removeClippedSubviews={Platform.OS === 'android'}

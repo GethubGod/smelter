@@ -6,6 +6,8 @@ import { color, radius, size, space, typeScale, weight } from '@/theme/tokens';
 export interface SegmentOption<T extends string> {
   value: T;
   label: string;
+  /** Dims the option, drops it out of the tab order and refuses the press. */
+  disabled?: boolean;
 }
 
 export interface SegmentProps<T extends string> {
@@ -55,16 +57,21 @@ export function Segment<T extends string>({
     >
       {options.map((option) => {
         const selected = option.value === value;
+        const disabled = option.disabled === true;
         return (
           <TouchableOpacity
             key={option.value}
             onPress={() => onChange(option.value)}
+            disabled={disabled}
             activeOpacity={0.85}
             accessibilityRole="radio"
             accessibilityLabel={option.label}
-            accessibilityState={{ selected, checked: selected }}
+            accessibilityState={
+              disabled ? { selected, checked: selected, disabled: true } : { selected, checked: selected }
+            }
             hitSlop={{ top: slop, bottom: slop, left: 0, right: 0 }}
             style={{
+              opacity: disabled ? 0.4 : 1,
               flex: 1,
               alignItems: 'center',
               justifyContent: 'center',

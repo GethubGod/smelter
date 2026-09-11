@@ -3,7 +3,7 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerImpactHaptic, triggerSelectionHaptic } from '@/lib/haptics';
-import { glassHairlineWidth, radii, tipsTheme } from '@/theme/design';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 import type { SimpleOrderDensity } from '@/types/settings';
 import { formatQuantity, type SelectionLine } from '../checklistSelection';
 
@@ -39,8 +39,8 @@ const DENSITY_METRICS: Record<SimpleOrderDensity, DensityMetrics> = {
     rowMinHeight: 58,
     checkboxSize: 26,
     stepperButtonSize: 38,
-    nameFontSize: 15,
-    quantityFontSize: 14.5,
+    nameFontSize: typeScale.body,
+    quantityFontSize: typeScale.body,
     verticalPadding: 8,
     showSubtitle: true,
     midMinWidth: 34,
@@ -49,8 +49,8 @@ const DENSITY_METRICS: Record<SimpleOrderDensity, DensityMetrics> = {
     rowMinHeight: 40,
     checkboxSize: 21,
     stepperButtonSize: 28,
-    nameFontSize: 13.5,
-    quantityFontSize: 13,
+    nameFontSize: typeScale.secondary,
+    quantityFontSize: typeScale.secondary,
     verticalPadding: 3,
     showSubtitle: false,
     midMinWidth: 56,
@@ -99,8 +99,8 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
         gap: ds.spacing(density === 'dense' ? 8 : 12),
         minHeight: Math.max(metrics.rowMinHeight, density === 'dense' ? 0 : ds.rowH),
         paddingVertical: ds.spacing(metrics.verticalPadding),
-        borderBottomWidth: isLast ? 0 : glassHairlineWidth,
-        borderBottomColor: tipsTheme.hairline,
+        borderBottomWidth: isLast ? 0 : 1,
+        borderBottomColor: color.hairline,
       }}
     >
       <TouchableOpacity
@@ -121,10 +121,10 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
           style={{
             width: checkboxSize,
             height: checkboxSize,
-            borderRadius: radii.circle,
+            borderRadius: radius.pill,
             borderWidth: line.checked ? 0 : 1.5,
-            borderColor: tipsTheme.disabled,
-            backgroundColor: line.checked ? tipsTheme.accent : 'transparent',
+            borderColor: color.disabled,
+            backgroundColor: line.checked ? color.accent : 'transparent',
             alignItems: 'center',
             justifyContent: 'center',
           }}
@@ -133,7 +133,7 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
             <Ionicons
               name="checkmark"
               size={Math.round(checkboxSize * 0.55)}
-              color="#FFFFFF"
+              color={color.onAccent}
             />
           ) : null}
         </View>
@@ -142,14 +142,14 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
             numberOfLines={1}
             style={{
               fontSize: ds.fontSize(metrics.nameFontSize),
-              fontWeight: '600',
-              color: line.checked ? tipsTheme.ink : tipsTheme.ink2,
+              fontWeight: weight.semibold,
+              color: line.checked ? color.ink : color.ink2,
             }}
           >
             {line.itemName}
           </Text>
           {metrics.showSubtitle ? (
-            <Text style={{ marginTop: 1, fontSize: ds.fontSize(12), color: tipsTheme.ink3 }}>
+            <Text style={{ marginTop: 1, fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}>
               {line.unit}
               {line.recommendedQty !== null
                 ? ` · usually ${formatQuantity(line.recommendedQty)}`
@@ -163,10 +163,10 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          backgroundColor: tipsTheme.card,
-          borderWidth: glassHairlineWidth,
-          borderColor: 'rgba(0, 0, 0, 0.09)',
-          borderRadius: radii.pill,
+          backgroundColor: color.card,
+          borderWidth: 1,
+          borderColor: color.hairlineStrong,
+          borderRadius: radius.pill,
           opacity: line.checked ? 1 : 0.45,
         }}
       >
@@ -185,7 +185,7 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
           <Ionicons
             name="remove"
             size={ds.icon(density === 'dense' ? 15 : 17)}
-            color={tipsTheme.ink}
+            color={color.ink}
           />
         </TouchableOpacity>
 
@@ -209,7 +209,7 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
             style={{
               fontSize: ds.fontSize(metrics.quantityFontSize),
               fontWeight: '700',
-              color: tipsTheme.ink,
+              color: color.ink,
               textAlign: 'center',
             }}
           >
@@ -220,8 +220,8 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
               numberOfLines={1}
               style={{
                 maxWidth: ds.spacing(52),
-                fontSize: ds.fontSize(10.5),
-                color: tipsTheme.ink3,
+                fontSize: ds.fontSize(typeScale.caption),
+                color: color.ink3,
               }}
             >
               {line.unit}
@@ -244,7 +244,7 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
           <Ionicons
             name="add"
             size={ds.icon(density === 'dense' ? 15 : 17)}
-            color={tipsTheme.accent}
+            color={color.accent}
           />
         </TouchableOpacity>
       </View>

@@ -25,13 +25,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import {
-  colors,
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-  grayScale,
-} from '@/theme/design';
+import { Button, SectionLabel } from '@/components/ui';
+import { color, radius, size, space, tracking, typeScale, weight } from '@/theme/tokens';
 import type { UnitType } from '@/types';
 import type { StockCheckItem } from '../types';
 import {
@@ -169,16 +164,16 @@ const IconCircleButton = memo(function IconCircleButton({
       style={{
         width: size,
         height: size,
-        borderRadius: glassRadii.round,
+        borderRadius: radius.pill,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: accent ? 'rgba(232, 80, 58, 0.14)' : grayScale[100],
+        backgroundColor: accent ? color.tint : color.well,
       }}
     >
       <Ionicons
         name={icon}
         size={iconSize}
-        color={accent ? glassColors.accent : glassColors.textPrimary}
+        color={accent ? color.accent : color.ink}
       />
     </TouchableOpacity>
   );
@@ -204,19 +199,19 @@ const QuickNoteChip = memo(function QuickNoteChip({
       onPress={handlePress}
       activeOpacity={0.85}
       style={{
-        paddingHorizontal: ds.spacing(12),
-        paddingVertical: ds.spacing(6),
-        borderRadius: glassRadii.pill,
-        backgroundColor: colors.white,
-        borderWidth: glassHairlineWidth,
-        borderColor: glassColors.cardBorder,
+        paddingHorizontal: ds.spacing(space[3]),
+        paddingVertical: ds.spacing(space[1] + 2),
+        borderRadius: radius.pill,
+        backgroundColor: color.card,
+        borderWidth: 1,
+        borderColor: color.hairlineStrong,
       }}
     >
       <Text
         style={{
-          fontSize: ds.fontSize(12),
-          fontWeight: '600',
-          color: glassColors.textPrimary,
+          fontSize: ds.fontSize(typeScale.secondary),
+          fontWeight: weight.semibold,
+          color: color.ink2,
         }}
         numberOfLines={1}
       >
@@ -422,7 +417,7 @@ function SetStockBottomSheetImpl(
 
   // Pinned-footer offset against the safe-area inset.
   const footerBottomInset = Math.max(insets.bottom, ds.spacing(10));
-  const footerHeight = ds.spacing(54);
+  const footerHeight = Math.max(size.touchMin, ds.spacing(size.button));
   const contentPaddingBottom = footerHeight + footerBottomInset + ds.spacing(12);
 
   /* Whether the user has dialed in any stock or note edits — used as a
@@ -438,22 +433,22 @@ function SetStockBottomSheetImpl(
     () => (
       <View
         style={{
-          paddingHorizontal: ds.spacing(20),
-          paddingTop: ds.spacing(8),
-          paddingBottom: item ? ds.spacing(10) : ds.spacing(4),
-          backgroundColor: colors.white,
-          borderTopLeftRadius: glassRadii.surface + 4,
-          borderTopRightRadius: glassRadii.surface + 4,
+          paddingHorizontal: ds.spacing(space[5]),
+          paddingTop: ds.spacing(space[2]),
+          paddingBottom: item ? ds.spacing(space[2] + 2) : ds.spacing(space[1]),
+          backgroundColor: color.card,
+          borderTopLeftRadius: radius.sheet,
+          borderTopRightRadius: radius.sheet,
         }}
       >
         <View
           style={{
             alignSelf: 'center',
-            width: 42,
-            height: 5,
-            borderRadius: glassRadii.pill,
-            backgroundColor: grayScale[300],
-            marginBottom: item ? ds.spacing(12) : 0,
+            width: size.sheetHandleWidth,
+            height: size.sheetHandleHeight,
+            borderRadius: radius.pill,
+            backgroundColor: color.disabled,
+            marginBottom: item ? ds.spacing(space[3]) : 0,
           }}
         />
 
@@ -467,9 +462,10 @@ function SetStockBottomSheetImpl(
             <View style={{ flex: 1, paddingRight: ds.spacing(12) }}>
               <Text
                 style={{
-                  fontSize: ds.fontSize(22),
-                  fontWeight: '900',
-                  color: glassColors.textPrimary,
+                  fontSize: ds.fontSize(typeScale.title),
+                  fontWeight: weight.bold,
+                  letterSpacing: tracking.title,
+                  color: color.ink,
                 }}
                 numberOfLines={1}
                 ellipsizeMode="tail"
@@ -478,9 +474,9 @@ function SetStockBottomSheetImpl(
               </Text>
               <Text
                 style={{
-                  marginTop: ds.spacing(2),
-                  fontSize: ds.fontSize(12),
-                  color: glassColors.textSecondary,
+                  marginTop: ds.spacing(space[1] / 2),
+                  fontSize: ds.fontSize(typeScale.secondary),
+                  color: color.ink2,
                 }}
                 numberOfLines={1}
               >
@@ -558,9 +554,9 @@ function SetStockBottomSheetImpl(
       android_keyboardInputMode="adjustResize"
       handleComponent={renderHandle}
       backgroundStyle={{
-        backgroundColor: colors.white,
-        borderTopLeftRadius: glassRadii.surface + 4,
-        borderTopRightRadius: glassRadii.surface + 4,
+        backgroundColor: color.card,
+        borderTopLeftRadius: radius.sheet,
+        borderTopRightRadius: radius.sheet,
       }}
     >
       <BottomSheetView style={{ flex: 1 }}>
@@ -575,8 +571,8 @@ function SetStockBottomSheetImpl(
           >
             <Text
               style={{
-                fontSize: ds.fontSize(14),
-                color: glassColors.textSecondary,
+                fontSize: ds.fontSize(typeScale.body),
+                color: color.ink2,
               }}
             >
               No item selected.
@@ -604,35 +600,24 @@ function SetStockBottomSheetImpl(
                   layout={LinearTransition.duration(180)}
                   style={{ flex: 1 }}
                 >
-                  <Text
-                    style={{
-                      fontSize: ds.fontSize(11),
-                      fontWeight: '700',
-                      letterSpacing: 1.0,
-                      color: glassColors.textSecondary,
-                      textTransform: 'uppercase',
-                      marginBottom: ds.spacing(6),
-                    }}
-                  >
-                    Add a note
-                  </Text>
+                  <SectionLabel>Add a note</SectionLabel>
 
                   <BottomSheetTextInput
                     value={noteDraft}
                     onChangeText={setNoteDraft}
                     placeholder="Bump up — chef expecting big weekend rush"
-                    placeholderTextColor={glassColors.textMuted}
+                    placeholderTextColor={color.ink3}
                     multiline
                     textAlignVertical="top"
                     style={{
                       flex: 1,
                       minHeight: 150,
-                      backgroundColor: grayScale[100],
-                      borderRadius: glassRadii.surface,
-                      paddingHorizontal: ds.spacing(12),
-                      paddingVertical: ds.spacing(10),
-                      fontSize: ds.fontSize(14),
-                      color: glassColors.textPrimary,
+                      backgroundColor: color.well,
+                      borderRadius: radius.control,
+                      paddingHorizontal: ds.spacing(space[3]),
+                      paddingVertical: ds.spacing(space[2] + 2),
+                      fontSize: ds.fontSize(typeScale.body),
+                      color: color.ink,
                     }}
                   />
 
@@ -689,30 +674,23 @@ function SetStockBottomSheetImpl(
                       marginTop: ds.spacing(14),
                       paddingHorizontal: ds.spacing(14),
                       paddingVertical: ds.spacing(12),
-                      borderRadius: glassRadii.surface,
-                      backgroundColor: 'rgba(232, 80, 58, 0.06)',
+                      borderRadius: radius.card,
+                      backgroundColor: color.tint,
                       flexDirection: 'row',
                       alignItems: 'center',
                     }}
                   >
                     <View style={{ flex: 1 }}>
-                      <Text
-                        style={{
-                          fontSize: ds.fontSize(10),
-                          fontWeight: '700',
-                          letterSpacing: 1.4,
-                          color: glassColors.textSecondary,
-                          textTransform: 'uppercase',
-                        }}
-                      >
+                      <SectionLabel style={{ marginTop: 0, marginBottom: 0 }}>
                         Stock
-                      </Text>
+                      </SectionLabel>
                       <Text
                         style={{
-                          marginTop: ds.spacing(2),
-                          fontSize: ds.fontSize(17),
-                          fontWeight: '800',
-                          color: glassColors.textPrimary,
+                          marginTop: ds.spacing(space[1] / 2),
+                          fontSize: ds.fontSize(typeScale.title),
+                          fontWeight: weight.bold,
+                          letterSpacing: tracking.title,
+                          color: color.ink,
                         }}
                         numberOfLines={1}
                       >
@@ -720,23 +698,16 @@ function SetStockBottomSheetImpl(
                       </Text>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
-                      <Text
-                        style={{
-                          fontSize: ds.fontSize(10),
-                          fontWeight: '700',
-                          letterSpacing: 1.4,
-                          color: glassColors.textSecondary,
-                          textTransform: 'uppercase',
-                        }}
-                      >
+                      <SectionLabel style={{ marginTop: 0, marginBottom: 0 }}>
                         Need to order
-                      </Text>
+                      </SectionLabel>
                       <Text
                         style={{
-                          marginTop: ds.spacing(2),
-                          fontSize: ds.fontSize(17),
-                          fontWeight: '800',
-                          color: glassColors.accent,
+                          marginTop: ds.spacing(space[1] / 2),
+                          fontSize: ds.fontSize(typeScale.title),
+                          fontWeight: weight.bold,
+                          letterSpacing: tracking.title,
+                          color: color.accent,
                         }}
                       >
                         {liveNeedToOrder}
@@ -759,40 +730,18 @@ function SetStockBottomSheetImpl(
                 left: 0,
                 right: 0,
                 bottom: 0,
-                paddingHorizontal: ds.spacing(20),
+                paddingHorizontal: ds.spacing(space[5]),
                 paddingBottom: footerBottomInset,
-                paddingTop: ds.spacing(8),
-                backgroundColor: colors.white,
+                paddingTop: ds.spacing(space[2]),
+                backgroundColor: color.card,
               }}
             >
-              <TouchableOpacity
-                accessibilityRole="button"
-                accessibilityLabel="Save stock and close"
+              <Button
+                label="Done"
                 onPress={handleDone}
-                activeOpacity={0.9}
-                style={{
-                  height: footerHeight,
-                  borderRadius: glassRadii.submitButton,
-                  backgroundColor: glassColors.accent,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  shadowColor: 'rgba(15, 23, 42, 0.35)',
-                  shadowOpacity: 0.18,
-                  shadowRadius: 16,
-                  shadowOffset: { width: 0, height: 8 },
-                  elevation: 4,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: ds.fontSize(16),
-                    fontWeight: '800',
-                    color: glassColors.textOnPrimary,
-                  }}
-                >
-                  Done
-                </Text>
-              </TouchableOpacity>
+                fullWidth
+                accessibilityHint="Saves this stock count and closes the sheet"
+              />
             </View>
           </>
         )}

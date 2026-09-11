@@ -3,26 +3,26 @@
 // through the manager-gated set_user_default_location RPC.
 
 import { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Modal,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useShallow } from 'zustand/react/shallow';
-import { StackScreenHeader } from '@/components';
 import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
+import {
+  Button,
+  Card,
+  EmptyState,
+  Input,
+  ListRow,
+  Loading,
+  ScreenHeader,
+  Sheet,
+} from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
+import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
 import { useAuthStore } from '@/store';
 import { triggerNotificationHaptic, NotificationFeedbackType } from '@/lib/haptics';
-import { colors, glassHairlineWidth, radii, tipsTheme } from '@/theme/design';
+import { color, space, typeScale, weight } from '@/theme/tokens';
 import { listManagedUsers, type ManagedUser } from '@/services/userManagement';
 import { getModulesForUser, setUserModule, type ModuleKey } from '@/services/userModules';
 import {
@@ -53,6 +53,7 @@ const DETAIL_MODULE_LABELS: Partial<Record<ModuleKey, string>> = {
 
 export default function MemberDetailScreen() {
   const ds = useScaledStyles();
+  const { backTo } = useSettingsNavigationContext();
   const params = useLocalSearchParams<{ userId?: string | string[] }>();
   const userId = (Array.isArray(params.userId) ? params.userId[0] : params.userId) ?? '';
   const { locations } = useAuthStore(useShallow((state) => ({ locations: state.locations })));
@@ -175,79 +176,79 @@ export default function MemberDetailScreen() {
     );
   };
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace(backTo);
+  };
+
   const displayName = user?.full_name ?? 'Team member';
   const manageableKeys = user ? getManageableModuleKeys(user.role) : [];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: tipsTheme.page }} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.page }} edges={['left', 'right']}>
       <ManagerScaleContainer>
-        <View style={{ backgroundColor: tipsTheme.page }}>
-          <StackScreenHeader
-            title={displayName}
-            subtitle={
-              user?.is_suspended
-                ? 'Suspended'
-                : credential
-                  ? `Signs in with a ${credential.kind === 'pin' ? 'PIN' : 'password'}`
-                  : 'No app sign-in set up yet'
-            }
-          />
-        </View>
+        <ScreenHeader
+          mode="pushed"
+          title={displayName}
+          subtitle={
+            user?.is_suspended
+              ? 'Suspended'
+              : credential
+                ? `Signs in with a ${credential.kind === 'pin' ? 'PIN' : 'password'}`
+                : 'No app sign-in set up yet'
+          }
+          onBack={handleBack}
+        />
 
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{
-            paddingHorizontal: ds.spacing(20),
-            paddingBottom: ds.spacing(28),
+            paddingHorizontal: ds.spacing(space[4]),
+            paddingBottom: ds.spacing(space[8]),
           }}
         >
           {loadError ? (
-            <View
-              style={{
-                backgroundColor: tipsTheme.tint,
-                borderRadius: 13,
-                padding: ds.spacing(12),
-                marginTop: ds.spacing(8),
-              }}
-            >
-              <Text style={{ fontSize: ds.fontSize(12.5), color: tipsTheme.alert }}>{loadError}</Text>
-              <TouchableOpacity onPress={() => void load()} style={{ marginTop: ds.spacing(6) }}>
-                <Text style={{ fontSize: ds.fontSize(12.5), fontWeight: '700', color: tipsTheme.alert }}>
-                  Retry
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <EmptyState
+              icon="alert-circle-outline"
+              tone="alert"
+              title="Unable to load this person"
+              body={loadError}
+              action={{ label: 'Retry', onPress: () => void load() }}
+              compact
+            />
           ) : null}
 
           {!user && !loadError ? (
-            <View style={{ paddingVertical: ds.spacing(30), alignItems: 'center' }}>
-              <ActivityIndicator size="small" color={tipsTheme.accent} />
+            <View style={{ paddingVertical: ds.spacing(space[8]) }}>
+              <Loading size="inline" label="Loading this person" style={{ alignItems: 'center' }} />
             </View>
           ) : null}
 
           {user ? (
             <>
               {notice ? (
-                <View
-                  style={{
-                    backgroundColor: tipsTheme.tint,
-                    borderRadius: 13,
-                    paddingHorizontal: ds.spacing(12),
-                    paddingVertical: ds.spacing(8),
-                    marginTop: ds.spacing(8),
-                  }}
-                >
-                  <Text style={{ fontSize: ds.fontSize(12), fontWeight: '600', color: tipsTheme.ink }}>
+                <Card style={{ marginTop: ds.spacing(space[2]) }}>
+                  <Text
+                    accessibilityRole="alert"
+                    style={{
+                      fontSize: ds.fontSize(typeScale.secondary),
+                      fontWeight: weight.semibold,
+                      color: color.ink,
+                    }}
+                  >
                     {notice}
                   </Text>
-                </View>
+                </Card>
               ) : null}
 
               <TeamSectionLabel label="Works at · change anytime" />
               <WorksAtSegmented value={group} onChange={(next) => void handleGroupChange(next)} disabled={groupSaving} />
 
               <TeamSectionLabel label="Features" />
-              <TeamCard style={{ paddingHorizontal: ds.spacing(13) }}>
+              <TeamCard style={{ paddingHorizontal: ds.spacing(space[3] + 2) }}>
                 {modules ? (
                   manageableKeys.map((key, index) => (
                     <ModuleToggleRow
@@ -260,167 +261,82 @@ export default function MemberDetailScreen() {
                     />
                   ))
                 ) : (
-                  <View style={{ paddingVertical: ds.spacing(14), alignItems: 'center' }}>
-                    <ActivityIndicator size="small" color={tipsTheme.accent} />
+                  <View style={{ paddingVertical: ds.spacing(space[4]) }}>
+                    <Loading size="inline" label="Loading features" style={{ alignItems: 'center' }} />
                   </View>
                 )}
               </TeamCard>
 
-              <View style={{ height: ds.spacing(9) }} />
-              <TouchableOpacity
-                onPress={() => {
-                  setResetPin('');
-                  setResetError(null);
-                  setResetVisible(true);
-                }}
-                disabled={user.is_suspended}
-                activeOpacity={0.82}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: ds.spacing(10),
-                  backgroundColor: tipsTheme.card,
-                  borderWidth: glassHairlineWidth,
-                  borderColor: tipsTheme.hairline,
-                  borderRadius: 17,
-                  paddingHorizontal: ds.spacing(13),
-                  minHeight: Math.max(48, ds.buttonH),
-                  opacity: user.is_suspended ? 0.5 : 1,
-                }}
-              >
-                <Ionicons name="key-outline" size={ds.icon(17)} color={tipsTheme.ink} />
-                <Text style={{ flex: 1, fontSize: ds.fontSize(13.5), fontWeight: '700', color: tipsTheme.ink }}>
-                  {`Reset ${displayName.split(' ')[0]}'s PIN`}
-                </Text>
-                <Ionicons name="chevron-forward" size={ds.icon(16)} color={tipsTheme.ink3} />
-              </TouchableOpacity>
+              <View style={{ height: ds.spacing(space[2]) }} />
+              <Card flush style={{ paddingHorizontal: ds.spacing(space[3] + 2) }}>
+                <ListRow
+                  icon="key-outline"
+                  title={`Reset ${displayName.split(' ')[0]}'s PIN`}
+                  chevron
+                  last
+                  disabled={user.is_suspended}
+                  onPress={() => {
+                    setResetPin('');
+                    setResetError(null);
+                    setResetVisible(true);
+                  }}
+                />
+              </Card>
 
-              <TouchableOpacity
+              <Button
+                icon="eye-outline"
+                label={`Preview as ${displayName.split(' ')[0]}`}
                 onPress={() =>
                   router.push({
                     pathname: '/(manager)/manager-settings/team-preview',
                     params: { userId: user.id, name: displayName, group },
                   } as Parameters<typeof router.push>[0])
                 }
-                activeOpacity={0.82}
-                style={{
-                  marginTop: ds.spacing(9),
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: ds.spacing(8),
-                  backgroundColor: tipsTheme.ink,
-                  borderRadius: radii.pill,
-                  minHeight: Math.max(46, ds.buttonH),
-                }}
-              >
-                <Ionicons name="eye-outline" size={ds.icon(16)} color="#FFFFFF" />
-                <Text style={{ fontSize: ds.fontSize(13), fontWeight: '700', color: '#FFFFFF' }}>
-                  {`Preview as ${displayName.split(' ')[0]}`}
-                </Text>
-              </TouchableOpacity>
+                style={{ marginTop: ds.spacing(space[3]) }}
+              />
             </>
           ) : null}
         </ScrollView>
 
-        <Modal transparent animationType="fade" visible={resetVisible} onRequestClose={() => setResetVisible(false)}>
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: colors.scrimStrong,
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: ds.spacing(24),
+        <Sheet
+          visible={resetVisible}
+          title={`Reset ${displayName.split(' ')[0]}'s PIN`}
+          onClose={() => {
+            if (!resetBusy) setResetVisible(false);
+          }}
+        >
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
+            Type a new 4-digit PIN. Tell them in person.
+          </Text>
+          <Input
+            value={resetPin}
+            onChangeText={(value) => {
+              setResetPin(value.replace(/[^0-9]/g, '').slice(0, 4));
+              if (resetError) setResetError(null);
             }}
-          >
-            <View
-              style={{
-                alignSelf: 'stretch',
-                backgroundColor: tipsTheme.card,
-                borderRadius: 19,
-                padding: ds.spacing(18),
-              }}
-            >
-              <Text style={{ fontSize: ds.fontSize(17), fontWeight: '700', color: tipsTheme.ink }}>
-                {`Reset ${displayName.split(' ')[0]}'s PIN`}
-              </Text>
-              <Text style={{ fontSize: ds.fontSize(12.5), color: tipsTheme.ink2, marginTop: ds.spacing(4) }}>
-                Type a new 4-digit PIN. Tell them in person.
-              </Text>
-              <TextInput
-                value={resetPin}
-                onChangeText={(value) => {
-                  setResetPin(value.replace(/[^0-9]/g, '').slice(0, 4));
-                  if (resetError) setResetError(null);
-                }}
-                keyboardType="number-pad"
-                secureTextEntry
-                maxLength={4}
-                editable={!resetBusy}
-                autoFocus
-                style={{
-                  marginTop: ds.spacing(12),
-                  backgroundColor: tipsTheme.well,
-                  borderRadius: 12,
-                  paddingHorizontal: ds.spacing(13),
-                  minHeight: 48,
-                  fontSize: ds.fontSize(20),
-                  fontWeight: '700',
-                  letterSpacing: 8,
-                  textAlign: 'center',
-                  color: tipsTheme.ink,
-                }}
-              />
-              {resetError ? (
-                <Text style={{ fontSize: ds.fontSize(12), color: tipsTheme.alert, marginTop: ds.spacing(6) }}>
-                  {resetError}
-                </Text>
-              ) : null}
-              <View style={{ flexDirection: 'row', gap: ds.spacing(8), marginTop: ds.spacing(14) }}>
-                <TouchableOpacity
-                  onPress={() => setResetVisible(false)}
-                  disabled={resetBusy}
-                  activeOpacity={0.82}
-                  style={{
-                    flex: 1,
-                    borderRadius: radii.pill,
-                    borderWidth: glassHairlineWidth,
-                    borderColor: tipsTheme.hairline,
-                    minHeight: 44,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Text style={{ fontSize: ds.fontSize(12.5), fontWeight: '700', color: tipsTheme.ink }}>
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleResetSubmit}
-                  disabled={resetBusy || resetPin.length !== 4}
-                  activeOpacity={0.82}
-                  style={{
-                    flex: 1,
-                    borderRadius: radii.pill,
-                    backgroundColor: tipsTheme.accent,
-                    minHeight: 44,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    opacity: resetBusy || resetPin.length !== 4 ? 0.5 : 1,
-                  }}
-                >
-                  {resetBusy ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <Text style={{ fontSize: ds.fontSize(12.5), fontWeight: '700', color: '#FFFFFF' }}>
-                      Reset PIN
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
+            accessibilityLabel="New PIN"
+            placeholder="New 4-digit PIN"
+            keyboardType="number-pad"
+            secureTextEntry
+            maxLength={4}
+            editable={!resetBusy}
+            autoFocus
+            error={resetError ?? undefined}
+          />
+          <Button
+            label="Reset PIN"
+            loading={resetBusy}
+            disabled={resetPin.length !== 4}
+            onPress={handleResetSubmit}
+          />
+          <Button
+            variant="secondary"
+            label="Cancel"
+            disabled={resetBusy}
+            accessibilityHint="Leaves the PIN unchanged"
+            onPress={() => setResetVisible(false)}
+          />
+        </Sheet>
       </ManagerScaleContainer>
     </SafeAreaView>
   );

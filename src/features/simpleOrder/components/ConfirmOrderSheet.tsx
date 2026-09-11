@@ -1,17 +1,10 @@
 import React, { useCallback } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomSheetShell } from '@/components/BottomSheetShell';
+import { Button, Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerImpactHaptic } from '@/lib/haptics';
-import { glassHairlineWidth, radii, tipsTheme } from '@/theme/design';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 import { formatQuantity, type SelectionLine } from '../checklistSelection';
 
 /**
@@ -48,7 +41,6 @@ export function ConfirmOrderSheet({
   onClose,
 }: ConfirmOrderSheetProps) {
   const ds = useScaledStyles();
-  const insets = useSafeAreaInsets();
 
   const handleClose = useCallback(() => {
     if (isSending) return;
@@ -64,16 +56,9 @@ export function ConfirmOrderSheet({
   const trimmedNote = note.trim();
 
   return (
-    <BottomSheetShell
-      visible={visible}
-      onClose={handleClose}
-      bottomPadding={Math.max(insets.bottom, ds.spacing(14))}
-    >
-      <Text style={{ fontSize: ds.fontSize(20), fontWeight: '700', color: tipsTheme.ink }}>
-        Review order
-      </Text>
+    <Sheet visible={visible} title="Review order" onClose={handleClose}>
       <Text
-        style={{ fontSize: ds.fontSize(13), color: tipsTheme.ink2, marginBottom: ds.spacing(12) }}
+        style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginBottom: ds.spacing(12) }}
       >
         {sendableCount === 1 ? '1 item' : `${sendableCount} items`} ·{' '}
         {mode === 'direct' ? 'sends straight to your suppliers' : 'goes to manager review'}
@@ -81,10 +66,10 @@ export function ConfirmOrderSheet({
 
       <View
         style={{
-          backgroundColor: tipsTheme.card,
-          borderWidth: glassHairlineWidth,
-          borderColor: tipsTheme.hairline,
-          borderRadius: 18,
+          backgroundColor: color.card,
+          borderWidth: 1,
+          borderColor: color.hairline,
+          borderRadius: radius.card,
           paddingHorizontal: ds.spacing(16),
           marginBottom: ds.spacing(12),
         }}
@@ -102,8 +87,8 @@ export function ConfirmOrderSheet({
                 alignItems: 'center',
                 gap: ds.spacing(10),
                 minHeight: 40,
-                borderBottomWidth: index === lines.length - 1 ? 0 : glassHairlineWidth,
-                borderBottomColor: 'rgba(0, 0, 0, 0.05)',
+                borderBottomWidth: index === lines.length - 1 ? 0 : 1,
+                borderBottomColor: color.hairline,
               }}
             >
               <Text
@@ -111,18 +96,18 @@ export function ConfirmOrderSheet({
                 style={{
                   flex: 1,
                   minWidth: 0,
-                  fontSize: ds.fontSize(14),
-                  fontWeight: '600',
-                  color: tipsTheme.ink,
+                  fontSize: ds.fontSize(typeScale.body),
+                  fontWeight: weight.semibold,
+                  color: color.ink,
                 }}
               >
                 {line.itemName}
               </Text>
               <Text
                 style={{
-                  fontSize: ds.fontSize(13),
-                  fontWeight: '600',
-                  color: tipsTheme.ink2,
+                  fontSize: ds.fontSize(typeScale.secondary),
+                  fontWeight: weight.semibold,
+                  color: color.ink2,
                 }}
                 numberOfLines={1}
               >
@@ -135,8 +120,8 @@ export function ConfirmOrderSheet({
             <Text
               style={{
                 paddingVertical: ds.spacing(16),
-                fontSize: ds.fontSize(14),
-                color: tipsTheme.ink2,
+                fontSize: ds.fontSize(typeScale.body),
+                color: color.ink2,
                 textAlign: 'center',
               }}
             >
@@ -156,29 +141,29 @@ export function ConfirmOrderSheet({
             flexDirection: 'row',
             alignItems: 'flex-start',
             gap: ds.spacing(9),
-            backgroundColor: tipsTheme.card,
-            borderWidth: glassHairlineWidth,
-            borderColor: tipsTheme.hairline,
-            borderRadius: 18,
+            backgroundColor: color.card,
+            borderWidth: 1,
+            borderColor: color.hairline,
+            borderRadius: radius.card,
             paddingHorizontal: ds.spacing(16),
             paddingVertical: ds.spacing(12),
             marginBottom: ds.spacing(12),
           }}
         >
-          <Ionicons name="create-outline" size={ds.icon(16)} color={tipsTheme.accent} />
+          <Ionicons name="create-outline" size={ds.icon(16)} color={color.accent} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text
               style={{
-                fontSize: ds.fontSize(11),
+                fontSize: ds.fontSize(typeScale.caption),
                 fontWeight: '700',
                 letterSpacing: 0.5,
-                color: tipsTheme.ink2,
+                color: color.ink2,
                 marginBottom: 1,
               }}
             >
               NOTE
             </Text>
-            <Text style={{ fontSize: ds.fontSize(13), color: tipsTheme.ink }} numberOfLines={4}>
+            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink }} numberOfLines={4}>
               {trimmedNote}
             </Text>
           </View>
@@ -188,14 +173,14 @@ export function ConfirmOrderSheet({
       {unmatchedNames.length > 0 ? (
         <View
           style={{
-            backgroundColor: tipsTheme.tint,
-            borderRadius: 12,
+            backgroundColor: color.tint,
+            borderRadius: radius.control,
             paddingHorizontal: ds.spacing(12),
             paddingVertical: ds.spacing(9),
             marginBottom: ds.spacing(12),
           }}
         >
-          <Text style={{ fontSize: ds.fontSize(12), color: tipsTheme.alert }}>
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.alert }}>
             Not in inventory, will be skipped: {unmatchedNames.join(', ')}
           </Text>
         </View>
@@ -204,44 +189,31 @@ export function ConfirmOrderSheet({
       {sendError ? (
         <View
           style={{
-            backgroundColor: tipsTheme.tint,
-            borderRadius: 12,
+            backgroundColor: color.tint,
+            borderRadius: radius.control,
             paddingHorizontal: ds.spacing(12),
             paddingVertical: ds.spacing(9),
             marginBottom: ds.spacing(12),
           }}
         >
-          <Text style={{ fontSize: ds.fontSize(13), color: tipsTheme.alert }}>{sendError}</Text>
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.alert }}>{sendError}</Text>
         </View>
       ) : null}
 
-      <TouchableOpacity
+      <Button
+        label={
+          mode === 'direct'
+            ? 'Continue to send'
+            : sendableCount === 1
+              ? 'Send 1 item'
+              : `Send ${sendableCount} items`
+        }
         onPress={handleConfirm}
-        disabled={isSending || sendableCount === 0}
-        activeOpacity={0.85}
-        accessibilityRole="button"
-        accessibilityLabel="Confirm and send order"
-        style={{
-          minHeight: Math.max(52, ds.buttonH),
-          borderRadius: radii.pill,
-          backgroundColor:
-            isSending || sendableCount === 0 ? tipsTheme.disabled : tipsTheme.accent,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {isSending ? (
-          <ActivityIndicator color="#FFFFFF" />
-        ) : (
-          <Text style={{ fontSize: ds.fontSize(15), fontWeight: '700', color: '#FFFFFF' }}>
-            {mode === 'direct'
-              ? 'Continue to send'
-              : sendableCount === 1
-                ? 'Send 1 item'
-                : `Send ${sendableCount} items`}
-          </Text>
-        )}
-      </TouchableOpacity>
-    </BottomSheetShell>
+        loading={isSending}
+        disabled={sendableCount === 0}
+        fullWidth
+        accessibilityHint="Confirms and sends this order"
+      />
+    </Sheet>
   );
 }
