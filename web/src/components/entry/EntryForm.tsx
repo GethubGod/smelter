@@ -340,7 +340,7 @@ export function EntryForm() {
   const [card, setCard] = useState("");
   const [gratuity, setGratuity] = useState("");
   // Whole-day vs shift-only Square number. Dinner only — lunch always
-  // records what was typed. Defaults to whole day per the approved mockup.
+  // records what was typed. Defaults to whole-day card mode.
   const [scope, setScope] = useState<EnteredScope>("day");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   // Share weight per person id (1 | 0.75 | 0.5 | 0.25). Kept independent of
@@ -657,8 +657,8 @@ export function EntryForm() {
     isValidAmount(card) &&
     (gratuity === "" || isValidAmount(gratuity));
 
-  // Day-scope derivation drives the live receipt and the one blocking
-  // warning. The server recomputes all of this on save and is authoritative.
+  // Whole-day scope applies only to card. Cash and gratuity remain the dinner
+  // amounts typed or spoken by the closer. The server repeats this on save.
   const typedAmounts: MealAmounts = {
     cash: isValidAmount(cash) ? Number(cash) : 0,
     card: isValidAmount(card) ? Number(card) : 0,
@@ -671,7 +671,12 @@ export function EntryForm() {
     effectiveScope,
     lunchAmounts,
   );
-  const negativeAfterLunch = hasNegativeAmount(derivedAmounts);
+  const wholeDayCardMissing =
+    meal === "dinner" && scope === "day" && !isValidAmount(card);
+  const negativeAfterLunch =
+    effectiveScope === "day" &&
+    isValidAmount(card) &&
+    hasNegativeAmount(derivedAmounts);
 
   const poolCents = Math.max(0, toCents(derivedAmounts.cash));
   // Allocation order is the ROSTER order (sort_order, name — the same rule
@@ -717,7 +722,7 @@ export function EntryForm() {
     return {
       ...base,
       peopleIds,
-      // All three amounts go AS TYPED — the server does the subtraction.
+      // All three amounts go as typed. The server subtracts lunch card only.
       gratuity: isValidAmount(gratuity) ? Number(gratuity) : 0,
       enteredScope: base.meal === "dinner" ? scope : "shift",
       weights: peopleIds.map((id) => weightById[id] ?? 1),
@@ -997,40 +1002,44 @@ export function EntryForm() {
             <div className="mt-3 grid gap-1 border-t border-dashed border-line pt-2.5 text-sm tabular-nums">
               <div className="flex text-ink2">
                 <span>
-                  {scope === "day" ? "Entered (whole day)" : "Entered (dinner only)"}
+                  {scope === "day" ? "Entered card amount" : "Entered (dinner only)"}
                 </span>
                 <span className="ml-auto font-semibold text-ink">
-                  {formatMoney(enteredTotal(typedAmounts))}
+                  {formatMoney(
+                    scope === "day" ? typedAmounts.card : enteredTotal(typedAmounts),
+                  )}
                 </span>
               </div>
               {scope === "day" && (
                 <div className="flex text-ink2">
-                  <span>Lunch amount</span>
+                  <span>Lunch card amount</span>
                   <span className="ml-auto font-semibold text-alert">
                     &minus;
-                    {formatMoney(
-                      lunchAmounts ? enteredTotal(lunchAmounts) : 0,
-                    )}
+                    {formatMoney(lunchAmounts?.card ?? 0)}
                   </span>
                 </div>
               )}
               <div className="mt-0.5 flex border-t border-line pt-1.5 font-extrabold text-ink">
                 <span>Dinner records</span>
                 <span className="ml-auto text-base">
-                  {formatMoney(enteredTotal(derivedAmounts))}
+                  {formatMoney(
+                    scope === "day"
+                      ? derivedAmounts.card
+                      : enteredTotal(derivedAmounts),
+                  )}
                 </span>
               </div>
             </div>
           )}
-          {/* The one warning the entry screen ever shows. A whole-day dinner
-              with no lunch on record says NOTHING here — it saves flagged
-              for the manager. */}
-          {negativeAfterLunch && (
+          {wholeDayCardMissing ? (
             <div className="mt-3 rounded-well bg-tint p-3 text-sm text-alert">
-              Lunch already recorded more than this. Check the Square report.{" "}
-              <b>Save is off until this is fixed.</b>
+              Please enter an amount for card.
             </div>
-          )}
+          ) : negativeAfterLunch ? (
+            <div className="mt-3 rounded-well bg-tint p-3 text-sm text-alert">
+              Please switch to dinner only.
+            </div>
+          ) : null}
         </div>
 
         {/* Roster */}

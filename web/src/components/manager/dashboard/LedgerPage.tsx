@@ -191,17 +191,16 @@ function FixDialog({
   onClose: () => void;
 }) {
   const toast = useToast();
-  // The fields hold the AS-TYPED figures (same contract as the entry phone):
-  // on a whole-day row that's the raw Square number, and the dialog derives
-  // the stored shift figures against the recorded lunch before writing.
+  // Cash and gratuity are always dinner amounts. On a whole-day-card row,
+  // only card uses the raw entered value and subtracts recorded lunch card.
   const [cash, setCash] = useState(
-    (((entry.enteredScope === "day" ? entry.rawCashCents : null) ?? entry.cashCents) / 100).toFixed(2),
+    (entry.cashCents / 100).toFixed(2),
   );
   const [card, setCard] = useState(
     (((entry.enteredScope === "day" ? entry.rawCardCents : null) ?? entry.cardCents) / 100).toFixed(2),
   );
   const [gratuity, setGratuity] = useState(
-    (((entry.enteredScope === "day" ? entry.rawGratuityCents : null) ?? entry.gratuityCents) / 100).toFixed(2),
+    (entry.gratuityCents / 100).toFixed(2),
   );
   const [scope, setScope] = useState<"shift" | "day">(entry.enteredScope);
   const [peopleIds, setPeopleIds] = useState<string[]>(entry.peopleIds);
@@ -231,28 +230,24 @@ function FixDialog({
   const cardCents = parseAmountToCents(card);
   const gratuityCents = parseAmountToCents(gratuity);
 
-  // Same derivation contract as the entry save: on day scope subtract the
-  // recorded lunch field by field; the stored figures are always shift-only
-  // and raw_* keeps what was typed. No lunch on record → nothing to subtract.
+  // Same contract as entry save: day scope subtracts recorded lunch card.
+  // Cash and gratuity pass through as dinner amounts.
   const lunchCents =
     scope === "day" && lunchEntry
       ? {
-          cash: lunchEntry.cashCents,
           card: lunchEntry.cardCents,
-          gratuity: lunchEntry.gratuityCents,
         }
       : null;
   const derivedCents =
     cashCents !== null && cardCents !== null && gratuityCents !== null
       ? {
-          cash: cashCents - (lunchCents?.cash ?? 0),
+          cash: cashCents,
           card: cardCents - (lunchCents?.card ?? 0),
-          gratuity: gratuityCents - (lunchCents?.gratuity ?? 0),
+          gratuity: gratuityCents,
         }
       : null;
   const negativeAfterLunch =
-    derivedCents !== null &&
-    (derivedCents.cash < 0 || derivedCents.card < 0 || derivedCents.gratuity < 0);
+    derivedCents !== null && derivedCents.card < 0;
   const valid =
     derivedCents !== null && !negativeAfterLunch && peopleIds.length >= 1;
 
@@ -359,7 +354,7 @@ function FixDialog({
         <div className="mt-4 flex gap-1.5">
           {(
             [
-              { value: "day", label: "Whole day (Square)" },
+              { value: "day", label: "Whole day (card)" },
               { value: "shift", label: "Dinner only" },
             ] as const
           ).map((option) => (
@@ -381,7 +376,7 @@ function FixDialog({
       <div className="mt-4 grid grid-cols-3 gap-3">
         <label className="flex flex-col gap-1">
           <span className="section-label">
-            {scope === "day" ? "Cash (whole day)" : "Cash (split pool)"}
+            Cash (split pool)
           </span>
           <input
             value={cash}
@@ -488,15 +483,14 @@ function FixDialog({
       {scope === "day" && derivedCents !== null && !negativeAfterLunch && (
         <p className="mt-3 text-[12.5px] text-ink2 tabular-nums">
           {lunchEntry
-            ? `− lunch ${moneyFromCents(lunchCents?.cash ?? 0)} cash / ${moneyFromCents(lunchCents?.card ?? 0)} card → records `
+            ? `− lunch card ${moneyFromCents(lunchCents?.card ?? 0)} → records `
             : "no lunch on record → records "}
-          <b className="text-ink">{moneyFromCents(derivedCents.cash)}</b> cash pool
+          <b className="text-ink">{moneyFromCents(derivedCents.card)}</b> dinner card
         </p>
       )}
       {negativeAfterLunch && (
         <p className="mt-3 text-sm text-alert">
-          Lunch already recorded more than this. The whole-day figures can&apos;t
-          be below the recorded lunch.
+          Please switch to dinner only.
         </p>
       )}
       {derivedCents !== null && !negativeAfterLunch && peopleIds.length > 0 && (
@@ -550,10 +544,10 @@ function DetailPanel({
   // Prefix match: when the save was ALSO a statistical outlier the reason is
   // "day_total_no_lunch; <statistical reason>" (contract amendment 2).
   const noLunchFlag = entry.anomalyReason?.startsWith(NO_LUNCH_CODE) ?? false;
-  // What was actually subtracted at save time — shown from the raw figures,
-  // not the current lunch row (which a fix may have changed since).
+  // What was subtracted at save time. Use raw card rather than the current
+  // lunch row, which a later correction may have changed.
   const subtractedCents =
-    entry.rawCashCents === null ? null : entry.rawCashCents - entry.cashCents;
+    entry.rawCardCents === null ? null : entry.rawCardCents - entry.cardCents;
 
   return (
     <div className="grid gap-3 md:grid-cols-3">
@@ -563,14 +557,14 @@ function DetailPanel({
           {entry.enteredScope === "day" ? (
             <>
               <div className="flex text-ink2">
-                <span>Entered from Square (whole day)</span>
+                <span>Entered card amount</span>
                 <span className="ml-auto font-semibold text-ink">
-                  {moneyFromCents(entry.rawCashCents ?? entry.cashCents)}
+                  {moneyFromCents(entry.rawCardCents ?? entry.cardCents)}
                 </span>
               </div>
               <div className="flex text-ink2">
                 <span>
-                  Lunch amount
+                  Lunch card amount
                   {lunchEntry && !noLunchFlag ? ` (recorded ${timeLabel(lunchEntry.createdAt)})` : ""}
                 </span>
                 {noLunchFlag ? (
@@ -582,8 +576,8 @@ function DetailPanel({
                 )}
               </div>
               <div className="mt-0.5 flex border-t border-line pt-1.5 font-extrabold text-ink">
-                <span>{mealLabel(entry.meal)} cash pool</span>
-                <span className="ml-auto">{moneyFromCents(entry.cashCents)}</span>
+                <span>{mealLabel(entry.meal)} card</span>
+                <span className="ml-auto">{moneyFromCents(entry.cardCents)}</span>
               </div>
             </>
           ) : (
@@ -844,18 +838,6 @@ export function LedgerPage({ ctx }: { ctx: PageContext }) {
                     </td>
                     <td className={`${td} ${flaggedTint}`}>{mealLabel(entry.meal)}</td>
                     <td className={`${td} ${entry.flagged ? "bg-flagtint" : "bg-cashcol"} text-right font-semibold tabular-nums`}>
-                      {entry.enteredScope === "day" && (
-                        <span
-                          className="mr-1.5 inline-flex cursor-help rounded-[5px] border border-line bg-card px-1 py-0.5 text-[10px] font-extrabold uppercase text-ink2"
-                          title={`Entered as a whole-day total${
-                            entry.rawCashCents !== null
-                              ? ` of ${moneyFromCents(entry.rawCashCents)}`
-                              : ""
-                          }, lunch subtracted`}
-                        >
-                          day −lunch
-                        </span>
-                      )}
                       {moneyFromCents(entry.cashCents)}
                       {entry.flagged && (
                         <span className="ml-1.5 inline-flex items-center gap-1 rounded-md bg-flagtint px-1.5 py-0.5 text-[10.5px] font-extrabold uppercase tracking-[0.03em] text-alert">
@@ -882,6 +864,18 @@ export function LedgerPage({ ctx }: { ctx: PageContext }) {
                       )}
                     </td>
                     <td className={`${td} ${entry.flagged ? "bg-flagtint" : "bg-cardcol"} text-right font-semibold tabular-nums`}>
+                      {entry.enteredScope === "day" && (
+                        <span
+                          className="mr-1.5 inline-flex cursor-help rounded-[5px] border border-line bg-card px-1 py-0.5 text-[10px] font-extrabold uppercase text-ink2"
+                          title={`Entered as a whole-day card amount${
+                            entry.rawCardCents !== null
+                              ? ` of ${moneyFromCents(entry.rawCardCents)}`
+                              : ""
+                          }, lunch card subtracted`}
+                        >
+                          day −lunch
+                        </span>
+                      )}
                       {moneyFromCents(entry.cardCents)}
                     </td>
                     <td className={`${td} ${flaggedTint} text-[12.5px] text-ink2`}>

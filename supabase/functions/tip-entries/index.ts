@@ -289,7 +289,7 @@ Deno.serve(async (req) => {
         return json(req, {
           ok: false,
           code: 'negative_after_lunch',
-          error: 'Lunch already recorded more than this. Check the Square report.',
+          error: 'Please switch to dinner only.',
         }, 400);
       }
       const missingLunch = enteredScope === 'day' && lunch === null;

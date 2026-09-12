@@ -96,7 +96,7 @@ test.describe("typed entry", () => {
 
     await mealTab(page, "Lunch").click();
     // Lunch has no scope switch — always records what was typed.
-    await expect(page.getByText("Whole day (Square)")).toBeHidden();
+    await expect(page.getByText("Whole day (card)")).toBeHidden();
     await clearChips(page);
 
     await fillAmount(page, "Cash", "120.50");
@@ -177,44 +177,51 @@ test.describe("typed entry", () => {
     await chip(page, "Jose").click();
     await expect(page.getByText("Pick at least one person")).toBeHidden();
 
-    // Whole day is the default: the receipt shows its work against the
-    // recorded lunch (cash 120.50 + card 340.25 + gratuity 0 = 460.75).
-    await expect(page.getByText("Entered (whole day)")).toBeVisible();
-    await expect(page.getByText("$800.75")).toBeVisible();
-    await expect(page.getByText("− Lunch already recorded")).toBeVisible();
-    await expect(page.getByText("−$460.75")).toBeVisible();
+    // Whole-day card is the default. The receipt subtracts only recorded
+    // lunch card, while cash remains the dinner split pool.
+    await expect(page.getByText("Entered card amount")).toBeVisible();
+    await expect(page.getByText("$400.25")).toBeVisible();
+    await expect(page.getByText("Lunch card amount")).toBeVisible();
+    await expect(page.getByText("−$340.25")).toBeVisible();
     await expect(page.getByText("Dinner records")).toBeVisible();
-    await expect(page.getByText("$340.00")).toBeVisible();
+    await expect(page.getByText("$60.00")).toBeVisible();
 
-    // The one blocking warning: typed cash below the recorded lunch cash.
+    // Cash is always dinner-only, even when it is below recorded lunch cash.
     await fillAmount(page, "Cash", "50");
     await expect(
-      page.getByText(/Lunch already recorded more than this/),
-    ).toBeVisible();
-    await expect(page.getByRole("button", { name: "Save →" })).toBeDisabled();
-    await fillAmount(page, "Cash", "350.50");
-    await expect(
-      page.getByText(/Lunch already recorded more than this/),
+      page.getByText("Please switch to dinner only."),
     ).toBeHidden();
+
+    // Blank whole-day card gets a specific prompt. A whole-day card amount
+    // below lunch card points the closer to dinner-only mode.
+    await fillAmount(page, "Card", "");
+    await expect(page.getByText("Please enter an amount for card.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Save →" })).toBeDisabled();
+    await fillAmount(page, "Card", "40");
+    await expect(page.getByText("Please enter an amount for card.")).toBeHidden();
+    await expect(page.getByText("Please switch to dinner only.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Save →" })).toBeDisabled();
+    await fillAmount(page, "Card", "400.25");
+    await expect(page.getByText("Please switch to dinner only.")).toBeHidden();
+    await fillAmount(page, "Cash", "350.50");
 
     // Dinner-only scope hides the lunch line and relabels the receipt.
     await page.getByRole("tab", { name: "Dinner only" }).click();
     await expect(page.getByText("Entered (dinner only)")).toBeVisible();
-    await expect(page.getByText("− Lunch already recorded")).toBeHidden();
-    await page.getByRole("tab", { name: "Whole day (Square)" }).click();
+    await expect(page.getByText("Lunch card amount")).toBeHidden();
+    await page.getByRole("tab", { name: "Whole day (card)" }).click();
 
-    // Derived cash pool: 350.50 − 120.50 = 230.00. Badge cycling reshapes
-    // the shares: Jose at 50% raises Maria's full share.
-    await expect(page.getByText("of $230.00 cash")).toBeVisible();
+    // The full $350.50 dinner cash pool stays in the spoken/typed split.
+    await expect(page.getByText("of $350.50 cash")).toBeVisible();
     await expect(page.getByText("Split 2 ways")).toBeVisible();
     await badge(page, "Jose", 100).click(); // → 75
     await badge(page, "Jose", 75).click(); // → 50
     await expect(page.getByText("Full share")).toBeVisible();
     // The full share shows in the strip and in Maria's payout row.
-    await expect(page.getByText("$153.33").first()).toBeVisible();
+    await expect(page.getByText("$233.67").first()).toBeVisible();
     await expect(page.getByText("What each person takes")).toBeVisible();
     await expect(page.getByText("50% share")).toBeVisible();
-    await expect(page.getByText("$76.67")).toBeVisible();
+    await expect(page.getByText("$116.83")).toBeVisible();
     // Cycling badges never deselects the person.
     await expect(chip(page, "Jose")).toHaveAttribute("aria-pressed", "true");
 
@@ -228,7 +235,7 @@ test.describe("typed entry", () => {
 
     const saved = await save(page);
     // The server stored the DERIVED shift figures and kept the raw ones.
-    expect(saved.cash).toBe(230);
+    expect(saved.cash).toBe(350.5);
     expect(saved.card).toBe(60);
     expect(saved.gratuity).toBe(50);
     expect(saved.enteredScope).toBe("day");
@@ -239,9 +246,9 @@ test.describe("typed entry", () => {
     expect(saved.people.map((p) => p.weight).sort()).toEqual([0.5, 1]);
 
     // The saved screen shows the DERIVED shift figures, not what was typed:
-    // cash 230.00, card 400.25 − 340.25 = 60.00, gratuity 50.00 − 0 = 50.00.
+    // cash 350.50, card 400.25 − 340.25 = 60.00, gratuity 50.00.
     await expect(page.getByRole("heading", { name: "Saved" })).toBeVisible();
-    await expect(page.getByText("$230.00")).toBeVisible();
+    await expect(page.getByText("$350.50")).toBeVisible();
     await expect(page.getByText("$60.00")).toBeVisible();
     await expect(page.getByText("$50.00")).toBeVisible();
     await expect(page.getByText(/full share/)).toBeVisible();
