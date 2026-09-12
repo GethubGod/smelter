@@ -13,10 +13,36 @@ import {
   hasOnboarded,
   loadSession,
   markOnboarded,
+  parseStoredSession,
+  saveSession,
+  type StoredSession,
 } from "@/lib/tips/session";
 import { Onboarding, type OnboardingVariant } from "@/components/entry-flow/Onboarding";
 import { QrScanner } from "@/components/entry-flow/QrScanner";
 import { Splash } from "@/components/entry-flow/chrome";
+
+let devSessionRequest: Promise<StoredSession> | null = null;
+
+function requestDevSession(): Promise<StoredSession> {
+  if (devSessionRequest) return devSessionRequest;
+  devSessionRequest = fetch("/api/dev/tips-session", { method: "POST" })
+    .then(async (response) => {
+      const payload: unknown = await response.json().catch(() => null);
+      const session = parseStoredSession(payload);
+      if (!response.ok || !session) {
+        throw new Error("Local test sign-in failed.");
+      }
+      return session;
+    });
+  void devSessionRequest.finally(() => {
+    window.setTimeout(() => {
+      devSessionRequest = null;
+    }, 1_000);
+  }).catch(() => {
+    // The effect reports the request failure on the scan screen.
+  });
+  return devSessionRequest;
+}
 
 function QrIcon() {
   return (
@@ -67,12 +93,17 @@ function ScanLanding() {
   const search = useSearchParams();
   const [phase, setPhase] = useState<"checking" | "ready">("checking");
   const [networkNote, setNetworkNote] = useState(false);
+  const [devBypassFailed, setDevBypassFailed] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   // /?onboarding=a|b previews a specific carousel variant.
   const onboardingParam = search.get("onboarding");
   const variant: OnboardingVariant = onboardingParam === "b" ? "story" : "cards";
+  const devBypass =
+    process.env.NODE_ENV === "development" &&
+    search.get("dev") === "1" &&
+    onboardingParam === null;
 
   // Warm the edge functions and prefetch the sign-in route while the user
   // is still looking at this screen — by the time a QR code is scanned the
@@ -84,10 +115,22 @@ function ScanLanding() {
 
   useEffect(() => {
     let cancelled = false;
-    const session = loadSession();
     // A live session means an entry is mid-flight on this phone (refresh,
     // tab restore) — resume it rather than demanding a re-scan.
-    const verify = async (): Promise<"show" | "entry" | "closer" | "network"> => {
+    const verify = async (): Promise<
+      "show" | "entry" | "closer" | "network" | "dev-error"
+    > => {
+      const session = loadSession();
+      if (!session && devBypass) {
+        try {
+          const devSession = await requestDevSession();
+          saveSession(devSession);
+          markOnboarded();
+          return "closer";
+        } catch {
+          return "dev-error";
+        }
+      }
       if (!session) return "show";
       try {
         await fetchState(session.token);
@@ -107,13 +150,16 @@ function ScanLanding() {
         return;
       }
       if (outcome === "network") setNetworkNote(true);
-      setShowOnboarding(onboardingParam !== null || !hasOnboarded());
+      if (outcome === "dev-error") setDevBypassFailed(true);
+      setShowOnboarding(
+        !devBypass && (onboardingParam !== null || !hasOnboarded()),
+      );
       setPhase("ready");
     });
     return () => {
       cancelled = true;
     };
-  }, [router, onboardingParam]);
+  }, [router, onboardingParam, devBypass]);
 
   if (phase === "checking") {
     return <Splash>One sec&hellip;</Splash>;
@@ -141,6 +187,12 @@ function ScanLanding() {
         <p className="mt-3 text-sm text-ink3">
           Couldn&rsquo;t check this phone&rsquo;s last session — scan the
           QR code to start fresh.
+        </p>
+      )}
+      {devBypassFailed && (
+        <p className="mt-3 text-sm text-ink3">
+          Local test sign-in failed. Use the QR code or check the development
+          setup.
         </p>
       )}
 
