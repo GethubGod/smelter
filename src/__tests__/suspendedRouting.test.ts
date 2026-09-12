@@ -253,10 +253,10 @@ describe('suspended routing', () => {
     renderer.act(() => component.unmount());
   });
 
-  test('the suspended screen still redirects to login when there is no session', () => {
+  test('the suspended screen redirects to the shared sign-in screen when there is no session', () => {
     const component = renderScreen(React.createElement(SuspendedScreen));
 
-    expect(mockRedirect).toHaveBeenCalledWith('/(auth)/login');
+    expect(mockRedirect).toHaveBeenCalledWith('/(auth)/sign-in');
     expect(mockSignOut).not.toHaveBeenCalled();
 
     renderer.act(() => component.unmount());

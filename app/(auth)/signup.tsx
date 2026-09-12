@@ -130,8 +130,9 @@ export default function SignUpScreen() {
               text: 'OK',
               onPress: () => {
                 router.replace({
-                  pathname: '/(auth)/login',
+                  pathname: '/(auth)/sign-in',
                   params: {
+                    method: 'email',
                     email: result.email,
                     notice: 'confirm-email',
                   },
@@ -482,7 +483,7 @@ export default function SignUpScreen() {
           <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: auth.dim }}>
             Already have an account?
           </Text>
-          <Link href="/(auth)/login" asChild>
+          <Link href="/(auth)/sign-in" replace asChild>
             <TouchableOpacity
               accessibilityRole="link"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}

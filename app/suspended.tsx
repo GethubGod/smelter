@@ -23,7 +23,7 @@ export default function SuspendedScreen() {
   }
 
   if (!session) {
-    return <Redirect href="/(auth)/login" />;
+    return <Redirect href="/(auth)/sign-in" />;
   }
 
   if (!profile?.is_suspended) {

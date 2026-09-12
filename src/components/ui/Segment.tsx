@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { color, radius, size, space, typeScale, weight } from '@/theme/tokens';
+import { auth, color, radius, size, space, typeScale, weight } from '@/theme/tokens';
 
 export interface SegmentOption<T extends string> {
   value: T;
@@ -11,6 +11,7 @@ export interface SegmentOption<T extends string> {
 }
 
 export interface SegmentProps<T extends string> {
+  onDark?: boolean;
   options: readonly SegmentOption<T>[];
   value: T;
   onChange: (value: T) => void;
@@ -24,6 +25,7 @@ export interface SegmentProps<T extends string> {
  * track, active option takes the accent. Use `Chip` for list filters.
  */
 export function Segment<T extends string>({
+  onDark = false,
   options,
   value,
   onChange,
@@ -49,8 +51,8 @@ export function Segment<T extends string>({
         {
           flexDirection: 'row',
           padding: ds.spacing(space[1] - 1),
-          borderRadius: radius.pill,
-          backgroundColor: color.well,
+          borderRadius: onDark ? radius.control : radius.pill,
+          backgroundColor: onDark ? auth.well : color.well,
         },
         style,
       ]}
@@ -77,8 +79,8 @@ export function Segment<T extends string>({
               justifyContent: 'center',
               minHeight: optionHeight,
               paddingVertical: ds.spacing(space[2] - 1),
-              borderRadius: radius.pill,
-              backgroundColor: selected ? color.accent : 'transparent',
+              borderRadius: onDark ? radius.control : radius.pill,
+              backgroundColor: selected ? (onDark ? auth.text : color.accent) : 'transparent',
             }}
           >
             <Text
@@ -86,7 +88,7 @@ export function Segment<T extends string>({
               style={{
                 fontSize: ds.fontSize(typeScale.secondary),
                 fontWeight: weight.semibold,
-                color: selected ? color.onAccent : color.ink2,
+                color: onDark ? (selected ? auth.bg : auth.dim) : (selected ? color.onAccent : color.ink2),
               }}
             >
               {option.label}
