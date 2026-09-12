@@ -63,7 +63,7 @@ export function ScreenHeader({
   const ds = useScaledStyles();
   const insets = useSafeAreaInsets();
   const pushed = mode === 'pushed';
-  const circle = Math.max(size.touchMin, ds.icon(size.headerCircle));
+  const circle = ds.icon(size.headerCircle);
   const titleColor = onDark ? auth.text : color.ink;
   const subtitleColor = onDark ? auth.dim : color.ink2;
 
@@ -73,8 +73,8 @@ export function ScreenHeader({
       style={[
         {
           paddingTop: (includeSafeArea ? insets.top : 0) + ds.spacing(space[1]),
-          paddingHorizontal: ds.spacing(space[4]),
-          paddingBottom: ds.spacing(space[3] - 2),
+          paddingHorizontal: ds.spacing(space[5]),
+          paddingBottom: ds.spacing(space[1]),
         },
         style,
       ]}
@@ -94,7 +94,7 @@ export function ScreenHeader({
               alignItems: 'center',
               justifyContent: 'center',
               borderRadius: radius.pill,
-              backgroundColor: onDark ? auth.well : color.well,
+              backgroundColor: onDark ? auth.well : color.card,
             }}
           >
             <Ionicons name="chevron-back" size={ds.icon(18)} color={titleColor} />
@@ -117,7 +117,7 @@ export function ScreenHeader({
           {subtitle ? (
             <Text
               style={{
-                marginTop: ds.spacing(space[1] / 2),
+                marginTop: ds.spacing(space[1]),
                 fontSize: ds.fontSize(typeScale.secondary),
                 color: subtitleColor,
               }}

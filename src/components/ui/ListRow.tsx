@@ -1,5 +1,5 @@
-import React from 'react';
-import { Text, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native';
+import React, { useRef } from 'react';
+import { Animated, Text, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { auth, color, radius, space, typeScale, weight } from '@/theme/tokens';
@@ -17,7 +17,7 @@ export interface ListRowProps {
   /** Right slot: a value, a toggle, a stepper, a small Button, a StatusPill. */
   right?: React.ReactNode;
   /** Draws the chevron in the right slot. Ignored when `right` is set. */
-  chevron?: boolean;
+  chevron?: boolean | 'down' | 'right';
   onPress?: () => void;
   /** Last row in a group drops its separator. */
   last?: boolean;
@@ -52,7 +52,9 @@ export function ListRow({
   style,
 }: ListRowProps) {
   const ds = useScaledStyles();
-  const tile = ds.icon(32);
+  const tile = ds.icon(36);
+  const pressed = useRef(new Animated.Value(0)).current;
+  const animatePress = (value: number) => Animated.timing(pressed, { toValue: value, duration: 120, useNativeDriver: false }).start();
   const titleColor = onDark ? auth.text : color.ink;
   const subtitleColor = onDark ? auth.dim : color.ink2;
 
@@ -63,10 +65,10 @@ export function ListRow({
           flexDirection: 'row',
           alignItems: 'center',
           gap: ds.spacing(space[3]),
-          minHeight: ds.spacing(44),
+          minHeight: ds.spacing(60),
+          paddingHorizontal: ds.spacing(14),
           paddingVertical: ds.spacing(space[3] - 2),
-          borderBottomWidth: last ? 0 : 1,
-          borderBottomColor: onDark ? auth.wellBorder : color.hairline,
+
           opacity: disabled ? 0.5 : 1,
         },
         style,
@@ -79,19 +81,19 @@ export function ListRow({
             height: tile,
             alignItems: 'center',
             justifyContent: 'center',
-            borderRadius: radius.control,
+            borderRadius: radius.tile,
             backgroundColor: onDark ? auth.wellBorder : color.well,
           }}
         >
           {typeof icon === 'string' ? (
-            <Ionicons name={icon} size={ds.icon(16)} color={onDark ? auth.text : color.ink2} />
+            <Ionicons name={icon} size={ds.icon(18)} color={onDark ? auth.text : color.ink2} />
           ) : (
             icon
           )}
         </View>
       ) : null}
 
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, minWidth: 0 }}>
         <Text
           numberOfLines={2}
           style={{
@@ -105,7 +107,7 @@ export function ListRow({
         {subtitle ? (
           <Text
             numberOfLines={2}
-            style={{ fontSize: ds.fontSize(typeScale.secondary), color: subtitleColor }}
+            style={{ marginTop: 2, fontSize: ds.fontSize(typeScale.secondary), color: subtitleColor }}
           >
             {subtitle}
           </Text>
@@ -115,11 +117,12 @@ export function ListRow({
       {right ??
         (chevron ? (
           <Ionicons
-            name="chevron-forward"
+            name={chevron === 'down' ? 'chevron-down' : 'chevron-forward'}
             size={ds.icon(18)}
             color={onDark ? auth.dim : color.ink3}
           />
         ) : null)}
+      {!last ? <View style={{ position: 'absolute', bottom: 0, left: 14, right: 0, height: 1, backgroundColor: onDark ? auth.wellBorder : color.hairline }} /> : null}
     </View>
   );
 
@@ -132,17 +135,18 @@ export function ListRow({
   }
 
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
       disabled={disabled}
-      activeOpacity={0.7}
+      onPressIn={() => animatePress(1)}
+      onPressOut={() => animatePress(0)}
       accessibilityRole="button"
       accessibilityLabel={subtitle ? `${title}, ${subtitle}` : title}
       accessibilityHint={accessibilityHint}
       accessibilityState={selected === undefined ? { disabled } : { disabled, selected }}
       testID={testID}
     >
-      {body}
-    </TouchableOpacity>
+      <Animated.View style={{ backgroundColor: pressed.interpolate({ inputRange: [0, 1], outputRange: ['transparent', onDark ? auth.well : color.well] }) }}>{body}</Animated.View>
+    </Pressable>
   );
 }

@@ -24,6 +24,18 @@ function hostComponent(name: string) {
 /** Replacement for `react-native`. */
 export function reactNative() {
   return {
+    Animated: {
+      View: hostComponent('AnimatedView'),
+      Value: class {
+        constructor(public value: number) {}
+        interpolate({ outputRange }: { outputRange: unknown[] }) { return outputRange[this.value] ?? outputRange[0]; }
+        setValue(value: number) { this.value = value; }
+      },
+      timing: (value: { setValue: (next: number) => void }, config: { toValue: number }) => ({
+        start: () => value.setValue(config.toValue),
+        stop: () => undefined,
+      }),
+    },
     View: hostComponent('View'),
     Text: hostComponent('Text'),
     TextInput: hostComponent('TextInput'),
