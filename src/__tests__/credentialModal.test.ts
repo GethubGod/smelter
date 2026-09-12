@@ -13,7 +13,22 @@ jest.mock('react-native', () => ({
   TouchableOpacity: 'TouchableOpacity', ActivityIndicator: 'ActivityIndicator',
   KeyboardAvoidingView: 'KeyboardAvoidingView', ScrollView: 'ScrollView',
   Alert: { alert }, Platform: { OS: 'ios' }, useWindowDimensions: () => ({ width: 390, height: 844 }),
-  Animated: { Value: class { setValue() {} }, View: 'AnimatedView', timing: () => ({ start: (done: () => void) => done() }), spring: () => ({ start: () => {} }) },
+  Animated: {
+    Value: class { setValue() {} },
+    View: 'AnimatedView',
+    timing: () => ({
+      start: (done?: (result: { finished: boolean }) => void) => done?.({ finished: true }),
+      stop: () => undefined,
+    }),
+    parallel: (animations: { start: () => void }[]) => ({
+      start: (done?: (result: { finished: boolean }) => void) => {
+        animations.forEach((animation) => animation.start());
+        done?.({ finished: true });
+      },
+      stop: () => undefined,
+    }),
+  },
+  Easing: { bezier: (...points: number[]) => points },
   PanResponder: { create: () => ({ panHandlers: {} }) },
 }));
 jest.mock('@expo/vector-icons', () => ({ Ionicons: 'Ionicons' }));

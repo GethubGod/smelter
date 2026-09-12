@@ -3,8 +3,7 @@ import { Alert, ScrollView, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useShallow } from 'zustand/react/shallow';
-import { Button, Card, Input, ScreenHeader, Sheet } from '@/components/ui';
-import { getFloatingPillClearance } from '@/components/navigation';
+import { Button, Card, Input, ScreenHeader, Sheet, getTabBarClearance } from '@/components/ui';
 import { useResolvedActiveLocation } from '@/hooks/useResolvedActiveLocation';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { ChangeCredentialSheet } from '@/components/settings/ChangeCredentialSheet';
@@ -145,7 +144,7 @@ export function EmployeeProfileScreen() {
     }
   }, [deleteConfirmText, deleteSelfAccount, isDeletingAccount]);
 
-  const bottomPadding = getFloatingPillClearance(insets.bottom) + ds.spacing(16);
+  const bottomPadding = getTabBarClearance(insets.bottom) + ds.spacing(16);
 
   return (
     <SafeAreaView edges={['left', 'right']} style={{ flex: 1, backgroundColor: color.page }}>

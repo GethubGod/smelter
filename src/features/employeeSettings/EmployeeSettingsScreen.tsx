@@ -5,7 +5,6 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useShallow } from 'zustand/react/shallow';
-import { getFloatingPillClearance } from '@/components/navigation';
 import { useMyModules } from '@/hooks';
 import { useResolvedActiveLocation } from '@/hooks/useResolvedActiveLocation';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
@@ -15,7 +14,7 @@ import {
   type RecurringReminderRule,
 } from '@/services/employeeReminders';
 import { useAuthStore, useSettingsStore } from '@/store';
-import { Button, Card, ScreenHeader } from '@/components/ui';
+import { Button, Card, ScreenHeader, getTabBarClearance } from '@/components/ui';
 import { color, radius, space, typeScale, weight } from '@/theme/tokens';
 import { ChecklistSettingsSheet } from '@/features/simpleOrder/components/ChecklistSettingsSheet';
 import { OrderDayReminderSheet } from '@/features/simpleOrder/components/OrderDayReminderSheet';
@@ -112,7 +111,7 @@ export function EmployeeSettingsScreen() {
         ? 'Off'
         : summarizeOrderDayRule(reminderRule);
 
-  const bottomPadding = getFloatingPillClearance(insets.bottom) + ds.spacing(24);
+  const bottomPadding = getTabBarClearance(insets.bottom) + ds.spacing(24);
 
   return (
     <SafeAreaView edges={['left', 'right']} style={{ flex: 1, backgroundColor: color.page }}>

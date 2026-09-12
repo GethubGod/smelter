@@ -33,6 +33,22 @@ jest.mock('@expo/vector-icons', () => require('./ui/nativeMocks').vectorIcons())
 jest.mock('react-native-safe-area-context', () => require('./ui/nativeMocks').safeAreaContext());
 jest.mock('@/hooks/useScaledStyles', () => require('./ui/nativeMocks').scaledStyles());
 jest.mock('@/components/LoadingIndicator', () => require('./ui/nativeMocks').loadingIndicator());
+jest.mock('react-native-reanimated', () => {
+  const native = require('./ui/nativeMocks').reactNative();
+  return {
+    __esModule: true,
+    default: { View: native.View },
+    cancelAnimation: jest.fn(),
+    Easing: {
+      bezier: jest.fn(() => (value: number) => value),
+      cubic: (value: number) => value,
+      out: (easing: (value: number) => number) => easing,
+    },
+    useAnimatedStyle: (factory: () => object) => factory(),
+    useSharedValue: (value: number) => ({ value }),
+    withTiming: (value: number) => value,
+  };
+});
 /* The barrel still exports the deprecated header, which drags the router and
    the auth store in behind it. Neither is part of what these tests check. */
 jest.mock('@/components/ui/StackScreenHeader', () => ({ StackScreenHeader: 'StackScreenHeader' }));
@@ -51,12 +67,19 @@ jest.mock('@/components/BottomSheetShell', () => {
   return {
     BottomSheetShell: ({
       visible,
+      header,
       children,
+      footer,
       ...props
     }: {
       visible: boolean;
+      header?: unknown;
       children?: unknown;
-    }) => (visible ? reactModule.createElement('BottomSheetShell', props, children) : null),
+      footer?: unknown;
+    }) =>
+      visible
+        ? reactModule.createElement('BottomSheetShell', props, header, children, footer)
+        : null,
   };
 });
 /* eslint-enable @typescript-eslint/no-require-imports */

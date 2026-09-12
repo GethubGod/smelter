@@ -46,6 +46,19 @@ jest.mock('@/components/LoadingIndicator', () => {
   const native = jest.requireActual<typeof import('./ui/nativeMocks')>('./ui/nativeMocks');
   return native.loadingIndicator();
 });
+jest.mock('react-native-reanimated', () => ({
+  __esModule: true,
+  default: { View: 'View' },
+  cancelAnimation: jest.fn(),
+  Easing: {
+    bezier: jest.fn(() => (value: number) => value),
+    cubic: (value: number) => value,
+    out: (easing: (value: number) => number) => easing,
+  },
+  useAnimatedStyle: (factory: () => object) => factory(),
+  useSharedValue: (value: number) => ({ value }),
+  withTiming: (value: number) => value,
+}));
 jest.mock('react-native-safe-area-context', () => ({ SafeAreaView: 'SafeAreaView' }));
 jest.mock('expo-status-bar', () => ({ StatusBar: 'StatusBar' }));
 jest.mock('expo-router', () => {

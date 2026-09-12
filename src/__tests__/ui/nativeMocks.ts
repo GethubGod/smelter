@@ -91,7 +91,20 @@ export function loadingIndicator() {
 }
 
 export function bottomSheetShell() {
-  const Shell = ({ visible, children }: { visible: boolean; children?: React.ReactNode }) =>
-    visible ? React.createElement('BottomSheetShell', null, children) : null;
+  const Shell = ({
+    visible,
+    header,
+    children,
+    footer,
+    ...props
+  }: {
+    visible: boolean;
+    header?: React.ReactNode;
+    children?: React.ReactNode;
+    footer?: React.ReactNode;
+  }) =>
+    visible
+      ? React.createElement('BottomSheetShell', props, header, children, footer)
+      : null;
   return { BottomSheetShell: Shell };
 }

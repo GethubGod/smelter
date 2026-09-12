@@ -108,6 +108,19 @@ jest.mock('react-native', () => ({
 }));
 jest.mock('react-native-safe-area-context', () => ({ SafeAreaView: 'SafeAreaView' }));
 jest.mock('@expo/vector-icons', () => ({ Ionicons: 'Ionicons' }));
+jest.mock('react-native-reanimated', () => ({
+  __esModule: true,
+  default: { View: 'View' },
+  cancelAnimation: jest.fn(),
+  Easing: {
+    bezier: jest.fn(() => (value: number) => value),
+    cubic: (value: number) => value,
+    out: (easing: (value: number) => number) => easing,
+  },
+  useAnimatedStyle: (factory: () => object) => factory(),
+  useSharedValue: (value: number) => ({ value }),
+  withTiming: (value: number) => value,
+}));
 jest.mock('@/constants', () => ({
   colors: { background: '#fff', errorBg: '#fee', error: '#c00', text: '#111' },
 }));
