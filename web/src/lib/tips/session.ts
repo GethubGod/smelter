@@ -17,6 +17,27 @@ export interface StoredSession {
   closerName: string | null;
 }
 
+export function parseStoredSession(value: unknown): StoredSession | null {
+  if (!value || typeof value !== "object") return null;
+  const candidate = value as Record<string, unknown>;
+  if (
+    typeof candidate.token !== "string" ||
+    !candidate.token ||
+    typeof candidate.locationId !== "string" ||
+    !candidate.locationId
+  ) {
+    return null;
+  }
+  return {
+    token: candidate.token,
+    locationId: candidate.locationId,
+    locationName:
+      typeof candidate.locationName === "string" ? candidate.locationName : "",
+    closerId: typeof candidate.closerId === "string" ? candidate.closerId : null,
+    closerName: typeof candidate.closerName === "string" ? candidate.closerName : null,
+  };
+}
+
 function storage(): Storage | null {
   if (typeof window === "undefined") return null;
   try {
@@ -32,17 +53,7 @@ export function loadSession(): StoredSession | null {
   try {
     const raw = store.getItem(SESSION_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<StoredSession>;
-    if (typeof parsed.token !== "string" || typeof parsed.locationId !== "string") {
-      return null;
-    }
-    return {
-      token: parsed.token,
-      locationId: parsed.locationId,
-      locationName: typeof parsed.locationName === "string" ? parsed.locationName : "",
-      closerId: typeof parsed.closerId === "string" ? parsed.closerId : null,
-      closerName: typeof parsed.closerName === "string" ? parsed.closerName : null,
-    };
+    return parseStoredSession(JSON.parse(raw));
   } catch {
     return null;
   }

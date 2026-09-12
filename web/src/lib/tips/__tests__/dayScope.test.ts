@@ -13,14 +13,23 @@ const amounts = (cash: number, card: number, gratuity: number): MealAmounts => (
 });
 
 describe("deriveShiftAmounts", () => {
-  it("subtracts the lunch row field by field on day scope (the mockup's default state)", () => {
+  it("subtracts only lunch card on whole-day card scope", () => {
     const { derived, subtracted } = deriveShiftAmounts(
       amounts(323, 777, 216),
       "day",
       amounts(118, 142, 0),
     );
-    expect(derived).toEqual(amounts(205, 635, 216));
+    expect(derived).toEqual(amounts(323, 635, 216));
     expect(subtracted).toBe(true);
+  });
+
+  it("keeps spoken cash in the split even when the whole-day card amount is below lunch", () => {
+    const { derived } = deriveShiftAmounts(
+      amounts(15, 40, 0),
+      "day",
+      amounts(70, 70, 12),
+    );
+    expect(derived).toEqual(amounts(15, -30, 0));
   });
 
   it("passes typed figures through unchanged on shift scope", () => {
@@ -49,28 +58,28 @@ describe("deriveShiftAmounts", () => {
       "day",
       amounts(0.1, 0.2, 0),
     );
-    expect(derived.cash).toBe(0.2);
+    expect(derived.cash).toBe(0.3);
     expect(derived.card).toBe(99.9);
   });
 
-  it("can go negative — the caller decides what to do with it", () => {
+  it("only goes negative when the whole-day card amount is below lunch card", () => {
     const { derived } = deriveShiftAmounts(
-      amounts(50, 200, 0),
+      amounts(50, 100, 0),
       "day",
       amounts(118, 142, 0),
     );
-    expect(derived.cash).toBe(-68);
-    expect(derived.card).toBe(58);
+    expect(derived.cash).toBe(50);
+    expect(derived.card).toBe(-42);
     expect(hasNegativeAmount(derived)).toBe(true);
   });
 
-  it("a zero entry against a recorded lunch is fully negative", () => {
+  it("does not subtract lunch cash or gratuity from a zero entry", () => {
     const { derived } = deriveShiftAmounts(
       amounts(0, 0, 0),
       "day",
       amounts(118, 142, 5),
     );
-    expect(derived).toEqual(amounts(-118, -142, -5));
+    expect(derived).toEqual(amounts(0, -142, 0));
     expect(hasNegativeAmount(derived)).toBe(true);
   });
 

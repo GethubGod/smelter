@@ -1,13 +1,13 @@
 "use client";
 
-// Whole-day vs dinner-only scope for the amounts card (Tips v3). Dinner only —
-// lunch has no switch and always records what was typed. No label above it.
+// Whole-day-card vs dinner-only scope for the amounts card. Cash and gratuity
+// are always dinner amounts. Lunch has no switch and records what was typed.
 
 import type { EnteredScope } from "@/lib/tips/dayScope";
 import { Segmented } from "./Segmented";
 
 const SCOPE_OPTIONS = [
-  { value: "day", label: "Whole day (Square)" },
+  { value: "day", label: "Whole day (card)" },
   { value: "shift", label: "Dinner only" },
 ] as const;
 

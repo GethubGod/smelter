@@ -21,17 +21,16 @@ test("no-lunch whole-day dinner saves flagged with nothing shown to the closer",
 
   await page.getByRole("tab", { name: "Dinner", exact: true }).click();
 
-  // Whole day is the default. With no lunch on record the receipt subtracts
-  // zero and no warning of any kind appears.
+  // Whole-day card is the default. With no lunch on record it subtracts zero.
   await expect(
-    page.getByRole("tab", { name: "Whole day (Square)" }),
+    page.getByRole("tab", { name: "Whole day (card)" }),
   ).toHaveAttribute("aria-selected", "true");
   await page.getByLabel("Cash amount").fill("200.00");
   await page.getByLabel("Card amount").fill("100.00");
-  await expect(page.getByText("− Lunch already recorded")).toBeVisible();
+  await expect(page.getByText("Lunch card amount")).toBeVisible();
   await expect(page.getByText("−$0.00")).toBeVisible();
   await expect(
-    page.getByText(/Lunch already recorded more than this/),
+    page.getByText("Please switch to dinner only."),
   ).toBeHidden();
 
   const pressed = page.locator('button[aria-pressed="true"]');

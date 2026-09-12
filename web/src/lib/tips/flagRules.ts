@@ -85,7 +85,7 @@ export function describeStoredReason(
       if (part === NO_LUNCH_CODE) {
         return {
           kind: "no_lunch" as const,
-          text: "Whole-day total entered before lunch was recorded, so nothing was subtracted for lunch.",
+          text: "Whole-day card amount entered before lunch was recorded, so no lunch card amount was subtracted.",
         };
       }
       const match = STATISTICAL_PATTERN.exec(part);

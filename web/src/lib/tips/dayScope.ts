@@ -1,9 +1,7 @@
-// Day-scope subtraction (Tips v3). A dinner entered as "Whole day (Square)"
-// stores shift-only figures: what the closer typed minus what lunch already
-// recorded, field by field (cash−cash, card−card, gratuity−gratuity), against
-// today's lunch row at the same location. The server recomputes this on save
-// and is authoritative; the client copy only drives the live receipt and the
-// blocking negative warning.
+// Whole-day card subtraction (Tips v3). Cash and gratuity are always dinner
+// amounts. When the closer enters the whole-day card total, only the recorded
+// lunch card amount is subtracted. The server recomputes this on save and is
+// authoritative; the client copy drives the live receipt and card warning.
 //
 // MIRROR: supabase/functions/_shared/tips.ts carries a copy of this logic
 // (edge functions cannot import from web/). Keep them in sync.
@@ -21,17 +19,17 @@ export interface MealAmounts {
 export interface DerivedAmounts {
   /** Shift-only figures in dollars, cent-exact. May be negative. */
   derived: MealAmounts;
-  /** True when a lunch row existed and was subtracted. */
+  /** True when a lunch row existed and its card amount was subtracted. */
   subtracted: boolean;
 }
 
 /**
  * Derive the shift-only amounts from what the closer typed.
  *
- * On scope "day" with a lunch row on record, each field is typed − lunch,
- * computed in integer cents. On scope "shift", or on "day" with no lunch
- * recorded (the flagged day_total_no_lunch case), the typed figures pass
- * through unchanged and `subtracted` is false.
+ * On scope "day" with a lunch row on record, card is typed card − lunch card,
+ * computed in integer cents. Cash and gratuity always pass through as dinner
+ * amounts. On scope "shift", or on "day" with no lunch recorded, every typed
+ * figure passes through unchanged and `subtracted` is false.
  */
 export function deriveShiftAmounts(
   typed: MealAmounts,
@@ -43,9 +41,9 @@ export function deriveShiftAmounts(
   }
   return {
     derived: {
-      cash: fromCents(toCents(typed.cash) - toCents(lunch.cash)),
+      cash: typed.cash,
       card: fromCents(toCents(typed.card) - toCents(lunch.card)),
-      gratuity: fromCents(toCents(typed.gratuity) - toCents(lunch.gratuity)),
+      gratuity: typed.gratuity,
     },
     subtracted: true,
   };
