@@ -10,7 +10,7 @@ import { clampQuantity, unitForInventoryItem } from './checklistSelection';
  * React/React Native imports so they are unit-testable in plain Jest.
  */
 
-export const MAX_SEARCH_RESULTS = 30;
+export const MAX_SEARCH_RESULTS = 6;
 
 function normalize(value: string): string {
   return value.trim().toLowerCase();
@@ -19,14 +19,12 @@ function normalize(value: string): string {
 export interface CatalogSearchEntry {
   item: InventoryItem;
   normalizedName: string;
-  normalizedAliases: string[];
 }
 
 export function buildCatalogSearchIndex(items: InventoryItem[]): CatalogSearchEntry[] {
   return items.map((item) => ({
     item,
     normalizedName: normalize(item.name),
-    normalizedAliases: (item.aliases ?? []).map(normalize),
   }));
 }
 
@@ -38,30 +36,21 @@ export function filterCatalogSearchIndex(
   const normalized = normalize(query);
   if (normalized.length === 0) return [];
 
-  const prefix: InventoryItem[] = [];
-  const substring: InventoryItem[] = [];
-  const alias: InventoryItem[] = [];
+  const matches: InventoryItem[] = [];
 
   for (const entry of index) {
-    if (entry.normalizedName.startsWith(normalized)) {
-      prefix.push(entry.item);
-    } else if (entry.normalizedName.includes(normalized)) {
-      substring.push(entry.item);
-    } else if (
-      entry.normalizedAliases.some((value) => value.includes(normalized))
-    ) {
-      alias.push(entry.item);
+    if (entry.normalizedName.includes(normalized)) {
+      matches.push(entry.item);
     }
-    if (prefix.length >= limit) break;
+    if (matches.length >= limit) break;
   }
 
-  return [...prefix, ...substring, ...alias].slice(0, limit);
+  return matches;
 }
 
 /**
- * Filters the full inventory catalog by name or alias. Name-prefix matches
- * rank ahead of name substring matches, which rank ahead of alias matches,
- * preserving catalog order within each tier.
+ * Filters the full inventory catalogue by a case-insensitive item-name
+ * substring, preserving catalogue order and returning at most six by default.
  */
 export function filterCatalogItems(
   items: InventoryItem[],

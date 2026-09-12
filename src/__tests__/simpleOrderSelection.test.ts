@@ -9,6 +9,7 @@ import {
   initSelection,
   locationGroupForLocation,
   MAX_QUANTITY,
+  quantityStepFor,
   sectionizeLines,
   selectionReducer,
   unitForInventoryItem,
@@ -141,7 +142,7 @@ describe('selectionReducer', () => {
     expect(state.lines[0].quantity).toBe(1);
   });
 
-  it('snaps fractional quantities to whole steps when stepping', () => {
+  it('uses whole steps when the unit and usual amount are whole', () => {
     const fractional = selectionReducer(baseState, {
       type: 'setQuantity',
       key: 'a',
@@ -152,14 +153,49 @@ describe('selectionReducer', () => {
       key: 'a',
       delta: 1,
     });
-    expect(up.lines[0].quantity).toBe(3);
+    expect(up.lines[0].quantity).toBe(3.5);
 
     const down = selectionReducer(fractional, {
       type: 'adjustQuantity',
       key: 'a',
       delta: -1,
     });
-    expect(down.lines[0].quantity).toBe(2);
+    expect(down.lines[0].quantity).toBe(1.5);
+  });
+
+  it('steps cases and fractional usual amounts by 0.5 with a 0.5 floor', () => {
+    const cases = initSelection(
+      makeChecklist([
+        makeChecklistItem({ id: 'case', unit: 'CASE', recommendedQty: 2 }),
+        makeChecklistItem({
+          id: 'fractional',
+          itemId: 'inv-2',
+          unit: 'pack',
+          recommendedQty: 1.5,
+        }),
+      ]),
+    );
+    expect(quantityStepFor(cases.lines[0])).toBe(0.5);
+    expect(quantityStepFor(cases.lines[1])).toBe(0.5);
+
+    const caseUp = selectionReducer(cases, {
+      type: 'adjustQuantity',
+      key: 'case',
+      delta: 1,
+    });
+    expect(caseUp.lines[0].quantity).toBe(2.5);
+
+    let atFloor = selectionReducer(cases, {
+      type: 'setQuantity',
+      key: 'case',
+      quantity: 0.5,
+    });
+    atFloor = selectionReducer(atFloor, {
+      type: 'adjustQuantity',
+      key: 'case',
+      delta: -1,
+    });
+    expect(atFloor.lines[0].quantity).toBe(0.5);
   });
 
   it('clamps manual quantity input to valid bounds', () => {

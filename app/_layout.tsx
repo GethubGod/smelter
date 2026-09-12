@@ -162,6 +162,8 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: colors.background },
           animation: reduceMotion ? "none" : "simple_push",
           gestureEnabled: true,
+          animationDuration: 280,
+          gestureResponseDistance: { start: 28 },
         }}
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />

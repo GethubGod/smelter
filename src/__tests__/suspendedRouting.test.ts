@@ -48,6 +48,8 @@ const mockRefreshPushToken = jest.fn(async () => undefined);
 const mockStartAutoRefresh = jest.fn();
 const mockStopAutoRefresh = jest.fn();
 
+jest.mock('@/components/ui/NoticeSheet', () => ({ NoticeSheet: () => null, showNotice: jest.fn() }));
+jest.mock('@/components/ui/StudioToast', () => ({ StudioToast: () => null, showStudioToast: jest.fn() }));
 jest.mock('@/store', () => ({
   useAuthStore: mockUseAuthStore,
   useDisplayStore: mockUseDisplayStore,

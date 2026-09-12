@@ -17,12 +17,14 @@ Stage A complete, commit `ca0fb37`:
 - `npm run lint`: exit 0, no warnings.
 - `npm run test:ci`: exit 0, 91 suites passed, 1 skipped; 1259 tests passed, 1 skipped, 1260 total. Initial integration runs exposed missing native test mocks and two lint warnings; these were corrected before the green run.
 
-Stage B in progress:
+Stage B complete:
 
 - `npx jest src/__tests__/simpleOrderRecentOrders.test.ts --runInBand`: exit 1 before tests because sandbox access to Watchman's state directory failed.
 - `npm run test:ci -- src/__tests__/simpleOrderRecentOrders.test.ts`: exit 0, 1 suite and 14 tests passed. This command uses the repository's Watchman-free CI configuration.
 - `npx eslint src/features/simpleOrder/recentOrders.ts src/features/simpleOrder/HistoryScreen.tsx src/features/simpleOrder/components/OrderDetailSheet.tsx src/components/ui/GlidePage.tsx src/components/ui/StudioToast.tsx src/lib/switchViewMode.ts`: exit 0.
-- Stage B integration checks remain pending.
+- `npm run typecheck`: exit 0.
+- `npm run lint`: exit 0, no warnings.
+- `npm run test:ci`: exit 0, 93 suites passed, 1 skipped; 1276 tests passed, 1 skipped, 1277 total. Earlier runs caught a native gesture option type error and root-layout test doubles missing the new notification hosts; corrected before the green run.
 - Simulator acceptance items 1 to 14 remain pending. No acceptance captures have been claimed.
 
 ## Deviations
@@ -32,6 +34,11 @@ Stage B in progress:
 - Privacy choices remains the existing functional sheet. The existing pushed support route has unrelated content, so it was not substituted for a privacy screen.
 - Pending checklist orders have no archived supplier message. Their detail sheet shows the existing unavailable-message text when expanded; no supplier message is fabricated.
 
+- The selected checklist location changes the visible group, but the existing submission service assigns the order to the user's manager-set default location. The UI work does not change this authenticated service contract.
+- Employee History now reads the user's checklist submissions immediately and their own direct-send archives. Manager-created supplier archives are not exposed to employees by existing RLS. Pending submission detail cannot display a supplier message that has not been archived for that employee.
+- Profile uses a 280ms horizontal transition with the contract easing, left shadow and 28pt/110pt edge-swipe rules. The tab navigator does not provide the reference's behind-screen parallax/dimming. Actual native Stack routes use 280ms simple-push; native easing, shadow/parallax and release threshold cannot be customized through the current native-stack API.
+- Direct-send review retains its existing supplier-specific subtitle and Continue to send action. Voice, Quantity and legacy Recent Orders retain their domain controls inside shared Sheet chrome. Existing reminders retain Remove reminder.
+
 ## Reference discrepancies
 
 - Dense stepper gap is 2 in the reference, while the general written row anatomy says 4.
@@ -39,4 +46,4 @@ Stage B in progress:
 
 ## Remaining work
 
-Complete stages B through D, run each stage's full checks, build and walk the simulator acceptance checklist, review the integrated diff, and record final commands and risks here.
+Complete stages C and D, run each stage's full checks, build and walk the simulator acceptance checklist, review the integrated diff, and record final commands and risks here.

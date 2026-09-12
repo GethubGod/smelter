@@ -82,44 +82,51 @@ function freshState(): SelectionState {
 }
 
 describe('deriveDisplaySections', () => {
-  it('groups non-rare lines under ordered category labels when categories are on', () => {
+  it('groups every line under ordered category labels when categories are on', () => {
     const sections = deriveDisplaySections(freshState(), {
       showCategories: true,
-      rareExpanded: true,
       categoryForItemId,
     });
 
     expect(sections.map((section) => section.title)).toEqual([
       'Fish & Seafood',
       'Dry Goods',
-      'Rarely ordered (1)',
+      'Sauces',
     ]);
     expect(sections[0].data.map((line) => line.key)).toEqual(['row-salmon']);
-    expect(sections[2].isRare).toBe(true);
     expect(sections[2].data.map((line) => line.key)).toEqual(['row-yuzu']);
   });
 
-  it('renders one flat untitled list when categories are off', () => {
+  it('renders one titled flat list when categories are off', () => {
     const sections = deriveDisplaySections(freshState(), {
       showCategories: false,
-      rareExpanded: true,
       categoryForItemId,
     });
-    expect(sections).toHaveLength(2);
-    expect(sections[0].title).toBeNull();
-    expect(sections[0].data.map((line) => line.key)).toEqual(['row-salmon', 'row-rice']);
-    expect(sections[1].isRare).toBe(true);
+    expect(sections).toHaveLength(1);
+    expect(sections[0].title).toBe('All items');
+    expect(sections[0].data.map((line) => line.key)).toEqual([
+      'row-salmon',
+      'row-rice',
+      'row-yuzu',
+    ]);
   });
 
-  it('collapses the rare section to a header-only entry', () => {
+  it('reports selected and total counts for each section', () => {
     const sections = deriveDisplaySections(freshState(), {
-      showCategories: false,
-      rareExpanded: false,
+      showCategories: true,
       categoryForItemId,
     });
-    const rare = sections.find((section) => section.isRare);
-    expect(rare?.data).toEqual([]);
-    expect(rare?.rareCount).toBe(1);
+    expect(
+      sections.map(({ title, selectedCount, totalCount }) => ({
+        title,
+        selectedCount,
+        totalCount,
+      })),
+    ).toEqual([
+      { title: 'Fish & Seafood', selectedCount: 1, totalCount: 1 },
+      { title: 'Dry Goods', selectedCount: 0, totalCount: 1 },
+      { title: 'Sauces', selectedCount: 0, totalCount: 1 },
+    ]);
   });
 
   it('puts unknown-category lines in a trailing Other group', () => {
@@ -135,11 +142,10 @@ describe('deriveDisplaySections', () => {
     });
     const sections = deriveDisplaySections(state, {
       showCategories: true,
-      rareExpanded: false,
       categoryForItemId,
     });
     const titles = sections.map((section) => section.title);
-    expect(titles.indexOf('Other')).toBe(titles.length - 2); // before the rare section
+    expect(titles.indexOf('Other')).toBe(titles.length - 1);
     const other = sections.find((section) => section.title === 'Other');
     expect(other?.data.map((line) => line.itemName)).toEqual(['Mystery jar']);
   });

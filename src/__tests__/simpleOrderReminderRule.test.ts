@@ -80,14 +80,16 @@ describe('toggleDay', () => {
 });
 
 describe('shiftTime', () => {
-  it('steps forward and backward by minutes', () => {
-    expect(shiftTime('10:00', 30)).toBe('10:30');
-    expect(shiftTime('10:00', -30)).toBe('09:30');
+  it('moves in one-hour steps', () => {
+    expect(shiftTime('10:00', 60)).toBe('11:00');
+    expect(shiftTime('10:00', -60)).toBe('09:00');
   });
 
-  it('wraps across midnight in both directions', () => {
-    expect(shiftTime('23:30', 30)).toBe('00:00');
-    expect(shiftTime('00:00', -30)).toBe('23:30');
+  it('clamps between 5 AM and 8 PM', () => {
+    expect(shiftTime('20:00', 60)).toBe('20:00');
+    expect(shiftTime('19:30', 60)).toBe('20:00');
+    expect(shiftTime('05:00', -60)).toBe('05:00');
+    expect(shiftTime('05:30', -60)).toBe('05:00');
   });
 });
 

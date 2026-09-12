@@ -8,7 +8,7 @@ import { space } from '@/theme/tokens';
 /** One row inside a settings card. The contract `ListRow`. */
 
 interface SettingsCardRowProps {
-  icon: React.ComponentProps<typeof Ionicons>['name'];
+  icon?: React.ComponentProps<typeof Ionicons>['name'];
   title: string;
   subtitle?: string | null;
   onPress?: () => void;
@@ -16,7 +16,8 @@ interface SettingsCardRowProps {
   destructive?: boolean;
   /** Rendered at the trailing edge instead of the chevron. */
   rightElement?: React.ReactNode;
-  showChevron?: boolean;
+  showChevron?: boolean | 'down' | 'right';
+  disabled?: boolean;
   accessibilityLabel?: string;
 }
 
@@ -29,6 +30,7 @@ export function SettingsCardRow({
   destructive = false,
   rightElement,
   showChevron = true,
+  disabled = false,
   accessibilityLabel,
 }: SettingsCardRowProps) {
   const ds = useScaledStyles();
@@ -58,7 +60,14 @@ export function SettingsCardRow({
       subtitle={subtitle ?? undefined}
       onPress={onPress}
       right={rightElement}
-      chevron={showChevron && !rightElement && Boolean(onPress)}
+      chevron={
+        showChevron && !rightElement && Boolean(onPress)
+          ? showChevron === true
+            ? 'right'
+            : showChevron
+          : false
+      }
+      disabled={disabled}
       last={isLast}
     />
   );
@@ -72,13 +81,8 @@ export function SettingsCard({
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
-  const ds = useScaledStyles();
-
   return (
-    <Card
-      flush
-      style={[{ paddingHorizontal: ds.spacing(space[3] + 2), overflow: 'hidden' }, style]}
-    >
+    <Card flush style={[{ overflow: 'hidden' }, style]}>
       {children}
     </Card>
   );

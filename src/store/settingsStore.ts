@@ -65,6 +65,22 @@ interface SettingsState {
   setSimpleOrderShowCategories: (show: boolean) => void;
 }
 
+const SETTINGS_STORE_VERSION = 1;
+
+/** Old `dense` meant the two-row Compact option before true Dense existed. */
+export function normalizePersistedSimpleOrderDensity(
+  value: unknown,
+  persistedVersion: number,
+): SimpleOrderDensity {
+  if (persistedVersion < SETTINGS_STORE_VERSION && value === 'dense') return 'compact';
+  if (value === 'comfort' || value === 'compact' || value === 'dense') return value;
+  return DEFAULT_SIMPLE_ORDER_DENSITY;
+}
+
+function isSettingsRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set, get) => ({
@@ -192,6 +208,17 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: 'app-settings',
       storage: createJSONStorage(() => AsyncStorage),
+      version: SETTINGS_STORE_VERSION,
+      migrate: (persistedState, persistedVersion) => {
+        if (!isSettingsRecord(persistedState)) return persistedState;
+        return {
+          ...persistedState,
+          simpleOrderDensity: normalizePersistedSimpleOrderDensity(
+            persistedState.simpleOrderDensity,
+            persistedVersion,
+          ),
+        };
+      },
     }
   )
 );

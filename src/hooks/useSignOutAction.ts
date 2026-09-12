@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import { Alert, Platform } from 'react-native';
+import { showNotice } from '@/components/ui/NoticeSheet';
+import { showStudioToast } from '@/components/ui/StudioToast';
 import { useAuthStore } from '@/store';
 
 interface UseSignOutActionOptions {
@@ -20,15 +21,11 @@ export function useSignOutAction({
     try {
       setIsSigningOut(true);
       await signOut();
+      showStudioToast('Signed out');
     } catch (error) {
       console.error('Failed to complete sign out.', error);
 
-      if (Platform.OS === 'web' && typeof globalThis.alert === 'function') {
-        globalThis.alert('Unable to sign out. Please try again.');
-        return;
-      }
-
-      Alert.alert('Sign Out Failed', 'Unable to sign out. Please try again.');
+      showNotice('Unable to sign out', 'Please try again.');
     } finally {
       setIsSigningOut(false);
     }
@@ -44,23 +41,10 @@ export function useSignOutAction({
       return;
     }
 
-    const message = 'Are you sure you want to sign out?';
-
-    if (Platform.OS === 'web') {
-      const confirmed =
-        typeof globalThis.confirm === 'function' ? globalThis.confirm(message) : true;
-      if (!confirmed) {
-        return;
-      }
-
-      void performSignOut();
-      return;
-    }
-
-    Alert.alert('Sign Out', message, [
+    showNotice('Sign out?', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Sign Out',
+        text: 'Sign out',
         style: 'destructive',
         onPress: () => {
           void performSignOut();

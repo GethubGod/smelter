@@ -1,17 +1,11 @@
 import React, { useCallback } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Sheet } from '@/components/ui';
+import { Card, SectionLabel, Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerSelectionHaptic } from '@/lib/haptics';
 import { color, radius, typeScale, weight } from '@/theme/tokens';
 import type { SimpleOrderDensity } from '@/types/settings';
-
-/**
- * Checklist display sheet: Comfortable/Compact density cards plus the
- * "Show categories" toggle. Reached from the quick-actions sheet and from
- * Settings → Checklist display; both preferences persist per user.
- */
 
 interface ChecklistSettingsSheetProps {
   visible: boolean;
@@ -22,7 +16,7 @@ interface ChecklistSettingsSheetProps {
   onClose: () => void;
 }
 
-const OPTIONS: {
+const OPTIONS: readonly {
   value: SimpleOrderDensity;
   label: string;
   detail: string;
@@ -30,11 +24,16 @@ const OPTIONS: {
   {
     value: 'comfort',
     label: 'Comfortable',
-    detail: 'Bigger rows with the usual amounts shown',
+    detail: 'One card per item, biggest targets',
+  },
+  {
+    value: 'compact',
+    label: 'Compact',
+    detail: 'Grouped rows with the usual amount',
   },
   {
     value: 'dense',
-    label: 'Compact',
+    label: 'Dense',
     detail: 'Tight rows, see the whole list at once',
   },
 ];
@@ -63,111 +62,152 @@ export function ChecklistSettingsSheet({
   }, [onToggleCategories, showCategories]);
 
   return (
-    <Sheet visible={visible} title="Checklist display" onClose={onClose}>
-      <Text
-        style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginBottom: ds.spacing(12) }}
-      >
-        How your list is shown.
-      </Text>
+    <Sheet
+      visible={visible}
+      title="Checklist display"
+      subtitle="How your list is shown."
+      onClose={onClose}
+      primary={{ label: 'Done', onPress: onClose }}
+    >
+      <View accessibilityRole="radiogroup" style={{ gap: ds.spacing(10) }}>
+        {OPTIONS.map((option) => {
+          const selected = option.value === density;
+          return (
+            <TouchableOpacity
+              key={option.value}
+              onPress={() => handleSelect(option.value)}
+              activeOpacity={0.8}
+              accessibilityRole="radio"
+              accessibilityState={{ selected, checked: selected }}
+              accessibilityLabel={option.label}
+              accessibilityHint={option.detail}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: ds.spacing(11),
+                backgroundColor: selected ? color.tint : color.card,
+                borderWidth: 1.5,
+                borderColor: selected ? color.accent : color.card,
+                borderRadius: radius.card,
+                paddingHorizontal: ds.spacing(14),
+                paddingVertical: ds.spacing(14),
+              }}
+            >
+              <View
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: radius.pill,
+                  borderWidth: selected ? 0 : 2,
+                  borderColor: color.hairlineStrong,
+                  backgroundColor: selected ? color.accent : color.card,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {selected ? (
+                  <Ionicons name="checkmark" size={ds.icon(13)} color={color.onAccent} />
+                ) : null}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: ds.fontSize(typeScale.body),
+                    fontWeight: weight.semibold,
+                    color: color.ink,
+                  }}
+                >
+                  {option.label}
+                </Text>
+                <Text
+                  style={{
+                    marginTop: ds.spacing(1),
+                    fontSize: ds.fontSize(typeScale.secondary),
+                    color: color.ink2,
+                  }}
+                >
+                  {option.detail}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
 
-      {OPTIONS.map((option) => {
-        const selected = option.value === density;
-        return (
+      <View>
+        <SectionLabel>Grouping</SectionLabel>
+        <Card flush>
           <TouchableOpacity
-            key={option.value}
-            onPress={() => handleSelect(option.value)}
+            onPress={handleToggle}
             activeOpacity={0.8}
-            accessibilityRole="radio"
-            accessibilityState={{ selected }}
-            accessibilityLabel={`${option.label} rows`}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: showCategories }}
+            accessibilityLabel="Show categories"
+            accessibilityHint="Group items under Fish, Produce, Dry goods"
             style={{
               flexDirection: 'row',
               alignItems: 'center',
               gap: ds.spacing(11),
-              backgroundColor: color.card,
-              borderWidth: selected ? 1 : 1,
-              borderColor: selected ? color.accent : color.hairline,
-              borderRadius: radius.card,
-              paddingHorizontal: ds.spacing(16),
-              paddingVertical: ds.spacing(14),
-              marginBottom: ds.spacing(8),
+              minHeight: ds.spacing(60),
+              paddingHorizontal: ds.spacing(14),
+              paddingVertical: ds.spacing(10),
             }}
           >
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink }}>
-                {option.label}
-              </Text>
-              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginTop: 1 }}>
-                {option.detail}
-              </Text>
-            </View>
             <View
               style={{
-                width: 22,
-                height: 22,
-                borderRadius: radius.pill,
-                borderWidth: selected ? 0 : 1.5,
-                borderColor: color.disabled,
-                backgroundColor: selected ? color.accent : 'transparent',
+                width: 36,
+                height: 36,
+                borderRadius: radius.tile,
+                backgroundColor: color.well,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              {selected ? <Ionicons name="checkmark" size={13} color={color.onAccent} /> : null}
+              <Ionicons name="list-outline" size={ds.icon(18)} color={color.ink2} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: ds.fontSize(typeScale.body),
+                  fontWeight: weight.semibold,
+                  color: color.ink,
+                }}
+              >
+                Show categories
+              </Text>
+              <Text
+                style={{
+                  marginTop: ds.spacing(2),
+                  fontSize: ds.fontSize(typeScale.secondary),
+                  color: color.ink2,
+                }}
+              >
+                Group items under Fish, Produce, Dry goods
+              </Text>
+            </View>
+            <View
+              style={{
+                width: 44,
+                height: 26,
+                borderRadius: radius.pill,
+                backgroundColor: showCategories ? color.accent : color.disabled,
+                justifyContent: 'center',
+                paddingHorizontal: 3,
+              }}
+            >
+              <View
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: radius.pill,
+                  backgroundColor: color.onAccent,
+                  transform: [{ translateX: showCategories ? 18 : 0 }],
+                }}
+              />
             </View>
           </TouchableOpacity>
-        );
-      })}
-
-      <TouchableOpacity
-        onPress={handleToggle}
-        activeOpacity={0.8}
-        accessibilityRole="switch"
-        accessibilityState={{ checked: showCategories }}
-        accessibilityLabel="Show categories"
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: ds.spacing(11),
-          backgroundColor: color.card,
-          borderWidth: 1,
-          borderColor: color.hairline,
-          borderRadius: radius.card,
-          paddingHorizontal: ds.spacing(16),
-          paddingVertical: ds.spacing(13),
-          marginTop: ds.spacing(4),
-        }}
-      >
-        <Ionicons name="list-outline" size={ds.icon(20)} color={color.ink} />
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink }}>
-            Show categories
-          </Text>
-          <Text style={{ fontSize: ds.fontSize(typeScale.caption), color: color.ink3, marginTop: 1 }}>
-            Group items under Fish, Protein, Dry goods
-          </Text>
-        </View>
-        <View
-          style={{
-            width: 44,
-            height: 26,
-            borderRadius: radius.pill,
-            backgroundColor: showCategories ? color.accent : color.disabled,
-            justifyContent: 'center',
-            paddingHorizontal: 2,
-          }}
-        >
-          <View
-            style={{
-              width: 22,
-              height: 22,
-              borderRadius: radius.pill,
-              backgroundColor: color.onAccent,
-              alignSelf: showCategories ? 'flex-end' : 'flex-start',
-            }}
-          />
-        </View>
-      </TouchableOpacity>
+        </Card>
+      </View>
     </Sheet>
   );
 }

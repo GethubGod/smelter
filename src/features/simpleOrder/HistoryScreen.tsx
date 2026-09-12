@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
@@ -10,6 +10,7 @@ import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { ImpactFeedbackStyle, triggerImpactHaptic } from '@/lib/haptics';
 import { color, radius, typeScale, weight } from '@/theme/tokens';
 import { useSimpleOrderUiStore } from '@/store/simpleOrderUiStore';
+import { locationGroupForLocation } from '@/features/simpleOrder/checklistSelection';
 import { OrderDetailSheet } from './components/OrderDetailSheet';
 import { formatHistoryDate, formatSentTime, listMyOrderHistory, type RecentOrder } from './recentOrders';
 
@@ -22,11 +23,13 @@ export function HistoryScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [detailOrder, setDetailOrder] = useState<RecentOrder | null>(null);
+  const loadGeneration = useRef(0);
   const load = useCallback(async () => {
+    const generation = ++loadGeneration.current;
     setLoadError(null);
-    try { setOrders(await listMyOrderHistory(location?.id)); }
-    catch (error) { setLoadError(error instanceof Error ? error.message : 'Could not load your past orders.'); }
-  }, [location?.id]);
+    try { const result = await listMyOrderHistory(location?.id, locationGroupForLocation(location?.name, location?.short_code)); if (generation === loadGeneration.current) setOrders(result); }
+    catch (error) { if (generation === loadGeneration.current) setLoadError(error instanceof Error ? error.message : 'Could not load your past orders.'); }
+  }, [location?.id, location?.name, location?.short_code]);
   useFocusEffect(useCallback(() => { void load(); }, [load]));
   const refresh = async () => { setRefreshing(true); try { await load(); } finally { setRefreshing(false); } };
   const reorder = useCallback((order: RecentOrder) => {
@@ -42,7 +45,7 @@ export function HistoryScreen() {
   const rows = (items: RecentOrder[]) => <Card flush>{items.map((order, index) => <ListRow key={order.id} icon="receipt-outline" title={formatHistoryDate(order.createdAt)}
     subtitle={`${order.itemCount ?? order.reorderItems.length} items · ${order.supplierName} · ${formatSentTime(order.createdAt)}`}
     onPress={() => setDetailOrder(order)} last={index === items.length - 1}
-    right={order.reorderItems.length ? <Pressable onPress={() => reorder(order)} accessibilityRole="button" accessibilityLabel={`Reorder ${formatHistoryDate(order.createdAt)}`} hitSlop={8}
+    right={order.reorderItems.length ? <Pressable onPress={event => { event.stopPropagation(); reorder(order); }} accessibilityRole="button" accessibilityLabel={`Reorder ${formatHistoryDate(order.createdAt)}`} hitSlop={8}
       style={{ backgroundColor: color.tint, borderRadius: radius.pill, paddingHorizontal: ds.spacing(9), paddingVertical: ds.spacing(5) }}>
       <Text style={{ color: color.accent, fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold, textTransform: 'uppercase' }}>Reorder</Text>
     </Pressable> : undefined} />)}</Card>;

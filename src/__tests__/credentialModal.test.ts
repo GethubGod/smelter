@@ -7,6 +7,7 @@ const getUser = jest.fn();
 const signInWithPassword = jest.fn();
 const updateUser = jest.fn();
 const setCredential = jest.fn();
+const studioToast = jest.fn();
 
 jest.mock('react-native', () => ({
   View: 'View', Text: 'Text', Modal: 'Modal', Pressable: 'Pressable', TextInput: 'TextInput',
@@ -39,6 +40,7 @@ jest.mock('@/theme/design', () => ({ colors: { white: '#fff' }, radii: { card: 1
 jest.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ bottom: 0 }) }));
 jest.mock('@/hooks/useScaledStyles', () => ({ useScaledStyles: () => ({ spacing: (n: number) => n, fontSize: (n: number) => n, icon: (n: number) => n }) }));
 jest.mock('@/services/loginCredentials', () => ({ getMyCredentialKind: (id: string) => credentialKind(id), isValidPin: (value: string) => /^\d{4}$/.test(value), isValidPassword: (value: string) => value.length >= 8, setMyCredential: (kind: string, secret: string) => setCredential(kind, secret) }));
+jest.mock('@/components/ui/StudioToast', () => ({ showStudioToast: (message: string) => studioToast(message) }));
 const mockAuthState = { session: { user: { id: 'user-1' } }, isLoading: false };
 jest.mock('@/store/authStore', () => ({ useAuthStore: Object.assign((selector: (state: unknown) => unknown) => selector(mockAuthState), { getState: () => mockAuthState }) }));
 jest.mock('@/lib/supabase', () => ({ supabase: { auth: { getUser } }, createCredentialClient: () => ({ auth: { signInWithPassword, updateUser } }) }));
@@ -130,8 +132,43 @@ it('retains a native modal for the standalone employee credential sheet', async 
   const host = tree.root.find((node) => String(node.type) === 'Modal');
   expect(tree.root.findAll((node) => String(node.type) === 'Modal')).toHaveLength(1);
   expect(tree.root.findAll((node) => String(node.type) === 'TextInput')).toHaveLength(2);
+  expect(
+    tree.root
+      .findAll((node) => node.props.accessibilityRole === 'radio')
+      .map((node) => node.props.accessibilityLabel),
+  ).toEqual(['PIN', 'Password']);
+  expect(
+    tree.root.findAll((node) => node.props.accessibilityLabel === 'Close Change PIN or password'),
+  ).toHaveLength(1);
+  expect(JSON.stringify(tree.toJSON())).not.toContain('Restaurant PIN');
+  expect(JSON.stringify(tree.toJSON())).not.toContain('Cancel');
   await act(async () => host.props.onRequestClose());
   expect(onClose).toHaveBeenCalledTimes(1);
+  await act(async () => tree.unmount());
+});
+
+it('saves a valid PIN and reports the reference success toast', async () => {
+  const onClose = jest.fn();
+  let tree!: renderer.ReactTestRenderer;
+  await act(async () => {
+    tree = renderer.create(
+      React.createElement(ChangeCredentialSheet, { visible: true, onClose }),
+    );
+  });
+  const fields = tree.root.findAll((node) => String(node.type) === 'TextInput');
+  await act(async () => {
+    fields[0].props.onChangeText('1234');
+    fields[1].props.onChangeText('1234');
+  });
+  const save = tree.root.find(
+    (node) =>
+      node.props.accessibilityLabel === 'Save PIN' &&
+      String(node.type) === 'TouchableOpacity',
+  );
+  await act(async () => save.props.onPress());
+  expect(setCredential).toHaveBeenCalledWith('pin', '1234');
+  expect(onClose).toHaveBeenCalledTimes(1);
+  expect(studioToast).toHaveBeenCalledWith('PIN updated');
   await act(async () => tree.unmount());
 });
 

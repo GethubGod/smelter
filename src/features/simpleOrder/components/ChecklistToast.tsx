@@ -44,11 +44,11 @@ export function ChecklistToast({
     opacity.setValue(0);
     Animated.timing(opacity, { toValue: 1, duration: 220, easing: Easing.bezier(...motion.ease), useNativeDriver: true }).start();
     const timer = setTimeout(() => {
-      Animated.timing(opacity, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => {
-        expireRef.current();
+      Animated.timing(opacity, { toValue: 0, duration: 220, useNativeDriver: true }).start(({ finished }) => {
+        if (finished) expireRef.current();
       });
-    }, durationMs);
-    return () => clearTimeout(timer);
+    }, Math.max(0, durationMs - 220));
+    return () => { clearTimeout(timer); opacity.stopAnimation(); };
   }, [durationMs, opacity, toast]);
 
   if (!toast) return null;

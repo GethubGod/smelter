@@ -192,32 +192,23 @@ export function mapSubmittedHistoryOrder(value: unknown): RecentOrder | null {
     reorderItems.push({ itemId: typeof line.inventory_item_id === 'string' ? line.inventory_item_id : null, itemName: item.name, quantity, unit: typeof unit === 'string' ? unit : null });
   }
   return { id: row.id, createdAt: row.created_at, supplierName: [...suppliers].join(', ') || 'Supplier', itemCount: reorderItems.length,
-    reorderItems, messageText: '', status: row.status === 'fulfilled' ? 'Sent' : 'Pending' };
+    reorderItems, messageText: '', status: row.status === 'fulfilled' || (lines.length > 0 && lines.every(value => record(value)?.status === 'sent')) ? 'Sent' : 'Pending' };
 }
 
-export async function listMyOrderHistory(locationId?: string): Promise<RecentOrder[]> {
+export async function listMyOrderHistory(locationId?: string, locationGroup?: 'sushi' | 'poki'): Promise<RecentOrder[]> {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError) throw userError;
   const userId = userData.user?.id;
   if (!userId) throw new Error('You must be signed in to view recent orders.');
   const since = new Date(Date.now() - 90 * DAY_MS).toISOString();
-  const archivesQuery = supabase.from('past_orders').select('id,supplier_name,created_at,message_text,payload').eq('created_by', userId).gte('created_at', since);
-  let ordersQuery = supabase.from('orders').select('id,created_at,status,order_items(id,inventory_item_id,quantity,quantity_requested,unit_type,unit_label,inventory_item:inventory_items(name,base_unit,pack_unit,supplier:suppliers!inventory_items_supplier_id_fkey(name)))').eq('user_id', userId).in('status', ['submitted', 'processing', 'fulfilled']).eq('entry_method', 'simple_checklist').gte('created_at', since);
+  let archivesQuery = supabase.from('past_orders').select('id,supplier_name,created_at,message_text,payload,past_order_items!inner(location_group)').eq('created_by', userId).eq('payload->>entryMethod', 'simple_checklist_direct').gte('created_at', since);
+  if (locationGroup) archivesQuery = archivesQuery.eq('past_order_items.location_group', locationGroup);
+  let ordersQuery = supabase.from('orders').select('id,created_at,status,order_items(id,status,inventory_item_id,quantity,quantity_requested,unit_type,unit_label,inventory_item:inventory_items(name,base_unit,pack_unit,supplier:suppliers!inventory_items_supplier_id_fkey(name)))').eq('user_id', userId).in('status', ['submitted', 'processing', 'fulfilled']).eq('entry_method', 'simple_checklist').gte('created_at', since);
   if (locationId) ordersQuery = ordersQuery.eq('location_id', locationId);
   const [archives, orders] = await Promise.all([archivesQuery.order('created_at', { ascending: false }).limit(200), ordersQuery.order('created_at', { ascending: false }).limit(200)]);
   if (archives.error) throw archives.error;
   if (orders.error) throw orders.error;
-  const consumed = new Set<string>();
-  for (const archive of archives.data ?? []) {
-    const payload = record(archive.payload);
-    const ids = payload?.sourceOrderItemIds ?? payload?.source_order_item_ids;
-    if (Array.isArray(ids)) for (const id of ids) if (typeof id === 'string') consumed.add(id);
-  }
   const rawOrders: unknown[] = orders.data ?? [];
-  const submitted = rawOrders.filter(value => {
-    const row = record(value);
-    const lines: unknown[] = Array.isArray(row?.order_items) ? row.order_items : [];
-    return !lines.length || !lines.every(value => { const line = record(value); return typeof line?.id === 'string' && consumed.has(line.id); });
-  }).map(mapSubmittedHistoryOrder).filter((order): order is RecentOrder => order !== null);
+  const submitted = rawOrders.map(mapSubmittedHistoryOrder).filter((order): order is RecentOrder => order !== null);
   return [...(archives.data ?? []).map(mapRecentOrderRow), ...submitted].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 }

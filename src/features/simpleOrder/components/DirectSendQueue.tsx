@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   AppState,
   Platform,
   ScrollView,
@@ -14,6 +13,7 @@ import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import * as SMS from 'expo-sms';
 import { Card } from '@/components/ui';
+import { showNotice } from '@/components/ui/NoticeSheet';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import {
   ImpactFeedbackStyle,
@@ -97,8 +97,7 @@ export function DirectSendQueue({ groups, onDone }: DirectSendQueueProps) {
         await archiveDirectSend(group, shareMethod);
         return true;
       } catch (error) {
-        console.error('[SimpleOrder:DirectSend] archiveDirectSend failed:', error);
-        Alert.alert(
+        showNotice(
           'Could Not Save Order',
           error instanceof Error
             ? error.message
@@ -171,7 +170,7 @@ export function DirectSendQueue({ groups, onDone }: DirectSendQueueProps) {
       const key = directSendGroupKey(group);
       const supported = await Linking.canOpenURL(url).catch(() => true);
       if (!supported) {
-        Alert.alert(
+        showNotice(
           'App Unavailable',
           'The messaging app for this supplier is not available on this device. Using the share sheet instead.',
         );
@@ -183,7 +182,7 @@ export function DirectSendQueue({ groups, onDone }: DirectSendQueueProps) {
         await Linking.openURL(url);
       } catch {
         dispatchQueue({ type: 'send-cancelled', id: key });
-        Alert.alert(
+        showNotice(
           'Unable to Open Messaging App',
           'Could not open the messaging app. Using the share sheet instead.',
         );
@@ -216,21 +215,22 @@ export function DirectSendQueue({ groups, onDone }: DirectSendQueueProps) {
             if (Platform.OS === 'android' && result === 'unknown') {
               // Android reports 'unknown' for both cancel and send, so confirm
               // with the user before archiving. iOS reports cancel correctly.
-              const wasSent = await new Promise<boolean>((resolve) => {
-                Alert.alert(
-                  'Confirm Send',
-                  `Was the message sent to ${group.supplierName}?`,
-                  [
-                    { text: 'Not sent', style: 'cancel', onPress: () => resolve(false) },
-                    { text: 'Sent', onPress: () => resolve(true) },
-                  ],
-                  { cancelable: false },
-                );
-              });
-              if (!wasSent) {
-                dispatchQueue({ type: 'send-cancelled', id: key });
-                return;
-              }
+              showNotice(
+                'Confirm Send',
+                `Was the message sent to ${group.supplierName}?`,
+                [
+                  {
+                    text: 'Not sent',
+                    style: 'cancel',
+                    onPress: () => dispatchQueue({ type: 'send-cancelled', id: key }),
+                  },
+                  {
+                    text: 'Sent',
+                    onPress: () => void completeSend(group, 'share'),
+                  },
+                ],
+              );
+              return;
             }
             await completeSend(group, 'share');
             return;

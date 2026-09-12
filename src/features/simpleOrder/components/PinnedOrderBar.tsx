@@ -2,13 +2,14 @@ import React, { useCallback, useEffect, useRef } from 'react';
 import {
   FlatList,
   Keyboard,
-  KeyboardEvent,
+  type KeyboardEvent,
   Platform,
+  Pressable,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   Easing,
@@ -18,62 +19,56 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerImpactHaptic, triggerSelectionHaptic } from '@/lib/haptics';
-import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { color, motion, radius, shadow, typeScale, weight } from '@/theme/tokens';
 import type { InventoryItem } from '@/types';
 import { unitForInventoryItem } from '../checklistSelection';
-
-/**
- * Pinned bottom stack, floating above the pill toolbar: optional note chip →
- * search results card while typing → the add-item bar (search field with the
- * mic inside, red send circle with a count badge; gray at zero). Send opens
- * the Review order sheet.
- */
 
 interface PinnedOrderBarProps {
   query: string;
   onQueryChange: (query: string) => void;
   results: InventoryItem[];
-  /** Inventory item ids already checked on the checklist. */
+  listedItemIds: Set<string>;
   selectedItemIds: Set<string>;
   onAddItem: (item: InventoryItem) => void;
   checkedCount: number;
   onPressSend: () => void;
   voiceAvailable: boolean;
   onPressMic: () => void;
-  /** Note chip above the bar ("Note added · edit"). */
-  hasNote: boolean;
-  onPressNote: () => void;
-  /** Resting bottom offset (pill toolbar clearance). */
   restingBottom: number;
-  onHeightChange?: (height: number) => void;
 }
 
 const KEYBOARD_FALLBACK_MS = 220;
-const MAX_RESULTS_HEIGHT = 288;
-const SEND_SIZE = 46;
+const MAX_RESULTS_HEIGHT = 300;
+const SEARCH_WELL_HEIGHT = 46;
+const SEND_SIZE = 48;
+const MIC_SIZE = 36;
+const CLEAR_SIZE = 24;
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const glideEasing = Easing.bezier(...motion.ease);
+const popEasing = Easing.bezier(...motion.pop);
 
 export function PinnedOrderBar({
   query,
   onQueryChange,
   results,
+  listedItemIds,
   selectedItemIds,
   onAddItem,
   checkedCount,
   onPressSend,
   voiceAvailable,
   onPressMic,
-  hasNote,
-  onPressNote,
   restingBottom,
-  onHeightChange,
 }: PinnedOrderBarProps) {
   const ds = useScaledStyles();
-  const inputRef = useRef<TextInput>(null);
-
-  // Track the keyboard directly (same pattern as QuickOrderComposerBar) so
-  // the bar stays in lockstep with the OS keyboard animation on iOS.
+  const focused = useIsFocused();
   const restingBottomRef = useRef(restingBottom);
   const keyboardBottom = useSharedValue(restingBottom);
+  const focusProgress = useSharedValue(focused ? 1 : 0);
+  const resultsProgress = useSharedValue(query.trim() ? 1 : 0);
+  const sendScale = useSharedValue(1);
+  const badgeScale = useSharedValue(1);
 
   useEffect(() => {
     restingBottomRef.current = restingBottom;
@@ -84,33 +79,75 @@ export function PinnedOrderBar({
   }, [keyboardBottom, restingBottom]);
 
   useEffect(() => {
+    focusProgress.value = withTiming(focused ? 1 : 0, {
+      duration: focused ? 300 : 260,
+      easing: glideEasing,
+    });
+  }, [focusProgress, focused]);
+
+  useEffect(() => {
+    resultsProgress.value = withTiming(query.trim() ? 1 : 0, {
+      duration: motion.dur,
+      easing: glideEasing,
+    });
+  }, [query, resultsProgress]);
+
+  useEffect(() => {
+    if (checkedCount === 0) return;
+    badgeScale.value = 0.6;
+    badgeScale.value = withTiming(1, { duration: 320, easing: popEasing });
+  }, [badgeScale, checkedCount]);
+
+  useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
     const onShow = (event: KeyboardEvent) => {
-      const target = Math.max(event.endCoordinates.height + 12, restingBottomRef.current);
-      keyboardBottom.value = withTiming(target, {
-        duration: event.duration && event.duration > 0 ? event.duration : KEYBOARD_FALLBACK_MS,
-        easing: Easing.out(Easing.cubic),
-      });
+      keyboardBottom.value = withTiming(
+        Math.max(event.endCoordinates.height + 12, restingBottomRef.current),
+        {
+          duration:
+            event.duration && event.duration > 0
+              ? event.duration
+              : KEYBOARD_FALLBACK_MS,
+          easing: Easing.out(Easing.cubic),
+        },
+      );
     };
     const onHide = (event: KeyboardEvent) => {
       keyboardBottom.value = withTiming(restingBottomRef.current, {
-        duration: event?.duration && event.duration > 0 ? event.duration : KEYBOARD_FALLBACK_MS,
+        duration:
+          event.duration && event.duration > 0
+            ? event.duration
+            : KEYBOARD_FALLBACK_MS,
         easing: Easing.out(Easing.cubic),
       });
     };
 
-    const showSub = Keyboard.addListener(showEvent, onShow);
-    const hideSub = Keyboard.addListener(hideEvent, onHide);
+    const showSubscription = Keyboard.addListener(showEvent, onShow);
+    const hideSubscription = Keyboard.addListener(hideEvent, onHide);
     return () => {
-      showSub.remove();
-      hideSub.remove();
+      showSubscription.remove();
+      hideSubscription.remove();
     };
   }, [keyboardBottom]);
 
-  const containerAnimatedStyle = useAnimatedStyle(() => ({
+  const positionStyle = useAnimatedStyle(() => ({
     bottom: keyboardBottom.value,
+    opacity: focusProgress.value,
+    transform: [{ translateY: 28 * (1 - focusProgress.value) }],
+  }));
+  const resultsStyle = useAnimatedStyle(() => ({
+    maxHeight: MAX_RESULTS_HEIGHT * resultsProgress.value,
+    marginBottom: 10 * resultsProgress.value,
+    opacity: resultsProgress.value,
+    transform: [{ translateY: 8 * (1 - resultsProgress.value) }],
+  }));
+  const sendStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: sendScale.value }],
+  }));
+  const badgeStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: badgeScale.value }],
   }));
 
   const handleAdd = useCallback(
@@ -138,170 +175,141 @@ export function PinnedOrderBar({
 
   const renderResult = useCallback(
     ({ item, index }: { item: InventoryItem; index: number }) => {
-      const alreadySelected = selectedItemIds.has(item.id);
+      const isListed = listedItemIds.has(item.id);
+      const isSelected = selectedItemIds.has(item.id);
       return (
-        <TouchableOpacity
+        <Pressable
           onPress={() => handleAdd(item)}
-          disabled={alreadySelected}
-          activeOpacity={0.6}
           accessibilityRole="button"
           accessibilityLabel={
-            alreadySelected ? `${item.name}, already on order` : `Add ${item.name}`
+            isSelected ? `${item.name}, already on order` : `Add ${item.name}`
           }
-          style={{
+          style={({ pressed }) => ({
+            minHeight: 50,
             flexDirection: 'row',
             alignItems: 'center',
-            minHeight: 48,
             paddingHorizontal: ds.spacing(14),
+            paddingVertical: ds.spacing(6),
             borderBottomWidth: index === results.length - 1 ? 0 : 1,
             borderBottomColor: color.hairline,
-          }}
+            opacity: pressed ? 0.72 : 1,
+          })}
         >
-          <View style={{ flex: 1, paddingRight: ds.spacing(8) }}>
+          <View style={{ flex: 1, minWidth: 0, paddingRight: ds.spacing(8) }}>
             <Text
               numberOfLines={1}
               style={{
                 fontSize: ds.fontSize(typeScale.body),
                 fontWeight: weight.semibold,
-                color: alreadySelected ? color.ink3 : color.ink,
+                color: color.ink,
               }}
             >
               {item.name}
             </Text>
-            <Text style={{ fontSize: ds.fontSize(typeScale.caption), color: color.ink3 }}>
+            <Text
+              numberOfLines={1}
+              style={{
+                fontSize: ds.fontSize(typeScale.meta),
+                color: color.ink3,
+              }}
+            >
               {unitForInventoryItem(item)}
+              {isListed ? ' · on your list' : ''}
             </Text>
           </View>
           <Ionicons
-            name={alreadySelected ? 'checkmark' : 'add'}
+            name={isSelected ? 'checkmark' : 'add'}
             size={ds.icon(20)}
-            color={alreadySelected ? color.good : color.accent}
+            color={isSelected ? color.good : color.accent}
           />
-        </TouchableOpacity>
+        </Pressable>
       );
     },
-    [ds, handleAdd, results.length, selectedItemIds],
+    [ds, handleAdd, listedItemIds, results.length, selectedItemIds],
   );
 
   return (
     <Animated.View
-      pointerEvents="box-none"
-      onLayout={(event) => onHeightChange?.(event.nativeEvent.layout.height)}
+      pointerEvents={focused ? 'box-none' : 'none'}
       style={[
         {
           position: 'absolute',
           left: ds.spacing(14),
           right: ds.spacing(14),
         },
-        containerAnimatedStyle,
+        positionStyle,
       ]}
     >
-      {hasNote ? (
-        <TouchableOpacity
-          onPress={onPressNote}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel="Note added, edit"
-          style={{
-            alignSelf: 'flex-start',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: ds.spacing(7),
-            backgroundColor: color.card,
-            borderWidth: 1,
-            borderColor: color.hairlineStrong,
-            borderRadius: radius.pill,
-            paddingHorizontal: ds.spacing(13),
-            paddingVertical: ds.spacing(7),
-            marginBottom: ds.spacing(10),
-          }}
-        >
-          <Ionicons name="create-outline" size={ds.icon(14)} color={color.accent} />
-          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: color.ink }}>
-            Note added · edit
-          </Text>
-        </TouchableOpacity>
-      ) : null}
-
-      {showResults ? (
-        <View
-          style={{
-            maxHeight: MAX_RESULTS_HEIGHT,
-            marginBottom: ds.spacing(10),
+      <Animated.View
+        pointerEvents={showResults ? 'auto' : 'none'}
+        style={[
+          {
+            overflow: 'hidden',
             backgroundColor: color.card,
             borderRadius: radius.card,
-            borderWidth: 1,
-            borderColor: color.hairlineStrong,
-            overflow: 'hidden',
-          }}
-        >
-          {results.length > 0 ? (
-            <FlatList
-              data={results}
-              keyExtractor={(item) => item.id}
-              renderItem={renderResult}
-              keyboardShouldPersistTaps="handled"
-            />
-          ) : (
-            <View
+          },
+          resultsStyle,
+        ]}
+      >
+        {results.length > 0 ? (
+          <FlatList
+            data={results}
+            keyExtractor={(item) => item.id}
+            renderItem={renderResult}
+            keyboardShouldPersistTaps="handled"
+          />
+        ) : (
+          <View
+            style={{
+              minHeight: 56,
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingHorizontal: ds.spacing(16),
+            }}
+          >
+            <Text
               style={{
-                minHeight: 56,
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingHorizontal: ds.spacing(16),
+                fontSize: ds.fontSize(typeScale.secondary),
+                color: color.ink3,
+                textAlign: 'center',
               }}
             >
-              <Text
-                style={{
-                  fontSize: ds.fontSize(typeScale.secondary),
-                  color: color.ink2,
-                  textAlign: 'center',
-                }}
-              >
-                No items match “{query.trim()}”
-              </Text>
-            </View>
-          )}
-        </View>
-      ) : null}
+              No items match “{query.trim()}”
+            </Text>
+          </View>
+        )}
+      </Animated.View>
 
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
           gap: ds.spacing(8),
-          backgroundColor: color.card,
-          borderWidth: 1,
-          borderColor: color.hairline,
-          borderRadius: radius.sheet,
           padding: ds.spacing(8),
-          shadowColor: color.ink,
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.1,
-          shadowRadius: 24,
-          elevation: Platform.OS === 'android' ? 8 : 0,
+          borderRadius: radius.addBar,
+          backgroundColor: color.card,
+          ...shadow.addBar,
         }}
       >
         <View
           style={{
             flex: 1,
+            minHeight: SEARCH_WELL_HEIGHT,
             flexDirection: 'row',
             alignItems: 'center',
-            minHeight: SEND_SIZE,
-            backgroundColor: color.page,
+            paddingLeft: ds.spacing(14),
+            paddingRight: ds.spacing(5),
             borderRadius: radius.pill,
-            paddingLeft: ds.spacing(15),
-            paddingRight: ds.spacing(6),
+            backgroundColor: color.page,
           }}
         >
           <Ionicons
             name="search-outline"
-            size={ds.icon(17)}
+            size={ds.icon(18)}
             color={color.ink3}
             style={{ marginRight: ds.spacing(8) }}
           />
           <TextInput
-            ref={inputRef}
             value={query}
             onChangeText={onQueryChange}
             placeholder="Add item"
@@ -317,39 +325,62 @@ export function PinnedOrderBar({
             }}
           />
           {query.length > 0 ? (
-            <TouchableOpacity
+            <Pressable
               onPress={() => onQueryChange('')}
               accessibilityRole="button"
               accessibilityLabel="Clear search"
-              hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
-              style={{ padding: ds.spacing(6) }}
-            >
-              <Ionicons name="close-circle" size={ds.icon(18)} color={color.ink3} />
-            </TouchableOpacity>
-          ) : null}
-          {voiceAvailable ? (
-            <TouchableOpacity
-              onPress={handleMic}
-              accessibilityRole="button"
-              accessibilityLabel="Add items by voice"
-              hitSlop={{ top: 10, bottom: 10, left: 4, right: 6 }}
-              style={{
-                width: 36,
-                height: 36,
+              hitSlop={8}
+              style={({ pressed }) => ({
+                width: CLEAR_SIZE,
+                height: CLEAR_SIZE,
                 borderRadius: radius.pill,
                 alignItems: 'center',
                 justifyContent: 'center',
-              }}
+                backgroundColor: color.well,
+                opacity: pressed ? 0.72 : 1,
+              })}
             >
-              <Ionicons name="mic-outline" size={ds.icon(20)} color={color.accent} />
-            </TouchableOpacity>
+              <Ionicons name="close" size={ds.icon(12)} color={color.ink3} />
+            </Pressable>
+          ) : null}
+          {voiceAvailable ? (
+            <Pressable
+              onPress={handleMic}
+              accessibilityRole="button"
+              accessibilityLabel="Add items by voice"
+              hitSlop={6}
+              style={({ pressed }) => ({
+                width: MIC_SIZE,
+                height: MIC_SIZE,
+                marginLeft: ds.spacing(5),
+                borderRadius: radius.tile,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: color.accent,
+                opacity: pressed ? 0.82 : 1,
+                transform: [{ scale: pressed ? 0.94 : 1 }],
+              })}
+            >
+              <Ionicons name="mic-outline" size={ds.icon(20)} color={color.onAccent} />
+            </Pressable>
           ) : null}
         </View>
 
-        <TouchableOpacity
+        <AnimatedPressable
           onPress={handleSend}
+          onPressIn={() => {
+            sendScale.value = withTiming(0.94, {
+              duration: 120,
+              easing: glideEasing,
+            });
+          }}
+          onPressOut={() => {
+            sendScale.value = withTiming(1, {
+              duration: 120,
+              easing: glideEasing,
+            });
+          }}
           disabled={sendDisabled}
-          activeOpacity={0.8}
           accessibilityRole="button"
           accessibilityState={{ disabled: sendDisabled }}
           accessibilityLabel={
@@ -357,40 +388,51 @@ export function PinnedOrderBar({
               ? 'Send order, no items selected'
               : `Send order with ${checkedCount} ${checkedCount === 1 ? 'item' : 'items'}`
           }
-          style={{
-            width: SEND_SIZE,
-            height: SEND_SIZE,
-            borderRadius: radius.pill,
-            backgroundColor: sendDisabled ? color.disabled : color.accent,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          style={[
+            {
+              width: SEND_SIZE,
+              height: SEND_SIZE,
+              borderRadius: radius.pill,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: sendDisabled ? color.disabled : color.accent,
+            },
+            sendStyle,
+          ]}
         >
-          <Ionicons name="arrow-up" size={ds.icon(20)} color={color.onAccent} />
+          <Ionicons name="arrow-up" size={ds.icon(22)} color={color.onAccent} />
           {checkedCount > 0 ? (
-            <View
-              style={{
-                position: 'absolute',
-                top: -4,
-                right: -4,
-                minWidth: 20,
-                height: 18,
-                paddingHorizontal: 6,
-                borderRadius: radius.pill,
-                backgroundColor: color.ink,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+            <Animated.View
+              style={[
+                {
+                  position: 'absolute',
+                  top: -4,
+                  right: -4,
+                  minWidth: 20,
+                  height: 19,
+                  paddingHorizontal: ds.spacing(5),
+                  borderRadius: radius.pill,
+                  backgroundColor: color.ink,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                },
+                badgeStyle,
+              ]}
             >
               <Text
-                style={{ fontSize: ds.fontSize(typeScale.caption), fontWeight: '700', color: color.onAccent }}
                 numberOfLines={1}
+                style={{
+                  fontSize: ds.fontSize(typeScale.caption),
+                  fontWeight: weight.bold,
+                  fontVariant: ['tabular-nums'],
+                  color: color.onAccent,
+                }}
               >
                 {checkedCount}
               </Text>
-            </View>
+            </Animated.View>
           ) : null}
-        </TouchableOpacity>
+        </AnimatedPressable>
       </View>
     </Animated.View>
   );

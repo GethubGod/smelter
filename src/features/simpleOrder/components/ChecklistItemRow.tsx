@@ -1,22 +1,24 @@
-import React, { memo, useCallback } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import React, { memo, useCallback, useEffect } from 'react';
+import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  Easing,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerImpactHaptic, triggerSelectionHaptic } from '@/lib/haptics';
-import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { color, motion, radius, typeScale, weight } from '@/theme/tokens';
 import type { SimpleOrderDensity } from '@/types/settings';
 import { formatQuantity, type SelectionLine } from '../checklistSelection';
 
-/**
- * Checklist row, tips colorway. Row tap toggles checked; the stepper's −/+
- * adjust; tapping the middle (quantity) opens the quantity card. Compact rows
- * are single-line with a WIDE stepper middle showing quantity + unit side by
- * side (`− 2 fillet +`) — the middle tap target stays ≥ 56pt wide.
- */
-
 interface ChecklistItemRowProps {
   line: SelectionLine;
+  isFirst: boolean;
   isLast: boolean;
+  isNew?: boolean;
   density: SimpleOrderDensity;
   onToggle: (key: string) => void;
   onAdjustQuantity: (key: string, delta: number) => void;
@@ -26,40 +28,114 @@ interface ChecklistItemRowProps {
 interface DensityMetrics {
   rowMinHeight: number;
   checkboxSize: number;
+  checkboxRadius: number;
   stepperButtonSize: number;
   nameFontSize: number;
+  metaFontSize: number;
   quantityFontSize: number;
+  quantityMinWidth: number;
   verticalPadding: number;
-  showSubtitle: boolean;
-  midMinWidth: number;
+  separatorInset: number;
+  showMeta: boolean;
 }
 
 const DENSITY_METRICS: Record<SimpleOrderDensity, DensityMetrics> = {
   comfort: {
-    rowMinHeight: 58,
-    checkboxSize: 26,
-    stepperButtonSize: 38,
+    rowMinHeight: 60,
+    checkboxSize: 36,
+    checkboxRadius: radius.checkComfort,
+    stepperButtonSize: 34,
+    nameFontSize: typeScale.itemComfort,
+    metaFontSize: typeScale.secondary,
+    quantityFontSize: typeScale.quantityComfort,
+    quantityMinWidth: 40,
+    verticalPadding: 12,
+    separatorInset: 44,
+    showMeta: true,
+  },
+  compact: {
+    rowMinHeight: 50,
+    checkboxSize: 30,
+    checkboxRadius: radius.checkCompact,
+    stepperButtonSize: 30,
     nameFontSize: typeScale.body,
-    quantityFontSize: typeScale.body,
+    metaFontSize: typeScale.meta,
+    quantityFontSize: typeScale.itemComfort,
+    quantityMinWidth: 36,
     verticalPadding: 8,
-    showSubtitle: true,
-    midMinWidth: 34,
+    separatorInset: 44,
+    showMeta: true,
   },
   dense: {
     rowMinHeight: 40,
-    checkboxSize: 21,
-    stepperButtonSize: 28,
-    nameFontSize: typeScale.secondary,
-    quantityFontSize: typeScale.secondary,
-    verticalPadding: 3,
-    showSubtitle: false,
-    midMinWidth: 56,
+    checkboxSize: 26,
+    checkboxRadius: radius.checkDense,
+    stepperButtonSize: 26,
+    nameFontSize: typeScale.itemDense,
+    metaFontSize: typeScale.meta,
+    quantityFontSize: typeScale.itemDense,
+    quantityMinWidth: 32,
+    verticalPadding: 4,
+    separatorInset: 38,
+    showMeta: false,
   },
 };
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const glideEasing = Easing.bezier(...motion.ease);
+const popEasing = Easing.bezier(...motion.pop);
+
+function ScalePressable({
+  accessibilityLabel,
+  children,
+  onPress,
+  size,
+  backgroundColor,
+}: {
+  accessibilityLabel: string;
+  children: React.ReactNode;
+  onPress: () => void;
+  size: number;
+  backgroundColor: string;
+}) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={() => {
+        scale.value = withTiming(0.9, { duration: 120, easing: glideEasing });
+      }}
+      onPressOut={() => {
+        scale.value = withTiming(1, { duration: 120, easing: glideEasing });
+      }}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      style={[
+        {
+          width: size,
+          height: size,
+          borderRadius: radius.pill,
+          backgroundColor,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        animatedStyle,
+      ]}
+    >
+      {children}
+    </AnimatedPressable>
+  );
+}
+
 export const ChecklistItemRow = memo(function ChecklistItemRow({
   line,
+  isFirst,
   isLast,
+  isNew = false,
   density,
   onToggle,
   onAdjustQuantity,
@@ -67,6 +143,44 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
 }: ChecklistItemRowProps) {
   const ds = useScaledStyles();
   const metrics = DENSITY_METRICS[density];
+  const checkedProgress = useSharedValue(line.checked ? 1 : 0);
+  const checkboxPressScale = useSharedValue(1);
+  const entryProgress = useSharedValue(isNew ? 0 : 1);
+
+  useEffect(() => {
+    checkedProgress.value = withTiming(line.checked ? 1 : 0, {
+      duration: line.checked ? 320 : motion.dur,
+      easing: line.checked ? popEasing : glideEasing,
+    });
+  }, [checkedProgress, line.checked]);
+
+  useEffect(() => {
+    if (!isNew) return;
+    entryProgress.value = 0;
+    entryProgress.value = withTiming(1, {
+      duration: 380,
+      easing: glideEasing,
+    });
+  }, [entryProgress, isNew]);
+
+  const checkboxStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      checkedProgress.value,
+      [0, 1],
+      [color.well, color.accent],
+    ),
+  }));
+  const checkStyle = useAnimatedStyle(() => ({
+    opacity: checkedProgress.value,
+    transform: [{ scale: checkedProgress.value }],
+  }));
+  const checkboxPressStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: checkboxPressScale.value }],
+  }));
+  const entryStyle = useAnimatedStyle(() => ({
+    opacity: entryProgress.value,
+    transform: [{ translateY: -6 * (1 - entryProgress.value) }],
+  }));
 
   const handleToggle = useCallback(() => {
     void triggerSelectionHaptic();
@@ -88,68 +202,109 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
     onOpenQuantityCard(line.key);
   }, [line.key, onOpenQuantityCard]);
 
-  const checkboxSize = Math.max(metrics.checkboxSize, ds.icon(metrics.checkboxSize));
-  const stepperSize = Math.max(metrics.stepperButtonSize, ds.icon(metrics.stepperButtonSize));
+  const comfortable = density === 'comfort';
+  const checkboxSize = Math.max(
+    metrics.checkboxSize,
+    ds.icon(metrics.checkboxSize),
+  );
+  const stepperSize = Math.max(
+    metrics.stepperButtonSize,
+    ds.icon(metrics.stepperButtonSize),
+  );
+  const stepperBackground = line.checked ? color.ink : color.well;
+  const stepperGlyph = line.checked ? color.onAccent : color.ink;
 
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: ds.spacing(density === 'dense' ? 8 : 12),
-        minHeight: Math.max(metrics.rowMinHeight, density === 'dense' ? 0 : ds.rowH),
-        paddingVertical: ds.spacing(metrics.verticalPadding),
-        borderBottomWidth: isLast ? 0 : 1,
-        borderBottomColor: color.hairline,
-      }}
+    <Animated.View
+      style={[
+        {
+          minHeight: metrics.rowMinHeight,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: ds.spacing(12),
+          paddingHorizontal: ds.spacing(12),
+          paddingVertical: ds.spacing(metrics.verticalPadding),
+          marginBottom: comfortable ? ds.spacing(8) : undefined,
+          backgroundColor: color.card,
+          borderTopLeftRadius: comfortable || isFirst ? radius.card : undefined,
+          borderTopRightRadius: comfortable || isFirst ? radius.card : undefined,
+          borderBottomLeftRadius: comfortable || isLast ? radius.card : undefined,
+          borderBottomRightRadius: comfortable || isLast ? radius.card : undefined,
+          overflow: 'hidden',
+        },
+        entryStyle,
+      ]}
     >
-      <TouchableOpacity
+      <AnimatedPressable
         onPress={handleToggle}
-        activeOpacity={0.6}
+        onPressIn={() => {
+          checkboxPressScale.value = withTiming(0.9, {
+            duration: 120,
+            easing: glideEasing,
+          });
+        }}
+        onPressOut={() => {
+          checkboxPressScale.value = withTiming(1, {
+            duration: 120,
+            easing: glideEasing,
+          });
+        }}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: line.checked }}
         accessibilityLabel={`${line.itemName}, ${line.checked ? 'selected' : 'not selected'}`}
-        style={{
-          flex: 1,
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: ds.spacing(density === 'dense' ? 8 : 12),
-          minHeight: metrics.rowMinHeight,
-        }}
-      >
-        <View
-          style={{
+        style={[
+          {
             width: checkboxSize,
             height: checkboxSize,
-            borderRadius: radius.pill,
-            borderWidth: line.checked ? 0 : 1.5,
-            borderColor: color.disabled,
-            backgroundColor: line.checked ? color.accent : 'transparent',
+            borderRadius: metrics.checkboxRadius,
             alignItems: 'center',
             justifyContent: 'center',
-          }}
-        >
-          {line.checked ? (
-            <Ionicons
-              name="checkmark"
-              size={Math.round(checkboxSize * 0.55)}
-              color={color.onAccent}
-            />
-          ) : null}
-        </View>
+          },
+          checkboxStyle,
+          checkboxPressStyle,
+        ]}
+      >
+        <Animated.View style={checkStyle}>
+          <Ionicons
+            name="checkmark"
+            size={Math.round(checkboxSize * 0.6)}
+            color={color.onAccent}
+          />
+        </Animated.View>
+      </AnimatedPressable>
+
+      <Pressable
+        onPress={handleToggle}
+        accessibilityRole="button"
+        accessibilityLabel={`Toggle ${line.itemName}`}
+        style={({ pressed }) => ({
+          flex: 1,
+          minWidth: 0,
+          minHeight: metrics.rowMinHeight - metrics.verticalPadding * 2,
+          justifyContent: 'center',
+          opacity: pressed ? 0.72 : 1,
+        })}
+      >
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text
             numberOfLines={1}
             style={{
               fontSize: ds.fontSize(metrics.nameFontSize),
               fontWeight: weight.semibold,
-              color: line.checked ? color.ink : color.ink2,
+              color: color.ink,
             }}
           >
             {line.itemName}
           </Text>
-          {metrics.showSubtitle ? (
-            <Text style={{ marginTop: 1, fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}>
+          {metrics.showMeta ? (
+            <Text
+              numberOfLines={1}
+              style={{
+                marginTop: ds.spacing(1),
+                fontSize: ds.fontSize(metrics.metaFontSize),
+                color: color.ink3,
+              }}
+            >
               {line.unit}
               {line.recommendedQty !== null
                 ? ` · usually ${formatQuantity(line.recommendedQty)}`
@@ -157,97 +312,95 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
             </Text>
           ) : null}
         </View>
-      </TouchableOpacity>
+      </Pressable>
 
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          backgroundColor: color.card,
-          borderWidth: 1,
-          borderColor: color.hairlineStrong,
-          borderRadius: radius.pill,
-          opacity: line.checked ? 1 : 0.45,
+          gap: ds.spacing(4),
         }}
       >
-        <TouchableOpacity
-          onPress={handleDecrement}
-          activeOpacity={0.6}
-          accessibilityRole="button"
+        <ScalePressable
           accessibilityLabel={`Decrease ${line.itemName} quantity`}
-          style={{
-            width: stepperSize,
-            height: stepperSize,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          onPress={handleDecrement}
+          size={stepperSize}
+          backgroundColor={stepperBackground}
         >
           <Ionicons
             name="remove"
-            size={ds.icon(density === 'dense' ? 15 : 17)}
-            color={color.ink}
+            size={ds.icon(density === 'dense' ? 14 : 16)}
+            color={stepperGlyph}
           />
-        </TouchableOpacity>
+        </ScalePressable>
 
-        <TouchableOpacity
+        <Pressable
           onPress={handleOpenQuantity}
-          activeOpacity={0.6}
           accessibilityRole="button"
           accessibilityLabel={`Set ${line.itemName} quantity, now ${formatQuantity(line.quantity)} ${line.unit}`}
-          style={{
-            minWidth: ds.spacing(metrics.midMinWidth),
+          style={({ pressed }) => ({
+            minWidth: ds.spacing(metrics.quantityMinWidth),
             minHeight: stepperSize,
-            flexDirection: 'row',
-            alignItems: 'baseline',
+            alignItems: 'center',
             justifyContent: 'center',
-            gap: density === 'dense' ? 4 : 0,
-            paddingHorizontal: ds.spacing(4),
-            paddingVertical: ds.spacing(density === 'dense' ? 5 : 6),
-          }}
+            opacity: pressed ? 0.72 : 1,
+          })}
         >
           <Text
             style={{
               fontSize: ds.fontSize(metrics.quantityFontSize),
-              fontWeight: '700',
-              color: color.ink,
+              fontWeight: weight.bold,
+              color: line.checked ? color.ink : color.ink3,
+              fontVariant: ['tabular-nums'],
               textAlign: 'center',
             }}
           >
             {formatQuantity(line.quantity)}
           </Text>
-          {density === 'dense' ? (
-            <Text
-              numberOfLines={1}
-              style={{
-                maxWidth: ds.spacing(52),
-                fontSize: ds.fontSize(typeScale.caption),
-                color: color.ink3,
-              }}
-            >
-              {line.unit}
-            </Text>
-          ) : null}
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity
-          onPress={handleIncrement}
-          activeOpacity={0.6}
-          accessibilityRole="button"
+        <ScalePressable
           accessibilityLabel={`Increase ${line.itemName} quantity`}
-          style={{
-            width: stepperSize,
-            height: stepperSize,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          onPress={handleIncrement}
+          size={stepperSize}
+          backgroundColor={stepperBackground}
         >
           <Ionicons
             name="add"
-            size={ds.icon(density === 'dense' ? 15 : 17)}
-            color={color.accent}
+            size={ds.icon(density === 'dense' ? 14 : 16)}
+            color={stepperGlyph}
           />
-        </TouchableOpacity>
+        </ScalePressable>
       </View>
-    </View>
+
+      {!comfortable && !isLast ? (
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            left: ds.spacing(metrics.separatorInset),
+            right: ds.spacing(12),
+            bottom: 0,
+            height: 1,
+            backgroundColor: color.hairline,
+          }}
+        />
+      ) : null}
+      {comfortable && line.checked ? (
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            borderWidth: 1.5,
+            borderColor: color.accent,
+            borderRadius: radius.card,
+          }}
+        />
+      ) : null}
+    </Animated.View>
   );
 });

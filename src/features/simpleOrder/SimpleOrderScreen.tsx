@@ -8,12 +8,20 @@ import React, {
 } from 'react';
 import {
   RefreshControl,
+  ScrollView,
   SectionList,
+  type SectionListScrollParams,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { router, useFocusEffect } from 'expo-router';
 import {
   SafeAreaView,
@@ -21,6 +29,7 @@ import {
 } from 'react-native-safe-area-context';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, EmptyState, Loading, ScreenHeader, getTabBarClearance } from '@/components/ui';
+import { LocationPill } from '@/components/ui/LocationPill';
 import { useResolvedActiveLocation } from '@/hooks/useResolvedActiveLocation';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import {
@@ -43,9 +52,8 @@ import { getMyOrderSendMode, type OrderSendMode } from '@/services/orderSendMode
 import type { SendAllQueueProgress } from '@/features/fulfillment/sendAll/sendAllQueue';
 import { useAuthStore, useInventoryStore, useSettingsStore } from '@/store';
 import { useSimpleOrderUiStore } from '@/store/simpleOrderUiStore';
-import { color, radius, space, typeScale, weight } from '@/theme/tokens';
+import { color, motion, radius, tracking, typeScale, weight } from '@/theme/tokens';
 import type { InventoryItem, Location } from '@/types';
-import { LocationSwitcherDropdown } from '@/features/stock-check/components/LocationSwitcherDropdown';
 import {
   addedLineKey,
   buildDefaultLines,
@@ -74,8 +82,96 @@ import { NoteSheet } from './components/NoteSheet';
 import { PinnedOrderBar } from './components/PinnedOrderBar';
 import { QuantityCardSheet } from './components/QuantityCardSheet';
 import { QuickActionsSheet, type QuickAction } from './components/QuickActionsSheet';
-import { RecentOrdersSheet } from './components/RecentOrdersSheet';
 import { VoiceAddSheet } from './components/VoiceAddSheet';
+
+const SHEET_TRANSITION_MS = 240;
+
+interface SentOrderResult {
+  orderId: string;
+  itemCount: number;
+}
+
+function OrderSuccess({
+  result,
+  bottomClearance,
+  onDone,
+}: {
+  result: SentOrderResult;
+  bottomClearance: number;
+  onDone: () => void;
+}) {
+  const ds = useScaledStyles();
+  const progress = useSharedValue(0);
+
+  useEffect(() => {
+    progress.value = withTiming(1, {
+      duration: 420,
+      easing: Easing.bezier(...motion.pop),
+    });
+  }, [progress]);
+
+  const ringStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [{ scale: 0.6 + progress.value * 0.4 }],
+  }));
+
+  return (
+    <View
+      key={result.orderId}
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingBottom: bottomClearance,
+      }}
+    >
+      <Animated.View
+        style={[
+          {
+            width: 88,
+            height: 88,
+            marginBottom: ds.spacing(16),
+            borderRadius: radius.pill,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: color.goodBg,
+          },
+          ringStyle,
+        ]}
+      >
+        <Ionicons name="checkmark" size={ds.icon(44)} color={color.good} />
+      </Animated.View>
+      <Text
+        style={{
+          marginBottom: ds.spacing(6),
+          fontSize: ds.fontSize(typeScale.stat),
+          fontWeight: weight.bold,
+          color: color.ink,
+        }}
+      >
+        Order sent
+      </Text>
+      <Text
+        style={{
+          marginBottom: ds.spacing(20),
+          paddingHorizontal: ds.spacing(32),
+          fontSize: ds.fontSize(typeScale.itemDense),
+          color: color.ink2,
+          textAlign: 'center',
+        }}
+      >
+        {result.itemCount === 1 ? '1 item' : `${result.itemCount} items`} went to
+        your manager for review.
+      </Text>
+      <Button
+        label="Done"
+        onPress={onDone}
+        fullWidth={false}
+        accessibilityHint="Returns to the checklist"
+      />
+    </View>
+  );
+}
 
 export function SimpleOrderScreen() {
   const ds = useScaledStyles();
@@ -114,8 +210,6 @@ export function SimpleOrderScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [rareExpanded, setRareExpanded] = useState(true);
-  const [locationDropdownOpen, setLocationDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [displaySheetVisible, setDisplaySheetVisible] = useState(false);
   const [quickActionsVisible, setQuickActionsVisible] = useState(false);
@@ -123,15 +217,18 @@ export function SimpleOrderScreen() {
   const [note, setNote] = useState('');
   const [quantityKey, setQuantityKey] = useState<string | null>(null);
   const [voiceVisible, setVoiceVisible] = useState(false);
-  const [orderBarHeight, setOrderBarHeight] = useState(62);
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
-  const [sentItemCount, setSentItemCount] = useState<number | null>(null);
+  const [sentOrder, setSentOrder] = useState<SentOrderResult | null>(null);
   const [sendMode, setSendMode] = useState<OrderSendMode>('review');
   const [directSendGroups, setDirectSendGroups] = useState<DirectSendGroup[] | null>(null);
-  const [recentOrdersVisible, setRecentOrdersVisible] = useState(false);
+  const [selectedSectionKey, setSelectedSectionKey] = useState('all');
+  const [pendingScrollKey, setPendingScrollKey] = useState<string | null>(null);
+  const [newlyAddedKey, setNewlyAddedKey] = useState<string | null>(null);
   const [toast, setToast] = useState<ChecklistToastState | null>(null);
+  const listRef = useRef<SectionList<SelectionLine, DisplaySection>>(null);
+  const scrollTargetRef = useRef<SectionListScrollParams | null>(null);
   const loadRequestRef = useRef(0);
   const toastIdRef = useRef(0);
   const quickActionsTokenRef = useRef(quickActionsToken);
@@ -149,24 +246,31 @@ export function SimpleOrderScreen() {
   useEffect(() => {
     if (quickActionsToken !== quickActionsTokenRef.current) {
       quickActionsTokenRef.current = quickActionsToken;
-      setLocationDropdownOpen(false);
       setQuickActionsVisible(true);
     }
   }, [quickActionsToken]);
 
-  // History's Reorder stages lines in the ui store; apply them when the
-  // Order tab gains focus.
+  const applyPendingReorder = useCallback(() => {
+    if (!checklist) return;
+    const staged = consumePendingReorder();
+    if (!staged || staged.items.length === 0) return;
+    dispatch({ type: 'applyReorder', items: staged.items });
+    showToast(
+      `Loaded ${staged.items.length} ${staged.items.length === 1 ? 'item' : 'items'} from ${staged.sourceLabel}`,
+    );
+  }, [checklist, consumePendingReorder, showToast]);
+
+  // History can focus this screen before its asynchronous checklist load
+  // finishes. Consume the staged reorder only once there is a list to apply it to.
   useFocusEffect(
     useCallback(() => {
-      const staged = consumePendingReorder();
-      if (staged && staged.items.length > 0) {
-        dispatch({ type: 'applyReorder', items: staged.items });
-        showToast(
-          `Loaded ${staged.items.length} ${staged.items.length === 1 ? 'item' : 'items'} from ${staged.sourceLabel}`,
-        );
-      }
-    }, [consumePendingReorder, showToast]),
+      applyPendingReorder();
+    }, [applyPendingReorder]),
   );
+
+  useEffect(() => {
+    applyPendingReorder();
+  }, [applyPendingReorder]);
 
   // Manager-configured 5b preference; unknown/error safely means review mode.
   useEffect(() => {
@@ -218,7 +322,7 @@ export function SimpleOrderScreen() {
   );
 
   useEffect(() => {
-    setSentItemCount(null);
+    setSentOrder(null);
     void loadChecklist('load');
   }, [loadChecklist]);
 
@@ -238,12 +342,14 @@ export function SimpleOrderScreen() {
 
   const handleSelectLocation = useCallback(
     (next: Location) => {
-      setLocationDropdownOpen(false);
       if (next.id === location?.id) return;
       void triggerImpactHaptic(ImpactFeedbackStyle.Light);
+      setSearchQuery('');
+      setNote('');
       setLocation(next);
+      showToast(`Ordering for ${next.name.replace(/^Babytuna\s+/i, '')}`);
     },
-    [location?.id, setLocation],
+    [location?.id, setLocation, showToast],
   );
 
   const handleToggleLine = useCallback((key: string) => {
@@ -258,9 +364,17 @@ export function SimpleOrderScreen() {
     setQuantityKey(key);
   }, []);
 
-  const handleAddInventoryItem = useCallback((item: InventoryItem) => {
-    dispatch({ type: 'addInventoryItem', item });
-  }, []);
+  const handleAddInventoryItem = useCallback(
+    (item: InventoryItem) => {
+      const existing = selection.lines.find((line) => line.itemId === item.id);
+      const key = existing?.key ?? addedLineKey(item.id);
+      dispatch({ type: 'addInventoryItem', item });
+      setPendingScrollKey(key);
+      if (!existing) setNewlyAddedKey(key);
+      showToast(`${item.name} added`);
+    },
+    [selection.lines, showToast],
+  );
 
   const inventoryById = useMemo(
     () => new Map(inventoryItems.map((item) => [item.id, item])),
@@ -274,11 +388,8 @@ export function SimpleOrderScreen() {
   );
 
   const searchableItems = useMemo(
-    () =>
-      inventoryItems
-        .filter((item) => !item.location_id || item.location_id === location?.id)
-        .sort((left, right) => left.name.localeCompare(right.name)),
-    [inventoryItems, location?.id],
+    () => inventoryItems.filter((item) => item.active !== false),
+    [inventoryItems],
   );
 
   const catalogSearchIndex = useMemo(
@@ -319,6 +430,13 @@ export function SimpleOrderScreen() {
     }
     return ids;
   }, [checkedLines]);
+  const listedItemIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const line of selection.lines) {
+      if (line.itemId) ids.add(line.itemId);
+    }
+    return ids;
+  }, [selection.lines]);
 
   const { lines: sendLines, unmatchedNames } = useMemo(
     () => buildSendLines(selection),
@@ -333,11 +451,60 @@ export function SimpleOrderScreen() {
     () =>
       deriveDisplaySections(selection, {
         showCategories,
-        rareExpanded,
         categoryForItemId,
       }),
-    [categoryForItemId, rareExpanded, selection, showCategories],
+    [categoryForItemId, selection, showCategories],
   );
+
+  const categoryChips = useMemo(
+    () => [
+      { key: 'all', label: 'All', count: selection.lines.length },
+      ...(showCategories
+        ? listSections.map((section) => ({
+            key: section.key,
+            label: section.title.split(/\s+/)[0] ?? section.title,
+            count: section.totalCount,
+          }))
+        : []),
+    ],
+    [listSections, selection.lines.length, showCategories],
+  );
+
+  useEffect(() => {
+    if (selectedSectionKey === 'all') return;
+    if (!listSections.some((section) => section.key === selectedSectionKey)) {
+      setSelectedSectionKey('all');
+    }
+  }, [listSections, selectedSectionKey]);
+
+  useEffect(() => {
+    if (!pendingScrollKey) return;
+    const sectionIndex = listSections.findIndex((section) =>
+      section.data.some((line) => line.key === pendingScrollKey),
+    );
+    if (sectionIndex < 0) return;
+    const itemIndex = listSections[sectionIndex].data.findIndex(
+      (line) => line.key === pendingScrollKey,
+    );
+    const timeout = setTimeout(() => {
+      const target = {
+        sectionIndex,
+        itemIndex,
+        animated: true,
+        viewPosition: 0.5,
+      } satisfies SectionListScrollParams;
+      scrollTargetRef.current = target;
+      listRef.current?.scrollToLocation(target);
+      setPendingScrollKey(null);
+    }, 80);
+    return () => clearTimeout(timeout);
+  }, [listSections, pendingScrollKey]);
+
+  useEffect(() => {
+    if (!newlyAddedKey) return;
+    const timeout = setTimeout(() => setNewlyAddedKey(null), 460);
+    return () => clearTimeout(timeout);
+  }, [newlyAddedKey]);
 
   const quantityLine = useMemo(
     () => selection.lines.find((line) => line.key === quantityKey) ?? null,
@@ -391,18 +558,27 @@ export function SimpleOrderScreen() {
           break;
         }
         case 'note':
-          setNoteSheetVisible(true);
+          setTimeout(() => setNoteSheetVisible(true), SHEET_TRANSITION_MS);
           break;
         case 'display':
-          setDisplaySheetVisible(true);
+          setTimeout(() => setDisplaySheetVisible(true), SHEET_TRANSITION_MS);
           break;
         case 'receive':
           // Cast: .expo/types/router.d.ts is a stale generated artifact
           // (last regenerated June '26); the route file exists.
-          router.push('/(tabs)/receive-delivery' as Parameters<typeof router.push>[0]);
+          setTimeout(
+            () =>
+              router.push(
+                '/(tabs)/receive-delivery' as Parameters<typeof router.push>[0],
+              ),
+            SHEET_TRANSITION_MS,
+          );
           break;
         case 'recent':
-          setRecentOrdersVisible(true);
+          setTimeout(
+            () => router.push('/(tabs)/history' as Parameters<typeof router.push>[0]),
+            SHEET_TRANSITION_MS,
+          );
           break;
       }
     },
@@ -462,10 +638,12 @@ export function SimpleOrderScreen() {
     setIsSending(true);
     setSendError(null);
     try {
-      await sendChecklistOrder(selection.checklistId, sendLines, { note });
+      const result = await sendChecklistOrder(selection.checklistId, sendLines, { note });
       void triggerConfirmationHaptic();
       setConfirmVisible(false);
-      setSentItemCount(sendLines.length);
+      setSentOrder({ orderId: result.orderId, itemCount: sendLines.length });
+      setNote('');
+      dispatch({ type: 'clearAll' });
     } catch (error) {
       void triggerNotificationHaptic(NotificationFeedbackType.Error);
       setSendError(
@@ -492,12 +670,48 @@ export function SimpleOrderScreen() {
   );
 
   const handleSuccessDone = useCallback(() => {
-    setSentItemCount(null);
+    setSentOrder(null);
     setNote('');
-    if (checklist) {
-      dispatch({ type: 'init', checklist });
-    }
-  }, [checklist]);
+    dispatch({ type: 'clearAll' });
+  }, []);
+
+  const handleCategoryPress = useCallback(
+    (key: string) => {
+      const sectionIndex =
+        key === 'all'
+          ? 0
+          : listSections.findIndex((section) => section.key === key);
+      if (sectionIndex < 0 || listSections[sectionIndex].data.length === 0) return;
+      void triggerImpactHaptic(ImpactFeedbackStyle.Light);
+      setSelectedSectionKey(key);
+      const target = {
+        sectionIndex,
+        itemIndex: 0,
+        animated: true,
+        viewPosition: 0,
+      } satisfies SectionListScrollParams;
+      scrollTargetRef.current = target;
+      listRef.current?.scrollToLocation(target);
+    },
+    [listSections],
+  );
+
+  const handleScrollToIndexFailed = useCallback(
+    (info: {
+      index: number;
+      highestMeasuredFrameIndex: number;
+      averageItemLength: number;
+    }) => {
+      const target = scrollTargetRef.current;
+      if (!target) return;
+      listRef.current?.getScrollResponder()?.scrollTo({
+        y: Math.max(0, info.averageItemLength * info.highestMeasuredFrameIndex),
+        animated: false,
+      });
+      setTimeout(() => listRef.current?.scrollToLocation(target), 100);
+    },
+    [],
+  );
 
   const renderItem = useCallback(
     ({
@@ -511,145 +725,89 @@ export function SimpleOrderScreen() {
     }) => (
       <ChecklistItemRow
         line={item}
+        isFirst={index === 0}
         isLast={index === section.data.length - 1}
+        isNew={item.key === newlyAddedKey}
         density={density}
         onToggle={handleToggleLine}
         onAdjustQuantity={handleAdjustQuantity}
         onOpenQuantityCard={handleOpenQuantityCard}
       />
     ),
-    [density, handleAdjustQuantity, handleOpenQuantityCard, handleToggleLine],
+    [
+      density,
+      handleAdjustQuantity,
+      handleOpenQuantityCard,
+      handleToggleLine,
+      newlyAddedKey,
+    ],
   );
 
   const renderSectionHeader = useCallback(
-    ({ section }: { section: DisplaySection }) => {
-      if (section.isRare) {
-        return (
-          <TouchableOpacity
-            onPress={() => {
-              void triggerImpactHaptic(ImpactFeedbackStyle.Light);
-              setRareExpanded((prev) => !prev);
-            }}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityState={{ expanded: rareExpanded }}
-            accessibilityLabel={`Rarely ordered, ${section.rareCount ?? 0} items`}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              minHeight: 42,
-              marginTop: ds.spacing(10),
-              backgroundColor: color.page,
-            }}
-          >
-            <Text
-              style={{
-                flex: 1,
-                fontSize: ds.fontSize(typeScale.secondary),
-                fontWeight: '700',
-                letterSpacing: 0.6,
-                textTransform: 'uppercase',
-                color: color.ink2,
-              }}
-            >
-              {section.title}
-            </Text>
-            <Ionicons
-              name={rareExpanded ? 'chevron-up' : 'chevron-down'}
-              size={ds.icon(16)}
-              color={color.ink2}
-            />
-          </TouchableOpacity>
-        );
-      }
-
-      if (!section.title) return null;
-
-      return (
-        <View
+    ({ section }: { section: DisplaySection }) => (
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingTop: ds.spacing(14),
+          paddingBottom: ds.spacing(4),
+          paddingHorizontal: ds.spacing(2),
+          backgroundColor: color.page,
+        }}
+      >
+        <Text
           style={{
-            minHeight: density === 'dense' ? 26 : 32,
-            justifyContent: 'flex-end',
-            paddingBottom: ds.spacing(2),
-            marginTop: ds.spacing(density === 'dense' ? 8 : 12),
-            backgroundColor: color.page,
+            flex: 1,
+            fontSize: ds.fontSize(typeScale.caption),
+            fontWeight: weight.bold,
+            letterSpacing: tracking.caption,
+            textTransform: 'uppercase',
+            color: color.ink3,
           }}
         >
-          <Text
-            style={{
-              fontSize: ds.fontSize(density === 'dense' ? 11 : 12),
-              fontWeight: '700',
-              letterSpacing: 0.6,
-              textTransform: 'uppercase',
-              color: color.ink2,
-            }}
-          >
-            {section.title}
-          </Text>
-        </View>
-      );
-    },
-    [density, ds, rareExpanded],
+          {section.title}
+        </Text>
+        <Text
+          style={{
+            fontSize: ds.fontSize(typeScale.caption),
+            fontWeight: weight.semibold,
+            color: color.ink2,
+          }}
+        >
+          {section.selectedCount}/{section.totalCount}
+        </Text>
+      </View>
+    ),
+    [ds],
   );
 
-  const pillClearance = getTabBarClearance(insets.bottom);
-  const orderBarRestingBottom = pillClearance + ds.spacing(2);
-  // Pill toolbar + the pinned composer both float over the checklist, so the
-  // last row has to scroll a full row gap clear of the composer's top edge.
-  const listBottomPadding = orderBarRestingBottom + orderBarHeight + ds.spacing(32);
+  const renderSectionFooter = useCallback(
+    () => (
+      <View
+        style={{
+          height: density === 'comfort' ? 0 : ds.spacing(2),
+          backgroundColor: color.page,
+        }}
+      />
+    ),
+    [density, ds],
+  );
 
-  const locationLabel = (location?.name ?? 'Location').replace(/^Babytuna\s+/i, '');
+  const orderBarRestingBottom = getTabBarClearance(insets.bottom, 'pinned');
+  const listBottomPadding = getTabBarClearance(insets.bottom, 'order');
 
   let content: React.ReactNode;
   if (directSendGroups !== null) {
     content = (
       <DirectSendQueue groups={directSendGroups} onDone={handleDirectSendDone} />
     );
-  } else if (sentItemCount !== null) {
+  } else if (sentOrder !== null) {
     content = (
-      <View
-        style={{
-          flex: 1,
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingBottom: pillClearance,
-        }}
-      >
-        <Ionicons
-          name="checkmark-circle"
-          size={ds.icon(72)}
-          color={color.good}
-          style={{ marginBottom: ds.spacing(12) }}
-        />
-        <Text
-          style={{
-            fontSize: ds.fontSize(typeScale.title),
-            fontWeight: '700',
-            color: color.ink,
-            marginBottom: ds.spacing(4),
-          }}
-        >
-          Order sent
-        </Text>
-        <Text
-          style={{
-            fontSize: ds.fontSize(typeScale.body),
-            color: color.ink2,
-            textAlign: 'center',
-            paddingHorizontal: ds.spacing(32),
-            marginBottom: ds.spacing(20),
-          }}
-        >
-          {sentItemCount === 1 ? '1 item' : `${sentItemCount} items`} went to
-          your manager for review.
-        </Text>
-        <Button
-          label="Done"
-          onPress={handleSuccessDone}
-          fullWidth={false}
-          accessibilityHint="Returns to the checklist"
-        />
-      </View>
+      <OrderSuccess
+        result={sentOrder}
+        bottomClearance={getTabBarClearance(insets.bottom)}
+        onDone={handleSuccessDone}
+      />
     );
   } else if (isLoading) {
     content = <Loading label="Loading your checklist" />;
@@ -674,14 +832,20 @@ export function SimpleOrderScreen() {
   } else {
     content = (
       <SectionList
+        ref={listRef}
         sections={listSections}
         keyExtractor={(item) => item.key}
         renderItem={renderItem}
         renderSectionHeader={renderSectionHeader}
+        renderSectionFooter={renderSectionFooter}
         stickySectionHeadersEnabled={false}
         keyboardShouldPersistTaps="handled"
-        onScrollBeginDrag={() => setLocationDropdownOpen(false)}
-        contentContainerStyle={{ paddingBottom: listBottomPadding }}
+        showsVerticalScrollIndicator={false}
+        onScrollToIndexFailed={handleScrollToIndexFailed}
+        contentContainerStyle={{
+          paddingTop: ds.spacing(2),
+          paddingBottom: listBottomPadding,
+        }}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -698,103 +862,97 @@ export function SimpleOrderScreen() {
       edges={['top']}
       style={{ flex: 1, backgroundColor: color.page }}
     >
-      <View style={{ flex: 1, paddingHorizontal: ds.spacing(18) }}>
-        {/* Tight top: status bar → header → list, no dead band. */}
-        <View
-          style={{
-            zIndex: 10,
-            position: 'relative',
-            paddingTop: ds.spacing(2),
-            paddingBottom: ds.spacing(6),
-          }}
-        >
+      <View style={{ flex: 1, paddingHorizontal: ds.spacing(16) }}>
+        {sentOrder === null ? (
           <ScreenHeader
-            title="Checklist"
+            title="Order"
+            subtitle={`${selection.lines.length} items · ${checkedCount} selected`}
             includeSafeArea={false}
-            style={{ paddingHorizontal: 0, paddingBottom: 0 }}
+            style={{ paddingHorizontal: ds.spacing(4), paddingTop: ds.spacing(4) }}
             right={
-              <TouchableOpacity
-                onPress={() => {
-                  void triggerImpactHaptic(ImpactFeedbackStyle.Light);
-                  setLocationDropdownOpen((prev) => !prev);
-                }}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityState={{ expanded: locationDropdownOpen }}
-                accessibilityLabel={`Location: ${locationLabel}. Change location`}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: ds.spacing(space[2] - 1),
-                  backgroundColor: color.card,
-                  borderWidth: 1,
-                  borderColor: color.hairline,
-                  borderRadius: radius.pill,
-                  paddingHorizontal: ds.spacing(space[3]),
-                  paddingVertical: ds.spacing(space[2] - 1),
-                }}
-              >
-                <View
-                  style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: radius.pill,
-                    backgroundColor: color.accent,
-                  }}
-                />
-                <Text
-                  numberOfLines={1}
-                  style={{
-                    maxWidth: ds.spacing(120),
-                    fontSize: ds.fontSize(typeScale.secondary),
-                    fontWeight: weight.semibold,
-                    color: color.ink,
-                  }}
-                >
-                  {locationLabel}
-                </Text>
-                <Ionicons name="chevron-down" size={ds.icon(13)} color={color.ink2} />
-              </TouchableOpacity>
+              <LocationPill
+                location={location}
+                locations={locations}
+                onSelect={handleSelectLocation}
+              />
             }
           />
-          {/* Absolute wrapper: the dropdown always occupies layout space (it
-              animates opacity/scale), so anchoring it like Browse does keeps
-              the header tight — no dead band above the list. */}
-          <View
-            pointerEvents="box-none"
-            style={{ position: 'absolute', top: 44, left: 0, right: 0, zIndex: 30 }}
+        ) : null}
+
+        {directSendGroups === null && sentOrder === null ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{
+              gap: ds.spacing(8),
+              paddingHorizontal: ds.spacing(16),
+              paddingTop: ds.spacing(2),
+              paddingBottom: ds.spacing(6),
+            }}
+            style={{ marginHorizontal: ds.spacing(-16), flexGrow: 0 }}
           >
-            <LocationSwitcherDropdown
-              isOpen={locationDropdownOpen}
-              locations={locations}
-              selectedLocationId={location?.id ?? null}
-              onSelect={handleSelectLocation}
-              onRequestClose={() => setLocationDropdownOpen(false)}
-            />
-          </View>
-        </View>
+            {categoryChips.map((chip) => {
+              const selected = chip.key === selectedSectionKey;
+              return (
+                <TouchableOpacity
+                  key={chip.key}
+                  onPress={() => handleCategoryPress(chip.key)}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={`${chip.label}, ${chip.count} items`}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: ds.spacing(4),
+                    paddingHorizontal: ds.spacing(12),
+                    paddingVertical: ds.spacing(7),
+                    borderRadius: radius.pill,
+                    backgroundColor: selected ? color.ink : color.card,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: ds.fontSize(typeScale.secondary),
+                      fontWeight: weight.semibold,
+                      color: selected ? color.onAccent : color.ink2,
+                    }}
+                  >
+                    {chip.label}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: ds.fontSize(typeScale.secondary),
+                      color: selected ? color.onAccent : color.ink3,
+                    }}
+                  >
+                    {chip.count}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        ) : null}
 
         {content}
       </View>
 
       {directSendGroups === null &&
-      sentItemCount === null &&
+      sentOrder === null &&
       !isLoading &&
       !loadError ? (
         <PinnedOrderBar
           query={searchQuery}
           onQueryChange={setSearchQuery}
           results={searchResults}
+          listedItemIds={listedItemIds}
           selectedItemIds={selectedItemIds}
           onAddItem={handleAddInventoryItem}
           checkedCount={checkedCount}
           onPressSend={handleOpenConfirm}
           voiceAvailable
           onPressMic={() => setVoiceVisible(true)}
-          hasNote={note.trim().length > 0}
-          onPressNote={() => setNoteSheetVisible(true)}
           restingBottom={orderBarRestingBottom}
-          onHeightChange={setOrderBarHeight}
         />
       ) : null}
 
@@ -854,7 +1012,7 @@ export function SimpleOrderScreen() {
         note={note}
         onEditNote={() => {
           setConfirmVisible(false);
-          setNoteSheetVisible(true);
+          setTimeout(() => setNoteSheetVisible(true), SHEET_TRANSITION_MS);
         }}
         isSending={isSending}
         sendError={sendError}
@@ -862,14 +1020,9 @@ export function SimpleOrderScreen() {
         onClose={() => setConfirmVisible(false)}
       />
 
-      <RecentOrdersSheet
-        visible={recentOrdersVisible}
-        onClose={() => setRecentOrdersVisible(false)}
-      />
-
       <ChecklistToast
         toast={toast}
-        bottom={orderBarRestingBottom + orderBarHeight + ds.spacing(12)}
+        bottom={200}
         onExpire={() => setToast(null)}
       />
     </SafeAreaView>

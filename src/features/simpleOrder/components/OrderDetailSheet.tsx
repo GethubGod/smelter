@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Card, SectionLabel, Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { color, typeScale, weight } from '@/theme/tokens';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 import { formatHistoryDate, formatSentTime, type RecentOrder } from '../recentOrders';
 
 export function OrderDetailSheet({ order, onClose, onReorder }: {
@@ -20,17 +20,17 @@ export function OrderDetailSheet({ order, onClose, onReorder }: {
       label: `Reorder these ${count} items`, onPress: () => { onClose(); setTimeout(() => onReorder(order), 240); },
     } : undefined}>
     {order ? <>
-      <View style={{ flexDirection: 'row', gap: ds.spacing(8) }}>
+      <View style={{ flexDirection: 'row', gap: ds.spacing(10) }}>
         {[{ value: String(count), label: 'items' }, { value: order.supplierName.split(' ')[0], label: 'supplier' }, { value: order.status ?? 'Sent', label: 'status' }].map(stat =>
-          <Card key={stat.label} style={{ flex: 1, alignItems: 'center' }}>
+          <View key={stat.label} style={{ flex: 1, backgroundColor: color.card, borderRadius: radius.control, padding: ds.spacing(12) }}>
             <Text numberOfLines={1} style={{ fontSize: ds.fontSize(typeScale.stat), fontWeight: weight.bold, color: color.ink }}>{stat.value}</Text>
-            <Text style={{ fontSize: ds.fontSize(typeScale.caption), color: color.ink3 }}>{stat.label}</Text>
-          </Card>)}
+            <Text style={{ fontSize: ds.fontSize(typeScale.meta), color: color.ink2 }}>{stat.label}</Text>
+          </View>)}
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}><SectionLabel>Items</SectionLabel><Text style={{ fontSize: ds.fontSize(typeScale.caption), color: color.ink3 }}>{count}</Text></View>
       <Card flush>{order.reorderItems.map((item, index) => <View key={`${item.itemId ?? item.itemName}-${index}`} style={{ marginHorizontal: ds.spacing(14), paddingVertical: ds.spacing(12), flexDirection: 'row', gap: ds.spacing(12), borderBottomWidth: index === order.reorderItems.length - 1 ? 0 : 1, borderBottomColor: color.hairline }}>
-        <Text style={{ flex: 1, fontSize: ds.fontSize(typeScale.body), color: color.ink }}>{item.itemName}</Text>
-        <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink, fontWeight: weight.semibold }}>{item.quantity}{item.unit ? ` ${item.unit}` : ''}</Text>
+        <Text style={{ flex: 1, fontSize: ds.fontSize(typeScale.itemDense), color: color.ink }}>{item.itemName}</Text>
+        <Text style={{ fontSize: ds.fontSize(typeScale.itemDense), color: color.ink, fontWeight: weight.semibold }}>{item.quantity}{item.unit ? ` ${item.unit}` : ''}</Text>
       </View>)}</Card>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
         <SectionLabel>Message as sent</SectionLabel>
