@@ -1,3 +1,6 @@
+import { GlidePage } from "@/components/ui/GlidePage";
+import { Easing } from "react-native";
+import { motion } from "@/theme/tokens";
 import { Redirect, Tabs } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
@@ -19,7 +22,7 @@ const PILL_TAB_META: Record<
   "quick-order": { label: "Advanced", icon: "flash-outline" },
   cart: { label: "Cart", icon: "bag-handle-outline" },
   history: { label: "History", icon: "time-outline" },
-  settings: { label: "Settings", icon: "person-circle-outline" },
+  settings: { label: "Settings", icon: "person-outline" },
 };
 
 /** Hidden routes highlight their pill parent (receive lives under Order, …). */
@@ -31,7 +34,7 @@ const ROUTE_PILL_ALIAS: Record<string, string> = {
 };
 
 /** Routes where the pill appends the divider + quick-actions dots. */
-const QUICK_ACTION_ROUTES = new Set(["simple-order", "receive-delivery"]);
+const QUICK_ACTION_ROUTES = new Set(["simple-order"]);
 
 interface EmployeeTabBarProps extends BottomTabBarProps {
   /** Visible tab route names, in display order (getVisibleEmployeeTabs). */
@@ -140,7 +143,10 @@ export default function TabsLayout() {
           light glyphs on a light screen. */}
       <StatusBar style="dark" />
       <Tabs
-        screenOptions={{ headerShown: false }}
+        backBehavior="history"
+        detachInactiveScreens={false}
+        screenLayout={({ children }) => <GlidePage>{children}</GlidePage>}
+        screenOptions={{ headerShown: false, animation: "fade", transitionSpec: { animation: "timing", config: { duration: 340, easing: Easing.bezier(...motion.ease) } }, sceneStyleInterpolator: () => ({ sceneStyle: {} }) }}
         tabBar={(props) => (
           <EmployeeTabBar
             {...props}

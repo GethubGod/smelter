@@ -35,6 +35,7 @@ export function Card({
         {
           backgroundColor: onDark ? auth.well : selected ? color.tint : color.card,
           borderRadius: radius.card,
+          overflow: 'hidden',
           borderWidth: selected ? 1.5 : onDark ? 1 : 0,
           borderColor,
           paddingHorizontal: flush ? 0 : ds.spacing(space[3] + 2),

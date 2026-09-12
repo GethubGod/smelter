@@ -14,6 +14,7 @@ export interface RecentOrder {
   createdAt: string;
   itemCount: number | null;
   messageText: string;
+  status?: string;
   /** Lines that can be loaded back into today's checklist via Reorder. */
   reorderItems: ReorderItem[];
 }
@@ -94,7 +95,7 @@ export function formatHistoryDate(iso: string, now: Date = new Date()): string {
     return relative;
   }
   const date = new Date(iso);
-  const weekday = date.toLocaleDateString('en-US', { weekday: 'long' });
+  const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
   return `${weekday}, ${relative}`;
 }
 
@@ -166,4 +167,57 @@ export async function listMyRecentOrders(limit = 20): Promise<RecentOrder[]> {
 
   if (error) throw error;
   return ((data ?? []) as RecentOrderRow[]).map(mapRecentOrderRow);
+}
+
+function record(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === 'object' && !Array.isArray(value) ? Object.fromEntries(Object.entries(value)) : null;
+}
+
+/** Submitted checklist orders are visible immediately, before supplier fulfillment. */
+export function mapSubmittedHistoryOrder(value: unknown): RecentOrder | null {
+  const row = record(value);
+  if (!row || typeof row.id !== 'string' || typeof row.created_at !== 'string') return null;
+  const lines = Array.isArray(row.order_items) ? row.order_items : [];
+  const suppliers = new Set<string>();
+  const reorderItems: ReorderItem[] = [];
+  for (const raw of lines) {
+    const line = record(raw);
+    const item = record(line?.inventory_item);
+    if (!line || !item || typeof item.name !== 'string') continue;
+    const quantity = Number(line.quantity_requested ?? line.quantity);
+    if (!Number.isFinite(quantity) || quantity <= 0) continue;
+    const supplier = record(item.supplier);
+    if (typeof supplier?.name === 'string') suppliers.add(supplier.name);
+    const unit = line.unit_label ?? (line.unit_type === 'pack' ? item.pack_unit : item.base_unit);
+    reorderItems.push({ itemId: typeof line.inventory_item_id === 'string' ? line.inventory_item_id : null, itemName: item.name, quantity, unit: typeof unit === 'string' ? unit : null });
+  }
+  return { id: row.id, createdAt: row.created_at, supplierName: [...suppliers].join(', ') || 'Supplier', itemCount: reorderItems.length,
+    reorderItems, messageText: '', status: row.status === 'fulfilled' ? 'Sent' : 'Pending' };
+}
+
+export async function listMyOrderHistory(locationId?: string): Promise<RecentOrder[]> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  const userId = userData.user?.id;
+  if (!userId) throw new Error('You must be signed in to view recent orders.');
+  const since = new Date(Date.now() - 90 * DAY_MS).toISOString();
+  const archivesQuery = supabase.from('past_orders').select('id,supplier_name,created_at,message_text,payload').eq('created_by', userId).gte('created_at', since);
+  let ordersQuery = supabase.from('orders').select('id,created_at,status,order_items(id,inventory_item_id,quantity,quantity_requested,unit_type,unit_label,inventory_item:inventory_items(name,base_unit,pack_unit,supplier:suppliers!inventory_items_supplier_id_fkey(name)))').eq('user_id', userId).in('status', ['submitted', 'processing', 'fulfilled']).eq('entry_method', 'simple_checklist').gte('created_at', since);
+  if (locationId) ordersQuery = ordersQuery.eq('location_id', locationId);
+  const [archives, orders] = await Promise.all([archivesQuery.order('created_at', { ascending: false }).limit(200), ordersQuery.order('created_at', { ascending: false }).limit(200)]);
+  if (archives.error) throw archives.error;
+  if (orders.error) throw orders.error;
+  const consumed = new Set<string>();
+  for (const archive of archives.data ?? []) {
+    const payload = record(archive.payload);
+    const ids = payload?.sourceOrderItemIds ?? payload?.source_order_item_ids;
+    if (Array.isArray(ids)) for (const id of ids) if (typeof id === 'string') consumed.add(id);
+  }
+  const rawOrders: unknown[] = orders.data ?? [];
+  const submitted = rawOrders.filter(value => {
+    const row = record(value);
+    const lines: unknown[] = Array.isArray(row?.order_items) ? row.order_items : [];
+    return !lines.length || !lines.every(value => { const line = record(value); return typeof line?.id === 'string' && consumed.has(line.id); });
+  }).map(mapSubmittedHistoryOrder).filter((order): order is RecentOrder => order !== null);
+  return [...(archives.data ?? []).map(mapRecentOrderRow), ...submitted].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 }

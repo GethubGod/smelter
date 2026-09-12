@@ -1,3 +1,5 @@
+import { NoticeSheet } from "@/components/ui/NoticeSheet";
+import { StudioToast } from "@/components/ui/StudioToast";
 import React, { useEffect } from "react";
 import {
   LogBox,
@@ -172,6 +174,8 @@ export default function RootLayout() {
         <Stack.Screen name="suspended" options={{ headerShown: false }} />
         <Stack.Screen name="join" options={{ headerShown: false }} />
       </Stack>
+      <StudioToast />
+      <NoticeSheet />
     </GestureHandlerRootView>
   );
 
