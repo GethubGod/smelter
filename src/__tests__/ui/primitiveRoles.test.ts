@@ -213,6 +213,18 @@ describe('StatusPill', () => {
     );
     expect(withRole(root, 'text')[0].props.accessibilityLabel).toBe('Status: 1 ready');
   });
+
+  it('can omit a redundant visual dot without changing the spoken status', () => {
+    const root = render(
+      React.createElement(StatusPill, {
+        status: 'submitted',
+        label: 'Ready',
+        showDot: false,
+      }),
+    );
+    expect(withRole(root, 'text')[0].props.accessibilityLabel).toBe('Status: Ready');
+    expect(byHost(root, 'View')).toHaveLength(1);
+  });
 });
 
 describe('ScreenHeader', () => {

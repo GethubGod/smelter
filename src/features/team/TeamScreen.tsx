@@ -6,10 +6,10 @@ import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { useShallow } from 'zustand/react/shallow';
-import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
-import { Button, EmptyState, Loading, ScreenHeader } from '@/components/ui';
+import { Button, Card, EmptyState, ListRow, Loading, ScreenHeader, SectionLabel } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
+import { buildSettingsHref } from '@/lib/settingsNavigation';
 import { useAuthStore } from '@/store';
 import { color, space } from '@/theme/tokens';
 import { listManagedUsers, type ManagedUser } from '@/services/userManagement';
@@ -36,6 +36,26 @@ interface RosterEntry {
   locationId: string | null;
 }
 
+type DefaultsStatus = 'loading' | 'ready' | 'error';
+
+function summarizeDefaults(
+  defaults: EmployeeInviteDefaults | null,
+  status: DefaultsStatus,
+): string {
+  if (status === 'loading') return 'Loading defaults';
+  if (status === 'error' || !defaults) return 'Defaults unavailable';
+
+  const extraLabels = [
+    defaults.ordering_advanced ? 'Advanced ordering' : null,
+    defaults.stock_check ? 'Stock check' : null,
+    defaults.tips ? 'Tips' : null,
+  ].filter((label): label is string => label !== null);
+  const extras = extraLabels.length === 0
+    ? 'everything else off'
+    : `${extraLabels.join(', ')} on`;
+  return `Checklist ${defaults.ordering_simple ? 'on' : 'off'} · ${extras}`;
+}
+
 export default function TeamScreen() {
   const ds = useScaledStyles();
   const { backTo } = useSettingsNavigationContext();
@@ -43,17 +63,22 @@ export default function TeamScreen() {
 
   const [roster, setRoster] = useState<RosterEntry[] | null>(null);
   const [defaults, setDefaults] = useState<EmployeeInviteDefaults | null>(null);
+  const [defaultsStatus, setDefaultsStatus] = useState<DefaultsStatus>('loading');
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
+    setDefaultsStatus('loading');
     try {
-      const [users, locationIds, inviteDefaults] = await Promise.all([
+      const [users, locationIds, defaultsResult] = await Promise.all([
         listManagedUsers(),
         fetchDefaultLocationIds(),
-        getEmployeeInviteDefaults().catch(() => null),
+        getEmployeeInviteDefaults()
+          .then((value) => ({ status: 'ready' as const, value }))
+          .catch(() => ({ status: 'error' as const, value: null })),
       ]);
-      setDefaults(inviteDefaults);
+      setDefaults(defaultsResult.value);
+      setDefaultsStatus(defaultsResult.status);
 
       const entries: RosterEntry[] = await Promise.all(
         users.map(async (user) => {
@@ -83,40 +108,39 @@ export default function TeamScreen() {
     router.replace(backTo);
   };
 
-  const defaultsSummary = defaults
-    ? summarizeModules({ ...defaults, fulfillment: false } as EffectiveModules)
-    : 'Loading';
+  const defaultsSummary = summarizeDefaults(defaults, defaultsStatus);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.page }} edges={['left', 'right']}>
-      <ManagerScaleContainer>
-        <ScreenHeader
-          mode="pushed"
-          title="Team"
-          subtitle="Invites, features, and sign-in resets"
-          onBack={handleBack}
-          right={
-            <Button
-              size="small"
-              icon="add"
-              label="Invite"
-              onPress={() =>
-                router.push(
-                  '/(manager)/manager-settings/team-invite' as Parameters<typeof router.push>[0],
-                )
-              }
-            />
-          }
-        />
+      <ScreenHeader
+        mode="pushed"
+        title="Team"
+        onBack={handleBack}
+        right={
+          <Button
+            size="small"
+            label="Invite"
+            onPress={() =>
+              router.push(
+                buildSettingsHref('/(manager)/manager-settings/team-invite', {
+                  origin: 'manager',
+                  backTo,
+                }),
+              )
+            }
+          />
+        }
+      />
 
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{
-            paddingHorizontal: ds.spacing(space[4]),
-            paddingTop: ds.spacing(space[2]),
-            paddingBottom: ds.spacing(space[8]),
-          }}
-        >
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: ds.spacing(space[4]),
+          paddingTop: ds.spacing(space[2]),
+          paddingBottom: ds.spacing(space[8]),
+        }}
+        showsVerticalScrollIndicator={false}
+      >
           {error ? (
             <EmptyState
               icon="alert-circle-outline"
@@ -134,43 +158,56 @@ export default function TeamScreen() {
             </View>
           ) : null}
 
-          {(roster ?? []).map(({ user, modules, locationId }) => {
-            const group = groupForLocationId(locationId, locations);
-            const summary = user.is_suspended
-              ? 'Suspended'
-              : `${LOCATION_GROUP_LABELS[group]} · ${summarizeModules(modules)}`;
-            return (
-              <TeamRow
-                key={user.id}
-                initial={(user.full_name ?? user.email ?? '?').trim().charAt(0).toUpperCase() || '?'}
-                title={user.full_name ?? user.email ?? 'Unnamed'}
-                subtitle={summary}
+        {roster && roster.length > 0 ? (
+          <Card flush>
+            {roster.map(({ user, modules, locationId }, index) => {
+              const group = groupForLocationId(locationId, locations);
+              const locationSummary = LOCATION_GROUP_LABELS[group];
+              const summary = `${locationSummary} · ${
+                user.is_suspended ? 'Suspended' : summarizeModules(modules)
+              }`;
+              return (
+                <TeamRow
+                  key={user.id}
+                  initial={(user.full_name ?? user.email ?? '?').trim().charAt(0).toUpperCase() || '?'}
+                  title={user.full_name ?? user.email ?? 'Unnamed'}
+                  subtitle={summary}
+                  last={index === roster.length - 1}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/(manager)/manager-settings/team-member',
+                      params: { userId: user.id, origin: 'manager', backTo: String(backTo) },
+                    })
+                  }
+                />
+              );
+            })}
+          </Card>
+        ) : null}
+
+        {roster !== null ? (
+          <>
+            <SectionLabel>Defaults</SectionLabel>
+            <Card flush>
+              <ListRow
+                icon="sparkles-outline"
+                title="New employee defaults"
+                subtitle={defaultsSummary}
+                chevron
+                last
                 onPress={() =>
-                  router.push({
-                    pathname: '/(manager)/manager-settings/team-member',
-                    params: { userId: user.id },
-                  } as Parameters<typeof router.push>[0])
+                  router.push(
+                    buildSettingsHref('/(manager)/manager-settings/team-defaults', {
+                      origin: 'manager',
+                      backTo,
+                    }),
+                  )
                 }
               />
-            );
-          })}
-
-          {roster !== null ? (
-            <TeamRow
-              icon="options-outline"
-              initial=""
-              muted
-              title="New employee defaults"
-              subtitle={defaultsSummary === 'Nothing enabled' ? 'Everything off' : defaultsSummary}
-              onPress={() =>
-                router.push(
-                  '/(manager)/manager-settings/team-defaults' as Parameters<typeof router.push>[0],
-                )
-              }
-            />
-          ) : null}
-        </ScrollView>
-      </ManagerScaleContainer>
+            </Card>
+          </>
+        ) : null}
+      </ScrollView>
     </SafeAreaView>
   );
 }

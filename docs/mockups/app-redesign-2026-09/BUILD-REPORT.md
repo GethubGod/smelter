@@ -27,6 +27,14 @@ Stage B complete:
 - `npm run test:ci`: exit 0, 93 suites passed, 1 skipped; 1276 tests passed, 1 skipped, 1277 total. Earlier runs caught a native gesture option type error and root-layout test doubles missing the new notification hosts; corrected before the green run.
 - Simulator acceptance items 1 to 14 remain pending. No acceptance captures have been claimed.
 
+Stage C complete:
+
+- `npm run typecheck`: exit 0.
+- `npm run lint`: exit 0, no warnings.
+- `npm run test:ci`: exit 0, 96 suites passed, 1 skipped; 1291 tests passed, 1 skipped, 1292 total.
+- `git diff --check`: exit 0.
+- Worktree dependencies were cloned locally to isolate Expo quoting patches. `pod install --no-repo-update` initially failed in the sandbox on Hermes DNS, then succeeded with network access. Repeated after dependency isolation, it succeeded with 109 dependencies and 110 pods. Pod versions did not change; EXConstants and EXUpdates checksums reflect the required quoting patches.
+
 ## Deviations
 
 - The browser URL policy blocked opening the local `reference-glide.html`. Reference inspection uses its HTML, CSS, and interaction code. Interactive browser comparison has not been performed. No alternate browser or URL workaround was attempted.
@@ -39,6 +47,9 @@ Stage B complete:
 - Profile uses a 280ms horizontal transition with the contract easing, left shadow and 28pt/110pt edge-swipe rules. The tab navigator does not provide the reference's behind-screen parallax/dimming. Actual native Stack routes use 280ms simple-push; native easing, shadow/parallax and release threshold cannot be customized through the current native-stack API.
 - Direct-send review retains its existing supplier-specific subtitle and Continue to send action. Voice, Quantity and legacy Recent Orders retain their domain controls inside shared Sheet chrome. Existing reminders retain Remove reminder.
 
+- Supplier review retains the unit pill and overflow menu for existing conversion, supplier reassignment, order-later, note, removal and breakdown actions. Multiple real notes appear on separate accent lines. Secondary logistics forms retain their existing controls.
+- Inventory uses the reference list and search layout. Existing edit and bulk actions remain available through row press and long press. A usual quantity tag appears only when the checklist service supplies a real recommendation.
+
 ## Reference discrepancies
 
 - Dense stepper gap is 2 in the reference, while the general written row anatomy says 4.
@@ -46,4 +57,4 @@ Stage B complete:
 
 ## Remaining work
 
-Complete stages C and D, run each stage's full checks, build and walk the simulator acceptance checklist, review the integrated diff, and record final commands and risks here.
+Complete stage D, run each stage's full checks, build and walk the simulator acceptance checklist, review the integrated diff, and record final commands and risks here.

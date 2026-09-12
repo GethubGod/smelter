@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   FlatList,
   Platform,
   Share,
@@ -14,11 +13,10 @@ import { Redirect, router, useFocusEffect, useLocalSearchParams } from 'expo-rou
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
-import { SUPPLIER_CATEGORY_LABELS, colors } from '@/constants';
+import { SUPPLIER_CATEGORY_LABELS } from '@/constants';
 import { useAuthStore, useOrderStore, useSettingsStore } from '@/store';
 import { useShallow } from 'zustand/react/shallow';
 import { supabase } from '@/lib/supabase';
-import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
 import {
   FulfillmentConfirmItemRow,
   QuantityExportSelector,
@@ -26,7 +24,7 @@ import {
 } from '@/features/fulfillment/components';
 import { OrderLaterScheduleModal } from '@/features/fulfillment/components/OrderLaterScheduleModal';
 import type { SupplierPickerOption } from '@/features/fulfillment/components';
-import { GlassSurface, ItemActionSheet } from '@/components';
+import { ItemActionSheet } from '@/components';
 import type { ItemActionSheetSection } from '@/components';
 import { buildSupplierConfirmationData } from '@/services/fulfillmentDataSource';
 import { loadSupplierLookup, type SupplierLookupRow } from '@/services/supplierResolver';
@@ -44,30 +42,12 @@ import {
   type UnitLabelAvailability,
   type UnitSelectorProps,
 } from '@/features/fulfillment/unitLabels';
-import {
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-  glassSpacing,
-} from '@/theme/design';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { useModuleAccessGuard } from '@/hooks';
-import { color, typeScale, weight } from '@/theme/tokens';
-import { Button } from '@/components/ui/Button';
+import { color, radius, space, typeScale, weight } from '@/theme/tokens';
+import { Button, Card, ScreenHeader, SectionLabel, StatusPill } from '@/components/ui';
+import { showNotice } from '@/components/ui/NoticeSheet';
 import { Sheet } from '@/components/ui/Sheet';
-
-const AVATAR_PALETTE = [
-  { background: color.well, text: color.ink2 },
-  { background: color.well, text: color.ink2 },
-  { background: color.well, text: color.ink2 },
-  { background: color.well, text: color.ink2 },
-] as const;
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  return name.slice(0, 2).toUpperCase();
-}
 
 interface ConfirmationDetail {
   locationId?: string;
@@ -97,50 +77,6 @@ const LOCATION_GROUP_LABELS: Record<LocationGroup, string> = {
   sushi: 'Sushi',
   poki: 'Poki',
 };
-
-interface LocationSectionLabelProps {
-  group: LocationGroup;
-  count: number;
-}
-
-function LocationSectionLabel({
-  group,
-  count,
-}: LocationSectionLabelProps) {
-  const ds = useScaledStyles();
-  const label = `${LOCATION_GROUP_LABELS[group]} · ${count} item${count === 1 ? '' : 's'}`;
-
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <View style={{ flex: 1, height: 1, backgroundColor: glassColors.divider }} />
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          marginHorizontal: ds.spacing(12),
-        }}
-      >
-        <Ionicons
-          name="location-outline"
-          size={ds.icon(14)}
-          color={glassColors.textSecondary}
-        />
-        <Text
-          style={{
-            fontSize: ds.fontSize(typeScale.body),
-            fontWeight: weight.bold,
-            color: glassColors.textSecondary,
-            letterSpacing: -0.2,
-            marginLeft: ds.spacing(6),
-          }}
-        >
-          {label}
-        </Text>
-      </View>
-      <View style={{ flex: 1, height: 1, backgroundColor: glassColors.divider }} />
-    </View>
-  );
-}
 
 interface ConfirmationItem {
   id: string;
@@ -182,17 +118,9 @@ interface RemainingConfirmationItem {
   secondarySupplierId: string | null;
 }
 
-type RegularListEntry =
-  | {
-      key: string;
-      type: 'group-header';
-      group: LocationGroup;
-    }
-  | {
-      key: string;
-      type: 'regular-item';
-      item: ConfirmationItem;
-    };
+type ReviewListEntry =
+  | { key: string; type: 'regular'; item: ConfirmationItem }
+  | { key: string; type: 'remaining'; item: RemainingConfirmationItem };
 
 function parseParamArray<T>(value: string | string[] | undefined): T[] {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -227,6 +155,20 @@ function toNonNegativeNumber(value: unknown, fallback = 0): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.max(0, parsed);
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim()) return error.message;
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof error.message === 'string' &&
+    error.message.trim()
+  ) {
+    return error.message;
+  }
+  return fallback;
 }
 
 function formatQuantity(value: number): string {
@@ -378,6 +320,7 @@ interface RemainingItemRowProps {
   onUnitChange: (unit: 'base' | 'pack') => void;
   onQuantityChange: (item: RemainingConfirmationItem, value: number | null) => void;
   onOverflowPress: (item: RemainingConfirmationItem) => void;
+  last?: boolean;
 }
 
 const RemainingItemRow = React.memo(function RemainingItemRow({
@@ -390,130 +333,63 @@ const RemainingItemRow = React.memo(function RemainingItemRow({
   onUnitChange,
   onQuantityChange,
   onOverflowPress,
+  last = false,
 }: RemainingItemRowProps) {
   const ds = useScaledStyles();
-  const [showDetails, setShowDetails] = useState(false);
-  const hasContributorBreakdown = contributorBreakdown.length > 1;
-
-  const orderedByContent = (
-    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <View
-        style={{
-          width: ds.spacing(26),
-          height: ds.spacing(26),
-          borderRadius: ds.spacing(13),
-          backgroundColor: AVATAR_PALETTE[0].background,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Text style={{ color: AVATAR_PALETTE[0].text, fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold }}>
-          {getInitials(item.orderedBy)}
-        </Text>
-      </View>
-      <View style={{ flex: 1, marginLeft: ds.spacing(8) }}>
-        <Text
-          style={{
-            fontSize: ds.fontSize(typeScale.secondary),
-            fontWeight: weight.semibold,
-            color: glassColors.textSecondary,
-          }}
-          numberOfLines={1}
-        >
-          {item.orderedBy}
-        </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: ds.spacing(2) }}>
-          <Ionicons name="location-outline" size={ds.icon(12)} color={glassColors.textSecondary} />
-          <Text
-            style={{
-              marginLeft: ds.spacing(4),
-              fontSize: ds.fontSize(typeScale.secondary),
-              fontWeight: weight.semibold,
-              color: glassColors.textSecondary,
-            }}
-            numberOfLines={1}
-          >
-            {item.locationName} ({item.shortCode})
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
-
-  const inlineNotesContent = item.note ? (
-    <View
-      style={{
-        borderRadius: glassRadii.button,
-        backgroundColor: color.tint,
-        borderWidth: glassHairlineWidth,
-        borderColor: color.hairline,
-        paddingHorizontal: ds.spacing(12),
-        paddingVertical: ds.spacing(8),
-      }}
-    >
-      <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: color.accent }}>
-        {item.orderedBy} · {item.locationName} ({item.shortCode})
-      </Text>
-      <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink, marginTop: ds.spacing(3) }}>
-        {item.note}
-      </Text>
-    </View>
-  ) : null;
+  const breakdown = contributorBreakdown.length > 0
+    ? contributorBreakdown
+        .map((entry) => `${entry.name} ${formatQuantity(entry.reportedTotal)}`)
+        .join(' · ')
+    : `${item.orderedBy} ${formatQuantity(item.reportedRemaining)}`;
 
   return (
     <FulfillmentConfirmItemRow
       title={item.name}
-      orderedByContent={orderedByContent}
-      inlineNotesContent={inlineNotesContent}
-      headerActions={(
-        <>
-          <TouchableOpacity
-            onPress={() => onOverflowPress(item)}
-            style={{ padding: ds.spacing(6), marginRight: ds.spacing(4) }}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="ellipsis-horizontal" size={ds.icon(22)} color={glassColors.textPrimary} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setShowDetails((prev) => !prev)}
-            style={{ padding: ds.spacing(6) }}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons
-              name={showDetails ? 'information-circle' : 'information-circle-outline'}
-              size={ds.icon(22)}
-              color={showDetails ? glassColors.accent : glassColors.textPrimary}
-            />
-          </TouchableOpacity>
-        </>
-      )}
-      chips={[
-        {
-          id: `${item.orderItemId}-reported`,
-          label: `Reported: ${formatQuantity(item.reportedRemaining)} ${item.unitLabel}`,
-          tone: 'gray',
-        },
-      ]}
+      orderedByContent={
+        <Text
+          numberOfLines={1}
+          style={{ fontSize: ds.fontSize(typeScale.meta), color: color.ink3 }}
+        >
+          {breakdown}
+        </Text>
+      }
       trailingChip={
-        suggested != null ? (
+        suggested !== null ? (
           <TouchableOpacity
             onPress={() => onQuantityChange(item, suggested)}
+            accessibilityRole="button"
+            accessibilityLabel={`Use suggested quantity ${formatQuantity(suggested)} for ${item.name}`}
             style={{
-              paddingHorizontal: ds.spacing(12),
-              paddingVertical: ds.spacing(6),
-              borderRadius: glassRadii.pill,
-              backgroundColor: glassColors.accentSoft,
-              borderWidth: glassHairlineWidth,
-              borderColor: glassColors.accentBorder,
+              paddingHorizontal: ds.spacing(7),
+              paddingVertical: ds.spacing(3),
+              borderRadius: radius.pill,
+              backgroundColor: color.tint,
             }}
           >
-            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.bold, color: glassColors.accent }}>
-              Suggested: {formatQuantity(suggested)}
+            <Text
+              style={{
+                fontSize: ds.fontSize(typeScale.meta),
+                fontWeight: weight.semibold,
+                color: color.accent,
+              }}
+            >
+              Suggested {formatQuantity(suggested)}
             </Text>
           </TouchableOpacity>
         ) : undefined
       }
-      quantityValue={item.decidedQuantity == null ? '' : `${item.decidedQuantity}`}
+      headerActions={
+        <TouchableOpacity
+          onPress={() => onOverflowPress(item)}
+          accessibilityRole="button"
+          accessibilityLabel={`More actions for ${item.name}`}
+          style={{ padding: ds.spacing(4) }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="ellipsis-horizontal" size={ds.icon(18)} color={color.ink3} />
+        </TouchableOpacity>
+      }
+      quantityValue={item.decidedQuantity === null ? '' : formatQuantity(item.decidedQuantity)}
       onQuantityChangeText={(text) => {
         const sanitized = text.replace(/[^0-9.]/g, '');
         if (sanitized.length === 0) {
@@ -532,8 +408,8 @@ const RemainingItemRow = React.memo(function RemainingItemRow({
         const current = item.decidedQuantity ?? 0;
         onQuantityChange(item, current + 1);
       }}
-      quantityPlaceholder="Set qty"
-      unitSelector={(
+      quantityPlaceholder="–"
+      unitSelector={
         <QuantityExportSelector
           exportUnitType={exportUnitType}
           baseUnitLabel={unitSelectorProps.baseUnitLabel}
@@ -541,87 +417,16 @@ const RemainingItemRow = React.memo(function RemainingItemRow({
           canSwitchUnit={unitSelectorProps.canSwitchUnit}
           onUnitChange={onUnitChange}
         />
-      )}
-      detailsVisible={showDetails}
-      details={(
-        <View
-          style={{
-            borderRadius: glassRadii.button,
-            borderWidth: glassHairlineWidth,
-            borderColor: glassColors.cardBorder,
-            backgroundColor: glassColors.subtleFill,
-            paddingHorizontal: ds.spacing(14),
-            paddingVertical: ds.spacing(14),
-          }}
-        >
-          <View style={{ marginBottom: (hasContributorBreakdown || item.note) ? ds.spacing(12) : 0 }}>
-            <Text style={{ fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold, color: glassColors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Ordered By</Text>
-            <Text style={{ fontSize: ds.fontSize(typeScale.body), color: glassColors.textPrimary, marginTop: ds.spacing(4) }}>
-              {hasContributorBreakdown ? `${contributorBreakdown.length} people` : item.orderedBy}
-            </Text>
-          </View>
-
-          {hasContributorBreakdown && (
-            <View style={{ marginBottom: item.note ? ds.spacing(12) : 0 }}>
-              {contributorBreakdown.map((entry, index) => (
-                <View
-                  key={`${item.orderItemId}-contributor-${entry.name}`}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    paddingVertical: ds.spacing(6),
-                    borderBottomWidth: index < contributorBreakdown.length - 1 ? glassHairlineWidth : 0,
-                    borderBottomColor: glassColors.divider,
-                  }}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View
-                      style={{
-                        width: ds.spacing(22),
-                        height: ds.spacing(22),
-                        borderRadius: ds.spacing(11),
-                        backgroundColor: AVATAR_PALETTE[index % AVATAR_PALETTE.length].background,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginRight: ds.spacing(8),
-                      }}
-                    >
-                      <Text style={{ color: AVATAR_PALETTE[index % AVATAR_PALETTE.length].text, fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold }}>
-                        {getInitials(entry.name)}
-                      </Text>
-                    </View>
-                    <Text style={{ fontSize: ds.fontSize(typeScale.body), color: glassColors.textPrimary }}>{entry.name}</Text>
-                  </View>
-                  <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: glassColors.textSecondary }}>
-                    {formatQuantity(entry.reportedTotal)} {item.unitLabel}
-                    {entry.rowCount > 1 ? ` · ${entry.rowCount} entries` : ''}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-          <View style={{ marginBottom: item.note ? ds.spacing(12) : 0 }}>
-            <Text style={{ fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold, color: glassColors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Location</Text>
-            <Text style={{ fontSize: ds.fontSize(typeScale.body), color: glassColors.textPrimary, marginTop: ds.spacing(4) }}>
-              {item.locationName} ({item.shortCode})
-            </Text>
-            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: glassColors.textSecondary, marginTop: ds.spacing(4) }}>
-              Reported amount: {formatQuantity(item.reportedRemaining)} {item.unitLabel}
-            </Text>
-          </View>
-
-          {item.note ? (
-            <View>
-              <Text style={{ fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold, color: glassColors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Notes</Text>
-              <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent, marginTop: ds.spacing(4) }}>{item.note}</Text>
-            </View>
-          ) : null}
-        </View>
-      )}
-      footer={isSaving ? <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: glassColors.textSecondary }}>Saving...</Text> : undefined}
+      }
+      footer={
+        isSaving ? (
+          <Text style={{ fontSize: ds.fontSize(typeScale.meta), color: color.ink3 }}>
+            Saving…
+          </Text>
+        ) : undefined
+      }
       disableControls={isSaving}
+      last={last}
     />
   );
 });
@@ -810,14 +615,12 @@ function FulfillmentConfirmationScreen() {
 
   const [items, setItems] = useState<ConfirmationItem[]>(initialItems);
   const [remainingItems, setRemainingItems] = useState<RemainingConfirmationItem[]>(initialRemainingItems);
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [savingRemainingIds, setSavingRemainingIds] = useState<Set<string>>(new Set());
   const [lastOrderedByRemainingId, setLastOrderedByRemainingId] = useState<
     Record<string, { quantity: number; orderedAt: string }>
   >({});
   const [loadingLastOrdered, setLoadingLastOrdered] = useState(false);
   const [historyUnavailableOffline, setHistoryUnavailableOffline] = useState(false);
-  const [showRetryActions, setShowRetryActions] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
   const finalizeInFlightRef = useRef(false);
   const [orderLaterTarget, setOrderLaterTarget] = useState<
@@ -871,6 +674,9 @@ function FulfillmentConfirmationScreen() {
   const supplierLabelParam = Array.isArray(params.supplierLabel)
     ? params.supplierLabel[0]
     : params.supplierLabel;
+  const openedFromSendAll = (
+    Array.isArray(params.from) ? params.from[0] : params.from
+  ) === 'send-all';
   const supplierId = useMemo(() => {
     if (typeof supplierParam !== 'string') return null;
     const trimmed = supplierParam.trim();
@@ -895,9 +701,7 @@ function FulfillmentConfirmationScreen() {
   useEffect(() => {
     setItems(initialItems);
     setRemainingItems(initialRemainingItems);
-    setExpandedItems(new Set());
     setSavingRemainingIds(new Set());
-    setShowRetryActions(false);
     setIsFinalizing(false);
     setOrderLaterTarget(null);
     setOverflowTarget(null);
@@ -965,10 +769,7 @@ function FulfillmentConfirmationScreen() {
         const lookup = await loadUnitConversionLookup(ids);
         if (!active) return;
         setUnitConversionLookup(lookup);
-      } catch (error) {
-        if (__DEV__) {
-          console.warn('[Fulfillment:Confirm] Unable to load unit conversions.', error);
-        }
+      } catch {
         if (active) {
           setUnitConversionLookup({});
         }
@@ -987,11 +788,7 @@ function FulfillmentConfirmationScreen() {
         if (!active) return;
         setSupplierOptions(lookup.suppliers);
       })
-      .catch((error) => {
-        if (__DEV__) {
-          console.warn('[Fulfillment:Confirm] Unable to load suppliers.', error);
-        }
-      });
+      .catch(() => {});
     return () => {
       active = false;
     };
@@ -1034,10 +831,7 @@ function FulfillmentConfirmationScreen() {
         regularItems: nextRegularItems,
         remainingItems: nextRemainingItems,
       };
-    } catch (error) {
-      if (__DEV__) {
-        console.warn('[Fulfillment:Confirm] Unable to refresh supplier payload from source.', error);
-      }
+    } catch {
       return null;
     }
   }, [fetchPendingFulfillmentOrders, getSupplierDraftItems, managerLocationIds, supplierId]);
@@ -1049,8 +843,12 @@ function FulfillmentConfirmationScreen() {
   );
 
   const handleBackPress = useCallback(() => {
+    if (openedFromSendAll) {
+      router.back();
+      return;
+    }
     router.replace('/(manager)/fulfillment');
-  }, []);
+  }, [openedFromSendAll]);
 
   const syncOrderStoreDecision = useCallback(
     (orderItemId: string, decidedQuantity: number, decidedBy: string, decidedAt: string) => {
@@ -1087,7 +885,7 @@ function FulfillmentConfirmationScreen() {
     async (orderItemId: string, quantity: number, options?: { silent?: boolean }) => {
       if (!user?.id) {
         if (!options?.silent) {
-          Alert.alert('Sign In Required', 'Please sign in again to save remaining item decisions.');
+          showNotice('Sign In Required', 'Please sign in again to save remaining item decisions.');
         }
         return false;
       }
@@ -1114,9 +912,9 @@ function FulfillmentConfirmationScreen() {
 
         syncOrderStoreDecision(orderItemId, quantity, user.id, decidedAt);
         return true;
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (!options?.silent) {
-          Alert.alert('Unable to Save Decision', error?.message || 'Please try again.');
+          showNotice('Unable to Save Decision', getErrorMessage(error, 'Please try again.'));
         }
         return false;
       } finally {
@@ -1387,28 +1185,79 @@ function FulfillmentConfirmationScreen() {
     );
   }, [remainingItems]);
 
-  const regularListEntries = useMemo<RegularListEntry[]>(() => {
-    const entries: RegularListEntry[] = [];
-    (['sushi', 'poki'] as LocationGroup[]).forEach((group) => {
-      const rows = groupedRegularItems[group];
-      if (!rows || rows.length === 0) return;
-      entries.push({
-        key: `group-header-${group}`,
-        type: 'group-header',
-        group,
-      });
-      rows.forEach((item) => {
-        entries.push({
-          key: `regular-${item.id}`,
-          type: 'regular-item',
-          item,
+  const reviewListEntries = useMemo<ReviewListEntry[]>(
+    () =>
+      [
+        ...items.map(
+          (item): ReviewListEntry => ({
+            key: `regular-${item.id}`,
+            type: 'regular',
+            item,
+          }),
+        ),
+        ...remainingItems.map(
+          (item): ReviewListEntry => ({
+            key: `remaining-${item.orderItemId}`,
+            type: 'remaining',
+            item,
+          }),
+        ),
+      ].sort((left, right) => {
+        const groupOrder: Record<LocationGroup, number> = { sushi: 0, poki: 1 };
+        return groupOrder[left.item.locationGroup] - groupOrder[right.item.locationGroup];
+      }),
+    [items, remainingItems],
+  );
+
+  const reviewNotes = useMemo(() => {
+    const seen = new Set<string>();
+    const notes: { id: string; text: string }[] = [];
+
+    items.forEach((item) => {
+      item.notes.forEach((note) => {
+        const key = note.text.trim().toLowerCase();
+        if (seen.has(key)) return;
+        seen.add(key);
+        notes.push({
+          id: `regular-${note.id}`,
+          text: note.text,
         });
       });
     });
-    return entries;
-  }, [groupedRegularItems]);
 
-  const regularItemCount = groupedRegularItems.sushi.length + groupedRegularItems.poki.length;
+    remainingItems.forEach((item) => {
+      const text = item.note?.trim();
+      if (!text) return;
+      const key = text.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      notes.push({
+        id: `remaining-${item.orderItemId}`,
+        text,
+      });
+    });
+
+    return notes;
+  }, [items, remainingItems]);
+
+  const peopleCount = useMemo(() => {
+    const names = new Set<string>();
+    items.forEach((item) => {
+      item.contributors.forEach((contributor) => {
+        const name = contributor.name.trim();
+        if (name && name !== 'Unknown') names.add(name.toLowerCase());
+      });
+      item.details.forEach((detail) => {
+        const name = detail.orderedBy.trim();
+        if (name && name !== 'Unknown') names.add(name.toLowerCase());
+      });
+    });
+    remainingItems.forEach((item) => {
+      const name = item.orderedBy.trim();
+      if (name && name !== 'Unknown') names.add(name.toLowerCase());
+    });
+    return names.size;
+  }, [items, remainingItems]);
 
   const remainingContributorBreakdownByOrderItemId = useMemo(() => {
     const groupedByItem = new Map<string, RemainingConfirmationItem[]>();
@@ -1614,24 +1463,12 @@ function FulfillmentConfirmationScreen() {
     return normalizedMessage;
   }, [exportFormat.template, formattedItems, supplierLabel]);
 
-  const toggleExpand = useCallback((id: string) => {
-    setExpandedItems((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  }, []);
-
   const persistRegularRemoval = useCallback(
     async (orderItemIds: string[], status: 'order_later' | 'cancelled' = 'cancelled') => {
       if (orderItemIds.length === 0) return true;
       const success = await markOrderItemsStatus(orderItemIds, status);
       if (!success) {
-        Alert.alert('Unable to Update Item', 'Please try again.');
+        showNotice('Unable to Update Item', 'Please try again.');
         return false;
       }
       return true;
@@ -1644,7 +1481,7 @@ function FulfillmentConfirmationScreen() {
       if (!orderItemId) return true;
       const success = await markOrderItemsStatus([orderItemId], status);
       if (!success) {
-        Alert.alert('Unable to Move Item', 'Please try again.');
+        showNotice('Unable to Move Item', 'Please try again.');
         return false;
       }
       return true;
@@ -1658,7 +1495,7 @@ function FulfillmentConfirmationScreen() {
       const targetName = item.secondarySupplierName;
       const targetId = item.secondarySupplierId;
 
-      Alert.alert(
+      showNotice(
         `Move to ${targetName}?`,
         `${item.name} will move back to ${targetName} on fulfillment.`,
         [
@@ -1669,7 +1506,7 @@ function FulfillmentConfirmationScreen() {
               void (async () => {
                 const moved = await setSupplierOverride(item.sourceOrderItemIds, targetId);
                 if (!moved) {
-                  Alert.alert('Unable to Move Item', 'Please try again.');
+                  showNotice('Unable to Move Item', 'Please try again.');
                   return;
                 }
 
@@ -1692,7 +1529,7 @@ function FulfillmentConfirmationScreen() {
       const targetName = item.secondarySupplierName;
       const targetId = item.secondarySupplierId;
 
-      Alert.alert(
+      showNotice(
         `Move to ${targetName}?`,
         `${item.name} will move back to ${targetName} on fulfillment.`,
         [
@@ -1703,7 +1540,7 @@ function FulfillmentConfirmationScreen() {
               void (async () => {
                 const moved = await setSupplierOverride([item.orderItemId], targetId);
                 if (!moved) {
-                  Alert.alert('Unable to Move Item', 'Please try again.');
+                  showNotice('Unable to Move Item', 'Please try again.');
                   return;
                 }
 
@@ -1773,11 +1610,6 @@ function FulfillmentConfirmationScreen() {
       }
 
       setItems((prev) => prev.filter((row) => row.id !== item.id));
-      setExpandedItems((prev) => {
-        const next = new Set(prev);
-        next.delete(item.id);
-        return next;
-      });
       return true;
     },
     [moveDraftItemsToSupplier, setSupplierOverride, supplierId]
@@ -1810,7 +1642,7 @@ function FulfillmentConfirmationScreen() {
             : await moveRemainingItemToSupplier(supplierPickerTarget.item, targetSupplierId);
 
         if (!success) {
-          Alert.alert('Unable to Move Item', 'Please try again.');
+          showNotice('Unable to Move Item', 'Please try again.');
           return;
         }
 
@@ -1827,7 +1659,7 @@ function FulfillmentConfirmationScreen() {
 
   const handleDelete = useCallback(
     (item: ConfirmationItem) => {
-      Alert.alert('Remove Item', `Remove ${item.name} from this supplier order?`, [
+      showNotice('Remove Item', `Remove ${item.name} from this supplier order?`, [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Remove',
@@ -1846,11 +1678,6 @@ function FulfillmentConfirmationScreen() {
               }
 
               setItems((prev) => prev.filter((row) => row.id !== item.id));
-              setExpandedItems((prev) => {
-                const next = new Set(prev);
-                next.delete(item.id);
-                return next;
-              });
             })();
           },
         },
@@ -1861,7 +1688,7 @@ function FulfillmentConfirmationScreen() {
 
   const handleDeleteRemaining = useCallback(
     (item: RemainingConfirmationItem) => {
-      Alert.alert('Remove Item', `Remove ${item.name} from this supplier order?`, [
+      showNotice('Remove Item', `Remove ${item.name} from this supplier order?`, [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Remove',
@@ -1962,8 +1789,8 @@ function FulfillmentConfirmationScreen() {
 
       closeNoteEditor();
       await refreshFromSupplierSource();
-    } catch (error: any) {
-      Alert.alert('Unable to Save Note', error?.message || 'Please try again.');
+    } catch (error: unknown) {
+      showNotice('Unable to Save Note', getErrorMessage(error, 'Please try again.'));
     } finally {
       setIsSavingNote(false);
     }
@@ -1979,7 +1806,7 @@ function FulfillmentConfirmationScreen() {
     (item: RemainingConfirmationItem) => {
       const rows = remainingContributorBreakdownByOrderItemId[item.orderItemId] ?? [];
       if (rows.length <= 1) {
-        Alert.alert('Breakdown', 'Only one employee contributed to this line.');
+        showNotice('Breakdown', 'Only one employee contributed to this line.');
         return;
       }
 
@@ -1990,7 +1817,7 @@ function FulfillmentConfirmationScreen() {
           return `${entry.name}: ${formatQuantity(entry.reportedTotal)} ${unit}${entryCount}`;
         })
         .join('\n');
-      Alert.alert('Per-Employee Breakdown', message);
+      showNotice('Per-Employee Breakdown', message);
     },
     [remainingContributorBreakdownByOrderItemId]
   );
@@ -2113,12 +1940,6 @@ function FulfillmentConfirmationScreen() {
           .map((row) => (row.id === target.id ? mergedTarget : row));
       });
 
-      setExpandedItems((prev) => {
-        const next = new Set(prev);
-        next.delete(sourceItemId);
-        next.add(targetItemId);
-        return next;
-      });
     },
     [getRegularConversionMultiplier]
   );
@@ -2130,7 +1951,7 @@ function FulfillmentConfirmationScreen() {
       );
 
       if (siblings.length === 0) {
-        Alert.alert(
+        showNotice(
           'No Unit Conflict',
           'This line has no alternate unit line to combine with.'
         );
@@ -2143,7 +1964,7 @@ function FulfillmentConfirmationScreen() {
       });
 
       if (convertibleTargets.length === 0) {
-        Alert.alert(
+        showNotice(
           'No Conversion Available',
           'No conversion rule is defined for this item yet. It will stay as separate lines.'
         );
@@ -2155,7 +1976,7 @@ function FulfillmentConfirmationScreen() {
         onPress: () => combineRegularItemIntoTarget(item.id, target.id),
       }));
 
-      Alert.alert(
+      showNotice(
         'Resolve Units',
         `Choose how to resolve ${item.name}.`,
         [
@@ -2170,6 +1991,24 @@ function FulfillmentConfirmationScreen() {
     },
     [combineRegularItemIntoTarget, getRegularConversionMultiplier, getRegularUnitSiblings]
   );
+
+  const handleResetToSum = useCallback((item: ConfirmationItem) => {
+    const resetQuantity = Math.max(0, item.sumOfContributorQuantities);
+    if (resetQuantity <= 0) return;
+    setItems((prev) =>
+      prev.map((row) =>
+        row.id === item.id
+          ? {
+              ...row,
+              quantity: resetQuantity,
+            }
+          : row
+      )
+    );
+    if (item.sourceDraftItemIds.length === 1) {
+      updateSupplierDraftItemQuantity(item.sourceDraftItemIds[0], resetQuantity);
+    }
+  }, [updateSupplierDraftItemQuantity]);
 
   const overflowActionSections = useMemo<ItemActionSheetSection[]>(() => {
     if (!overflowRegularItem && !overflowRemainingItem) return [];
@@ -2194,13 +2033,33 @@ function FulfillmentConfirmationScreen() {
                   icon: 'list-outline' as const,
                   onPress: () => {
                     setOverflowTarget(null);
-                    setExpandedItems((prev) => {
-                      const next = new Set(prev);
-                      next.add(overflowRegularItem.id);
-                      return next;
-                    });
+                    showNotice(
+                      'Per-employee breakdown',
+                      overflowRegularItem.contributors
+                        .map(
+                          (contributor) =>
+                            `${contributor.name}: ${formatQuantity(contributor.quantity)} ${overflowRegularItem.unitLabel}`,
+                        )
+                        .join('\n'),
+                    );
                   },
                 },
+                ...(Math.abs(
+                  overflowRegularItem.quantity -
+                    overflowRegularItem.sumOfContributorQuantities,
+                ) > 0.000001
+                  ? [
+                      {
+                        id: 'regular-reset-total',
+                        label: 'Reset to employee total',
+                        icon: 'refresh-outline' as const,
+                        onPress: () => {
+                          setOverflowTarget(null);
+                          handleResetToSum(overflowRegularItem);
+                        },
+                      },
+                    ]
+                  : []),
               ]
             : []),
           ...(getRegularUnitSiblings(overflowRegularItem).some(
@@ -2406,6 +2265,7 @@ function FulfillmentConfirmationScreen() {
     hasAlternateSupplierOptions,
     handleOpenRegularNoteEditor,
     handleOpenRemainingNoteEditor,
+    handleResetToSum,
     handleResolveUnitCombine,
     overflowRegularItem,
     overflowRemainingItem,
@@ -2457,24 +2317,6 @@ function FulfillmentConfirmationScreen() {
     [handleDelete, updateSupplierDraftItemQuantity]
   );
 
-  const handleResetToSum = useCallback((item: ConfirmationItem) => {
-    const resetQuantity = Math.max(0, item.sumOfContributorQuantities);
-    if (resetQuantity <= 0) return;
-    setItems((prev) =>
-      prev.map((row) =>
-        row.id === item.id
-          ? {
-              ...row,
-              quantity: resetQuantity,
-            }
-          : row
-      )
-    );
-    if (item.sourceDraftItemIds.length === 1) {
-      updateSupplierDraftItemQuantity(item.sourceDraftItemIds[0], resetQuantity);
-    }
-  }, [updateSupplierDraftItemQuantity]);
-
   const setRemainingDecisionLocal = useCallback((orderItemId: string, decidedQuantity: number | null) => {
     setRemainingItems((prev) =>
       prev.map((item) =>
@@ -2516,7 +2358,7 @@ function FulfillmentConfirmationScreen() {
     );
 
     if (unresolvedItems.length === 0) {
-      Alert.alert('Already Filled', 'All remaining items already have final quantities.');
+      showNotice('Already Filled', 'All remaining items already have final quantities.');
       return;
     }
 
@@ -2528,7 +2370,7 @@ function FulfillmentConfirmationScreen() {
       );
 
     if (candidates.length === 0) {
-      Alert.alert(
+      showNotice(
         historyUnavailableOffline ? 'History Unavailable Offline' : 'No History Available',
         historyUnavailableOffline
           ? 'Reconnect to load last ordered quantities.'
@@ -2572,7 +2414,7 @@ function FulfillmentConfirmationScreen() {
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
-      Alert.alert('Suggestions Applied', `Updated ${successCount} remaining item${successCount === 1 ? '' : 's'}.`);
+      showNotice('Suggestions Applied', `Updated ${successCount} remaining item${successCount === 1 ? '' : 's'}.`);
     }
   }, [
     getSuggestion,
@@ -2595,11 +2437,11 @@ function FulfillmentConfirmationScreen() {
 
       try {
         if (!user?.id) {
-          Alert.alert('Sign In Required', 'Please sign in again to finalize this order.');
+          showNotice('Sign In Required', 'Please sign in again to finalize this order.');
           return false;
         }
         if (!supplierId) {
-          Alert.alert('Missing Supplier', 'Unable to finalize because supplier info is missing.');
+          showNotice('Missing Supplier', 'Unable to finalize because supplier info is missing.');
           return false;
         }
 
@@ -2618,34 +2460,26 @@ function FulfillmentConfirmationScreen() {
           payload.consumedOrderItemIds.length === 0 &&
           payload.consumedDraftItemIds.length === 0
         ) {
-          Alert.alert(
+          showNotice(
             'Finalize Blocked',
             'No source links were found for these items. Pull to refresh and try again.'
           );
           return false;
         }
 
-        if (__DEV__) {
-          console.log(
-            '[Fulfillment:Confirm] finalize — consumed order_item ids:',
-            payload.consumedOrderItemIds.length,
-            payload.consumedOrderItemIds.slice(0, 5)
-          );
-        }
-
         try {
           const staleIds = await findStaleConsumedOrderItemIds(payload.consumedOrderItemIds);
           if (staleIds.length > 0) {
-            Alert.alert(
+            showNotice(
               'Order Changed',
               'Some items were already processed on another device. The screen will refresh now.'
             );
             await fetchPendingFulfillmentOrders(managerLocationIds);
-            router.replace('/(manager)/fulfillment');
+            handleBackPress();
             return false;
           }
-        } catch (validationError) {
-          console.warn('[Fulfillment:Confirm] unable to validate item freshness before finalize.', validationError);
+        } catch {
+          // Freshness validation is best-effort when the device is offline.
         }
 
         setIsFinalizing(true);
@@ -2687,11 +2521,13 @@ function FulfillmentConfirmationScreen() {
           if (Platform.OS !== 'web') {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           }
-          router.replace('/(manager)/fulfillment');
+          handleBackPress();
           return true;
-        } catch (error: any) {
-          console.error('[Fulfillment:Confirm] finalizeOrder failed:', error);
-          Alert.alert('Finalize Failed', error?.message || 'Unable to move this order to past orders.');
+        } catch (error: unknown) {
+          showNotice(
+            'Finalize Failed',
+            getErrorMessage(error, 'Unable to move this order to past orders.'),
+          );
           return false;
         } finally {
           setIsFinalizing(false);
@@ -2704,6 +2540,7 @@ function FulfillmentConfirmationScreen() {
       buildFinalizePayload,
       fetchPendingFulfillmentOrders,
       finalizeSupplierOrder,
+      handleBackPress,
       managerLocationIds,
       messageText,
       refreshFromSupplierSource,
@@ -2716,7 +2553,7 @@ function FulfillmentConfirmationScreen() {
   const handleMoveTargetToOrderLater = useCallback(
     async (scheduledAtIso: string) => {
       if (!user?.id) {
-        Alert.alert('Sign In Required', 'Please sign in again to schedule order-later items.');
+        showNotice('Sign In Required', 'Please sign in again to schedule order-later items.');
         return;
       }
 
@@ -2769,11 +2606,6 @@ function FulfillmentConfirmationScreen() {
         });
 
         setItems((prev) => prev.filter((item) => item.id !== orderLaterRegularItem.id));
-        setExpandedItems((prev) => {
-          const next = new Set(prev);
-          next.delete(orderLaterRegularItem.id);
-          return next;
-        });
       } else if (orderLaterRemainingItem) {
         const removed = await persistRemainingRemoval(orderLaterRemainingItem.orderItemId, 'order_later');
         if (!removed) return;
@@ -2813,7 +2645,7 @@ function FulfillmentConfirmationScreen() {
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
-      Alert.alert('Moved to Order Later', 'Item moved to Order Later.');
+      showNotice('Moved to Order Later', 'Item moved to Order Later.');
       setOrderLaterTarget(null);
     },
     [
@@ -2833,7 +2665,7 @@ function FulfillmentConfirmationScreen() {
       return;
     }
     if (actionsDisabled) {
-      Alert.alert('Decision Required', 'Set final quantities greater than zero for all remaining items before ordering.');
+      showNotice('Decision Required', 'Set final quantities greater than zero for all remaining items before ordering.');
       return;
     }
 
@@ -2855,10 +2687,7 @@ function FulfillmentConfirmationScreen() {
     }
 
     // Wait for finalization to finish (usually already done by now).
-    const finalized = await finalizePromise;
-    if (!finalized) {
-      setShowRetryActions(true);
-    }
+    await finalizePromise;
   }, [actionsDisabled, finalizeOrder, messageText, supplierLabel]);
 
   const handleCopyToClipboard = useCallback(async () => {
@@ -2866,7 +2695,7 @@ function FulfillmentConfirmationScreen() {
       return;
     }
     if (actionsDisabled) {
-      Alert.alert('Decision Required', 'Set final quantities greater than zero for all remaining items before ordering.');
+      showNotice('Decision Required', 'Set final quantities greater than zero for all remaining items before ordering.');
       return;
     }
 
@@ -2876,874 +2705,441 @@ function FulfillmentConfirmationScreen() {
     }
 
     // Always finalize after copy — the order is done.
-    const finalized = await finalizeOrder('copy');
-    if (!finalized) {
-      setShowRetryActions(true);
-    }
+    await finalizeOrder('copy');
   }, [actionsDisabled, finalizeOrder, messageText]);
 
-  const handleRemainingInstructionsPress = useCallback(() => {
-    Alert.alert(
-      'Remaining Item Instructions',
-      [
-        'Set a final order quantity greater than zero for each remaining item.',
-        'Use "Suggested" or "Auto-fill" when suggestions are available.',
-        'If you do not want to order now, open the item menu (•••) and choose "Set to Order Later".',
-        'Share stays disabled until all remaining items are resolved.',
-      ].join('\n\n')
-    );
-  }, []);
-
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: glassColors.background }} edges={['top', 'left', 'right', 'bottom']}>
-      <ManagerScaleContainer>
-        <View
-          style={{
-            paddingHorizontal: glassSpacing.screen,
-            paddingTop: ds.spacing(12),
-            paddingBottom: ds.spacing(16),
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-            <TouchableOpacity
-              onPress={handleBackPress}
-              style={{ padding: ds.spacing(8), marginRight: ds.spacing(8), marginLeft: -ds.spacing(8) }}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: color.page }}
+      edges={['left', 'right', 'bottom']}
+    >
+      <ScreenHeader
+        mode="pushed"
+        title={supplierLabel}
+        onBack={handleBackPress}
+        right={
+          <StatusPill
+            status="submitted"
+            showDot={false}
+            label={remainingItems.length > 0 ? `${remainingItems.length} remaining` : 'Ready'}
+          />
+        }
+      />
+
+      <FlatList
+        data={reviewListEntries}
+        keyExtractor={(entry) => entry.key}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{
+          paddingHorizontal: ds.spacing(space[5]),
+          paddingBottom: ds.spacing(space[4]),
+        }}
+        ListHeaderComponent={
+          <View>
+            <View
+              style={{
+                flexDirection: 'row',
+                gap: ds.spacing(10),
+                marginTop: ds.spacing(space[2]),
+                marginBottom: ds.spacing(12),
+              }}
             >
-              <Ionicons name="arrow-back" size={ds.icon(22)} color={glassColors.textPrimary} />
-            </TouchableOpacity>
-            <View>
-              <Text
-                style={{
-                  fontSize: ds.fontSize(typeScale.display),
-                  fontWeight: weight.bold,
-                  color: glassColors.textPrimary,
-                  letterSpacing: -0.8,
-                }}
-              >
-                {supplierLabel}
-              </Text>
-              <Text
-                style={{
-                  fontSize: ds.fontSize(typeScale.body),
-                  fontWeight: weight.semibold,
-                  color: glassColors.textSecondary,
-                  marginTop: -2,
-                }}
-              >
-                Review Order
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        <FlatList
-          className="flex-1"
-          data={regularListEntries}
-          keyExtractor={(entry) => entry.key}
-          contentContainerStyle={{ paddingHorizontal: glassSpacing.screen, paddingBottom: ds.spacing(64) }}
-          keyboardShouldPersistTaps="handled"
-          ListHeaderComponent={(
-            <View>
-              {remainingItems.length > 0 && (
+              {[
+                { label: 'items', value: reviewListEntries.length },
+                { label: 'remaining', value: remainingItems.length },
+                { label: 'people', value: peopleCount },
+              ].map((stat) => (
                 <View
+                  key={stat.label}
                   style={{
-                    backgroundColor: 'transparent',
-                    borderRadius: glassRadii.surface,
-                    borderWidth: 2,
-                    borderColor: glassColors.accentBorder,
-                    paddingHorizontal: ds.spacing(18),
-                    paddingTop: ds.spacing(18),
-                    paddingBottom: ds.spacing(18),
-                    marginBottom: ds.spacing(20),
-                  }}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: ds.spacing(8) }}>
-                      <Text
-                        style={{
-                          fontSize: ds.fontSize(typeScale.title),
-                          fontWeight: weight.bold,
-                          color: glassColors.textPrimary,
-                          letterSpacing: -0.4,
-                        }}
-                      >
-                        Remaining Items
-                      </Text>
-                      <TouchableOpacity
-                        onPress={handleRemainingInstructionsPress}
-                        style={{ marginLeft: ds.spacing(6), padding: ds.spacing(4) }}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <Ionicons name="information-circle-outline" size={ds.icon(20)} color={glassColors.textSecondary} />
-                      </TouchableOpacity>
-                    </View>
-                    <TouchableOpacity
-                      onPress={handleAutoFillSuggestions}
-                      disabled={suggestionCount === 0 || loadingLastOrdered || savingRemainingIds.size > 0}
-                      style={{
-                        minHeight: Math.max(38, ds.buttonH - ds.spacing(8)),
-                        paddingHorizontal: ds.spacing(14),
-                        borderRadius: glassRadii.pill,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: (suggestionCount === 0 || loadingLastOrdered || savingRemainingIds.size > 0)
-                          ? glassColors.accentSoft
-                          : glassColors.accent,
-                        opacity: suggestionCount === 0 || loadingLastOrdered || savingRemainingIds.size > 0 ? 0.7 : 1,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: ds.fontSize(typeScale.secondary),
-                          fontWeight: weight.bold,
-                          color:
-                            suggestionCount === 0 || loadingLastOrdered || savingRemainingIds.size > 0
-                              ? glassColors.accent
-                              : glassColors.textOnPrimary,
-                        }}
-                      >
-                        Auto-fill
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  {hasMissingRemaining && (
-                    <View
-                      style={{
-                        marginTop: ds.spacing(12),
-                        borderRadius: glassRadii.button,
-                        backgroundColor: glassColors.dangerSoft,
-                        borderWidth: glassHairlineWidth,
-                        borderColor: color.alert,
-                        paddingHorizontal: ds.spacing(12),
-                        paddingVertical: ds.spacing(8),
-                      }}
-                    >
-                      <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: glassColors.dangerText }}>
-                        {unresolvedRemainingItemIds.length} remaining item
-                        {unresolvedRemainingItemIds.length === 1 ? '' : 's'} still need a final quantity.
-                      </Text>
-                    </View>
-                  )}
-
-                  <View style={{ marginTop: ds.spacing(12) }}>
-                    {(['sushi', 'poki'] as LocationGroup[]).map((group) => {
-                      const rows = groupedRemainingItems[group];
-                      if (!rows || rows.length === 0) return null;
-
-                      return (
-                        <View key={`remaining-${group}`} style={{ marginBottom: ds.spacing(14) }}>
-                          <View style={{ marginBottom: ds.spacing(10) }}>
-                            <LocationSectionLabel
-                              group={group}
-                              count={rows.length}
-                            />
-                          </View>
-
-                          {rows.map((item, index) => {
-                            const suggested = getSuggestion(item);
-                            const isSaving = savingRemainingIds.has(item.orderItemId);
-                            const settings = getExportSettings(item.orderItemId, item.unitType);
-                            const contributorBreakdown =
-                              remainingContributorBreakdownByOrderItemId[item.orderItemId] ?? [];
-                            const unitSelectorProps = getUnitSelectorPropsByInventoryItemId(
-                              item.inventoryItemId,
-                              item.unitType,
-                              item.unitLabel
-                            );
-
-                            return (
-                              <View
-                                key={item.orderItemId}
-                                style={index < rows.length - 1 ? { marginBottom: ds.spacing(10) } : undefined}
-                              >
-                                <RemainingItemRow
-                                  item={item}
-                                  suggested={suggested}
-                                  isSaving={isSaving}
-                                  unitSelectorProps={unitSelectorProps}
-                                  exportUnitType={settings.exportUnitType}
-                                  contributorBreakdown={contributorBreakdown}
-                                  onUnitChange={(unit) =>
-                                    updateExportSettings(item.orderItemId, { exportUnitType: unit })
-                                  }
-                                  onQuantityChange={handleRemainingQuantityChange}
-                                  onOverflowPress={handleRemainingItemOverflow}
-                                />
-                              </View>
-                            );
-                          })}
-                        </View>
-                      );
-                    })}
-                  </View>
-                </View>
-              )}
-
-              <GlassSurface
-                intensity="subtle"
-                style={{
-                  borderRadius: glassRadii.surface,
-                  paddingHorizontal: ds.spacing(20),
-                  paddingTop: ds.spacing(20),
-                  paddingBottom: ds.spacing(20),
-                  marginBottom: ds.spacing(24),
-                }}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: ds.spacing(14) }}>
-                  <Text
-                    style={{
-                      fontSize: ds.fontSize(typeScale.body),
-                      fontWeight: weight.bold,
-                      color: glassColors.textPrimary,
-                    }}
-                  >
-                    Message Preview
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => router.push('/(manager)/manager-settings/export-format')}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      backgroundColor: glassColors.accentSoft,
-                      paddingHorizontal: ds.spacing(12),
-                      paddingVertical: ds.spacing(6),
-                      borderRadius: glassRadii.pill,
-                    }}
-                  >
-                    <Ionicons name="create" size={ds.icon(13)} color={glassColors.accent} />
-                    <Text
-                      style={{
-                        fontSize: ds.fontSize(typeScale.secondary),
-                        color: glassColors.accent,
-                        fontWeight: weight.bold,
-                        marginLeft: ds.spacing(6),
-                      }}
-                    >
-                      Settings
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                <View
-                  style={{
-                    backgroundColor: glassColors.mediumFill,
-                    borderRadius: glassRadii.surface - 4,
-                    padding: ds.spacing(16),
+                    flex: 1,
+                    paddingHorizontal: ds.spacing(space[3]),
+                    paddingVertical: ds.spacing(space[3]),
+                    borderRadius: radius.control,
+                    backgroundColor: color.card,
                   }}
                 >
                   <Text
                     style={{
-                      fontSize: ds.fontSize(typeScale.body),
-                      color: glassColors.textPrimary,
-                      lineHeight: ds.spacing(22),
-                      fontWeight: weight.semibold,
-                    }}
-                  >
-                    {messageText}
-                  </Text>
-                </View>
-              </GlassSurface>
-
-              {hasAnyItems ? (
-                <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: ds.spacing(12) }}>
-                  <Text
-                    style={{
-                      fontSize: ds.fontSize(typeScale.body),
+                      fontSize: ds.fontSize(typeScale.stat),
                       fontWeight: weight.bold,
-                      color: glassColors.textPrimary,
+                      color: color.ink,
                     }}
                   >
-                    Regular Items
+                    {stat.value}
                   </Text>
                   <Text
                     style={{
-                      fontSize: ds.fontSize(typeScale.body),
-                      fontWeight: weight.semibold,
-                      color: glassColors.textSecondary,
-                      marginLeft: ds.spacing(6),
+                      marginTop: ds.spacing(space[1]),
+                      fontSize: ds.fontSize(typeScale.meta),
+                      color: color.ink2,
                     }}
                   >
-                    ({regularItemCount})
+                    {stat.label}
                   </Text>
                 </View>
-              ) : null}
+              ))}
             </View>
-          )}
-          ListEmptyComponent={(
-            hasAnyItems ? (
+
+            {reviewNotes.length > 0 ? (
               <View
                 style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingVertical: ds.spacing(32),
-                  backgroundColor: color.card,
-                  borderWidth: glassHairlineWidth,
-                  borderColor: glassColors.divider,
-                  borderRadius: glassRadii.surface,
+                  padding: ds.spacing(14),
+                  borderRadius: radius.card,
+                  backgroundColor: color.tint,
+                  gap: ds.spacing(space[2]),
                 }}
               >
-                <Text style={{ color: glassColors.textSecondary, fontSize: ds.fontSize(typeScale.body) }}>No regular items in this supplier section</Text>
-              </View>
-            ) : (
-              <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: ds.spacing(48) }}>
-                <Ionicons name="list-outline" size={ds.icon(48)} color={glassColors.textMuted} />
-                <Text style={{ color: glassColors.textSecondary, fontSize: ds.fontSize(typeScale.body), marginTop: ds.spacing(12) }}>No items to confirm</Text>
-                <Text style={{ color: glassColors.textMuted, fontSize: ds.fontSize(typeScale.body), marginTop: ds.spacing(4) }}>Return to fulfillment to select items</Text>
-              </View>
-            )
-          )}
-          renderItem={({ item: entry }) => {
-            if (entry.type === 'group-header') {
-              const count = groupedRegularItems[entry.group]?.length ?? 0;
-              return (
-                <View style={{ marginBottom: ds.spacing(10) }}>
-                  <LocationSectionLabel
-                    group={entry.group}
-                    count={count}
-                  />
-                </View>
-              );
-            }
-
-            const item = entry.item;
-            const isExpanded = expandedItems.has(item.id);
-            const contributorCount = item.contributors.length;
-            const hasMultipleContributors = contributorCount > 1;
-            const singleContributorName =
-              item.contributors[0]?.name ||
-              item.details[0]?.orderedBy ||
-              'Unknown';
-            const finalTotalText = `${formatQuantity(item.quantity)} ${item.unitLabel}`;
-            const contributorTotalText = `${formatQuantity(item.sumOfContributorQuantities)} ${item.unitLabel}`;
-            const canResetToSum =
-              hasMultipleContributors &&
-              Math.abs(item.quantity - item.sumOfContributorQuantities) > 0.000001;
-            const settings = getExportSettings(item.id, item.unitType);
-            const unitSelectorProps = getUnitSelectorPropsByInventoryItemId(
-              item.inventoryItemId,
-              item.unitType,
-              item.unitLabel
-            );
-
-            const orderedByContent = (
-              <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: ds.spacing(6) }}>
-                {hasMultipleContributors ? (
-                  <>
-                    <View style={{ flexDirection: 'row', marginRight: ds.spacing(4) }}>
-                      {item.contributors.slice(0, 3).map((contributor, cIdx) => {
-                        const palette = AVATAR_PALETTE[cIdx % AVATAR_PALETTE.length];
-                        return (
-                          <View
-                            key={`${item.id}-av-${contributor.userId || contributor.name}-${cIdx}`}
-                            style={{
-                              width: ds.spacing(26),
-                              height: ds.spacing(26),
-                              borderRadius: ds.spacing(13),
-                              backgroundColor: palette.background,
-                              borderWidth: 1.5,
-                              borderColor: color.card,
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              marginLeft: cIdx === 0 ? 0 : -ds.spacing(6),
-                              zIndex: item.contributors.length - cIdx,
-                            }}
-                          >
-                            <Text style={{ color: palette.text, fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold }}>
-                              {getInitials(contributor.name)}
-                            </Text>
-                          </View>
-                        );
-                      })}
-                      {contributorCount > 3 && (
-                        <View
-                          style={{
-                            width: ds.spacing(26),
-                            height: ds.spacing(26),
-                            borderRadius: ds.spacing(13),
-                            backgroundColor: color.well,
-                            borderWidth: 1.5,
-                            borderColor: color.card,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            marginLeft: -ds.spacing(6),
-                          }}
-                        >
-                          <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold }}>
-                            +{contributorCount - 3}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
+                {reviewNotes.map((note) => (
+                  <View key={note.id}>
                     <Text
                       style={{
-                        fontSize: ds.fontSize(typeScale.secondary),
-                        fontWeight: weight.semibold,
-                        color: glassColors.textSecondary,
-                      }}
-                      numberOfLines={1}
-                    >
-                      {item.contributors.map((c) => c.name).join(', ')}
-                    </Text>
-                  </>
-                ) : (
-                  <>
-                    <View
-                      style={{
-                        width: ds.spacing(26),
-                        height: ds.spacing(26),
-                        borderRadius: ds.spacing(13),
-                        backgroundColor: AVATAR_PALETTE[0].background,
-                        alignItems: 'center',
-                        justifyContent: 'center',
+                        fontSize: ds.fontSize(typeScale.itemDense),
+                        color: color.accent,
                       }}
                     >
-                      <Text style={{ color: AVATAR_PALETTE[0].text, fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold }}>
-                        {getInitials(singleContributorName)}
-                      </Text>
-                    </View>
-                    <Text
-                      style={{
-                        fontSize: ds.fontSize(typeScale.secondary),
-                        fontWeight: weight.semibold,
-                        color: glassColors.textSecondary,
-                      }}
-                      numberOfLines={1}
-                    >
-                      {singleContributorName} · {formatQuantity(item.sumOfContributorQuantities)} {item.unitLabel}
-                    </Text>
-                  </>
-                )}
-              </View>
-            );
-
-            const inlineNotesContent = item.notes.length > 0 ? (
-              <View style={{ gap: ds.spacing(6) }}>
-                {item.notes.map((note) => (
-                  <View
-                    key={note.id}
-                    style={{
-                      borderRadius: glassRadii.button,
-                      backgroundColor: color.tint,
-                      borderWidth: glassHairlineWidth,
-                      borderColor: color.hairline,
-                      paddingHorizontal: ds.spacing(12),
-                      paddingVertical: ds.spacing(8),
-                    }}
-                  >
-                    <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: color.accent }}>
-                      {note.author} · {note.locationName} ({note.shortCode})
-                    </Text>
-                    <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink, marginTop: ds.spacing(3) }}>
                       {note.text}
                     </Text>
                   </View>
                 ))}
               </View>
-            ) : null;
+            ) : null}
 
-            return (
-              <View style={{ marginBottom: ds.spacing(10) }}>
-                <FulfillmentConfirmItemRow
-                  title={item.name}
-                  orderedByContent={orderedByContent}
-                  inlineNotesContent={inlineNotesContent}
-                  headerActions={(
-                    <>
-                      <TouchableOpacity
-                        onPress={() => handleRegularItemOverflow(item)}
-                        style={{ padding: ds.spacing(6), marginRight: ds.spacing(4) }}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <Ionicons name="ellipsis-horizontal" size={ds.icon(22)} color={glassColors.textPrimary} />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => toggleExpand(item.id)}
-                        style={{ padding: ds.spacing(6) }}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <Ionicons
-                          name={isExpanded ? 'information-circle' : 'information-circle-outline'}
-                          size={ds.icon(22)}
-                          color={isExpanded ? glassColors.accent : glassColors.textPrimary}
-                        />
-                      </TouchableOpacity>
-                    </>
-                  )}
-                  quantityValue={formatQuantity(item.quantity)}
-                  onQuantityChangeText={(text) => {
-                    const sanitized = text.replace(/[^0-9.]/g, '');
-                    if (sanitized.length === 0) return;
-                    const parsed = Number(sanitized);
-                    if (!Number.isFinite(parsed)) return;
-                    handleQuantityChange(item, parsed);
-                  }}
-                  onDecrement={() => handleQuantityChange(item, item.quantity - 1)}
-                  onIncrement={() => handleQuantityChange(item, item.quantity + 1)}
-                  unitSelector={(
-                    <QuantityExportSelector
-                      exportUnitType={settings.exportUnitType}
-                      baseUnitLabel={unitSelectorProps.baseUnitLabel}
-                      packUnitLabel={unitSelectorProps.packUnitLabel}
-                      canSwitchUnit={unitSelectorProps.canSwitchUnit}
-                      onUnitChange={(unit) =>
-                        updateExportSettings(item.id, { exportUnitType: unit })
-                      }
-                    />
-                  )}
-                  detailsVisible={isExpanded}
-                  details={(
-                    <View
-                      style={{
-                        borderRadius: glassRadii.button,
-                        borderWidth: glassHairlineWidth,
-                        borderColor: glassColors.cardBorder,
-                        backgroundColor: colors.gray[100],
-                        paddingHorizontal: ds.spacing(14),
-                        paddingVertical: ds.spacing(14),
-                      }}
-                    >
-                      <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: glassColors.textPrimary }}>
-                        Ordered by: {hasMultipleContributors ? `${contributorCount} people` : singleContributorName}
-                      </Text>
-                      <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: glassColors.textSecondary, marginTop: ds.spacing(4) }}>
-                        Final total: {finalTotalText}
-                      </Text>
-
-                      {hasMultipleContributors && (
-                        <View style={{ marginTop: ds.spacing(12) }}>
-                          <Text
-                            style={{
-                              fontSize: ds.fontSize(typeScale.caption),
-                              fontWeight: weight.bold,
-                              color: glassColors.textSecondary,
-                              textTransform: 'uppercase',
-                              letterSpacing: 0.5,
-                              marginBottom: ds.spacing(8),
-                            }}
-                          >
-                            Per-person breakdown
-                          </Text>
-                          {item.contributors.map((contributor, contributorIndex) => (
-                            <View
-                              key={`${item.id}-contributor-${contributor.userId || contributor.name}-${contributorIndex}`}
-                              style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                paddingVertical: ds.spacing(6),
-                                borderBottomWidth: contributorIndex < item.contributors.length - 1 ? glassHairlineWidth : 0,
-                                borderBottomColor: glassColors.divider,
-                              }}
-                            >
-                              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <View
-                                  style={{
-                                    width: ds.spacing(22),
-                                    height: ds.spacing(22),
-                                    borderRadius: ds.spacing(11),
-                                    backgroundColor: AVATAR_PALETTE[contributorIndex % AVATAR_PALETTE.length].background,
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    marginRight: ds.spacing(8),
-                                  }}
-                                >
-                                  <Text style={{ color: AVATAR_PALETTE[contributorIndex % AVATAR_PALETTE.length].text, fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold }}>
-                                    {getInitials(contributor.name)}
-                                  </Text>
-                                </View>
-                                <Text style={{ fontSize: ds.fontSize(typeScale.body), color: glassColors.textPrimary }}>{contributor.name}</Text>
-                              </View>
-                              <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: glassColors.textPrimary }}>
-                                {formatQuantity(contributor.quantity)} {item.unitLabel}
-                              </Text>
-                            </View>
-                          ))}
-                          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: glassColors.textSecondary, marginTop: ds.spacing(8) }}>
-                            Contributors total: {contributorTotalText}
-                          </Text>
-
-                          {canResetToSum && (
-                            <TouchableOpacity
-                              onPress={() => handleResetToSum(item)}
-                              style={{
-                                alignSelf: 'flex-start',
-                                marginTop: ds.spacing(8),
-                                paddingHorizontal: ds.spacing(12),
-                                paddingVertical: ds.spacing(6),
-                                borderRadius: glassRadii.button,
-                                backgroundColor: glassColors.mediumFill,
-                              }}
-                            >
-                              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.bold, color: glassColors.textPrimary }}>Reset to sum</Text>
-                            </TouchableOpacity>
-                          )}
-                        </View>
-                      )}
-
-                      {item.details.length > 0 && (
-                        <View style={{ marginTop: ds.spacing(12) }}>
-                          <Text
-                            style={{
-                              fontSize: ds.fontSize(typeScale.caption),
-                              fontWeight: weight.bold,
-                              color: glassColors.textSecondary,
-                              textTransform: 'uppercase',
-                              letterSpacing: 0.5,
-                              marginBottom: ds.spacing(8),
-                            }}
-                          >
-                            Location breakdown
-                          </Text>
-                          {item.details.map((detail, detailIndex) => (
-                            <View
-                              key={`${item.id}-detail-${detail.locationId || detail.locationName}-${detailIndex}`}
-                              style={{
-                                paddingVertical: ds.spacing(6),
-                                borderBottomWidth: detailIndex < item.details.length - 1 ? glassHairlineWidth : 0,
-                                borderBottomColor: glassColors.divider,
-                              }}
-                            >
-                              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <Text style={{ fontSize: ds.fontSize(typeScale.body), color: glassColors.textPrimary }}>
-                                  {detail.locationName}
-                                  {detail.shortCode ? ` (${detail.shortCode})` : ''}
-                                </Text>
-                                <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: glassColors.textPrimary }}>
-                                  {formatQuantity(detail.quantity)} {item.unitLabel}
-                                </Text>
-                              </View>
-                              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: glassColors.textSecondary, marginTop: ds.spacing(3) }}>Ordered by {detail.orderedBy}</Text>
-                            </View>
-                          ))}
-                        </View>
-                      )}
-
-                      {item.notes.length > 0 && (
-                        <View style={{ marginTop: ds.spacing(12) }}>
-                          <Text
-                            style={{
-                              fontSize: ds.fontSize(typeScale.caption),
-                              fontWeight: weight.bold,
-                              color: glassColors.textSecondary,
-                              textTransform: 'uppercase',
-                              letterSpacing: 0.5,
-                              marginBottom: ds.spacing(8),
-                            }}
-                          >
-                            Notes
-                          </Text>
-                          {item.notes.map((note, noteIndex) => (
-                            <View
-                              key={note.id}
-                              style={{
-                                borderRadius: glassRadii.button,
-                                borderWidth: glassHairlineWidth,
-                                borderColor: color.hairline,
-                                backgroundColor: color.tint,
-                                paddingHorizontal: ds.spacing(12),
-                                paddingVertical: ds.spacing(8),
-                                marginBottom: noteIndex < item.notes.length - 1 ? ds.spacing(6) : 0,
-                              }}
-                            >
-                              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: color.accent }}>
-                                {note.author} · {note.locationName} ({note.shortCode})
-                              </Text>
-                              <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink, marginTop: ds.spacing(3) }}>{note.text}</Text>
-                            </View>
-                          ))}
-                        </View>
-                      )}
-                    </View>
-                  )}
-                />
-              </View>
-            );
-          }}
-        />
-
-        <ItemActionSheet
-          visible={Boolean(overflowRegularItem || overflowRemainingItem)}
-          title="Item Actions"
-          subtitle={overflowRegularItem?.name || overflowRemainingItem?.name}
-          sections={overflowActionSections}
-          onClose={() => setOverflowTarget(null)}
-        />
-
-        <Sheet
-          visible={Boolean(noteRegularItem || noteRemainingItem)}
-          title={(noteRegularItem?.notes.length || noteRemainingItem?.note) ? 'Edit Note' : 'Add Note'}
-          onClose={closeNoteEditor}
-          primary={{ label: 'Save Note', onPress: handleSaveNote, loading: isSavingNote }}
-        >
-          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
-            {noteRegularItem?.name || noteRemainingItem?.name || ''}
-          </Text>
-
-          <TextInput
-            value={noteDraft}
-            onChangeText={setNoteDraft}
-            placeholder="Add supplier note..."
-            placeholderTextColor={glassColors.textMuted}
-            multiline
-            maxLength={240}
-            textAlignVertical="top"
-            style={{
-              minHeight: ds.spacing(120),
-              borderRadius: glassRadii.button,
-              borderWidth: glassHairlineWidth,
-              borderColor: glassColors.divider,
-              backgroundColor: glassColors.mediumFill,
-              paddingHorizontal: ds.spacing(14),
-              paddingVertical: ds.spacing(14),
-              fontSize: ds.fontSize(typeScale.body),
-              color: glassColors.textPrimary,
-            }}
-          />
-          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: glassColors.textMuted, marginTop: ds.spacing(8) }}>{noteDraft.length}/240</Text>
-
-          <Button variant="secondary" label="Cancel" onPress={closeNoteEditor} />
-        </Sheet>
-
-        <View
-          style={{
-            paddingHorizontal: glassSpacing.screen,
-            paddingTop: ds.spacing(8),
-            paddingBottom: ds.spacing(14),
-          }}
-        >
-          {showRetryActions ? (
-            <View style={{ flexDirection: 'row' }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <SectionLabel style={{ flex: 1 }}>Items</SectionLabel>
               <TouchableOpacity
-                onPress={handleCopyToClipboard}
-                disabled={actionsDisabled}
-                activeOpacity={0.86}
-                style={{
-                  flex: 1,
-                  height: Math.max(56, ds.buttonH + 8),
-                  borderRadius: glassRadii.submitButton,
-                  alignItems: 'center',
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  marginRight: 12,
-                  backgroundColor: actionsDisabled ? glassColors.mediumFill : glassColors.subtleFill,
+                onPress={handleAutoFillSuggestions}
+                disabled={
+                  suggestionCount === 0 ||
+                  loadingLastOrdered ||
+                  savingRemainingIds.size > 0
+                }
+                accessibilityRole="button"
+                accessibilityLabel="Auto-fill remaining quantities"
+                accessibilityState={{
+                  disabled:
+                    suggestionCount === 0 ||
+                    loadingLastOrdered ||
+                    savingRemainingIds.size > 0,
                 }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={{ paddingHorizontal: ds.spacing(space[1]) }}
               >
-                <Ionicons
-                  name="copy-outline"
-                  size={18}
-                  color={actionsDisabled ? glassColors.textTertiary : glassColors.textPrimary}
-                />
                 <Text
                   style={{
+                    fontSize: ds.fontSize(typeScale.caption),
                     fontWeight: weight.semibold,
-                    marginLeft: 8,
-                    fontSize: typeScale.body,
-                    color: actionsDisabled ? glassColors.textTertiary : glassColors.textPrimary,
+                    color: color.accent,
+                    opacity:
+                      suggestionCount === 0 ||
+                      loadingLastOrdered ||
+                      savingRemainingIds.size > 0
+                        ? 0.45
+                        : 1,
                   }}
                 >
-                  Copy
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={handleShareOrder}
-                disabled={actionsDisabled}
-                activeOpacity={0.86}
-                style={{
-                  flex: 1,
-                  height: Math.max(56, ds.buttonH + 8),
-                  borderRadius: glassRadii.submitButton,
-                  alignItems: 'center',
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  backgroundColor: actionsDisabled ? glassColors.accentSoft : glassColors.accent,
-                }}
-              >
-                <Ionicons
-                  name="share-social-outline"
-                  size={ds.icon(20)}
-                  color={actionsDisabled ? glassColors.accent : glassColors.textOnPrimary}
-                />
-                <Text
-                  style={{
-                    fontWeight: weight.bold,
-                    marginLeft: ds.spacing(8),
-                    fontSize: ds.fontSize(typeScale.title),
-                    color: actionsDisabled ? glassColors.accent : glassColors.textOnPrimary,
-                  }}
-                >
-                  Share
+                  Auto-fill
                 </Text>
               </TouchableOpacity>
             </View>
-          ) : (
-            <TouchableOpacity
-              onPress={handleShareOrder}
-              disabled={actionsDisabled}
-              activeOpacity={0.86}
-              style={{
-                height: Math.max(56, ds.buttonH + 8),
-                borderRadius: glassRadii.submitButton,
-                alignItems: 'center',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                backgroundColor: actionsDisabled ? glassColors.accentSoft : glassColors.accent,
-              }}
-            >
-              <Ionicons
-                name={isFinalizing ? 'hourglass-outline' : 'share-social-outline'}
-                size={ds.icon(20)}
-                color={actionsDisabled ? glassColors.accent : glassColors.textOnPrimary}
-              />
-              <Text
+          </View>
+        }
+        renderItem={({ item: entry, index }) => {
+          const last = index === reviewListEntries.length - 1;
+
+          if (entry.type === 'remaining') {
+            const item = entry.item;
+            const settings = getExportSettings(item.orderItemId, item.unitType);
+            return (
+              <View
                 style={{
-                  fontWeight: weight.bold,
-                  marginLeft: ds.spacing(8),
-                  fontSize: ds.fontSize(typeScale.title),
-                  color: actionsDisabled ? glassColors.accent : glassColors.textOnPrimary,
+                  overflow: 'hidden',
+                  backgroundColor: color.card,
+                  borderTopLeftRadius: index === 0 ? radius.card : 0,
+                  borderTopRightRadius: index === 0 ? radius.card : 0,
+                  borderBottomLeftRadius: last ? radius.card : 0,
+                  borderBottomRightRadius: last ? radius.card : 0,
+                  paddingTop: index === 0 ? ds.spacing(2) : 0,
+                  paddingBottom: last ? ds.spacing(2) : 0,
                 }}
               >
-                {isFinalizing ? 'Sending...' : 'Share'}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        <SupplierPickerBottomSheet
-          visible={Boolean(supplierPickerTarget)}
-          itemName={
-            supplierPickerTarget?.kind === 'regular'
-              ? supplierPickerTarget.item.name
-              : supplierPickerTarget?.kind === 'remaining'
-                ? supplierPickerTarget.item.name
-                : undefined
+                <RemainingItemRow
+                  item={item}
+                  suggested={getSuggestion(item)}
+                  isSaving={savingRemainingIds.has(item.orderItemId)}
+                  unitSelectorProps={getUnitSelectorPropsByInventoryItemId(
+                    item.inventoryItemId,
+                    item.unitType,
+                    item.unitLabel,
+                  )}
+                  exportUnitType={settings.exportUnitType}
+                  contributorBreakdown={
+                    remainingContributorBreakdownByOrderItemId[item.orderItemId] ?? []
+                  }
+                  onUnitChange={(unit) =>
+                    updateExportSettings(item.orderItemId, { exportUnitType: unit })
+                  }
+                  onQuantityChange={handleRemainingQuantityChange}
+                  onOverflowPress={handleRemainingItemOverflow}
+                  last={last}
+                />
+              </View>
+            );
           }
-          suppliers={supplierPickerOptions}
-          currentSupplierId={supplierId}
-          isMoving={isMovingSupplier}
-          onSelect={(targetSupplierId) => {
-            void handleSupplierPickerSelect(targetSupplierId);
-          }}
-          onClose={() => {
-            if (!isMovingSupplier) {
-              setSupplierPickerTarget(null);
-            }
-          }}
-        />
 
-        <OrderLaterScheduleModal
-          visible={Boolean(orderLaterRegularItem || orderLaterRemainingItem)}
-          title="Order Later"
-          subtitle="Choose when this item should be ordered."
-          confirmLabel="Move Item"
-          onClose={() => setOrderLaterTarget(null)}
-          onConfirm={handleMoveTargetToOrderLater}
+          const item = entry.item;
+          const settings = getExportSettings(item.id, item.unitType);
+          const unitSelectorProps = getUnitSelectorPropsByInventoryItemId(
+            item.inventoryItemId,
+            item.unitType,
+            item.unitLabel,
+          );
+          const breakdown = item.contributors.length > 0
+            ? item.contributors
+                .map(
+                  (contributor) =>
+                    `${contributor.name} ${formatQuantity(contributor.quantity)}`,
+                )
+                .join(' · ')
+            : item.details
+                .map(
+                  (detail) =>
+                    `${detail.orderedBy} ${formatQuantity(detail.quantity)}`,
+                )
+                .join(' · ');
+
+          return (
+            <View
+              style={{
+                overflow: 'hidden',
+                backgroundColor: color.card,
+                borderTopLeftRadius: index === 0 ? radius.card : 0,
+                borderTopRightRadius: index === 0 ? radius.card : 0,
+                borderBottomLeftRadius: last ? radius.card : 0,
+                borderBottomRightRadius: last ? radius.card : 0,
+                paddingTop: index === 0 ? ds.spacing(2) : 0,
+                paddingBottom: last ? ds.spacing(2) : 0,
+              }}
+            >
+              <FulfillmentConfirmItemRow
+                title={item.name}
+                orderedByContent={
+                  breakdown ? (
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        fontSize: ds.fontSize(typeScale.meta),
+                        color: color.ink3,
+                      }}
+                    >
+                      {breakdown}
+                    </Text>
+                  ) : undefined
+                }
+                headerActions={
+                  <TouchableOpacity
+                    onPress={() => handleRegularItemOverflow(item)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`More actions for ${item.name}`}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={{ padding: ds.spacing(space[1]) }}
+                  >
+                    <Ionicons
+                      name="ellipsis-horizontal"
+                      size={ds.icon(18)}
+                      color={color.ink3}
+                    />
+                  </TouchableOpacity>
+                }
+                quantityValue={formatQuantity(item.quantity)}
+                onQuantityChangeText={(text) => {
+                  const sanitized = text.replace(/[^0-9.]/g, '');
+                  if (!sanitized) return;
+                  const parsed = Number(sanitized);
+                  if (!Number.isFinite(parsed) || parsed < 0) return;
+                  handleQuantityChange(item, parsed);
+                }}
+                onDecrement={() => handleQuantityChange(item, item.quantity - 1)}
+                onIncrement={() => handleQuantityChange(item, item.quantity + 1)}
+                unitSelector={
+                  <QuantityExportSelector
+                    exportUnitType={settings.exportUnitType}
+                    baseUnitLabel={unitSelectorProps.baseUnitLabel}
+                    packUnitLabel={unitSelectorProps.packUnitLabel}
+                    canSwitchUnit={unitSelectorProps.canSwitchUnit}
+                    onUnitChange={(unit) =>
+                      updateExportSettings(item.id, { exportUnitType: unit })
+                    }
+                  />
+                }
+                last={last}
+              />
+            </View>
+          );
+        }}
+        ListEmptyComponent={
+          <Card>
+            <Text
+              style={{
+                textAlign: 'center',
+                fontSize: ds.fontSize(typeScale.secondary),
+                color: color.ink2,
+              }}
+            >
+              No items to order.
+            </Text>
+          </Card>
+        }
+        ListFooterComponent={
+          <View>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <SectionLabel style={{ flex: 1 }}>Message preview</SectionLabel>
+              <TouchableOpacity
+                onPress={() => router.push('/(manager)/manager-settings/export-format')}
+                accessibilityRole="button"
+                accessibilityLabel="Edit message format"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={{ paddingHorizontal: ds.spacing(space[1]) }}
+              >
+                <Text
+                  style={{
+                    fontSize: ds.fontSize(typeScale.caption),
+                    fontWeight: weight.semibold,
+                    color: color.accent,
+                  }}
+                >
+                  Format
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <Card flush>
+              <Text
+                selectable
+                style={{
+                  padding: ds.spacing(14),
+                  fontSize: ds.fontSize(typeScale.itemDense),
+                  lineHeight: ds.fontSize(typeScale.itemDense) * 1.45,
+                  color: color.ink,
+                }}
+              >
+                {messageText}
+              </Text>
+            </Card>
+
+            <View
+              style={{
+                flexDirection: 'row',
+                gap: ds.spacing(10),
+                marginTop: ds.spacing(14),
+              }}
+            >
+              <Button
+                variant="secondary"
+                icon="copy-outline"
+                label="Copy"
+                onPress={handleCopyToClipboard}
+                disabled={actionsDisabled}
+                style={{ flex: 1 }}
+              />
+              <Button
+                icon="share-social-outline"
+                label="Share"
+                onPress={handleShareOrder}
+                disabled={actionsDisabled}
+                loading={isFinalizing}
+                style={{ flex: 1.4 }}
+              />
+            </View>
+          </View>
+        }
+      />
+
+      <ItemActionSheet
+        visible={Boolean(overflowRegularItem || overflowRemainingItem)}
+        title="Item actions"
+        subtitle={overflowRegularItem?.name || overflowRemainingItem?.name}
+        sections={overflowActionSections}
+        onClose={() => setOverflowTarget(null)}
+      />
+
+      <Sheet
+        visible={Boolean(noteRegularItem || noteRemainingItem)}
+        title={noteRegularItem?.notes.length || noteRemainingItem?.note ? 'Edit note' : 'Add note'}
+        subtitle={noteRegularItem?.name || noteRemainingItem?.name}
+        onClose={closeNoteEditor}
+        primary={{ label: 'Save note', onPress: handleSaveNote, loading: isSavingNote }}
+      >
+        <TextInput
+          value={noteDraft}
+          onChangeText={setNoteDraft}
+          placeholder="Add supplier note…"
+          placeholderTextColor={color.ink3}
+          multiline
+          maxLength={240}
+          textAlignVertical="top"
+          accessibilityLabel="Supplier note"
+          style={{
+            minHeight: ds.spacing(112),
+            borderRadius: radius.control,
+            backgroundColor: color.well,
+            paddingHorizontal: ds.spacing(space[3]),
+            paddingVertical: ds.spacing(space[3]),
+            fontSize: ds.fontSize(typeScale.body),
+            color: color.ink,
+          }}
         />
-      </ManagerScaleContainer>
+        <Text
+          style={{
+            marginTop: ds.spacing(space[2]),
+            textAlign: 'right',
+            fontSize: ds.fontSize(typeScale.meta),
+            color: color.ink3,
+          }}
+        >
+          {noteDraft.length}/240
+        </Text>
+      </Sheet>
+
+      <SupplierPickerBottomSheet
+        visible={Boolean(supplierPickerTarget)}
+        itemName={
+          supplierPickerTarget?.kind === 'regular'
+            ? supplierPickerTarget.item.name
+            : supplierPickerTarget?.kind === 'remaining'
+              ? supplierPickerTarget.item.name
+              : undefined
+        }
+        suppliers={supplierPickerOptions}
+        currentSupplierId={supplierId}
+        isMoving={isMovingSupplier}
+        onSelect={(targetSupplierId) => {
+          void handleSupplierPickerSelect(targetSupplierId);
+        }}
+        onClose={() => {
+          if (!isMovingSupplier) setSupplierPickerTarget(null);
+        }}
+      />
+
+      <OrderLaterScheduleModal
+        visible={Boolean(orderLaterRegularItem || orderLaterRemainingItem)}
+        title="Order later"
+        subtitle="Choose when this item should be ordered."
+        confirmLabel="Move item"
+        onClose={() => setOrderLaterTarget(null)}
+        onConfirm={handleMoveTargetToOrderLater}
+      />
     </SafeAreaView>
   );
 }

@@ -1,10 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { triggerImpactHaptic, ImpactFeedbackStyle } from '@/lib/haptics';
+import { Text, TouchableOpacity } from 'react-native';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { glassColors, glassHairlineWidth } from '@/theme/design';
-import { segmentedControlColors } from '@/theme/segmentedControls';
-import { radius, typeScale, weight } from '@/theme/tokens';
+import { triggerImpactHaptic, ImpactFeedbackStyle } from '@/lib/haptics';
+import { color, radius, typeScale, weight } from '@/theme/tokens';
 
 type UnitType = 'base' | 'pack';
 
@@ -15,8 +13,8 @@ interface QuantityExportSelectorProps {
   canSwitchUnit: boolean;
   onUnitChange: (unit: UnitType) => void;
 }
-
-function UnitPillToggle({
+/** Small unit control that keeps export-unit overrides available in compact rows. */
+export function QuantityExportSelector({
   exportUnitType,
   baseUnitLabel,
   packUnitLabel,
@@ -24,101 +22,44 @@ function UnitPillToggle({
   onUnitChange,
 }: QuantityExportSelectorProps) {
   const ds = useScaledStyles();
-  const handlePress = (nextUnit: UnitType) => {
-    if (!canSwitchUnit || nextUnit === exportUnitType) return;
-    triggerImpactHaptic(ImpactFeedbackStyle.Light);
-    onUnitChange(nextUnit);
+  const label = exportUnitType === 'base' ? baseUnitLabel : packUnitLabel;
+
+  const handlePress = () => {
+    if (!canSwitchUnit) return;
+    void triggerImpactHaptic(ImpactFeedbackStyle.Light);
+    onUnitChange(exportUnitType === 'base' ? 'pack' : 'base');
   };
 
-  if (!canSwitchUnit) {
-    const label = exportUnitType === 'base' ? baseUnitLabel : packUnitLabel;
-
-    return (
-      <View
-        style={{
-          minHeight: 42,
-          borderRadius: radius.card,
-          borderWidth: glassHairlineWidth,
-          borderColor: glassColors.cardBorder,
-          backgroundColor: segmentedControlColors.inactiveBackground,
-          paddingHorizontal: ds.spacing(14),
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: 0.7,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: ds.fontSize(typeScale.body),
-            fontWeight: weight.bold,
-            color: glassColors.textSecondary,
-          }}
-          numberOfLines={1}
-        >
-          {label}
-        </Text>
-      </View>
-    );
-  }
-
   return (
-    <View
+    <TouchableOpacity
+      onPress={handlePress}
+      disabled={!canSwitchUnit}
+      accessibilityRole="button"
+      accessibilityLabel={`Export ${label}; ${
+        canSwitchUnit ? 'tap to change unit' : 'only available unit'
+      }`}
+      accessibilityState={{ disabled: !canSwitchUnit }}
+      activeOpacity={0.75}
       style={{
-        minHeight: 42,
-        flexDirection: 'row',
-        alignItems: 'stretch',
-        borderRadius: radius.card,
-        backgroundColor: segmentedControlColors.inactiveBackground,
-        overflow: 'hidden',
-        borderWidth: glassHairlineWidth,
-        borderColor: glassColors.cardBorder,
+        minHeight: ds.spacing(22),
+        paddingHorizontal: ds.spacing(7),
+        borderRadius: radius.pill,
+        backgroundColor: color.well,
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: canSwitchUnit ? 1 : 0.7,
       }}
     >
-      {([
-        { key: 'pack' as const, label: packUnitLabel },
-        { key: 'base' as const, label: baseUnitLabel },
-      ]).map((option) => {
-        const isActive = option.key === exportUnitType;
-
-        return (
-          <TouchableOpacity
-            key={option.key}
-            onPress={() => handlePress(option.key)}
-            style={{
-              minHeight: 42,
-              paddingHorizontal: ds.spacing(14),
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: isActive
-                ? segmentedControlColors.activeBackground
-                : 'transparent',
-            }}
-            activeOpacity={0.75}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text
-              style={{
-                fontSize: ds.fontSize(typeScale.body),
-                fontWeight: weight.bold,
-                color: isActive
-                  ? segmentedControlColors.activeText
-                  : segmentedControlColors.inactiveText,
-              }}
-              numberOfLines={1}
-            >
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
-}
-
-export function QuantityExportSelector(props: QuantityExportSelectorProps) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <UnitPillToggle {...props} />
-    </View>
+      <Text
+        numberOfLines={1}
+        style={{
+          fontSize: ds.fontSize(typeScale.meta),
+          fontWeight: weight.semibold,
+          color: canSwitchUnit ? color.ink2 : color.ink3,
+        }}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
   );
 }

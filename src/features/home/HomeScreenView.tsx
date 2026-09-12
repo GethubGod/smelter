@@ -1,321 +1,41 @@
-import React, {
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import {
-  GestureResponderEvent,
-  Platform,
-  RefreshControl,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { FlashList } from '@shopify/flash-list';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useFocusEffect } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Redirect, router } from 'expo-router';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useShallow } from 'zustand/react/shallow';
-import { getHomeInsights, getHomeInsightsGeneration, setHomeInsights } from './homeInsightsCache';
 import {
-  AddButton,
-  GlassSurface,
-  IdentityHeader,
-} from '@/components';
-import { Loading } from '@/components/ui';
-import { colors } from '@/constants';
+  Button,
+  Card,
+  ListRow,
+  ScreenHeader,
+  SectionLabel,
+  getTabBarClearance,
+} from '@/components/ui';
+import { LocationPill } from '@/components/ui/LocationPill';
+import { useManagerFulfillmentOverview } from '@/features/fulfillment/useManagerFulfillmentOverview';
 import {
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-} from '@/theme/design';
-import {
-  CATEGORY_ORDER,
-  getCategoryShortLabel,
-} from '@/features/browse/config';
-import { useManagedRefresh } from '@/hooks/useManagedRefresh';
-import { useOrderingCartActions } from '@/hooks/useOrderingCartActions';
+  buildReorderItemsFromPayload,
+  formatHistoryDate,
+  listMyOrderHistory,
+  type RecentOrder,
+} from '@/features/simpleOrder/recentOrders';
+import { locationGroupForLocation } from '@/features/simpleOrder/checklistSelection';
+import { useResolvedActiveLocation } from '@/hooks/useResolvedActiveLocation';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { useAuthStore, useInventoryStore, useOrderStore } from '@/store';
-import type {
-  InventoryItem,
-  ItemCategory,
-} from '@/types';
-import {
-  fetchLocationOrderInsights,
-  formatOrderDayLabel,
-  getItemSupplierLabel,
-  summarizeOrderItems,
-  type HistoricalOrderSummary,
-  type PredictedOrderItem,
-} from '@/features/ordering/orderInsights';
-import {
-  ImpactFeedbackStyle,
-  triggerImpactHaptic,
-} from '@/lib/haptics';
-import {
-  fetchActiveLocationReminder,
-  type LocationReminderBanner,
-} from '@/services/locationReminderService';
-import {
-  HomeModuleCard,
-  HomeModuleState,
-  HomeScreenScroll,
-  HomeSearchCard,
-} from './components/HomeScreenPrimitives';
+import { switchViewMode } from '@/lib/switchViewMode';
+import { useInventoryStore, useOrderStore, type PastOrder } from '@/store';
+import { useSimpleOrderUiStore } from '@/store/simpleOrderUiStore';
+import { color, radius, space, typeScale, weight } from '@/theme/tokens';
 import type { HomeScreenMode } from './modes';
-import { color, typeScale, weight } from '@/theme/tokens';
-
-const HOME_INSIGHTS_TIMEOUT_MS = 8000;
-const HOME_REMINDER_TIMEOUT_MS = 6000;
-const HOME_BACKGROUND_REFRESH_INTERVAL_MS = 60 * 1000;
-
-class HomeDataTimeoutError extends Error {
-  label: string;
-
-  constructor(label: string) {
-    super(`${label} timed out`);
-    this.name = 'HomeDataTimeoutError';
-    this.label = label;
-  }
-}
 
 interface HomeScreenViewProps {
   mode: HomeScreenMode;
 }
 
-interface LoadHomeDataOptions {
-  background?: boolean;
-}
-
-interface SuggestedItemCardProps {
-  item: PredictedOrderItem;
-  onAdd: (item: PredictedOrderItem) => void;
-}
-
-interface QuickActionRowProps {
-  icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  subtitle: string;
-  accessibilityLabel: string;
-  accessibilityHint: string;
-  onPress: () => void;
-}
-
-const SuggestedItemCard = memo(function SuggestedItemCard({
-  item,
-  onAdd,
-}: SuggestedItemCardProps) {
-  const ds = useScaledStyles();
-
-  return (
-    <View
-      style={{
-        width: ds.spacing(168),
-        minHeight: ds.spacing(148),
-        borderRadius: glassRadii.surface,
-        backgroundColor: colors.gray[100],
-        borderWidth: glassHairlineWidth,
-        borderColor: glassColors.cardBorder,
-        overflow: 'hidden',
-      }}
-    >
-      <View style={{ padding: ds.spacing(14), flex: 1, flexDirection: 'column' }}>
-        <View style={{ flex: 1 }}>
-          <Text
-            style={{
-              fontSize: ds.fontSize(typeScale.body),
-              fontWeight: weight.semibold,
-              color: glassColors.textPrimary,
-            }}
-            numberOfLines={2}
-          >
-            {item.name}
-          </Text>
-          <Text
-            style={{
-              marginTop: ds.spacing(4),
-              fontSize: ds.fontSize(typeScale.secondary),
-              color: glassColors.textSecondary,
-            }}
-            numberOfLines={1}
-          >
-            {item.quantity} {item.unitType === 'base' ? item.baseUnit : item.packUnit}
-            {' · '}
-            {getItemSupplierLabel(item)}
-          </Text>
-        </View>
-        <AddButton
-          onPress={() => onAdd(item)}
-          style={{
-            marginTop: 'auto',
-            minHeight: Math.max(38, ds.buttonH - ds.spacing(8)),
-            borderRadius: glassRadii.button,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: glassColors.accent,
-          }}
-          textStyle={{
-            fontSize: ds.fontSize(typeScale.secondary),
-          }}
-        />
-      </View>
-    </View>
-  );
-});
-
-interface BrowsePreviewRowProps {
-  item: InventoryItem;
-  onAdd: (item: InventoryItem) => void;
-}
-
-const BrowsePreviewRow = memo(function BrowsePreviewRow({
-  item,
-  onAdd,
-}: BrowsePreviewRowProps) {
-  const ds = useScaledStyles();
-
-  return (
-    <View
-      style={{
-        backgroundColor: glassColors.background,
-        borderWidth: glassHairlineWidth,
-        borderColor: glassColors.cardBorder,
-        borderRadius: glassRadii.button,
-        paddingHorizontal: ds.spacing(12),
-        paddingVertical: ds.spacing(10),
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}
-    >
-      <View style={{ flex: 1, paddingRight: ds.spacing(10) }}>
-        <Text
-          style={{
-            fontSize: ds.fontSize(typeScale.body),
-            fontWeight: weight.semibold,
-            color: glassColors.textPrimary,
-          }}
-          numberOfLines={1}
-        >
-          {item.name}
-        </Text>
-        <Text
-          style={{
-            marginTop: ds.spacing(2),
-            fontSize: ds.fontSize(typeScale.secondary),
-            color: glassColors.textSecondary,
-          }}
-          numberOfLines={1}
-        >
-          {getCategoryShortLabel(item.category)} · per {item.pack_unit}
-        </Text>
-      </View>
-      <AddButton
-        onPress={() => onAdd(item)}
-        style={{
-          minHeight: Math.max(36, ds.buttonH - ds.spacing(10)),
-          minWidth: ds.spacing(68),
-          borderRadius: glassRadii.pill,
-          backgroundColor: glassColors.accent,
-          paddingHorizontal: ds.spacing(14),
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-        textStyle={{
-          fontSize: ds.fontSize(typeScale.secondary),
-        }}
-      />
-    </View>
-  );
-});
-
-const QuickActionRow = memo(function QuickActionRow({
-  icon,
-  title,
-  subtitle,
-  accessibilityLabel,
-  accessibilityHint,
-  onPress,
-}: QuickActionRowProps) {
-  const ds = useScaledStyles();
-
-  return (
-    <TouchableOpacity
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      accessibilityHint={accessibilityHint}
-      onPress={onPress}
-      className="flex-row items-center"
-      style={{
-        paddingHorizontal: ds.spacing(14),
-        paddingVertical: ds.spacing(14),
-        borderRadius: glassRadii.surface,
-        backgroundColor: colors.gray[100],
-        borderWidth: glassHairlineWidth,
-        borderColor: glassColors.cardBorder,
-      }}
-      activeOpacity={0.85}
-    >
-      <View
-        style={{
-          width: ds.icon(36),
-          height: ds.icon(36),
-          borderRadius: glassRadii.iconTile,
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: glassColors.accentSoft,
-          marginRight: ds.spacing(12),
-        }}
-      >
-        <Ionicons
-          name={icon}
-          size={ds.icon(18)}
-          color={glassColors.accent}
-        />
-      </View>
-      <View style={{ flex: 1, paddingRight: ds.spacing(10) }}>
-        <Text
-          style={{
-            fontSize: ds.fontSize(typeScale.body),
-            fontWeight: weight.semibold,
-            color: glassColors.textPrimary,
-          }}
-        >
-          {title}
-        </Text>
-        <Text
-          style={{
-            marginTop: ds.spacing(4),
-            fontSize: ds.fontSize(typeScale.secondary),
-            color: glassColors.textSecondary,
-          }}
-          numberOfLines={1}
-        >
-          {subtitle}
-        </Text>
-      </View>
-      <Ionicons
-        name="chevron-forward"
-        size={ds.icon(18)}
-        color={glassColors.textSecondary}
-      />
-    </TouchableOpacity>
-  );
-});
-
-function getGreeting(now: Date): string {
-  const hour = now.getHours();
-  if (hour < 12) {
-    return 'Good morning';
-  }
-  if (hour < 18) {
-    return 'Good afternoon';
-  }
-  return 'Good evening';
+interface LocationRecentOrder {
+  locationId: string;
+  order: RecentOrder | null;
 }
 
 const WEEKDAY_NAMES = [
@@ -343,874 +63,443 @@ const MONTH_NAMES = [
   'Dec',
 ] as const;
 
-function formatHeaderDate(now: Date): string {
-  if (Platform.OS === 'android') {
-    return `${WEEKDAY_NAMES[now.getDay()]}, ${MONTH_NAMES[now.getMonth()]} ${now.getDate()}`;
-  }
+export function getHomeGreeting(now: Date): string {
+  const hour = now.getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
 
-  return now.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'short',
-    day: 'numeric',
+export function formatHomeDate(now: Date): string {
+  return `${WEEKDAY_NAMES[now.getDay()]}, ${MONTH_NAMES[now.getMonth()]} ${now.getDate()}`;
+}
+
+export function summarizeReorderItems(order: RecentOrder): string {
+  const names = Array.from(new Set(order.reorderItems.map((item) => item.itemName)));
+  const summary = names.slice(0, 3).join(', ');
+  return names.length > 3 ? `${summary}\u2026` : summary;
+}
+
+function record(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value))
+    : null;
+}
+
+function normalizedLocationGroup(value: unknown): 'sushi' | 'poki' | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase();
+  if (normalized.includes('sushi') || normalized === 's') return 'sushi';
+  if (normalized.includes('poki') || normalized.includes('pho') || normalized === 'p') {
+    return 'poki';
+  }
+  return null;
+}
+
+function payloadForLocation(
+  payload: Record<string, unknown>,
+  locationId: string,
+  locationGroup: 'sushi' | 'poki',
+): Record<string, unknown> | null {
+  if (
+    typeof payload.locationId === 'string' &&
+    payload.locationId.trim().length > 0 &&
+    payload.locationId !== locationId
+  ) {
+    return null;
+  }
+  const payloadGroup =
+    normalizedLocationGroup(payload.locationGroup) ??
+    normalizedLocationGroup(payload.locationName);
+  if (payloadGroup && payloadGroup !== locationGroup) return null;
+
+  const keys = ['regularItems', 'remainingItems'] as const;
+  const arrays = keys.map((key) => (Array.isArray(payload[key]) ? payload[key] : []));
+  const rows = arrays.flat();
+  const carriesRowLocation = rows.some((value) => {
+    const row = record(value);
+    return Boolean(row?.locationGroup || row?.locationId || row?.locationName);
   });
-}
 
-function formatReminderDate(dateString: string): string {
-  const date = new Date(dateString);
-
-  if (Platform.OS === 'android') {
-    return `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}`;
+  if (carriesRowLocation) {
+    const matches = (value: unknown) => {
+      const row = record(value);
+      if (!row) return false;
+      if (typeof row.locationId === 'string' && row.locationId === locationId) return true;
+      return (
+        normalizedLocationGroup(row.locationGroup) === locationGroup ||
+        normalizedLocationGroup(row.locationName) === locationGroup
+      );
+    };
+    return {
+      ...payload,
+      regularItems: arrays[0].filter(matches),
+      remainingItems: arrays[1].filter(matches),
+    };
   }
 
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  });
+  const locations = Array.isArray(payload.locations)
+    ? payload.locations
+        .map(normalizedLocationGroup)
+        .filter((group): group is 'sushi' | 'poki' => group !== null)
+    : [];
+  if (locations.length > 0 && !locations.includes(locationGroup)) return null;
+  if (new Set(locations).size > 1) return null;
+  return payload;
 }
 
-function createBrowseFocusRequestId(itemId: string): string {
-  return `${itemId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+export function recentManagerArchive(
+  pastOrders: PastOrder[],
+  locationId: string,
+  locationGroup: 'sushi' | 'poki',
+): RecentOrder | null {
+  const candidates = pastOrders
+    .map((order): RecentOrder | null => {
+      const payload = payloadForLocation(order.payload, locationId, locationGroup);
+      if (!payload) return null;
+      const reorderItems = buildReorderItemsFromPayload(payload);
+      if (reorderItems.length === 0) return null;
+      return {
+        id: order.id,
+        supplierName: order.supplierName,
+        createdAt: order.createdAt,
+        itemCount: reorderItems.length,
+        messageText: order.messageText,
+        reorderItems,
+      };
+    })
+    .filter((order): order is RecentOrder => order !== null)
+    .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
+  return candidates[0] ?? null;
 }
 
-async function withTimeout<T>(
-  promise: Promise<T>,
-  timeoutMs: number,
-  label: string,
-): Promise<T> {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-  try {
-    return await Promise.race([
-      promise,
-      new Promise<T>((_, reject) => {
-        timeoutId = setTimeout(() => {
-          reject(new HomeDataTimeoutError(label));
-        }, timeoutMs);
-      }),
-    ]);
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-  }
-}
-
-function isHomeDataTimeoutError(error: unknown): error is HomeDataTimeoutError {
-  return error instanceof HomeDataTimeoutError;
-}
-
-export function HomeScreenView({ mode }: HomeScreenViewProps) {
+function StatTile({ value, label }: { value: number | string; label: string }) {
   const ds = useScaledStyles();
-  const [browseCategory, setBrowseCategory] = useState<ItemCategory | null>(null);
-  const [predictedItems, setPredictedItems] = useState<PredictedOrderItem[]>(
-    () => {
-      const locId = useAuthStore.getState().location?.id;
-      return locId
-        ? (getHomeInsights(useAuthStore.getState().session?.user.id, locId)?.predictedItems ?? [])
-        : [];
-    },
+  return (
+    <View
+      style={{
+        flex: 1,
+        borderRadius: radius.control,
+        backgroundColor: color.well,
+        padding: ds.spacing(space[3]),
+      }}
+    >
+      <Text
+        style={{
+          fontSize: ds.fontSize(typeScale.stat),
+          fontWeight: weight.bold,
+          color: color.ink,
+        }}
+      >
+        {value}
+      </Text>
+      <Text style={{ fontSize: ds.fontSize(typeScale.meta), color: color.ink2 }}>
+        {label}
+      </Text>
+    </View>
   );
-  const [reorderOrder, setReorderOrder] =
-    useState<HistoricalOrderSummary | null>(() => {
-      const locId = useAuthStore.getState().location?.id;
-      return locId
-        ? (getHomeInsights(useAuthStore.getState().session?.user.id, locId)?.reorderOrder ?? null)
-        : null;
-    });
-  const [activeReminder, setActiveReminder] =
-    useState<LocationReminderBanner | null>(() => {
-      const locId = useAuthStore.getState().location?.id;
-      return locId
-        ? (getHomeInsights(useAuthStore.getState().session?.user.id, locId)?.activeReminder ?? null)
-        : null;
-    });
-  const hasLoadedHomeDataRef = useRef(
-    (() => {
-      const locId = useAuthStore.getState().location?.id;
-      return !!(locId && getHomeInsights(useAuthStore.getState().session?.user.id, locId));
-    })(),
-  );
-  const homeDataRefreshPromiseRef = useRef<Promise<void> | null>(null);
-  const queuedHomeDataRefreshRef = useRef(false);
+}
+
+function ManagerHomeContent({ mode }: { mode: HomeScreenMode }) {
+  const ds = useScaledStyles();
+  const insets = useSafeAreaInsets();
+  const { location, locations, setLocation } = useResolvedActiveLocation();
   const {
-    user,
-    profile,
-    session,
-    location,
-    locations,
-    setLocation,
-    fetchLocations,
-    setViewMode,
-  } = useAuthStore(
-    useShallow((state) => ({
-      user: state.user,
-      profile: state.profile,
-      session: state.session,
-      location: state.location,
-      locations: state.locations,
-      setLocation: state.setLocation,
-      fetchLocations: state.fetchLocations,
-      setViewMode: state.setViewMode,
-    })),
-  );
-  const {
-    items,
-    isLoading: itemsLoading,
-    fetchItems,
-  } = useInventoryStore(
+    supplierCount,
+    totalItems,
+    totalNotes,
+    isLoading: overviewLoading,
+    error: overviewError,
+    refresh: refreshOverview,
+  } = useManagerFulfillmentOverview();
+  const { items, isLoading: inventoryLoading, fetchItems } = useInventoryStore(
     useShallow((state) => ({
       items: state.items,
       isLoading: state.isLoading,
       fetchItems: state.fetchItems,
     })),
   );
-  const {
-    totalCartCount,
-  } = useOrderStore(
-    useShallow((state) => ({
-      totalCartCount: state.getTotalCartCount(mode.scope),
-    })),
-  );
-  const {
-    addPredictedItem,
-    reorderHistoricalOrder,
-  } = useOrderingCartActions(mode.scope);
+  const pastOrders = useOrderStore((state) => state.pastOrders);
+  const setPendingReorder = useSimpleOrderUiStore((state) => state.setPendingReorder);
+  const [fallbackRecentOrder, setFallbackRecentOrder] = useState<LocationRecentOrder | null>(null);
+  const [recentOrderLoading, setRecentOrderLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const recentLoadGeneration = useRef(0);
+
+  const locationGroup = locationGroupForLocation(location?.name, location?.short_code);
+  const loadRecentOrder = useCallback(async () => {
+    const generation = ++recentLoadGeneration.current;
+    if (!location?.id) {
+      setFallbackRecentOrder(null);
+      setRecentOrderLoading(false);
+      return;
+    }
+
+    setRecentOrderLoading(true);
+    try {
+      const orders = await listMyOrderHistory(location.id, locationGroup);
+      if (generation !== recentLoadGeneration.current) return;
+      setFallbackRecentOrder({
+        locationId: location.id,
+        order: orders.find((order) => order.reorderItems.length > 0) ?? null,
+      });
+    } catch {
+      if (generation !== recentLoadGeneration.current) return;
+      setFallbackRecentOrder(null);
+    } finally {
+      if (generation === recentLoadGeneration.current) setRecentOrderLoading(false);
+    }
+  }, [location?.id, locationGroup]);
 
   useEffect(() => {
     void fetchItems();
-    void fetchLocations();
-  }, [fetchItems, fetchLocations]);
+  }, [fetchItems]);
 
   useEffect(() => {
-    if (locations.length > 0 && !location) {
-      setLocation(locations[0]);
-    }
-  }, [location, locations, setLocation]);
+    void loadRecentOrder();
+    return () => {
+      recentLoadGeneration.current += 1;
+    };
+  }, [loadRecentOrder]);
 
-  useEffect(() => {
-    queuedHomeDataRefreshRef.current = false;
-
-    const cached = location?.id
-      ? getHomeInsights(session?.user.id, location.id)
-      : undefined;
-    if (cached) {
-      setPredictedItems(cached.predictedItems);
-      setReorderOrder(cached.reorderOrder);
-      setActiveReminder(cached.activeReminder);
-      hasLoadedHomeDataRef.current = true;
-    } else {
-      hasLoadedHomeDataRef.current = false;
-      setPredictedItems([]);
-      setReorderOrder(null);
-      setActiveReminder(null);
-    }
-  }, [location?.id, session?.user.id]);
-
-  const runHomeDataLoad = useCallback(async (background = false) => {
-    const authState = useAuthStore.getState();
-    const locationId = authState.location?.id ?? null;
-    const userId = authState.session?.user?.id ?? null;
-    const cacheGeneration = getHomeInsightsGeneration();
-    if (!locationId) {
-      hasLoadedHomeDataRef.current = false;
-      setPredictedItems([]);
-      setReorderOrder(null);
-      setActiveReminder(null);
-      return;
-    }
-
-    const shouldPreserveCurrentState =
-      background || hasLoadedHomeDataRef.current;
-
-    const [insightsResult, reminderResult] = await Promise.allSettled([
-      withTimeout(
-        fetchLocationOrderInsights(locationId, 12, userId),
-        HOME_INSIGHTS_TIMEOUT_MS,
-        'Home insights',
-      ),
-      withTimeout(
-        fetchActiveLocationReminder(locationId),
-        HOME_REMINDER_TIMEOUT_MS,
-        'Home reminder',
-      ),
-    ]);
-
-    if (useAuthStore.getState().location?.id !== locationId ||
-        useAuthStore.getState().session?.user.id !== userId ||
-        getHomeInsightsGeneration() !== cacheGeneration) {
-      return;
-    }
-
-    if (insightsResult.status === 'fulfilled') {
-      setPredictedItems(insightsResult.value.predictedItems);
-      setReorderOrder(insightsResult.value.reorderOrder);
-    } else if (isHomeDataTimeoutError(insightsResult.reason)) {
-      // Keep the current empty or populated card state on transient timeouts.
-    } else {
-      console.error('Unable to load order insights', insightsResult.reason);
-    }
-
-    if (reminderResult.status === 'fulfilled') {
-      setActiveReminder(reminderResult.value);
-    } else if (isHomeDataTimeoutError(reminderResult.reason)) {
-      // Keep the current banner state on transient timeouts.
-    } else {
-      console.error('Unable to load home reminder', reminderResult.reason);
-      if (!shouldPreserveCurrentState) {
-        setActiveReminder(null);
-      }
-    }
-
-    hasLoadedHomeDataRef.current = true;
-
-    if (
-      insightsResult.status === 'fulfilled' ||
-      reminderResult.status === 'fulfilled'
-    ) {
-      const prev = getHomeInsights(userId, locationId);
-      setHomeInsights(userId, locationId, {
-        predictedItems:
-          insightsResult.status === 'fulfilled'
-            ? insightsResult.value.predictedItems
-            : (prev?.predictedItems ?? []),
-        reorderOrder:
-          insightsResult.status === 'fulfilled'
-            ? insightsResult.value.reorderOrder
-            : (prev?.reorderOrder ?? null),
-        activeReminder:
-          reminderResult.status === 'fulfilled'
-            ? reminderResult.value
-            : (prev?.activeReminder ?? null),
-        cachedAt: Date.now(),
-      }, cacheGeneration);
-    }
-  }, []);
-
-  const loadHomeData = useCallback(
-    async ({ background = false }: LoadHomeDataOptions = {}) => {
-      if (homeDataRefreshPromiseRef.current) {
-        queuedHomeDataRefreshRef.current = true;
-        await homeDataRefreshPromiseRef.current;
-        return;
-      }
-
-      const refreshPromise = (async () => {
-        await runHomeDataLoad(background);
-
-        while (queuedHomeDataRefreshRef.current) {
-          queuedHomeDataRefreshRef.current = false;
-          await runHomeDataLoad(true);
-        }
-      })().finally(() => {
-        homeDataRefreshPromiseRef.current = null;
-      });
-
-      homeDataRefreshPromiseRef.current = refreshPromise;
-      await refreshPromise;
-    },
-    [runHomeDataLoad],
-  );
-
-  const { refreshing, onRefresh } = useManagedRefresh(
-    useCallback(async () => {
-      await Promise.allSettled([
-        fetchItems({ force: true }),
-        loadHomeData(),
-      ]);
-    }, [fetchItems, loadHomeData]),
-  );
-
-  useFocusEffect(
-    useCallback(() => {
-      void loadHomeData({
-        background: hasLoadedHomeDataRef.current,
-      });
-
-      const intervalId = setInterval(() => {
-        void loadHomeData({ background: true });
-      }, HOME_BACKGROUND_REFRESH_INTERVAL_MS);
-
-      return () => {
-        clearInterval(intervalId);
-      };
-    }, [loadHomeData]),
-  );
-
-  const allItemsSorted = useMemo(
-    () => [...items].sort((left, right) => left.name.localeCompare(right.name)),
+  const activeInventory = useMemo(
+    () => items.filter((item) => item.active !== false),
     [items],
   );
-
-  const filteredPreviewBrowseItems = useMemo(
+  const categoryCount = useMemo(
+    () => new Set(activeInventory.map((item) => item.category)).size,
+    [activeInventory],
+  );
+  const now = useMemo(() => new Date(), []);
+  const bottomPadding = getTabBarClearance(insets.bottom) + ds.spacing(space[6]);
+  const overviewHasError = Boolean(overviewError) && !overviewLoading;
+  const overviewPending = overviewLoading && supplierCount === 0 && totalItems === 0 && totalNotes === 0;
+  const supplierValue = overviewPending ? '\u2026' : supplierCount;
+  const itemValue = overviewPending ? '\u2026' : totalItems;
+  const noteValue = overviewPending ? '\u2026' : totalNotes;
+  const managerArchive = useMemo(
     () =>
-      allItemsSorted.filter((item) =>
-        !browseCategory || item.category === browseCategory,
-      ),
-    [allItemsSorted, browseCategory],
+      location?.id
+        ? recentManagerArchive(pastOrders, location.id, locationGroup)
+        : null,
+    [location?.id, locationGroup, pastOrders],
   );
+  const compatibleFallback = fallbackRecentOrder && fallbackRecentOrder.locationId === location?.id
+    ? fallbackRecentOrder.order
+    : null;
+  const recentOrder = managerArchive ?? (!overviewLoading ? compatibleFallback : null);
 
-  const previewItems = useMemo(
-    () => filteredPreviewBrowseItems.slice(0, 2),
-    [filteredPreviewBrowseItems],
-  );
-  const hasSuggestedItems = predictedItems.length > 0;
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.allSettled([
+        refreshOverview(),
+        fetchItems({ force: true }),
+        loadRecentOrder(),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchItems, loadRecentOrder, refreshOverview]);
 
-  const homeDate = useMemo(() => new Date(), []);
-  const greeting = getGreeting(homeDate);
-  const browseSubtitle = `${items.length} items across ${CATEGORY_ORDER.length} categories`;
-  const metadataRole =
-    typeof session?.user?.user_metadata?.role === 'string'
-      ? session.user.user_metadata.role
-      : typeof session?.user?.app_metadata?.role === 'string'
-        ? session.user.app_metadata.role
-        : null;
-  const canSwitchViews =
-    (user?.role ?? profile?.role ?? metadataRole) === 'manager';
-  const visibleCollapsedCategories = CATEGORY_ORDER.slice(0, 4);
-  const moreCategoryCount = Math.max(
-    CATEGORY_ORDER.length - visibleCollapsedCategories.length,
-    0,
-  );
-
-  const openBrowse = useCallback(
-    (
-      nextCategory: ItemCategory | null = browseCategory,
-      focusSearch = false,
-      options: {
-        routeCategory?: ItemCategory | null;
-        homeCategory?: ItemCategory | null;
-        focusItemId?: string | null;
-        expandItem?: boolean;
-        addItem?: boolean;
-        requestId?: string | null;
-      } = {},
-    ) => {
-      const homeCategory = options.homeCategory ?? nextCategory;
-      const routeCategory = options.routeCategory ?? nextCategory;
-
-      setBrowseCategory(homeCategory);
-      router.push(
-        mode.buildBrowseHref({
-          category: routeCategory,
-          focusSearch,
-          focusItemId: options.focusItemId,
-          expandItem: options.expandItem,
-          addItem: options.addItem,
-          requestId: options.requestId,
-        }) as any,
-      );
-    },
-    [browseCategory, mode],
-  );
-
-  const handleBrowseCardPress = useCallback(() => {
-    openBrowse(browseCategory, false);
-  }, [browseCategory, openBrowse]);
-
-  const handleBrowseCardActionPress = useCallback(
-    (onPress: () => void) => (event: GestureResponderEvent) => {
-      event.stopPropagation?.();
-      onPress();
-    },
-    [],
-  );
-
-  const handlePreviewAdd = useCallback(
-    (item: InventoryItem) => {
-      openBrowse(browseCategory, false, {
-        routeCategory: item.category,
-        homeCategory: browseCategory,
-        focusItemId: item.id,
-        expandItem: true,
-        addItem: true,
-        requestId: createBrowseFocusRequestId(item.id),
-      });
-    },
-    [browseCategory, openBrowse],
-  );
-
-  const handleAddAllPredicted = useCallback(() => {
-    predictedItems.forEach((item) => {
-      addPredictedItem(item);
+  const handleReorder = useCallback(() => {
+    if (!recentOrder) return;
+    setPendingReorder({
+      items: recentOrder.reorderItems,
+      sourceLabel: formatHistoryDate(recentOrder.createdAt),
     });
-  }, [addPredictedItem, predictedItems]);
+    switchViewMode('employee', { announce: false });
+  }, [recentOrder, setPendingReorder]);
 
-  const handleQuickActionPress = useCallback(() => {
-    if (!reorderOrder) {
-      return;
-    }
-
-    void triggerImpactHaptic(ImpactFeedbackStyle.Light);
-    const didReorder = reorderHistoricalOrder(reorderOrder);
-    if (!didReorder) {
-      return;
-    }
-
-    router.push(mode.cartRoute as any);
-  }, [mode.cartRoute, reorderHistoricalOrder, reorderOrder]);
-
-  const handleQuickOrderPress = useCallback(() => {
-    void triggerImpactHaptic(ImpactFeedbackStyle.Light);
-    router.push(mode.quickOrderRoute as any);
-  }, [mode.quickOrderRoute]);
-
-  const handleSwitchViewPress = useCallback(() => {
-    void triggerImpactHaptic(ImpactFeedbackStyle.Light);
-    if (mode.scope === 'manager') {
-      setViewMode('employee');
-      router.replace('/(tabs)' as any);
-      return;
-    }
-
-    setViewMode('manager');
-    router.replace('/(manager)' as any);
-  }, [mode.scope, setViewMode]);
-
-  const renderSuggestedItem = useCallback(
-    ({ item }: { item: PredictedOrderItem }) => (
-      <SuggestedItemCard item={item} onAdd={addPredictedItem} />
-    ),
-    [addPredictedItem],
-  );
-
-  if (itemsLoading && items.length === 0) {
-    return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: glassColors.background }}
-        edges={['top', 'left', 'right']}
-      >
-        <View className="flex-1 items-center justify-center">
-          <Loading label="Loading home" />
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const reorderTitle = recentOrder
+    ? `Reorder last ${new Date(recentOrder.createdAt).toLocaleDateString('en-US', {
+        weekday: 'long',
+      })}`
+    : 'Reorder last order';
+  const reorderSubtitle = recentOrder
+    ? `${recentOrder.reorderItems.length} items · ${summarizeReorderItems(recentOrder)}`
+    : recentOrderLoading || overviewLoading
+      ? 'Loading recent orders'
+      : 'No recent checklist order';
+  const inventorySubtitle = inventoryLoading && activeInventory.length === 0
+    ? 'Loading inventory'
+    : `${activeInventory.length} items across ${categoryCount} categories`;
 
   return (
-    <HomeScreenScroll
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={glassColors.accent}
-        />
-      }
-    >
-      <IdentityHeader
-        identity={mode.identity}
-        title={greeting}
-        subtitle={formatHeaderDate(homeDate)}
-        cartCount={totalCartCount}
-        onPressCart={() => router.push(mode.cartRoute as any)}
+    <SafeAreaView edges={['left', 'right']} style={{ flex: 1, backgroundColor: color.page }}>
+      <ScreenHeader
+        title={getHomeGreeting(now)}
+        subtitle={formatHomeDate(now)}
+        right={
+          <LocationPill
+            location={location}
+            locations={locations}
+            onSelect={setLocation}
+          />
+        }
       />
 
-      {activeReminder ? (
-        <GlassSurface
-          intensity="medium"
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: ds.spacing(space[4]),
+          paddingBottom: bottomPadding,
+        }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void handleRefresh()}
+            tintColor={color.accent}
+          />
+        }
+      >
+        <Card
           style={{
-            borderRadius: glassRadii.surface,
-            paddingHorizontal: ds.spacing(14),
-            paddingVertical: ds.spacing(12),
-            marginBottom: ds.spacing(14),
-            backgroundColor: colors.primary[50],
-            borderColor: colors.primary[100],
-            borderWidth: 1,
+            paddingHorizontal: ds.spacing(space[4]),
+            paddingVertical: ds.spacing(space[4]),
           }}
         >
-          <View className="flex-row items-start">
-            <View
-              style={{
-                width: ds.icon(34),
-                height: ds.icon(34),
-                borderRadius: glassRadii.iconTile,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: glassColors.accentSoft,
-                marginRight: ds.spacing(12),
-              }}
-            >
-              <Ionicons
-                name="notifications-outline"
-                size={ds.icon(18)}
-                color={glassColors.accent}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <View className="flex-row items-center justify-between">
-                <Text
-                  style={{
-                    fontSize: ds.fontSize(typeScale.secondary),
-                    fontWeight: weight.semibold,
-                    color: glassColors.accent,
-                    textTransform: 'uppercase',
-                    letterSpacing: 0.8,
-                  }}
-                >
-                  Order reminder
-                </Text>
-                <Text
-                  style={{
-                    fontSize: ds.fontSize(typeScale.caption),
-                    color: glassColors.textSecondary,
-                  }}
-                >
-                  {activeReminder.senderName ||
-                    `Updated ${formatReminderDate(activeReminder.createdAt)}`}
-                </Text>
-              </View>
-              <Text
-                style={{
-                  marginTop: ds.spacing(6),
-                  fontSize: ds.fontSize(typeScale.body),
-                  color: glassColors.textPrimary,
-                  lineHeight: ds.fontSize(typeScale.title),
-                }}
-              >
-                {activeReminder.message}
-              </Text>
-            </View>
-          </View>
-        </GlassSurface>
-      ) : null}
-
-      <HomeSearchCard
-        placeholder={`Search all ${items.length} items...`}
-        onPress={() => openBrowse(browseCategory, true)}
-        accessibilityLabel="Search inventory"
-      />
-
-      <View style={{ marginTop: ds.spacing(20) }}>
-        <HomeModuleCard title="Quick Actions">
-          <View style={{ gap: ds.spacing(10) }}>
-            <QuickActionRow
-              icon="flash-outline"
-              title="Quick Order"
-              subtitle="Type an order in seconds"
-              accessibilityLabel="Quick Order"
-              accessibilityHint="Opens the Quick Order screen"
-              onPress={handleQuickOrderPress}
-            />
-
-            {canSwitchViews ? (
-              <QuickActionRow
-                icon="swap-horizontal"
-                title={
-                  mode.scope === 'manager'
-                    ? 'Switch to Employee View'
-                    : 'Switch to Manager View'
-                }
-                subtitle={
-                  mode.scope === 'manager'
-                    ? 'Place orders in employee mode'
-                    : 'Manage orders and fulfillment'
-                }
-                accessibilityLabel={
-                  mode.scope === 'manager'
-                    ? 'Switch to Employee View'
-                    : 'Switch to Manager View'
-                }
-                accessibilityHint={
-                  mode.scope === 'manager'
-                    ? 'Switches to the employee home view'
-                    : 'Switches to the manager home view'
-                }
-                onPress={handleSwitchViewPress}
-              />
-            ) : null}
-
-            {reorderOrder ? (
-              <QuickActionRow
-                icon="star-outline"
-                title={`Reorder last ${formatOrderDayLabel(reorderOrder.createdAt)}`}
-                subtitle={`${reorderOrder.itemCount} items · ${summarizeOrderItems(reorderOrder)}`}
-                accessibilityLabel={`Reorder last ${formatOrderDayLabel(reorderOrder.createdAt)}`}
-                accessibilityHint="Adds the recommended reorder items to your cart and opens the cart"
-                onPress={handleQuickActionPress}
-              />
-            ) : null}
-          </View>
-        </HomeModuleCard>
-      </View>
-
-      <View style={{ marginTop: ds.spacing(20) }}>
-        <GlassSurface
-          intensity="subtle"
-          style={{ borderRadius: glassRadii.surface }}
-        >
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Browse inventory"
-            accessibilityHint="Opens the full inventory browse screen"
-            onPress={handleBrowseCardPress}
-            activeOpacity={0.94}
+          <View
             style={{
-              borderRadius: glassRadii.surface,
-              overflow: 'hidden',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: ds.spacing(space[3]),
             }}
           >
-            <View
+            <Text
               style={{
-                paddingHorizontal: ds.spacing(14),
-                paddingTop: ds.spacing(14),
-                paddingBottom: ds.spacing(12),
+                fontSize: ds.fontSize(typeScale.hero),
+                fontWeight: weight.bold,
+                color: color.ink,
               }}
             >
-              <View className="flex-row items-center justify-between">
-                <View className="flex-row items-center flex-1">
-                  <View
-                    style={{
-                      width: ds.icon(40),
-                      height: ds.icon(40),
-                      borderRadius: glassRadii.iconTile,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: colors.gray[100],
-                      marginRight: ds.spacing(12),
-                      borderWidth: glassHairlineWidth,
-                      borderColor: color.hairline,
-                    }}
-                  >
-                    <Ionicons
-                      name="grid-outline"
-                      size={ds.icon(20)}
-                      color={glassColors.textPrimary}
-                    />
-                  </View>
-                  <View style={{ flex: 1, paddingRight: ds.spacing(10) }}>
-                    <Text
-                      style={{
-                        fontSize: ds.fontSize(typeScale.title),
-                        fontWeight: weight.bold,
-                        color: glassColors.textPrimary,
-                        letterSpacing: -0.25,
-                      }}
-                    >
-                      Browse Inventory
-                    </Text>
-                    <Text
-                      style={{
-                        marginTop: ds.spacing(4),
-                        fontSize: ds.fontSize(typeScale.secondary),
-                        color: glassColors.textSecondary,
-                      }}
-                    >
-                      {browseSubtitle}
-                    </Text>
-                  </View>
-                </View>
-                <TouchableOpacity
-                  onPress={handleBrowseCardActionPress(() => openBrowse(browseCategory, false))}
-                  activeOpacity={0.88}
-                  style={{
-                    minHeight: Math.max(42, ds.buttonH),
-                    paddingHorizontal: ds.spacing(15),
-                    paddingVertical: ds.spacing(10),
-                    borderRadius: glassRadii.pill,
-                    backgroundColor: glassColors.accent,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    shadowColor: color.ink,
-                    shadowOpacity: 0.12,
-                    shadowRadius: 12,
-                    shadowOffset: { width: 0, height: 6 },
-                    elevation: 2,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: ds.fontSize(typeScale.body),
-                      fontWeight: weight.bold,
-                      color: glassColors.textOnPrimary,
-                    }}
-                  >
-                    Open
-                  </Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={ds.icon(16)}
-                    color={glassColors.textOnPrimary}
-                    style={{ marginLeft: ds.spacing(4) }}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
+              Fulfillment
+            </Text>
             <View
               style={{
-                marginHorizontal: ds.spacing(14),
-                borderTopWidth: glassHairlineWidth,
-                borderTopColor: glassColors.divider,
-              }}
-            />
-
-            <View
-              style={{
-                paddingHorizontal: ds.spacing(14),
-                paddingTop: ds.spacing(12),
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                gap: ds.spacing(8),
-              }}
-            >
-              <TouchableOpacity
-                onPress={handleBrowseCardActionPress(() => openBrowse(null, false))}
-                style={{
-                  paddingHorizontal: ds.spacing(16),
-                  paddingVertical: ds.spacing(9),
-                  borderRadius: glassRadii.pill,
-                  backgroundColor:
-                    browseCategory === null
-                      ? colors.gray[200]
-                      : colors.gray[100],
-                  borderWidth: glassHairlineWidth,
-                  borderColor:
-                    browseCategory === null
-                      ? color.ink
-                      : glassColors.cardBorder,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: ds.fontSize(typeScale.secondary),
-                    fontWeight: browseCategory === null ? '700' : '600',
-                    color: glassColors.textPrimary,
-                  }}
-                >
-                  All
-                </Text>
-              </TouchableOpacity>
-              {visibleCollapsedCategories.map((category) => {
-                const isSelected = browseCategory === category;
-                return (
-                  <TouchableOpacity
-                    key={category}
-                    onPress={handleBrowseCardActionPress(() => openBrowse(category, false))}
-                    style={{
-                      paddingHorizontal: ds.spacing(16),
-                      paddingVertical: ds.spacing(9),
-                      borderRadius: glassRadii.pill,
-                      backgroundColor: isSelected
-                        ? colors.gray[200]
-                        : colors.gray[100],
-                      borderWidth: glassHairlineWidth,
-                      borderColor: isSelected
-                        ? color.ink
-                        : glassColors.cardBorder,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: ds.fontSize(typeScale.secondary),
-                        fontWeight: isSelected ? '700' : '600',
-                        color: glassColors.textPrimary,
-                      }}
-                    >
-                      {getCategoryShortLabel(category)}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-              {moreCategoryCount > 0 ? (
-                <TouchableOpacity
-                  onPress={handleBrowseCardActionPress(() => openBrowse(null, false))}
-                  style={{
-                    paddingHorizontal: ds.spacing(16),
-                    paddingVertical: ds.spacing(9),
-                    borderRadius: glassRadii.pill,
-                    backgroundColor: colors.gray[100],
-                    borderWidth: glassHairlineWidth,
-                    borderColor: glassColors.cardBorder,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: ds.fontSize(typeScale.secondary),
-                      fontWeight: weight.semibold,
-                      color: glassColors.textPrimary,
-                    }}
-                  >
-                    +{moreCategoryCount} more
-                  </Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
-
-            <View
-              style={{
-                paddingHorizontal: ds.spacing(14),
-                paddingTop: ds.spacing(12),
-                gap: ds.spacing(8),
-              }}
-            >
-              {previewItems.map((item) => (
-                <BrowsePreviewRow
-                  key={item.id}
-                  item={item}
-                  onAdd={handlePreviewAdd}
-                />
-              ))}
-            </View>
-
-            <View
-              style={{
-                alignItems: 'center',
-                paddingTop: ds.spacing(12),
-                paddingBottom: ds.spacing(14),
+                paddingHorizontal: ds.spacing(space[2] + 1),
+                paddingVertical: ds.spacing(space[1] - 1),
+                borderRadius: radius.pill,
+                backgroundColor: color.warningBg,
               }}
             >
               <Text
                 style={{
-                  fontSize: ds.fontSize(typeScale.secondary),
-                  color: glassColors.textSecondary,
+                  fontSize: ds.fontSize(typeScale.caption),
+                  fontWeight: weight.bold,
+                  color: color.warning,
                 }}
               >
-                Showing {previewItems.length} of {filteredPreviewBrowseItems.length}{' '}
-                <Text
-                  style={{
-                    color: glassColors.accent,
-                    fontWeight: weight.semibold,
-                  }}
-                >
-                  View all
-                </Text>
+                {supplierValue} waiting
               </Text>
             </View>
-          </TouchableOpacity>
-        </GlassSurface>
-      </View>
+          </View>
 
-      <View style={{ marginTop: ds.spacing(20) }}>
-        <HomeModuleCard
-          title="Suggestions"
-          actionLabel={predictedItems.length > 0 ? 'Add all' : undefined}
-          onPressAction={predictedItems.length > 0 ? handleAddAllPredicted : undefined}
-        >
-          {hasSuggestedItems ? (
-            <FlashList
-              data={predictedItems}
-              renderItem={renderSuggestedItem}
-              keyExtractor={(item) => `${item.inventoryItemId}:${item.unitType}`}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              ItemSeparatorComponent={() => <View style={{ width: ds.spacing(10) }} />}
-              contentContainerStyle={{
-                paddingRight: ds.spacing(10),
+          <View
+            style={{
+              flexDirection: 'row',
+              gap: ds.spacing(space[2]),
+              marginTop: ds.spacing(space[3]),
+            }}
+          >
+            <StatTile value={supplierValue} label="suppliers" />
+            <StatTile value={itemValue} label="items" />
+            <StatTile value={noteValue} label="notes" />
+          </View>
+
+          {overviewHasError ? (
+            <Text
+              style={{
+                marginTop: ds.spacing(space[2]),
+                fontSize: ds.fontSize(typeScale.secondary),
+                color: color.alert,
               }}
-            />
-          ) : (
-            <HomeModuleState
-              icon="sparkles-outline"
-              title={location?.id ? 'Collecting more data' : 'Choose a location'}
-              message={
-                location?.id
-                  ? 'Suggestions will appear here as you place more orders.'
-                  : 'Select a location to see suggested items.'
-              }
-            />
-          )}
-        </HomeModuleCard>
-      </View>
-    </HomeScreenScroll>
+            >
+              Could not load fulfillment. Pull to refresh.
+            </Text>
+          ) : null}
+
+          <Button
+            label="Review orders ›"
+            onPress={() => router.push('/(manager)/fulfillment')}
+            style={{ marginTop: ds.spacing(space[3]) }}
+          />
+        </Card>
+
+        <SectionLabel>Quick actions</SectionLabel>
+        <Card flush>
+          <ListRow
+            icon="repeat-outline"
+            title={reorderTitle}
+            subtitle={reorderSubtitle}
+            onPress={recentOrder ? handleReorder : undefined}
+            disabled={!recentOrder}
+            chevron={Boolean(recentOrder)}
+            style={{ paddingVertical: ds.spacing(space[3]) }}
+          />
+          <ListRow
+            icon="grid-outline"
+            title="Browse inventory"
+            subtitle={inventorySubtitle}
+            onPress={() => router.push(mode.buildBrowseHref())}
+            chevron
+            style={{ paddingVertical: ds.spacing(space[3]) }}
+          />
+          <ListRow
+            icon="swap-horizontal"
+            title="Switch to Employee view"
+            subtitle="Place an order from the checklist"
+            onPress={() => switchViewMode('employee')}
+            chevron
+            last
+            style={{ paddingVertical: ds.spacing(space[3]) }}
+          />
+        </Card>
+
+        <SectionLabel>Suggestions</SectionLabel>
+        <Card>
+          <View
+            style={{
+              alignItems: 'center',
+              paddingHorizontal: ds.spacing(space[4]),
+              paddingVertical: ds.spacing(space[5]),
+            }}
+          >
+            <Ionicons name="sparkles-outline" size={ds.icon(28)} color={color.ink3} />
+            <Text
+              style={{
+                marginTop: ds.spacing(space[2]),
+                fontSize: ds.fontSize(typeScale.body),
+                fontWeight: weight.semibold,
+                color: color.ink,
+              }}
+            >
+              Collecting more data
+            </Text>
+            <Text
+              style={{
+                marginTop: ds.spacing(space[1]),
+                fontSize: ds.fontSize(typeScale.secondary),
+                color: color.ink2,
+                textAlign: 'center',
+              }}
+            >
+              Suggestions appear here as more orders are placed.
+            </Text>
+          </View>
+        </Card>
+      </ScrollView>
+    </SafeAreaView>
   );
+}
+
+/** Employee Home is no longer a visible tab; retain the shared adapter safely. */
+export function HomeScreenView({ mode }: HomeScreenViewProps) {
+  if (mode.scope === 'employee') {
+    return <Redirect href="/(tabs)/simple-order" />;
+  }
+
+  return <ManagerHomeContent mode={mode} />;
 }
