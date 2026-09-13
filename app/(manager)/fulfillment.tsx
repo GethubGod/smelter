@@ -1,5 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
+  Animated,
+  Easing,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -46,7 +48,7 @@ import {
 import { loadSupplierLookup } from '@/services/supplierResolver';
 import { useOrderStore } from '@/store';
 import type { FulfillmentLocationGroup, OrderLaterItem } from '@/store/orderStore.types';
-import { color, radius, tracking, typeScale, weight } from '@/theme/tokens';
+import { color, motion, radius, tracking, typeScale, weight } from '@/theme/tokens';
 
 const SHEET_TRANSITION_MS = 240;
 
@@ -114,6 +116,13 @@ function SupplierRow({
   onPress: () => void;
 }) {
   const ds = useScaledStyles();
+  const pressed = useRef(new Animated.Value(0)).current;
+  const animatePress = (toValue: number) => Animated.timing(pressed, {
+    toValue,
+    duration: 120,
+    easing: Easing.bezier(...motion.controlEase),
+    useNativeDriver: false,
+  }).start();
   const peopleLabel = `${group.peopleCount} ${group.peopleCount === 1 ? 'person' : 'people'}`;
   const sendable = isSendableManagerSupplier(group);
   return (
@@ -124,84 +133,88 @@ function SupplierRow({
       accessibilityLabel={`${group.supplierName}, ${group.itemCount} items, ${peopleLabel}`}
       accessibilityHint={sendable ? 'Opens supplier review' : 'Supplier setup is required'}
       accessibilityState={{ disabled: !sendable }}
-      style={({ pressed }) => ({
+      onPressIn={() => animatePress(1)}
+      onPressOut={() => animatePress(0)}
+      style={{ backgroundColor: color.card }}
+    >
+      <Animated.View style={{
         minHeight: ds.spacing(60),
         flexDirection: 'row',
         alignItems: 'center',
         gap: ds.spacing(12),
         paddingHorizontal: ds.spacing(14),
         paddingVertical: ds.spacing(10),
-        backgroundColor: pressed && sendable ? color.well : color.card,
-      })}
-    >
-      <View
-        style={{
-          width: ds.icon(38),
-          height: ds.icon(38),
-          borderRadius: radius.pill,
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: color.well,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: ds.fontSize(typeScale.body),
-            fontWeight: weight.semibold,
-            color: color.ink2,
-          }}
-        >
-          {(group.supplierName.trim()[0] || '?').toUpperCase()}
-        </Text>
-      </View>
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Text
-          numberOfLines={1}
-          style={{
-            fontSize: ds.fontSize(typeScale.body),
-            fontWeight: weight.semibold,
-            color: color.ink,
-          }}
-        >
-          {group.supplierName}
-        </Text>
-        <Text
-          numberOfLines={2}
-          style={{
-            marginTop: ds.spacing(2),
-            fontSize: ds.fontSize(typeScale.secondary),
-            color: color.ink2,
-          }}
-        >
-          {group.itemCount} {group.itemCount === 1 ? 'item' : 'items'} · {peopleLabel}
-          {group.remainingCount > 0 ? (
-            <Text style={{ color: color.warning }}>
-              {' '}· {group.remainingCount} remaining
-            </Text>
-          ) : null}
-          {!sendable ? (
-            <Text style={{ color: color.warning }}> · Supplier setup needed</Text>
-          ) : null}
-        </Text>
-      </View>
-      <Ionicons
-        name={sendable ? 'chevron-forward' : 'alert-circle-outline'}
-        size={ds.icon(18)}
-        color={sendable ? color.ink3 : color.warning}
-      />
-      {!last ? (
+        backgroundColor: pressed.interpolate({ inputRange: [0, 1], outputRange: [color.card, color.well] }),
+      }}>
         <View
-          pointerEvents="none"
           style={{
-            position: 'absolute',
-            left: ds.spacing(14),
-            right: 0,
-            bottom: 0,
-            height: 1,
-            backgroundColor: color.hairline,
+            width: ds.icon(38),
+            height: ds.icon(38),
+            borderRadius: radius.pill,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: color.well,
           }}
+        >
+          <Text
+            style={{
+              fontSize: ds.fontSize(typeScale.body),
+              fontWeight: weight.semibold,
+              color: color.ink2,
+            }}
+          >
+            {(group.supplierName.trim()[0] || '?').toUpperCase()}
+          </Text>
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text
+            numberOfLines={1}
+            style={{
+              fontSize: ds.fontSize(typeScale.body),
+              fontWeight: weight.semibold,
+              color: color.ink,
+            }}
+          >
+            {group.supplierName}
+          </Text>
+          <Text
+            numberOfLines={2}
+            style={{
+              marginTop: ds.spacing(2),
+              fontSize: ds.fontSize(typeScale.secondary),
+              color: color.ink2,
+            }}
+          >
+            {group.itemCount} {group.itemCount === 1 ? 'item' : 'items'} · {peopleLabel}
+            {group.remainingCount > 0 ? (
+              <Text style={{ color: color.warning }}>
+                {' '}· {group.remainingCount} remaining
+              </Text>
+            ) : null}
+            {!sendable ? (
+              <Text style={{ color: color.warning }}> · Supplier setup needed</Text>
+            ) : null}
+          </Text>
+        </View>
+        <Ionicons
+          name={sendable ? 'chevron-forward' : 'alert-circle-outline'}
+          size={ds.icon(18)}
+          color={sendable ? color.ink3 : color.warning}
         />
-      ) : null}
+        {!last ? (
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              left: ds.spacing(14),
+              right: 0,
+              bottom: 0,
+              height: 1,
+              backgroundColor: color.hairline,
+            }}
+          />
+        ) : null}
+      </Animated.View>
     </Pressable>
   );
 }
@@ -216,6 +229,13 @@ function OrderLaterRow({
   onEdit: () => void;
 }) {
   const ds = useScaledStyles();
+  const pressed = useRef(new Animated.Value(0)).current;
+  const animatePress = (toValue: number) => Animated.timing(pressed, {
+    toValue,
+    duration: 120,
+    easing: Easing.bezier(...motion.controlEase),
+    useNativeDriver: false,
+  }).start();
   const locationName = item.locationName
     ? stripLocationPrefix(item.locationName)
     : 'Unassigned location';
@@ -224,74 +244,78 @@ function OrderLaterRow({
       onPress={onEdit}
       accessibilityRole="button"
       accessibilityLabel={`Edit ${item.itemName}, order on ${formatOrderDay(item.scheduledAt)}`}
-      style={({ pressed }) => ({
+      onPressIn={() => animatePress(1)}
+      onPressOut={() => animatePress(0)}
+      style={{ backgroundColor: color.card }}
+    >
+      <Animated.View style={{
         minHeight: ds.spacing(60),
         flexDirection: 'row',
         alignItems: 'center',
         gap: ds.spacing(12),
         paddingHorizontal: ds.spacing(14),
         paddingVertical: ds.spacing(10),
-        backgroundColor: pressed ? color.well : color.card,
-      })}
-    >
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Text
-          numberOfLines={1}
-          style={{
-            fontSize: ds.fontSize(typeScale.body),
-            fontWeight: weight.semibold,
-            color: color.ink,
-          }}
-        >
-          {item.itemName}
-        </Text>
-        <Text
-          numberOfLines={2}
-          style={{
-            marginTop: ds.spacing(2),
-            fontSize: ds.fontSize(typeScale.secondary),
-            color: color.ink2,
-          }}
-        >
-          {locationName} · {item.unit} ·{' '}
-          <Text style={{ color: color.warning }}>
-            Order on {formatOrderDay(item.scheduledAt)}
+        backgroundColor: pressed.interpolate({ inputRange: [0, 1], outputRange: [color.card, color.well] }),
+      }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text
+            numberOfLines={1}
+            style={{
+              fontSize: ds.fontSize(typeScale.body),
+              fontWeight: weight.semibold,
+              color: color.ink,
+            }}
+          >
+            {item.itemName}
           </Text>
-        </Text>
-      </View>
-      <View
-        style={{
-          paddingHorizontal: ds.spacing(9),
-          paddingVertical: ds.spacing(5),
-          borderRadius: radius.pill,
-          backgroundColor: color.well,
-        }}
-      >
-        <Text
+          <Text
+            numberOfLines={2}
+            style={{
+              marginTop: ds.spacing(2),
+              fontSize: ds.fontSize(typeScale.secondary),
+              color: color.ink2,
+            }}
+          >
+            {locationName} · {item.unit} ·{' '}
+            <Text style={{ color: color.warning }}>
+              Order on {formatOrderDay(item.scheduledAt)}
+            </Text>
+          </Text>
+        </View>
+        <View
           style={{
-            fontSize: ds.fontSize(typeScale.caption),
-            fontWeight: weight.bold,
-            letterSpacing: tracking.caption,
-            textTransform: 'uppercase',
-            color: color.ink2,
+            paddingHorizontal: ds.spacing(9),
+            paddingVertical: ds.spacing(5),
+            borderRadius: radius.pill,
+            backgroundColor: color.well,
           }}
         >
-          Edit
-        </Text>
-      </View>
-      {!last ? (
-        <View
-          pointerEvents="none"
-          style={{
-            position: 'absolute',
-            left: ds.spacing(14),
-            right: 0,
-            bottom: 0,
-            height: 1,
-            backgroundColor: color.hairline,
-          }}
-        />
-      ) : null}
+          <Text
+            style={{
+              fontSize: ds.fontSize(typeScale.caption),
+              fontWeight: weight.bold,
+              letterSpacing: tracking.caption,
+              textTransform: 'uppercase',
+              color: color.ink2,
+            }}
+          >
+            Edit
+          </Text>
+        </View>
+        {!last ? (
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              left: ds.spacing(14),
+              right: 0,
+              bottom: 0,
+              height: 1,
+              backgroundColor: color.hairline,
+            }}
+          />
+        ) : null}
+      </Animated.View>
     </Pressable>
   );
 }

@@ -13,9 +13,11 @@ import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   Easing,
+  interpolateColor,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
+  withSequence,
 } from 'react-native-reanimated';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerImpactHaptic, triggerSelectionHaptic } from '@/lib/haptics';
@@ -46,6 +48,7 @@ const CLEAR_SIZE = 24;
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const glideEasing = Easing.bezier(...motion.ease);
+const controlEasing = Easing.bezier(...motion.controlEase);
 const popEasing = Easing.bezier(...motion.pop);
 
 export function PinnedOrderBar({
@@ -66,6 +69,9 @@ export function PinnedOrderBar({
   const restingBottomRef = useRef(restingBottom);
   const keyboardBottom = useSharedValue(restingBottom);
   const focusProgress = useSharedValue(focused ? 1 : 0);
+  const focusOpacity = useSharedValue(focused ? 1 : 0);
+  const resultsOpacity = useSharedValue(query.trim() ? 1 : 0);
+  const sendProgress = useSharedValue(checkedCount > 0 ? 1 : 0);
   const resultsProgress = useSharedValue(query.trim() ? 1 : 0);
   const sendScale = useSharedValue(1);
   const badgeScale = useSharedValue(1);
@@ -80,23 +86,29 @@ export function PinnedOrderBar({
 
   useEffect(() => {
     focusProgress.value = withTiming(focused ? 1 : 0, {
-      duration: focused ? 300 : 260,
+      duration: 260,
       easing: glideEasing,
     });
-  }, [focusProgress, focused]);
+    focusOpacity.value = withTiming(focused ? 1 : 0, { duration: 220, easing: controlEasing });
+  }, [focusOpacity, focusProgress, focused]);
 
   useEffect(() => {
     resultsProgress.value = withTiming(query.trim() ? 1 : 0, {
       duration: motion.dur,
       easing: glideEasing,
     });
-  }, [query, resultsProgress]);
+    resultsOpacity.value = withTiming(query.trim() ? 1 : 0, { duration: motion.dur, easing: controlEasing });
+  }, [query, resultsOpacity, resultsProgress]);
 
   useEffect(() => {
+    sendProgress.value = withTiming(checkedCount > 0 ? 1 : 0, { duration: motion.dur, easing: controlEasing });
     if (checkedCount === 0) return;
-    badgeScale.value = 0.6;
-    badgeScale.value = withTiming(1, { duration: 320, easing: popEasing });
-  }, [badgeScale, checkedCount]);
+    badgeScale.value = 1;
+    badgeScale.value = withSequence(
+      withTiming(1.35, { duration: 128, easing: popEasing }),
+      withTiming(1, { duration: 192, easing: popEasing }),
+    );
+  }, [badgeScale, checkedCount, sendProgress]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -134,17 +146,20 @@ export function PinnedOrderBar({
 
   const positionStyle = useAnimatedStyle(() => ({
     bottom: keyboardBottom.value,
-    opacity: focusProgress.value,
+    opacity: focusOpacity.value,
     transform: [{ translateY: 28 * (1 - focusProgress.value) }],
   }));
-  const resultsStyle = useAnimatedStyle(() => ({
+  const resultsHeightStyle = useAnimatedStyle(() => ({
     maxHeight: MAX_RESULTS_HEIGHT * resultsProgress.value,
-    marginBottom: 10 * resultsProgress.value,
-    opacity: resultsProgress.value,
+  }));
+  const resultsStyle = useAnimatedStyle(() => ({
+    marginBottom: 8 * resultsProgress.value,
+    opacity: resultsOpacity.value,
     transform: [{ translateY: 8 * (1 - resultsProgress.value) }],
   }));
   const sendStyle = useAnimatedStyle(() => ({
     transform: [{ scale: sendScale.value }],
+    backgroundColor: interpolateColor(sendProgress.value, [0, 1], [color.disabled, color.accent]),
   }));
   const badgeStyle = useAnimatedStyle(() => ({
     transform: [{ scale: badgeScale.value }],
@@ -184,18 +199,16 @@ export function PinnedOrderBar({
           accessibilityLabel={
             isSelected ? `${item.name}, already on order` : `Add ${item.name}`
           }
-          style={({ pressed }) => ({
+          style={{
             minHeight: 50,
             flexDirection: 'row',
             alignItems: 'center',
             paddingHorizontal: ds.spacing(14),
             paddingVertical: ds.spacing(6),
-            borderBottomWidth: index === results.length - 1 ? 0 : 1,
-            borderBottomColor: color.hairline,
-            opacity: pressed ? 0.72 : 1,
-          })}
+            gap: ds.spacing(10),
+          }}
         >
-          <View style={{ flex: 1, minWidth: 0, paddingRight: ds.spacing(8) }}>
+          <View style={{ flex: 1, minWidth: 0, paddingRight: 0 }}>
             <Text
               numberOfLines={1}
               style={{
@@ -217,6 +230,7 @@ export function PinnedOrderBar({
               {isListed ? ' · on your list' : ''}
             </Text>
           </View>
+          {index > 0 ? <View pointerEvents="none" style={{ position: 'absolute', left: ds.spacing(14), right: ds.spacing(14), top: 0, height: 1, backgroundColor: color.hairline }} /> : null}
           <Ionicons
             name={isSelected ? 'checkmark' : 'add'}
             size={ds.icon(20)}
@@ -225,7 +239,7 @@ export function PinnedOrderBar({
         </Pressable>
       );
     },
-    [ds, handleAdd, listedItemIds, results.length, selectedItemIds],
+    [ds, handleAdd, listedItemIds, selectedItemIds],
   );
 
   return (
@@ -244,13 +258,15 @@ export function PinnedOrderBar({
         pointerEvents={showResults ? 'auto' : 'none'}
         style={[
           {
-            overflow: 'hidden',
             backgroundColor: color.card,
             borderRadius: radius.card,
+            ...shadow.addBar,
+            shadowOpacity: 0.12,
           },
           resultsStyle,
         ]}
       >
+        <Animated.View style={[{ overflow: 'hidden', borderRadius: radius.card }, resultsHeightStyle]}>
         {results.length > 0 ? (
           <FlatList
             data={results}
@@ -261,10 +277,11 @@ export function PinnedOrderBar({
         ) : (
           <View
             style={{
-              minHeight: 56,
+              minHeight: 50,
               alignItems: 'center',
               justifyContent: 'center',
-              paddingHorizontal: ds.spacing(16),
+              paddingHorizontal: ds.spacing(14),
+              paddingVertical: ds.spacing(6),
             }}
           >
             <Text
@@ -278,6 +295,7 @@ export function PinnedOrderBar({
             </Text>
           </View>
         )}
+        </Animated.View>
       </Animated.View>
 
       <View
@@ -298,7 +316,8 @@ export function PinnedOrderBar({
             flexDirection: 'row',
             alignItems: 'center',
             paddingLeft: ds.spacing(14),
-            paddingRight: ds.spacing(5),
+            paddingRight: ds.spacing(6),
+            gap: ds.spacing(8),
             borderRadius: radius.pill,
             backgroundColor: color.page,
           }}
@@ -307,7 +326,6 @@ export function PinnedOrderBar({
             name="search-outline"
             size={ds.icon(18)}
             color={color.ink3}
-            style={{ marginRight: ds.spacing(8) }}
           />
           <TextInput
             value={query}
@@ -319,6 +337,7 @@ export function PinnedOrderBar({
             accessibilityLabel="Search inventory to add items"
             style={{
               flex: 1,
+              minWidth: 0,
               fontSize: ds.fontSize(typeScale.body),
               color: color.ink,
               paddingVertical: 0,
@@ -330,17 +349,16 @@ export function PinnedOrderBar({
               accessibilityRole="button"
               accessibilityLabel="Clear search"
               hitSlop={8}
-              style={({ pressed }) => ({
+              style={{
                 width: CLEAR_SIZE,
                 height: CLEAR_SIZE,
                 borderRadius: radius.pill,
                 alignItems: 'center',
                 justifyContent: 'center',
                 backgroundColor: color.well,
-                opacity: pressed ? 0.72 : 1,
-              })}
+              }}
             >
-              <Ionicons name="close" size={ds.icon(12)} color={color.ink3} />
+              <Ionicons name="close" size={ds.icon(16)} color={color.ink3} />
             </Pressable>
           ) : null}
           {voiceAvailable ? (
@@ -349,19 +367,14 @@ export function PinnedOrderBar({
               accessibilityRole="button"
               accessibilityLabel="Add items by voice"
               hitSlop={6}
-              style={({ pressed }) => ({
+              style={{
                 width: MIC_SIZE,
                 height: MIC_SIZE,
-                marginLeft: ds.spacing(5),
-                borderRadius: radius.tile,
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: color.accent,
-                opacity: pressed ? 0.82 : 1,
-                transform: [{ scale: pressed ? 0.94 : 1 }],
-              })}
+              }}
             >
-              <Ionicons name="mic-outline" size={ds.icon(20)} color={color.onAccent} />
+              <Ionicons name="mic-outline" size={ds.icon(20)} color={color.accent} />
             </Pressable>
           ) : null}
         </View>
@@ -370,14 +383,14 @@ export function PinnedOrderBar({
           onPress={handleSend}
           onPressIn={() => {
             sendScale.value = withTiming(0.94, {
-              duration: 120,
-              easing: glideEasing,
+              duration: 90,
+              easing: controlEasing,
             });
           }}
           onPressOut={() => {
             sendScale.value = withTiming(1, {
-              duration: 120,
-              easing: glideEasing,
+              duration: 90,
+              easing: controlEasing,
             });
           }}
           disabled={sendDisabled}
@@ -395,7 +408,6 @@ export function PinnedOrderBar({
               borderRadius: radius.pill,
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: sendDisabled ? color.disabled : color.accent,
             },
             sendStyle,
           ]}
@@ -410,7 +422,7 @@ export function PinnedOrderBar({
                   right: -4,
                   minWidth: 20,
                   height: 19,
-                  paddingHorizontal: ds.spacing(5),
+                  paddingHorizontal: ds.spacing(6),
                   borderRadius: radius.pill,
                   backgroundColor: color.ink,
                   alignItems: 'center',

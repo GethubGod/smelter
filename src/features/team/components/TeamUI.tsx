@@ -1,12 +1,12 @@
 // Shared building blocks for the Team screens, composed from the UI contract
 // primitives (docs/mockups/ui-contract/index.html).
 
-import type { ReactNode } from 'react';
-import { Platform, Pressable, Switch, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { useRef, type ReactNode } from 'react';
+import { Animated, Easing, Platform, Pressable, Switch, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, ListRow, SectionLabel, Segment } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { color, radius, size, space, typeScale, weight } from '@/theme/tokens';
+import { color, motion, radius, size, space, typeScale, weight } from '@/theme/tokens';
 import type { InviteLocationGroup } from '@/services/invites';
 import { LOCATION_GROUP_LABELS } from '../invitePreview';
 
@@ -111,16 +111,26 @@ interface TeamRowProps {
 export function TeamRow({ initial, title, subtitle, onPress, last = false }: TeamRowProps) {
   const ds = useScaledStyles();
   const avatar = ds.icon(38);
+  const pressed = useRef(new Animated.Value(0)).current;
+  const animatePress = (toValue: number) => Animated.timing(pressed, {
+    toValue,
+    duration: 120,
+    easing: Easing.bezier(...motion.controlEase),
+    useNativeDriver: false,
+  }).start();
 
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${title}, ${subtitle}`}
-      style={({ pressed }) => ({ backgroundColor: pressed ? color.well : color.card })}
+      onPressIn={() => animatePress(1)}
+      onPressOut={() => animatePress(0)}
+      style={{ backgroundColor: color.card }}
     >
-      <View
+      <Animated.View
         style={{
+          backgroundColor: pressed.interpolate({ inputRange: [0, 1], outputRange: [color.card, color.well] }),
           minHeight: ds.spacing(60),
           paddingHorizontal: ds.spacing(14),
           paddingVertical: ds.spacing(space[3] - 2),
@@ -180,7 +190,7 @@ export function TeamRow({ initial, title, subtitle, onPress, last = false }: Tea
             }}
           />
         ) : null}
-      </View>
+      </Animated.View>
     </Pressable>
   );
 }

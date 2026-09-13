@@ -16,6 +16,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { FullWindowOverlay } from 'react-native-screens';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -93,44 +94,52 @@ interface SentOrderResult {
 
 function OrderSuccess({
   result,
-  bottomClearance,
   onDone,
 }: {
   result: SentOrderResult;
-  bottomClearance: number;
   onDone: () => void;
 }) {
   const ds = useScaledStyles();
   const progress = useSharedValue(0);
+  const opacity = useSharedValue(0);
 
   useEffect(() => {
+    opacity.value = withTiming(1, { duration: motion.dur, easing: Easing.bezier(...motion.controlEase) });
     progress.value = withTiming(1, {
       duration: 420,
       easing: Easing.bezier(...motion.pop),
     });
-  }, [progress]);
+  }, [opacity, progress]);
 
   const ringStyle = useAnimatedStyle(() => ({
-    opacity: progress.value,
     transform: [{ scale: 0.6 + progress.value * 0.4 }],
   }));
 
+  const overlayStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
   return (
-    <View
+    <FullWindowOverlay unstable_accessibilityContainerViewIsModal>
+    <Animated.View
       key={result.orderId}
-      style={{
-        flex: 1,
+      style={[{
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+        backgroundColor: color.page,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingBottom: bottomClearance,
-      }}
+        gap: ds.spacing(10),
+        padding: ds.spacing(40),
+      }, overlayStyle]}
     >
       <Animated.View
         style={[
           {
             width: 88,
             height: 88,
-            marginBottom: ds.spacing(16),
+            marginBottom: ds.spacing(8),
             borderRadius: radius.pill,
             alignItems: 'center',
             justifyContent: 'center',
@@ -143,7 +152,6 @@ function OrderSuccess({
       </Animated.View>
       <Text
         style={{
-          marginBottom: ds.spacing(6),
           fontSize: ds.fontSize(typeScale.stat),
           fontWeight: weight.bold,
           color: color.ink,
@@ -153,8 +161,7 @@ function OrderSuccess({
       </Text>
       <Text
         style={{
-          marginBottom: ds.spacing(20),
-          paddingHorizontal: ds.spacing(32),
+          marginBottom: ds.spacing(14),
           fontSize: ds.fontSize(typeScale.itemDense),
           color: color.ink2,
           textAlign: 'center',
@@ -167,9 +174,11 @@ function OrderSuccess({
         label="Done"
         onPress={onDone}
         fullWidth={false}
+        style={{ alignSelf: 'center' }}
         accessibilityHint="Returns to the checklist"
       />
-    </View>
+    </Animated.View>
+    </FullWindowOverlay>
   );
 }
 
@@ -793,7 +802,6 @@ export function SimpleOrderScreen() {
     content = (
       <OrderSuccess
         result={sentOrder}
-        bottomClearance={getTabBarClearance(insets.bottom)}
         onDone={handleSuccessDone}
       />
     );

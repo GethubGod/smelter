@@ -86,15 +86,14 @@ export function Sheet({
           accessibilityLabel={`Close ${title}`}
           hitSlop={ds.spacing(6)}
           onPress={onClose}
-          style={({ pressed }) => ({
+          style={{
             width: ds.spacing(space[8]),
             height: ds.spacing(space[8]),
             borderRadius: ds.radius(radius.pill),
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: color.card,
-            opacity: pressed ? 0.72 : 1,
-          })}
+          }}
         >
           <Ionicons name="close" size={ds.icon(space[4])} color={color.ink} />
         </Pressable>

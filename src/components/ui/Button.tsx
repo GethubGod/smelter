@@ -125,9 +125,9 @@ function resolvePalette(
     return { background: color.accent, text: color.onAccent };
   }
   if (variant === 'destructive') {
-    return { background: color.alertBg, text: color.alert };
+    return { background: color.card, text: color.alert };
   }
   return onDark
     ? { background: 'transparent', text: auth.text, border: auth.buttonBorder }
-    : { background: color.card, text: color.ink, border: color.hairlineStrong };
+    : { background: color.card, text: color.ink };
 }
