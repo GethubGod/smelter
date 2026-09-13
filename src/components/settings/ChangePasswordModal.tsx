@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -13,14 +13,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetShell } from '@/components/BottomSheetShell';
 import { Button } from '@/components/ui/Button';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
-import { Loading } from '@/components/ui/Loading';
 import { SectionLabel } from '@/components/ui/SectionLabel';
 import { changeEmailPassword } from '@/services/changePassword';
-import { getMyCredentialKind, type CredentialKind } from '@/services/loginCredentials';
-import { useAuthStore } from '@/store/authStore';
-import { ChangeCredentialSheet } from './ChangeCredentialSheet';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { color, size, space, tracking, typeScale, weight } from '@/theme/tokens';
 
@@ -29,40 +24,14 @@ interface ChangePasswordModalProps {
   onClose: () => void;
 }
 
-/**
- * The sign-in editor. One `BottomSheetShell` hosts the native modal for every
- * branch, so the host is never remounted while the credential lookup resolves;
- * only the content inside it changes. That is why this one screen keeps the
- * shell rather than `Sheet`: each branch carries its own header, and `Sheet`
- * would add a second one.
- *
- * The shell owns the scrim and the drag-to-dismiss gesture, so the save-time
- * guard has to live here: whichever form is showing reports whether it is
- * mid-save, and the sheet refuses to dismiss until it finishes.
- */
+/** Email-account password editor. */
 export function ChangePasswordModal({ visible, onClose }: ChangePasswordModalProps) {
   const ds = useScaledStyles();
   const insets = useSafeAreaInsets();
   const [isBusy, setIsBusy] = useState(false);
-  const closeSheet = useCallback(() => {
+  const closeSheet = () => {
     if (!isBusy) onClose();
-  }, [isBusy, onClose]);
-  const userId = useAuthStore((state) => state.session?.user.id ?? null);
-  const [identity, setIdentity] = useState<{ userId: string; kind: CredentialKind | null } | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  useEffect(() => {
-    if (!visible || !userId) return;
-    let active = true;
-    setIdentity(null);
-    setLoadError(null);
-    void getMyCredentialKind(userId).then(
-      (kind) => { if (active) setIdentity({ userId, kind }); },
-      (error: unknown) => { if (active) setLoadError(error instanceof Error ? error.message : 'Unable to load your sign-in settings.'); },
-    );
-    return () => { active = false; };
-  }, [userId, visible]);
-
-  const isResolving = !identity || identity.userId !== userId;
+  };
 
   return (
     <BottomSheetShell
@@ -70,37 +39,7 @@ export function ChangePasswordModal({ visible, onClose }: ChangePasswordModalPro
       onClose={closeSheet}
       bottomPadding={Math.max(insets.bottom, ds.spacing(space[3] + 2))}
     >
-      {!visible ? null : isResolving ? (
-        loadError || !userId ? (
-          <EmptyState
-            icon="lock-closed-outline"
-            tone="alert"
-            title="Sign-in settings unavailable"
-            body={loadError ?? 'Sign in again to change your sign-in details.'}
-            action={{ label: 'Close', onPress: onClose }}
-          />
-        ) : (
-          <View style={{ alignItems: 'center', gap: ds.spacing(space[4]), paddingVertical: ds.spacing(space[6]) }}>
-            <Loading size="inline" label="Loading sign-in settings" />
-            <Button
-              variant="secondary"
-              label="Close"
-              accessibilityHint="Closes sign-in settings"
-              onPress={onClose}
-            />
-          </View>
-        )
-      ) : identity.kind ? (
-        <ChangeCredentialSheet
-          visible
-          presentation="content"
-          onClose={onClose}
-          initialKind={identity.kind}
-          onBusyChange={setIsBusy}
-        />
-      ) : (
-        <EmailPasswordContent onClose={onClose} onBusyChange={setIsBusy} />
-      )}
+      {visible ? <EmailPasswordContent onClose={onClose} onBusyChange={setIsBusy} /> : null}
     </BottomSheetShell>
   );
 }

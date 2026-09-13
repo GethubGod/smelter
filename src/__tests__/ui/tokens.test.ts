@@ -54,7 +54,7 @@ it('matches the contract auth palette', () => {
   });
 });
 
-it('keeps five type sizes and three weights', () => {
+it('keeps the contract type sizes and three weights', () => {
   expect(typeScale).toEqual({
     display: 30,
     title: 20,
@@ -63,6 +63,7 @@ it('keeps five type sizes and three weights', () => {
     caption: 11,
     meta: 12,
     option: 16,
+    link: 14,
   });
   expect(Object.values(weight).sort()).toEqual(['400', '600', '700']);
 });

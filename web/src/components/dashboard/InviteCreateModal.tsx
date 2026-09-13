@@ -35,6 +35,7 @@ export default function InviteCreateModal({
   onClose: () => void;
 }) {
   const [invitedName, setInvitedName] = useState("");
+  const [invitedEmail, setInvitedEmail] = useState("");
   const [role, setRole] = useState<InviteRole>("employee");
   const [locationGroup, setLocationGroup] =
     useState<InviteLocationGroup>("sushi");
@@ -102,6 +103,7 @@ export default function InviteCreateModal({
     try {
       const invite = await createInvite({
         invitedName: invitedName.trim(),
+        invitedEmail: invitedEmail.trim() || undefined,
         role,
         expiresInHours,
         modulePreset: buildModulePreset(role, preset),
@@ -168,6 +170,20 @@ export default function InviteCreateModal({
                 onChange={(e) => setInvitedName(e.target.value)}
                 placeholder="Who is this invite for?"
                 autoFocus
+                className="bg-well rounded-well px-4 py-2.5 text-sm text-ink placeholder:text-ink3 outline-none border-2 border-transparent focus:border-accent focus:bg-card"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <span className="section-label">Email (optional)</span>
+              <input
+                type="email"
+                value={invitedEmail}
+                onChange={(event) => setInvitedEmail(event.target.value)}
+                placeholder="name@example.com"
+                autoCapitalize="none"
+                autoCorrect="off"
+                autoComplete="email"
                 className="bg-well rounded-well px-4 py-2.5 text-sm text-ink placeholder:text-ink3 outline-none border-2 border-transparent focus:border-accent focus:bg-card"
               />
             </label>

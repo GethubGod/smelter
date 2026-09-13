@@ -145,6 +145,7 @@ export default function TeamScreen() {
                 initial={(user.full_name ?? user.email ?? '?').trim().charAt(0).toUpperCase() || '?'}
                 title={user.full_name ?? user.email ?? 'Unnamed'}
                 subtitle={summary}
+                badge={user.legacy_name_login ? 'Needs a new invite' : undefined}
                 onPress={() =>
                   router.push({
                     pathname: '/(manager)/manager-settings/team-member',

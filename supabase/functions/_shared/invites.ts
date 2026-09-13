@@ -15,22 +15,6 @@ export interface CreateInviteInput {
   locationGroup: InviteLocationGroup;
 }
 
-export type AcceptInviteMode = "credentials" | "onboarding";
-export type OnboardingCredentialKind = "pin" | "password";
-
-export interface AcceptInviteInput {
-  token: string;
-  validateOnly: boolean;
-  /** onboarding = invited setup flow: the server mints a synthetic account,
-   * installs the chosen app credential, then returns a one-shot session hash. */
-  mode: AcceptInviteMode;
-  email: string | null;
-  password: string | null;
-  name: string | null;
-  credentialKind: OnboardingCredentialKind | null;
-  credentialSecret: string | null;
-}
-
 export interface InviteState {
   invitedName: string;
   role: InviteRole;
@@ -196,108 +180,6 @@ export function parseCreateInviteInput(
       modulePreset,
       expiresInHours,
       locationGroup,
-    },
-  };
-}
-
-export function parseAcceptInviteInput(
-  payload: unknown,
-): ParseResult<AcceptInviteInput> {
-  if (!isRecord(payload)) return { ok: false, error: "Invalid request body" };
-
-  const token = optionalTrimmedString(payload.token);
-  if (!isInviteToken(token)) {
-    return { ok: false, error: "Invalid invite token" };
-  }
-
-  if (
-    payload.validateOnly !== undefined &&
-    typeof payload.validateOnly !== "boolean"
-  ) {
-    return { ok: false, error: "validateOnly must be a boolean" };
-  }
-
-  const validateOnly = payload.validateOnly === true;
-  if (validateOnly) {
-    return {
-      ok: true,
-      value: {
-        token,
-        validateOnly: true,
-        mode: "credentials",
-        email: null,
-        password: null,
-        name: null,
-        credentialKind: null,
-        credentialSecret: null,
-      },
-    };
-  }
-
-  if (payload.mode !== undefined && payload.mode !== "credentials" && payload.mode !== "onboarding") {
-    return { ok: false, error: "mode must be credentials or onboarding" };
-  }
-
-  if (payload.mode === "onboarding") {
-    const credentialKind = payload.credentialKind;
-    if (credentialKind !== "pin" && credentialKind !== "password") {
-      return { ok: false, error: "credentialKind must be pin or password" };
-    }
-
-    const credentialSecret = typeof payload.credentialSecret === "string"
-      ? payload.credentialSecret
-      : null;
-    if (credentialKind === "pin" && !/^[0-9]{4}$/.test(credentialSecret ?? "")) {
-      return { ok: false, error: "PIN must be exactly 4 digits" };
-    }
-    if (
-      credentialKind === "password" &&
-      (credentialSecret === null || credentialSecret.length < 8 || credentialSecret.length > 256)
-    ) {
-      return { ok: false, error: "Password must be between 8 and 256 characters" };
-    }
-
-    return {
-      ok: true,
-      value: {
-        token,
-        validateOnly: false,
-        mode: "onboarding",
-        email: null,
-        password: null,
-        name: null,
-        credentialKind,
-        credentialSecret,
-      },
-    };
-  }
-
-  const email = optionalTrimmedString(payload.email)?.toLowerCase() ?? null;
-  if (!email) return { ok: false, error: "email is required" };
-
-  // Password whitespace is valid; only reject a missing or empty value here.
-  const password =
-    typeof payload.password === "string" && payload.password.length > 0
-      ? payload.password
-      : null;
-  if (!password) return { ok: false, error: "password is required" };
-
-  const name = optionalTrimmedString(payload.name);
-  if (name && name.length > 120) {
-    return { ok: false, error: "name must be 120 characters or fewer" };
-  }
-
-  return {
-    ok: true,
-    value: {
-      token,
-      validateOnly: false,
-      mode: "credentials",
-      email,
-      password,
-      name,
-      credentialKind: null,
-      credentialSecret: null,
     },
   };
 }

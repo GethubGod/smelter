@@ -192,6 +192,7 @@ export default function InviteLoginScreen() {
       <PasswordRequirements password={password} />
       <Button
         shape="pill"
+        onDark
         label="Finish"
         onPress={() => void handleFinish()}
         loading={submitting}

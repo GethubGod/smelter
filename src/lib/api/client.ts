@@ -400,6 +400,7 @@ interface ListUsersUser {
   email: string;
   full_name: string | null;
   role: string;
+  legacy_name_login: boolean;
   is_suspended: boolean;
   last_active_at: string | null;
   last_order_at: string | null;
@@ -418,6 +419,7 @@ export async function listUsers(): Promise<ApiResult<ManagedUser[]>> {
     email: u.email,
     full_name: u.full_name,
     role: u.role === 'manager' ? 'manager' as const : 'employee' as const,
+    legacy_name_login: u.legacy_name_login,
     is_suspended: u.is_suspended,
     suspended_at: null,
     suspended_by: null,

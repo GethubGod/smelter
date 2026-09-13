@@ -100,6 +100,7 @@ interface TeamRowProps {
   initial: string;
   title: string;
   subtitle: string;
+  badge?: string;
   onPress: () => void;
   muted?: boolean;
   icon?: keyof typeof Ionicons.glyphMap;
@@ -112,7 +113,7 @@ interface TeamRowProps {
  * tokens here. Pending invites keep the muted well fill, which `Card` (white
  * only) cannot carry.
  */
-export function TeamRow({ initial, title, subtitle, onPress, muted = false, icon }: TeamRowProps) {
+export function TeamRow({ initial, title, subtitle, badge, onPress, muted = false, icon }: TeamRowProps) {
   const ds = useScaledStyles();
   const avatar = Math.max(size.touchMin, ds.icon(36));
 
@@ -121,7 +122,7 @@ export function TeamRow({ initial, title, subtitle, onPress, muted = false, icon
       onPress={onPress}
       activeOpacity={0.82}
       accessibilityRole="button"
-      accessibilityLabel={`${title}, ${subtitle}`}
+      accessibilityLabel={`${title}, ${subtitle}${badge ? `, ${badge}` : ''}`}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -160,16 +161,39 @@ export function TeamRow({ initial, title, subtitle, onPress, muted = false, icon
         )}
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text
-          numberOfLines={1}
-          style={{
-            fontSize: ds.fontSize(typeScale.body),
-            fontWeight: weight.semibold,
-            color: color.ink,
-          }}
-        >
-          {title}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: ds.spacing(space[2]) }}>
+          <Text
+            numberOfLines={1}
+            style={{
+              flexShrink: 1,
+              fontSize: ds.fontSize(typeScale.body),
+              fontWeight: weight.semibold,
+              color: color.ink,
+            }}
+          >
+            {title}
+          </Text>
+          {badge ? (
+            <View
+              style={{
+                paddingHorizontal: ds.spacing(space[2]),
+                paddingVertical: ds.spacing(space[1]),
+                borderRadius: radius.pill,
+                backgroundColor: color.well,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: ds.fontSize(typeScale.meta),
+                  fontWeight: weight.semibold,
+                  color: color.ink2,
+                }}
+              >
+                {badge}
+              </Text>
+            </View>
+          ) : null}
+        </View>
         <Text
           numberOfLines={1}
           style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}

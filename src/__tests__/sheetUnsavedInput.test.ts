@@ -25,6 +25,9 @@ jest.mock('react-native', () => ({
   ActivityIndicator: 'ActivityIndicator',
   SafeAreaView: 'SafeAreaView',
   Alert: { alert: jest.fn() },
+  Keyboard: {
+    addListener: () => ({ remove: jest.fn() }),
+  },
   Platform: { OS: 'ios', select: (values: Record<string, unknown>) => values.ios ?? values.default },
   StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1, absoluteFill: {} },
   useWindowDimensions: () => ({ width: 390, height: 844 }),
@@ -33,9 +36,18 @@ jest.mock('react-native', () => ({
       setValue() {}
     },
     View: 'AnimatedView',
-    timing: () => ({ start: (done?: () => void) => done?.() }),
+    timing: () => ({
+      start: (done?: (result: { finished: boolean }) => void) => done?.({ finished: true }),
+    }),
     spring: () => ({ start: () => {} }),
+    parallel: (animations: { start: (done?: () => void) => void }[]) => ({
+      start: (done?: (result: { finished: boolean }) => void) => {
+        animations.forEach((animation) => animation.start());
+        done?.({ finished: true });
+      },
+    }),
   },
+  Easing: { bezier: () => (value: number) => value },
   PanResponder: {
     create: (config: typeof panConfig) => {
       panConfig = config;
@@ -53,6 +65,7 @@ jest.mock('@/hooks/useScaledStyles', () => ({
   useScaledStyles: () => ({
     spacing: (n: number) => n,
     fontSize: (n: number) => n,
+    radius: (n: number) => n,
     icon: (n: number) => n,
     buttonH: 50,
     rowH: 56,

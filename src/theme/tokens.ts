@@ -24,6 +24,8 @@ export const color = {
   page: '#F3F3F1',
   /** Cards, sheets, the tab bar pill. */
   card: '#FFFFFF',
+  /** Pressed welcome option card. */
+  cardPressed: '#FBFBFA',
   /** Inputs, tracks, icon tiles, segment tracks. */
   well: '#EAEAE8',
   /** Row separators and card borders. */
@@ -85,7 +87,7 @@ export const providerColor = {
   googleGreen: '#34A853',
 } as const;
 
-/* ── Type: five sizes, three weights ───────────────────────────────── */
+/* ── Type sizes and weights ───────────────────────────────────────── */
 
 /**
  * Named `typeScale` rather than `type`: `import { type }` collides with
@@ -103,6 +105,7 @@ export const typeScale = {
   /** Section labels, status pills, badges. Always uppercase. */
   caption: 11,
   meta: 12,
+  link: 14,
   option: 16,
 } as const;
 
@@ -165,6 +168,10 @@ export const size = {
   authButton: 52,
   authInput: 50,
   authClose: 30,
+  authToastBottom: 120,
+  authReadyTop: 80,
+  authReadyRing: 88,
+  authReadyCheck: 40,
 } as const;
 
 /* ── Elevation ─────────────────────────────────────────────────────── */

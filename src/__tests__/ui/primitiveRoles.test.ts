@@ -358,7 +358,7 @@ describe('Sheet', () => {
       }),
     );
     expect(withRole(root, 'header')[0].props.children).toBe('Add a note');
-    expect(labels(withRole(root, 'button'))).toEqual(['Save note']);
+    expect(labels(withRole(root, 'button'))).toEqual(['Close Add a note', 'Save note']);
   });
 });
 

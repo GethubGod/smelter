@@ -1,5 +1,5 @@
-// Employee detail: works-at (changeable anytime), feature toggles, Reset PIN,
-// and Preview as <Name>. Toggles write user_modules live; works-at goes
+// Employee detail: works-at (changeable anytime), feature toggles, and
+// Preview as <Name>. Toggles write user_modules live; works-at goes
 // through the manager-gated set_user_default_location RPC.
 
 import { useCallback, useState } from 'react';
@@ -12,16 +12,12 @@ import {
   Button,
   Card,
   EmptyState,
-  Input,
-  ListRow,
   Loading,
   ScreenHeader,
-  Sheet,
 } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
 import { useAuthStore } from '@/store';
-import { triggerNotificationHaptic, NotificationFeedbackType } from '@/lib/haptics';
 import { color, space, typeScale, weight } from '@/theme/tokens';
 import { listManagedUsers, type ManagedUser } from '@/services/userManagement';
 import { getModulesForUser, setUserModule, type ModuleKey } from '@/services/userModules';
@@ -30,15 +26,12 @@ import {
   resolveEffectiveModules,
   type EffectiveModules,
 } from '@/store/moduleStore.helpers';
-import { isValidPin, resetUserCredential } from '@/services/loginCredentials';
 import type { InviteLocationGroup } from '@/services/invites';
 import {
   fetchDefaultLocationIds,
-  fetchLoginCredentialInfo,
   groupForLocationId,
   locationIdForGroup,
   setUserDefaultLocation,
-  type LoginCredentialInfo,
 } from './teamService';
 import { ModuleToggleRow, TeamCard, TeamSectionLabel, WorksAtSegmented } from './components/TeamUI';
 
@@ -61,16 +54,10 @@ export default function MemberDetailScreen() {
   const [user, setUser] = useState<ManagedUser | null>(null);
   const [modules, setModules] = useState<EffectiveModules | null>(null);
   const [group, setGroup] = useState<InviteLocationGroup>('both');
-  const [credential, setCredential] = useState<LoginCredentialInfo | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [pendingKey, setPendingKey] = useState<ModuleKey | null>(null);
   const [groupSaving, setGroupSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-
-  const [resetVisible, setResetVisible] = useState(false);
-  const [resetPin, setResetPin] = useState('');
-  const [resetBusy, setResetBusy] = useState(false);
-  const [resetError, setResetError] = useState<string | null>(null);
 
   const showNotice = (message: string) => {
     setNotice(message);
@@ -81,10 +68,9 @@ export default function MemberDetailScreen() {
     if (!userId) return;
     setLoadError(null);
     try {
-      const [users, locationIds, credentialInfo] = await Promise.all([
+      const [users, locationIds] = await Promise.all([
         listManagedUsers(),
         fetchDefaultLocationIds(),
-        fetchLoginCredentialInfo(userId).catch(() => null),
       ]);
       const found = users.find((candidate) => candidate.id === userId) ?? null;
       if (!found) {
@@ -92,7 +78,6 @@ export default function MemberDetailScreen() {
         return;
       }
       setUser(found);
-      setCredential(credentialInfo);
       setGroup(groupForLocationId(locationIds.get(userId) ?? null, locations));
       const states = await getModulesForUser(userId).catch(() => null);
       setModules(resolveEffectiveModules(found.role, states));
@@ -139,43 +124,6 @@ export default function MemberDetailScreen() {
     }
   };
 
-  const handleResetSubmit = () => {
-    if (!user) return;
-    if (!isValidPin(resetPin)) {
-      setResetError('PIN must be exactly 4 digits');
-      return;
-    }
-    Alert.alert(
-      `Reset ${user.full_name ?? 'this'} PIN?`,
-      `They sign in with ${resetPin} from now on.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reset',
-          style: 'destructive',
-          onPress: () => {
-            void (async () => {
-              setResetBusy(true);
-              setResetError(null);
-              try {
-                await resetUserCredential(user.id, resetPin);
-                triggerNotificationHaptic(NotificationFeedbackType.Success);
-                setResetVisible(false);
-                setResetPin('');
-                setCredential({ kind: 'pin', updatedAt: new Date().toISOString() });
-                showNotice('PIN reset.');
-              } catch (error) {
-                setResetError(error instanceof Error ? error.message : 'Unable to reset the PIN.');
-              } finally {
-                setResetBusy(false);
-              }
-            })();
-          },
-        },
-      ],
-    );
-  };
-
   const handleBack = () => {
     if (router.canGoBack()) {
       router.back();
@@ -196,9 +144,9 @@ export default function MemberDetailScreen() {
           subtitle={
             user?.is_suspended
               ? 'Suspended'
-              : credential
-                ? `Signs in with a ${credential.kind === 'pin' ? 'PIN' : 'password'}`
-                : 'No app sign-in set up yet'
+              : user?.legacy_name_login
+                ? 'Needs a new invite'
+                : 'Team member'
           }
           onBack={handleBack}
         />
@@ -267,22 +215,6 @@ export default function MemberDetailScreen() {
                 )}
               </TeamCard>
 
-              <View style={{ height: ds.spacing(space[2]) }} />
-              <Card flush style={{ paddingHorizontal: ds.spacing(space[3] + 2) }}>
-                <ListRow
-                  icon="key-outline"
-                  title={`Reset ${displayName.split(' ')[0]}'s PIN`}
-                  chevron
-                  last
-                  disabled={user.is_suspended}
-                  onPress={() => {
-                    setResetPin('');
-                    setResetError(null);
-                    setResetVisible(true);
-                  }}
-                />
-              </Card>
-
               <Button
                 icon="eye-outline"
                 label={`Preview as ${displayName.split(' ')[0]}`}
@@ -298,45 +230,6 @@ export default function MemberDetailScreen() {
           ) : null}
         </ScrollView>
 
-        <Sheet
-          visible={resetVisible}
-          title={`Reset ${displayName.split(' ')[0]}'s PIN`}
-          onClose={() => {
-            if (!resetBusy) setResetVisible(false);
-          }}
-        >
-          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
-            Type a new 4-digit PIN. Tell them in person.
-          </Text>
-          <Input
-            value={resetPin}
-            onChangeText={(value) => {
-              setResetPin(value.replace(/[^0-9]/g, '').slice(0, 4));
-              if (resetError) setResetError(null);
-            }}
-            accessibilityLabel="New PIN"
-            placeholder="New 4-digit PIN"
-            keyboardType="number-pad"
-            secureTextEntry
-            maxLength={4}
-            editable={!resetBusy}
-            autoFocus
-            error={resetError ?? undefined}
-          />
-          <Button
-            label="Reset PIN"
-            loading={resetBusy}
-            disabled={resetPin.length !== 4}
-            onPress={handleResetSubmit}
-          />
-          <Button
-            variant="secondary"
-            label="Cancel"
-            disabled={resetBusy}
-            accessibilityHint="Leaves the PIN unchanged"
-            onPress={() => setResetVisible(false)}
-          />
-        </Sheet>
       </ManagerScaleContainer>
     </SafeAreaView>
   );

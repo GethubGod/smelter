@@ -8,7 +8,13 @@ interface WizardProgressProps {
   startsAt?: 0 | 1 | 2;
 }
 
-export function WizardProgress({ step, startsAt = Math.max(0, step - 1) as 0 | 1 | 2 }: WizardProgressProps) {
+function previousStep(step: WizardProgressProps['step']): 0 | 1 | 2 {
+  if (step === 1) return 0;
+  if (step === 2) return 1;
+  return 2;
+}
+
+export function WizardProgress({ step, startsAt = previousStep(step) }: WizardProgressProps) {
   const ds = useScaledStyles();
   const fill = useRef(new Animated.Value(startsAt / 3)).current;
 

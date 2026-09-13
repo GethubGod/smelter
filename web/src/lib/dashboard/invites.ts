@@ -91,6 +91,7 @@ export interface CreatedInvite {
 
 export async function createInvite(input: {
   invitedName: string;
+  invitedEmail?: string;
   role: InviteRole;
   expiresInHours: number;
   /** Phase 3: {module_key: boolean} applied to user_modules on accept. */
@@ -101,6 +102,7 @@ export async function createInvite(input: {
   const { data, error } = await getSupabase().functions.invoke("create-invite", {
     body: {
       invitedName: input.invitedName,
+      ...(input.invitedEmail ? { invitedEmail: input.invitedEmail } : {}),
       role: input.role,
       expiresInHours: input.expiresInHours,
       ...(input.modulePreset ? { modulePreset: input.modulePreset } : {}),

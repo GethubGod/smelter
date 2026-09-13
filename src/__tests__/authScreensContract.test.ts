@@ -1,42 +1,34 @@
-// The three behavioural guarantees the auth sweep has to keep:
-//
-// 1. tapping the background of the legacy login dismisses the keyboard,
-// 2. the keyboard's Go key cannot dispatch a second sign-in mid-request,
-// 3. the auth guard's loading state is black and goes through the Loading
-//    primitive, so a cold start does not flash a light screen.
-
 import React from 'react';
-import renderer from 'react-test-renderer';
-import { create } from 'zustand';
+import renderer, { type ReactTestInstance } from 'react-test-renderer';
 
-const dismissKeyboard = jest.fn();
-const mockSignIn = jest.fn(async (_email: string, _password: string) => undefined);
+const mockSignIn = jest.fn();
+const mockSignOut = jest.fn(async () => undefined);
+const mockSetReadyPending = jest.fn();
+const mockResetPassword = jest.fn(async () => ({ error: null }));
 
-interface AuthSnapshot {
-  signIn: (email: string, password: string) => Promise<void>;
-  isLoading: boolean;
-}
-
-const mockUseAuthStore = create<AuthSnapshot>(() => ({
-  signIn: (email: string, password: string) => mockSignIn(email, password),
-  isLoading: false,
-}));
-
-const guardState = { isChecking: false };
+const authState = {
+  session: null as object | null,
+  profile: { role: 'employee' as const },
+  signIn: mockSignIn,
+  signOut: mockSignOut,
+  setReadyPending: mockSetReadyPending,
+  signInWithOAuth: jest.fn(),
+  signInWithApple: jest.fn(),
+};
 
 jest.mock('react-native', () => {
   const native = jest.requireActual<typeof import('./ui/nativeMocks')>('./ui/nativeMocks');
-  const base = native.reactNative();
-  return {
-    ...base,
-    KeyboardAvoidingView: base.View,
-    Keyboard: { dismiss: () => dismissKeyboard() },
-    Alert: { alert: jest.fn() },
-  };
+  return native.reactNative();
 });
 jest.mock('@expo/vector-icons', () => {
   const native = jest.requireActual<typeof import('./ui/nativeMocks')>('./ui/nativeMocks');
   return native.vectorIcons();
+});
+jest.mock('react-native-svg', () => {
+  const ReactActual = jest.requireActual<typeof import('react')>('react');
+  const host = (name: string) => (props: Record<string, unknown>) =>
+    ReactActual.createElement(name, props);
+  return { __esModule: true, default: host('Svg'), Path: host('Path') };
 });
 jest.mock('@/hooks/useScaledStyles', () => {
   const native = jest.requireActual<typeof import('./ui/nativeMocks')>('./ui/nativeMocks');
@@ -46,68 +38,52 @@ jest.mock('@/components/LoadingIndicator', () => {
   const native = jest.requireActual<typeof import('./ui/nativeMocks')>('./ui/nativeMocks');
   return native.loadingIndicator();
 });
-jest.mock('react-native-safe-area-context', () => ({ SafeAreaView: 'SafeAreaView' }));
-jest.mock('expo-status-bar', () => ({ StatusBar: 'StatusBar' }));
-jest.mock('expo-web-browser', () => ({
-  openBrowserAsync: jest.fn(),
-  WebBrowserPresentationStyle: { FULL_SCREEN: 'fullScreen' },
-}));
-jest.mock('expo-router', () => {
+jest.mock('@/components/ui/Sheet', () => {
   const ReactActual = jest.requireActual<typeof import('react')>('react');
   return {
-    Link: ({ children }: { children: React.ReactNode }) => children,
-    Redirect: ({ href }: { href: string }) => ReactActual.createElement('Redirect', { href }),
-    useLocalSearchParams: () => ({}),
-    useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
-    router: { push: jest.fn(), replace: jest.fn() },
+    Sheet: ({ visible, children, onClose }: {
+      visible: boolean;
+      children: React.ReactNode;
+      onClose: () => void;
+    }) => visible ? ReactActual.createElement('Sheet', { onClose }, children) : null,
   };
 });
-jest.mock('@/store', () => ({ useAuthStore: mockUseAuthStore }));
-jest.mock('@/hooks', () => ({
-  useAuthScreenGuard: () => ({
-    isChecking: guardState.isChecking,
-    authenticatedRedirectTo: null,
-    redirectTo: null,
-    resolvedRole: null,
-  }),
+jest.mock('@/store/authStore', () => ({
+  useAuthStore: { getState: () => authState },
 }));
-jest.mock('@/lib', () => ({
-  supabase: { auth: { resetPasswordForEmail: jest.fn(async () => ({ error: null })) } },
+jest.mock('@/lib/supabase', () => ({
+  supabase: { auth: { resetPasswordForEmail: mockResetPassword } },
 }));
-jest.mock('@/components', () => {
-  const ReactActual = jest.requireActual<typeof import('react')>('react');
-  const actual =
-    jest.requireActual<typeof import('../components/AuthLoadingScreen')>(
-      '../components/AuthLoadingScreen',
-    );
-  return {
-    AuthLoadingScreen: actual.AuthLoadingScreen,
-    AuthLogoHeader: () => ReactActual.createElement('AuthLogoHeader'),
-  };
-});
 
-// eslint-disable-next-line import/first -- the mocks above must initialize before the screen loads
-import LoginScreen from '../../app/(auth)/login';
+// eslint-disable-next-line import/first -- mocks must initialize before the component loads
+import { SignInSheet } from '@/features/auth/components/SignInSheet';
 // eslint-disable-next-line import/first -- same ordering requirement
-import { AuthLoadingScreen } from '../components/AuthLoadingScreen';
+import { AuthLoadingScreen } from '@/components/AuthLoadingScreen';
 // eslint-disable-next-line import/first -- same ordering requirement
-import { auth } from '../theme/tokens';
+import { auth } from '@/theme/tokens';
 
-type TestElement = React.ElementType;
+type HostType = React.ElementType;
 
-function renderScreen(element: React.ReactElement) {
-  let component!: renderer.ReactTestRenderer;
+function render(element: React.ReactElement): renderer.ReactTestRenderer {
+  let tree!: renderer.ReactTestRenderer;
   renderer.act(() => {
-    component = renderer.create(element);
+    tree = renderer.create(element);
   });
-  return component;
+  return tree;
 }
 
 function flatten(style: unknown): Record<string, unknown> {
   if (Array.isArray(style)) {
-    return style.reduce<Record<string, unknown>>((acc, item) => ({ ...acc, ...flatten(item) }), {});
+    return style.reduce<Record<string, unknown>>(
+      (result, item) => ({ ...result, ...flatten(item) }),
+      {},
+    );
   }
   return (style ?? {}) as Record<string, unknown>;
+}
+
+function fields(root: ReactTestInstance) {
+  return root.findAllByType('TextInput' as unknown as HostType);
 }
 
 describe('auth screens contract', () => {
@@ -117,84 +93,79 @@ describe('auth screens contract', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    guardState.isChecking = false;
-    mockUseAuthStore.setState({
-      signIn: (email: string, password: string) => mockSignIn(email, password),
-      isLoading: false,
-    });
+    authState.session = null;
+    authState.profile = { role: 'employee' };
   });
 
-  test('tapping the login background dismisses the keyboard', () => {
-    const component = renderScreen(React.createElement(LoginScreen));
-
-    const dismissSurfaces = component.root
-      .findAllByType('Pressable' as unknown as TestElement)
-      .filter((node) => typeof node.props.onPress === 'function');
-    expect(dismissSurfaces.length).toBeGreaterThan(0);
+  test('the keyboard Go key cannot dispatch twice while sign-in is in flight', async () => {
+    let settle!: () => void;
+    mockSignIn.mockImplementation(
+      () => new Promise<void>((resolve) => { settle = resolve; }),
+    );
+    const onComplete = jest.fn();
+    const tree = render(
+      React.createElement(SignInSheet, { visible: true, onClose: jest.fn(), onComplete }),
+    );
+    const [email, password] = fields(tree.root);
 
     renderer.act(() => {
-      dismissSurfaces[0].props.onPress();
+      email.props.onChangeText('manager@example.com');
+      password.props.onChangeText('Password123');
     });
-    expect(dismissKeyboard).toHaveBeenCalled();
+    const activePassword = fields(tree.root)[1];
+    renderer.act(() => {
+      activePassword.props.onSubmitEditing();
+      activePassword.props.onSubmitEditing();
+    });
 
-    renderer.act(() => component.unmount());
+    expect(mockSignIn).toHaveBeenCalledTimes(1);
+    await renderer.act(async () => {
+      settle();
+      await Promise.resolve();
+    });
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    renderer.act(() => tree.unmount());
   });
 
-  test('the keyboard Go key signs in once, and never during a request in flight', async () => {
-    const component = renderScreen(React.createElement(LoginScreen));
-
-    const fields = component.root.findAllByType('TextInput' as unknown as TestElement);
-    const password = fields[fields.length - 1];
-    expect(typeof password.props.onSubmitEditing).toBe('function');
-
-    await renderer.act(async () => {
-      fields[0].props.onChangeText('manager@example.com');
-    });
-    await renderer.act(async () => {
-      password.props.onChangeText('LocalQaManager1!');
-    });
-    await renderer.act(async () => {
-      await password.props.onSubmitEditing();
-    });
-    expect(mockSignIn).toHaveBeenCalledTimes(1);
-
-    // Same field, same key, while the store reports a sign-in in flight.
-    await renderer.act(async () => {
-      mockUseAuthStore.setState({ isLoading: true });
-    });
-    const busyPassword = component.root
-      .findAllByType('TextInput' as unknown as TestElement)
-      .slice(-1)[0];
-    await renderer.act(async () => {
-      await busyPassword.props.onSubmitEditing();
-    });
-    expect(mockSignIn).toHaveBeenCalledTimes(1);
-
-    renderer.act(() => component.unmount());
-  });
-
-  test('the auth guard loading state is black and uses the Loading primitive', () => {
-    guardState.isChecking = true;
-    const component = renderScreen(React.createElement(LoginScreen));
-
-    const root = component.root.findAllByType('View' as unknown as TestElement)[0];
-    expect(flatten(root.props.style).backgroundColor).toBe(auth.bg);
-
-    const spinner = component.root.findAllByProps({ accessibilityRole: 'progressbar' });
-    expect(spinner.length).toBeGreaterThan(0);
-    expect(component.root.findAllByType('LoadingIndicator' as unknown as TestElement)).toHaveLength(
-      1,
+  test('a dismissed sheet ignores a late sign-in result and keeps the request lock', async () => {
+    let settle!: () => void;
+    mockSignIn.mockImplementation(
+      () => new Promise<void>((resolve) => { settle = resolve; }),
     );
+    const onComplete = jest.fn();
+    const tree = render(
+      React.createElement(SignInSheet, { visible: true, onClose: jest.fn(), onComplete }),
+    );
+    const [email, password] = fields(tree.root);
 
-    renderer.act(() => component.unmount());
+    renderer.act(() => {
+      email.props.onChangeText('manager@example.com');
+      password.props.onChangeText('Password123');
+    });
+    renderer.act(() => {
+      fields(tree.root)[1].props.onSubmitEditing();
+      tree.root.findByType('Sheet' as unknown as HostType).props.onClose();
+      fields(tree.root)[1].props.onSubmitEditing();
+    });
+
+    expect(mockSignIn).toHaveBeenCalledTimes(1);
+    authState.session = { user: { id: 'manager-1' } };
+    await renderer.act(async () => {
+      settle();
+      await Promise.resolve();
+    });
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
+    expect(onComplete).not.toHaveBeenCalled();
+    renderer.act(() => tree.unmount());
   });
 
-  test('the post-auth loading state uses the Studio page colour', () => {
-    const component = renderScreen(React.createElement(AuthLoadingScreen));
+  test('the auth loading state uses the Studio page colour and Loading primitive', () => {
+    const tree = render(React.createElement(AuthLoadingScreen, { onDark: true }));
+    const root = tree.root.findAllByType('View' as unknown as HostType)[0];
 
-    const root = component.root.findAllByType('View' as unknown as TestElement)[0];
     expect(flatten(root.props.style).backgroundColor).toBe(auth.bg);
-
-    renderer.act(() => component.unmount());
+    expect(tree.root.findAllByProps({ accessibilityRole: 'progressbar' }).length).toBeGreaterThan(0);
+    expect(tree.root.findAllByType('LoadingIndicator' as unknown as HostType)).toHaveLength(1);
+    renderer.act(() => tree.unmount());
   });
 });

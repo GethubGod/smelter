@@ -40,6 +40,7 @@ export default function InviteScreen() {
   const ds = useScaledStyles();
   const { backTo } = useSettingsNavigationContext();
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [group, setGroup] = useState<InviteLocationGroup>('sushi');
   const [defaultToggles, setDefaultToggles] = useState<EmployeeInviteDefaults>(
     getBuiltInEmployeeDefaults(),
@@ -93,12 +94,14 @@ export default function InviteScreen() {
     try {
       const invite = await createInvite({
         invitedName,
+        invitedEmail: email.trim() || undefined,
         role: 'employee',
         expiresInHours: selectedExpiresInHours,
         modulePreset: { ...toggles },
         locationGroup: selectedGroup,
       });
       setName('');
+      setEmail('');
       setGroup('sushi');
       setToggles({ ...defaultToggles });
       setExpiresInHours(168);
@@ -148,6 +151,21 @@ export default function InviteScreen() {
             placeholder="First name, like on the schedule"
             accessibilityLabel="Name"
             autoCapitalize="words"
+            autoCorrect={false}
+            editable={!busy}
+          />
+
+          <TeamSectionLabel label="Email (optional)" />
+          <Input
+            value={email}
+            onChangeText={(value) => {
+              setEmail(value);
+              if (error) setError(null);
+            }}
+            placeholder="name@example.com"
+            accessibilityLabel="Email (optional)"
+            keyboardType="email-address"
+            autoCapitalize="none"
             autoCorrect={false}
             editable={!busy}
           />

@@ -150,6 +150,7 @@ export default function ReadyScreen() {
         >
           <Button
             shape="pill"
+            onDark
             label={manager ? 'Open your dashboard' : "See today's list"}
             onPress={handleEnter}
           />

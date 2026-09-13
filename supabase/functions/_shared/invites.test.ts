@@ -4,7 +4,6 @@ import {
   inspectInviteState,
   INVITE_TOKEN_LENGTH,
   mergeInviteModulePreset,
-  parseAcceptInviteInput,
   parseCreateInviteInput,
   resolveLocationGroupToLocationId,
 } from "./invites.ts";
@@ -60,40 +59,6 @@ Deno.test("parseCreateInviteInput validates locationGroup", () => {
   }
 });
 
-Deno.test("parseAcceptInviteInput validates the onboarding credential", () => {
-  const token = "A".repeat(INVITE_TOKEN_LENGTH);
-  const onboarding = parseAcceptInviteInput({
-    token,
-    mode: "onboarding",
-    credentialKind: "pin",
-    credentialSecret: "1234",
-  });
-  if (
-    !onboarding.ok ||
-    onboarding.value.mode !== "onboarding" ||
-    onboarding.value.email !== null ||
-    onboarding.value.password !== null ||
-    onboarding.value.credentialKind !== "pin" ||
-    onboarding.value.credentialSecret !== "1234"
-  ) {
-    throw new Error("Expected onboarding mode with an app credential");
-  }
-
-  const missing = parseAcceptInviteInput({ token, mode: "onboarding" });
-  if (missing.ok) throw new Error("Expected a missing onboarding credential to be rejected");
-
-  const weakPassword = parseAcceptInviteInput({
-    token,
-    mode: "onboarding",
-    credentialKind: "password",
-    credentialSecret: "short",
-  });
-  if (weakPassword.ok) throw new Error("Expected a weak onboarding password to be rejected");
-
-  const bogus = parseAcceptInviteInput({ token, mode: "magic" });
-  if (bogus.ok) throw new Error("Expected an unknown mode to be rejected");
-});
-
 Deno.test("resolveLocationGroupToLocationId follows the short_code convention", () => {
   const locations = [
     { id: "loc-sushi", short_code: "S1" },
@@ -142,26 +107,6 @@ Deno.test("mergeInviteModulePreset seeds employee invites from org defaults", ()
   const malformed = mergeInviteModulePreset("employee", null, ["nope"]);
   if (Object.keys(malformed).length !== 0) {
     throw new Error("Expected malformed defaults to yield an empty preset");
-  }
-});
-
-Deno.test("parseAcceptInviteInput requires credentials only for full acceptance", () => {
-  const token = "A".repeat(INVITE_TOKEN_LENGTH);
-  const dryRun = parseAcceptInviteInput({ token, validateOnly: true });
-  if (!dryRun.ok || !dryRun.value.validateOnly) {
-    throw new Error("Expected a valid dry run");
-  }
-
-  const full = parseAcceptInviteInput({
-    token,
-    email: "alex@example.com",
-    password: "password",
-  });
-  if (
-    !full.ok || full.value.validateOnly ||
-    full.value.email !== "alex@example.com"
-  ) {
-    throw new Error("Expected valid full acceptance credentials");
   }
 });
 

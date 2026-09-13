@@ -13,7 +13,7 @@ module.exports = {
         moduleResolution: 'node',
         esModuleInterop: true,
         strict: true,
-        jsx: 'react',
+        jsx: 'react-jsx',
         allowImportingTsExtensions: true,
         paths: { '@/*': ['./src/*'] },
         baseUrl: '.',
@@ -22,6 +22,7 @@ module.exports = {
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^expo-apple-authentication$': '<rootDir>/test-mocks/expoAppleAuthentication.ts',
     // Untransformed ESM under ts-jest — see test-mocks/reanimatedSwipeable.tsx.
     '^react-native-gesture-handler/ReanimatedSwipeable$':
       '<rootDir>/test-mocks/reanimatedSwipeable.tsx',

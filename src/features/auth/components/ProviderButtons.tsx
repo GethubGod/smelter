@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
-import { Button } from '@/components/ui';
+import { Button } from '@/components/ui/Button';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { color, providerColor } from '@/theme/tokens';
 

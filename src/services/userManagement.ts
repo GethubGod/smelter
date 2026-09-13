@@ -8,6 +8,7 @@ export interface ManagedUser {
   email: string;
   full_name: string | null;
   role: ManagedUserRole;
+  legacy_name_login: boolean;
   is_suspended: boolean;
   suspended_at: string | null;
   suspended_by: string | null;

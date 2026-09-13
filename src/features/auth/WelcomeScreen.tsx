@@ -1,115 +1,171 @@
-// Screens 01/02 — Welcome. Two actions only; the paste state is revealed by
-// "I have an invite link". The clipboard is read exclusively from that tap
-// (iOS surfaces a paste notice; never read silently on launch).
-
-import { useState } from 'react';
-import { View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Animated, Easing, Image, Pressable, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Redirect, useRouter } from 'expo-router';
-import * as Clipboard from 'expo-clipboard';
-import { AuthLoadingScreen, AuthLogoHeader } from '@/components';
-import { Button, Input } from '@/components/ui';
+import { AuthLoadingScreen } from '@/components';
 import { useAuthScreenGuard } from '@/hooks';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { parseJoinToken } from '@/services/inviteLinks';
-import { space } from '@/theme/tokens';
+import { auth, color, motion, radius, space, tracking, typeScale, weight } from '@/theme/tokens';
 import { AuthScreenShell } from './components/AuthScreenShell';
+import { SignInSheet } from './components/SignInSheet';
+import { openAuthBrowser, SIGNUP_URL } from './legal';
 
-const RAW_TOKEN_PATTERN = /^[A-Za-z0-9_-]{22,128}$/;
+interface WelcomeOptionProps {
+  title: string;
+  subtitle: string;
+  icon: 'chevron-forward' | 'open-outline';
+  onPress: () => void;
+}
 
-function extractToken(input: string): string | null {
-  const trimmed = input.trim();
-  if (!trimmed) return null;
-  if (RAW_TOKEN_PATTERN.test(trimmed)) return trimmed;
-  return parseJoinToken(trimmed);
+function WelcomeOption({ title, subtitle, icon, onPress }: WelcomeOptionProps) {
+  const ds = useScaledStyles();
+  const press = useRef(new Animated.Value(0)).current;
+
+  const animate = (toValue: number) => {
+    Animated.timing(press, {
+      toValue,
+      duration: ds.reduceMotion ? 1 : 90,
+      easing: Easing.bezier(...motion.ease),
+      useNativeDriver: false,
+    }).start();
+  };
+
+  return (
+    <Animated.View
+      style={{
+        borderRadius: radius.card,
+        backgroundColor: press.interpolate({
+          inputRange: [0, 1],
+          outputRange: [auth.well, color.cardPressed],
+        }),
+        transform: [
+          {
+            scale: press.interpolate({ inputRange: [0, 1], outputRange: [1, 0.985] }),
+          },
+        ],
+      }}
+    >
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityHint={subtitle}
+        onPress={onPress}
+        onPressIn={() => animate(1)}
+        onPressOut={() => animate(0)}
+        style={{
+          minHeight: ds.spacing(78),
+          paddingVertical: ds.spacing(space[4]),
+          paddingLeft: ds.spacing(18),
+          paddingRight: ds.spacing(space[4]),
+          borderRadius: radius.card,
+          backgroundColor: 'transparent',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: ds.spacing(space[3]),
+        }}
+      >
+        <View style={{ flex: 1 }}>
+          <Text
+            style={{
+              fontSize: ds.fontSize(typeScale.option),
+              fontWeight: weight.bold,
+              color: auth.text,
+            }}
+          >
+            {title}
+          </Text>
+          <Text
+            style={{
+              marginTop: ds.spacing(space[1]),
+              fontSize: ds.fontSize(typeScale.secondary),
+              fontWeight: weight.regular,
+              color: auth.dim,
+            }}
+          >
+            {subtitle}
+          </Text>
+        </View>
+        <View
+          style={{
+            width: ds.spacing(28),
+            height: ds.spacing(28),
+            borderRadius: radius.pill,
+            backgroundColor: color.well,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Ionicons name={icon} size={ds.icon(typeScale.body)} color={auth.text} />
+        </View>
+      </Pressable>
+    </Animated.View>
+  );
 }
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const ds = useScaledStyles();
   const guard = useAuthScreenGuard();
-  const [showPaste, setShowPaste] = useState(false);
-  const [linkInput, setLinkInput] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [signInVisible, setSignInVisible] = useState(false);
 
   if (guard.isChecking) return <AuthLoadingScreen onDark />;
   if (guard.authenticatedRedirectTo) return <Redirect href={guard.authenticatedRedirectTo} />;
 
-  const handleShowPaste = async () => {
-    setShowPaste(true);
-    setError(null);
-    try {
-      // User-initiated read only — this tap is the trigger.
-      const clip = await Clipboard.getStringAsync();
-      if (clip && extractToken(clip)) {
-        setLinkInput(clip.trim());
-      }
-    } catch {
-      // Clipboard unavailable — the field still accepts manual paste.
-    }
-  };
-
-  const handleContinue = () => {
-    const token = extractToken(linkInput);
-    if (!token) {
-      setError("That doesn't look like an invite link. Paste the whole link from your manager.");
-      return;
-    }
-    setError(null);
-    router.push(
-      { pathname: '/(auth)/invite-hello', params: { token } } as Parameters<typeof router.push>[0],
-    );
-  };
-
   return (
-    <AuthScreenShell>
-      <View style={{ flex: 1, justifyContent: 'center' }}>
-        <View style={{ alignItems: 'center', marginBottom: ds.spacing(space[8]) }}>
-          <AuthLogoHeader size={64} />
+    <>
+      <AuthScreenShell dismissKeyboardOnPress={false}>
+        <View style={{ alignItems: 'center', marginTop: ds.spacing(22) }}>
+          <Image
+            source={require('../../../assets/images/smelter-lockup.png')}
+            resizeMode="contain"
+            style={{ width: ds.spacing(112), aspectRatio: 1198 / 257 }}
+          />
         </View>
 
-        {showPaste ? (
-          <View style={{ gap: ds.spacing(space[3]) }}>
-            <Input
-              label="Paste your invite link"
-              onDark
-              accessibilityLabel="Invite link"
-              value={linkInput}
-              onChangeText={(value) => {
-                setLinkInput(value);
-                if (error) setError(null);
-              }}
-              placeholder="tips.babytunasystems.com/join/…"
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="url"
-              returnKeyType="go"
-              onSubmitEditing={handleContinue}
-              error={error ?? undefined}
-            />
-            <Button label="Continue" onPress={handleContinue} />
-            <Button
-              label="Back"
-              variant="secondary"
-              onDark
-              onPress={() => {
-                setShowPaste(false);
-                setLinkInput('');
-                setError(null);
-              }}
-            />
-          </View>
-        ) : (
-          <View style={{ gap: ds.spacing(space[3]) }}>
-            <Button label="I have an invite link" onPress={handleShowPaste} />
-            <Button
-              label="Sign in"
-              variant="secondary"
-              onDark
-              onPress={() => router.push('/(auth)/sign-in' as Parameters<typeof router.push>[0])}
-            />
-          </View>
-        )}
-      </View>
-    </AuthScreenShell>
+        <View style={{ flex: 1 }} />
+
+        <Text
+          accessibilityRole="header"
+          style={{
+            marginBottom: ds.spacing(22),
+            fontSize: ds.fontSize(typeScale.display),
+            fontWeight: weight.bold,
+            letterSpacing: tracking.display,
+            color: auth.text,
+          }}
+        >
+          Welcome
+        </Text>
+
+        <View style={{ gap: ds.spacing(10) }}>
+          <WelcomeOption
+            title="I was invited"
+            subtitle="Paste the link your manager sent"
+            icon="chevron-forward"
+            onPress={() => router.push('/(auth)/invite-link')}
+          />
+          <WelcomeOption
+            title="I have an account"
+            subtitle="Google, Apple, or email"
+            icon="chevron-forward"
+            onPress={() => setSignInVisible(true)}
+          />
+          <WelcomeOption
+            title="I'm setting up a restaurant"
+            subtitle="Create your account on smelterpos.com"
+            icon="open-outline"
+            onPress={() => void openAuthBrowser(SIGNUP_URL)}
+          />
+        </View>
+      </AuthScreenShell>
+
+      <SignInSheet
+        visible={signInVisible}
+        onClose={() => setSignInVisible(false)}
+        onComplete={() => {
+          router.replace('/(auth)/ready');
+        }}
+      />
+    </>
   );
 }

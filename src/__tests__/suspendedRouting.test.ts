@@ -99,6 +99,20 @@ jest.mock('react-native', () => ({
     currentState: 'active',
     addEventListener: jest.fn(() => ({ remove: jest.fn() })),
   },
+  Animated: {
+    Value: class {
+      constructor(public value: number) {}
+      setValue(value: number) { this.value = value; }
+    },
+    View: 'Animated.View',
+    timing: (value: { setValue: (next: number) => void }, config: { toValue: number }) => ({
+      start: (callback?: (result: { finished: boolean }) => void) => {
+        value.setValue(config.toValue);
+        callback?.({ finished: true });
+      },
+    }),
+  },
+  Easing: { bezier: () => (value: number) => value },
   // The @/components/ui barrel reaches design.ts through Sheet.
   StyleSheet: {
     hairlineWidth: 1,
@@ -253,10 +267,10 @@ describe('suspended routing', () => {
     renderer.act(() => component.unmount());
   });
 
-  test('the suspended screen still redirects to login when there is no session', () => {
+  test('the suspended screen redirects to Welcome when there is no session', () => {
     const component = renderScreen(React.createElement(SuspendedScreen));
 
-    expect(mockRedirect).toHaveBeenCalledWith('/(auth)/login');
+    expect(mockRedirect).toHaveBeenCalledWith('/(auth)/welcome');
     expect(mockSignOut).not.toHaveBeenCalled();
 
     renderer.act(() => component.unmount());

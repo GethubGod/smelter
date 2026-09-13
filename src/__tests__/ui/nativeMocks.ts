@@ -61,7 +61,7 @@ export function reactNative() {
           start(callback);
         },
       }),
-      parallel: (animations: Array<{ start: typeof start }>) => ({
+      parallel: (animations: { start: typeof start }[]) => ({
         start: (callback?: (result: { finished: boolean }) => void) => {
           animations.forEach((animation) => animation.start());
           start(callback);
@@ -116,7 +116,22 @@ export function loadingIndicator() {
 }
 
 export function bottomSheetShell() {
-  const Shell = ({ visible, children }: { visible: boolean; children?: React.ReactNode }) =>
-    visible ? React.createElement('BottomSheetShell', null, children) : null;
+  const Shell = ({
+    visible,
+    header,
+    children,
+    footer,
+    overlay,
+    ...props
+  }: {
+    visible: boolean;
+    header?: React.ReactNode;
+    children?: React.ReactNode;
+    footer?: React.ReactNode;
+    overlay?: React.ReactNode;
+  }) =>
+    visible
+      ? React.createElement('BottomSheetShell', props, header, children, footer, overlay)
+      : null;
   return { BottomSheetShell: Shell };
 }

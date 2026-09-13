@@ -7,7 +7,28 @@ const openURL = jest.fn(async (_value: string) => undefined);
 const share = jest.fn(async (_input: { message: string }) => undefined);
 const replace = jest.fn();
 jest.mock('expo-router', () => ({ useLocalSearchParams: () => params, router: { replace } }));
-jest.mock('react-native', () => ({ View: 'View', Text: 'Text', TouchableOpacity: 'TouchableOpacity', Linking: { openURL }, Platform: { OS: 'ios' }, Share: { share } }));
+jest.mock('react-native', () => ({
+  View: 'View',
+  Text: 'Text',
+  TouchableOpacity: 'TouchableOpacity',
+  Linking: { openURL },
+  Platform: { OS: 'ios' },
+  Share: { share },
+  Animated: {
+    Value: class {
+      constructor(public value: number) {}
+      setValue(value: number) { this.value = value; }
+    },
+    View: 'Animated.View',
+    timing: (value: { setValue: (next: number) => void }, config: { toValue: number }) => ({
+      start: (callback?: (result: { finished: boolean }) => void) => {
+        value.setValue(config.toValue);
+        callback?.({ finished: true });
+      },
+    }),
+  },
+  Easing: { bezier: () => (value: number) => value },
+}));
 jest.mock('react-native-safe-area-context', () => ({ SafeAreaView: 'SafeAreaView', useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) }));
 jest.mock('@expo/vector-icons', () => ({ Ionicons: 'Ionicons' }));
 /* The primitives reach the one designated spinner host; a factory may only require. */

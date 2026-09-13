@@ -71,7 +71,7 @@ Salmon` / `occasional` / `10`, and `Rare Nori` / `rare` / `1`, in that sort
 order. The fixture is intentionally separate from the general migration
 harness so the harness remains data-free for every phase.
 
-### Onboarding/auth fixture
+### Legacy login/auth fixture
 
 After a kept migration run, execute the onboarding/auth fixture to prove the
 login-credential and invite-defaults backend:
@@ -81,18 +81,31 @@ docker exec -i <container-name> psql -U postgres -d postgres \
   -v ON_ERROR_STOP=1 < scripts/local-db/onboarding_auth_fixture.sql
 ```
 
-It prints fourteen `ok:` notices covering: the `ordering_simple` employee
+It prints thirteen `ok:` notices covering: the `ordering_simple` employee
 default flip in `get_effective_modules` (and that explicit `user_modules`
 rows still override it), `set_my_login_credential` normalization + bcrypt
 hashing + format validation + duplicate-name refusal,
 `verify_login_credential` success/invalid/rate-limit (6 failures per name in
 10 minutes) and suspended-account refusal, `reset_login_credential`
-manager gating + PIN rotation + suspended-target refusal, atomic onboarding
-credential creation, invite-safe account deletion, the seeded
+manager gating + PIN rotation + suspended-target refusal, invite-safe account deletion, the seeded
 `employee_invite_module_defaults` app_config row and its manager-gated
 validated writes, and `set_user_default_location` gating with `null`
 meaning "both". It ends with
 `PASS: onboarding auth fixture assertions all held` and rolls back.
+
+### Auth flow C invite fixture
+
+After a kept migration run, execute the auth flow C fixture to verify the
+nullable-role provider bootstrap, legacy-login backfill, invited-email checks,
+atomic link claims, invite-name authority, and failure paths that must not
+consume the token or leave partial membership state:
+
+```sh
+docker exec -i <container-name> psql -U postgres -d postgres \
+  -v ON_ERROR_STOP=1 < scripts/local-db/auth_invite_c_fixture.sql
+```
+
+It ends with `PASS: auth invite backend fixture assertions all held`.
 
 ### Phase 6c holiday-template fixture
 

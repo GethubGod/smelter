@@ -52,11 +52,19 @@ jest.mock('@/components/BottomSheetShell', () => {
     BottomSheetShell: ({
       visible,
       children,
+      header,
+      footer,
       ...props
     }: {
       visible: boolean;
       children?: unknown;
-    }) => (visible ? reactModule.createElement('BottomSheetShell', props, children) : null),
+      header?: unknown;
+      footer?: unknown;
+    }) => (
+      visible
+        ? reactModule.createElement('BottomSheetShell', props, header, children, footer)
+        : null
+    ),
   };
 });
 /* eslint-enable @typescript-eslint/no-require-imports */

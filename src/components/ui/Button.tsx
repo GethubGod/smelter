@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
-import { Text, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
+import React, { useRef } from 'react';
+import { Animated, Easing, Text, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { auth, color, radius, size, space, typeScale, weight } from '@/theme/tokens';
+import { auth, color, motion, radius, size, space, typeScale, weight } from '@/theme/tokens';
 import { Loading } from './Loading';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ink' | 'white' | 'destructive';
 export type ButtonSize = 'default' | 'small';
 export type ButtonShape = 'pill';
+
+const BUTTON_RADIUS: Record<ButtonShape, number> = {
+  pill: radius.pill,
+};
 
 export interface ButtonProps {
   label: string;
@@ -42,6 +46,7 @@ export function Button({
   onPress,
   variant = 'primary',
   size: buttonSize = 'default',
+  shape = 'pill',
   loading = false,
   disabled = false,
   icon,
@@ -53,7 +58,7 @@ export function Button({
   style,
 }: ButtonProps) {
   const ds = useScaledStyles();
-  const [pressed, setPressed] = useState(false);
+  const pressScale = useRef(new Animated.Value(1)).current;
   const isSmall = buttonSize === 'small';
   const inert = disabled || loading;
   const stretches = fullWidth ?? !isSmall;
@@ -68,13 +73,28 @@ export function Button({
   const fontSize = ds.fontSize(isSmall ? typeScale.secondary : typeScale.body);
   const iconSize = ds.icon(isSmall ? typeScale.secondary : typeScale.body) + 2;
 
+  const animatePress = (toValue: number) => {
+    Animated.timing(pressScale, {
+      toValue,
+      duration: ds.reduceMotion ? 1 : 90,
+      easing: Easing.bezier(...motion.ease),
+      useNativeDriver: true,
+    }).start();
+  };
+
   return (
+    <Animated.View
+      style={[
+        { alignSelf: stretches ? 'stretch' : 'flex-start', transform: [{ scale: pressScale }] },
+        style,
+      ]}
+    >
     <TouchableOpacity
       onPress={onPress}
-      onPressIn={() => setPressed(true)}
-      onPressOut={() => setPressed(false)}
+      onPressIn={() => animatePress(0.98)}
+      onPressOut={() => animatePress(1)}
       disabled={inert}
-      activeOpacity={0.85}
+      activeOpacity={1}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
@@ -86,18 +106,16 @@ export function Button({
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: ds.spacing(space[2]),
+          gap: ds.spacing(onDark ? 10 : space[2]),
           height,
           minHeight: height,
           paddingHorizontal: ds.spacing(isSmall ? space[3] + 2 : space[5]),
-          borderRadius: radius.pill,
+          borderRadius: BUTTON_RADIUS[shape],
           backgroundColor: palette.background,
           borderWidth: palette.border ? 1 : 0,
           borderColor: palette.border,
-          alignSelf: stretches ? 'stretch' : 'flex-start',
-          transform: [{ scale: pressed ? 0.98 : 1 }],
+          alignSelf: 'stretch',
         },
-        style,
       ]}
     >
       {loading ? (
@@ -119,6 +137,7 @@ export function Button({
         </>
       )}
     </TouchableOpacity>
+    </Animated.View>
   );
 }
 

@@ -1,8 +1,8 @@
 import { useRef } from 'react';
-import { Animated, Pressable } from 'react-native';
+import { Animated, Easing, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { auth, radius, size } from '@/theme/tokens';
+import { auth, motion, radius, size } from '@/theme/tokens';
 
 interface AuthCloseButtonProps {
   onPress: () => void;
@@ -17,6 +17,7 @@ export function AuthCloseButton({ onPress, label = 'Close' }: AuthCloseButtonPro
     Animated.timing(scale, {
       toValue,
       duration: ds.reduceMotion ? 1 : 90,
+      easing: Easing.bezier(...motion.ease),
       useNativeDriver: true,
     }).start();
   };

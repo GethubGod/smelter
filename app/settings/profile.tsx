@@ -342,7 +342,7 @@ export default function ProfileSettingsScreen() {
       <SettingsGroup>
         <SettingsRow
           icon="key-outline"
-          title="Change PIN or password"
+          title="Change password"
           subtitle="Update your sign-in details"
           onPress={() => setShowPasswordModal(true)}
           showBorder={false}

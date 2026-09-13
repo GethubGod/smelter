@@ -198,16 +198,6 @@ export function buildSettingsGroups({
             onNavigate(routeFor(view, '/(manager)/manager-settings/team')),
         }),
         makeItem('management', {
-          key: 'access-codes',
-          icon: 'key-outline',
-          title: 'Access Codes',
-          subtitle: 'Update employee and manager sign-up codes',
-          onPress: () =>
-            onNavigate(
-              routeFor(view, '/(manager)/manager-settings/access-codes'),
-            ),
-        }),
-        makeItem('management', {
           key: 'supplier-contacts',
           icon: 'call-outline',
           title: 'Supplier Contacts',

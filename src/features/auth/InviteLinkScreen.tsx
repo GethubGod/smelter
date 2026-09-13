@@ -204,6 +204,7 @@ export default function InviteLinkScreen() {
       </Text>
       <Button
         shape="pill"
+        onDark
         label="Continue"
         onPress={() => void handleContinue()}
         loading={submitting}

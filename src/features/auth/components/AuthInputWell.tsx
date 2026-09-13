@@ -1,7 +1,6 @@
 import {
   forwardRef,
   useEffect,
-  useImperativeHandle,
   useRef,
   useState,
 } from 'react';
@@ -45,7 +44,6 @@ export const AuthInputWell = forwardRef<TextInput, AuthInputWellProps>(
     forwardedRef,
   ) {
     const ds = useScaledStyles();
-    const inputRef = useRef<TextInput>(null);
     const [focused, setFocused] = useState(false);
     const flash = useRef(new Animated.Value(0)).current;
     const focusRing = useRef(new Animated.Value(0)).current;
@@ -59,8 +57,6 @@ export const AuthInputWell = forwardRef<TextInput, AuthInputWellProps>(
         useNativeDriver: false,
       }).start();
     }, [ds.reduceMotion, focusRing, focused]);
-
-    useImperativeHandle(forwardedRef, () => inputRef.current!);
 
     useEffect(() => {
       Animated.timing(errorReveal, {
@@ -121,7 +117,7 @@ export const AuthInputWell = forwardRef<TextInput, AuthInputWellProps>(
         >
           <TextInput
             {...inputProps}
-            ref={inputRef}
+            ref={forwardedRef}
             testID={testID}
             editable={!locked}
             placeholderTextColor={auth.faint}

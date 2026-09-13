@@ -3,12 +3,11 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RealtimeChannel, Session } from '@supabase/supabase-js';
 import * as AuthSession from 'expo-auth-session';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import * as WebBrowser from 'expo-web-browser';
 import { User, Location, UserRole, Profile, AuthProvider } from '@/types';
 import { clearSupabaseStoredSession, supabase } from '@/lib/supabase';
 import { deleteSelfAccountRequest, registerSessionGetter } from '@/lib/api/client';
-import { validateAccessCode } from '@/services/accessCodes';
-import { acceptInvite } from '@/services/invites';
 import { invalidateCachePrefix } from '@/lib/queryCache';
 import { useSettingsStore } from './settingsStore';
 import { useSimpleOrderUiStore } from './simpleOrderUiStore';
@@ -20,6 +19,7 @@ import {
 
 type ViewMode = 'employee' | 'manager';
 type OAuthProvider = 'google' | 'apple';
+type ProviderSignInOptions = { deferHydration?: boolean };
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -44,15 +44,12 @@ let activeLocationRequest: LocationRequest | null = null;
 let identityRepairRpcAvailable: boolean | null = null;
 let warnedIdentityRepairRpcUnavailable = false;
 let explicitSignOutInProgress = false;
+let providerHydrationDeferred = false;
 const pendingDeferredAuthTaskTimeouts = new Set<ReturnType<typeof setTimeout>>();
 const SIGN_OUT_TIMEOUT_MS = 5_000;
 const DELETE_SELF_NETWORK_TIMEOUT_MS = 20_000;
 const DELETE_SELF_CLEANUP_TIMEOUT_MS = 8_000;
 const AUTH_TRANSITION_STALE_MESSAGE = '__AUTH_TRANSITION_STALE__';
-
-type SignUpResult =
-  | { status: 'authenticated'; user: User }
-  | { status: 'confirmation_required'; email: string };
 
 type SessionBootstrapInput = {
   email?: string | null;
@@ -88,6 +85,26 @@ function normalizeLocationId(value: string | null | undefined): string | null {
   if (typeof value !== 'string') return null;
   const normalized = value.trim();
   return normalized || null;
+}
+
+function formatAppleName(
+  fullName: AppleAuthentication.AppleAuthenticationFullName | null
+): string | null {
+  if (!fullName) return null;
+  return normalizeName(
+    [fullName.givenName, fullName.middleName, fullName.familyName]
+      .filter((part): part is string => typeof part === 'string' && Boolean(part.trim()))
+      .join(' ')
+  );
+}
+
+function isAppleCancellation(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    error.code === 'ERR_REQUEST_CANCELED'
+  );
 }
 
 function getSessionMetadataString(
@@ -460,6 +477,7 @@ interface AuthState {
   locations: Location[];
   isLoading: boolean;
   isInitialized: boolean;
+  readyPending: boolean;
   viewMode: ViewMode;
 
   // Actions
@@ -468,32 +486,20 @@ interface AuthState {
   setProfile: (profile: Profile | null) => void;
   setLocation: (location: Location | null) => void;
   setIsLoading: (isLoading: boolean) => void;
+  setReadyPending: (readyPending: boolean) => void;
   setViewMode: (mode: ViewMode) => void;
   initialize: () => Promise<void>;
   fetchUser: () => Promise<User | null>;
   fetchProfile: () => Promise<Profile | null>;
   fetchLocations: () => Promise<Location[]>;
   signIn: (email: string, password: string) => Promise<User | null>;
-  /**
-   * Hydrates the store from a session established outside the store's own
-   * sign-in actions (e.g. name + PIN/password via verifyOtp in
-   * services/loginCredentials, or the invited onboarding accept flow).
-   */
+  /** Hydrates the store after an invite claims an authenticated provider session. */
   adoptExternalSession: (session: Session) => Promise<User | null>;
-  signInWithOAuth: (provider: OAuthProvider) => Promise<void>;
-  signUp: (
-    email: string,
-    password: string,
-    name: string,
-    accessCode: string,
-    locationId?: string
-  ) => Promise<SignUpResult>;
-  signUpWithInvite: (
-    token: string,
-    email: string,
-    password: string,
-    name: string
-  ) => Promise<SignUpResult>;
+  signInWithOAuth: (
+    provider: OAuthProvider,
+    options?: ProviderSignInOptions
+  ) => Promise<Session | null>;
+  signInWithApple: (options?: ProviderSignInOptions) => Promise<Session | null>;
   signOut: () => Promise<void>;
   deleteSelfAccount: (confirmText: string) => Promise<void>;
   updateDefaultLocation: (locationId: string) => Promise<void>;
@@ -645,7 +651,9 @@ export const useAuthStore = create<AuthState>()(
           profile: null,
           location: null,
           viewMode: 'employee',
+          readyPending: false,
         });
+        providerHydrationDeferred = false;
       };
 
       const applySignedOutState = () => {
@@ -1000,10 +1008,10 @@ export const useAuthStore = create<AuthState>()(
         const profileRole =
           existingProfile?.role ??
           (get().profile?.id === session.user.id ? get().profile?.role : null);
-        const nextRole = bootstrap.role ?? profileRole ?? existingUser?.role ?? 'employee';
+        const nextRole = profileRole ?? bootstrap.role ?? existingUser?.role ?? 'employee';
         const nextName =
-          bootstrap.fullName ??
           profileName ??
+          bootstrap.fullName ??
           existingUser?.name ??
           deriveFallbackName(bootstrap.email ?? session.user.email ?? null, bootstrap.fullName);
         const nextEmail = bootstrap.email ?? existingUser?.email ?? normalizeEmail(session.user.email) ?? '';
@@ -1155,7 +1163,9 @@ export const useAuthStore = create<AuthState>()(
             id: nextUserId,
             email: bootstrap.email ?? session.user.email ?? null,
             full_name: bootstrap.fullName ?? deriveFallbackName(bootstrap.email, bootstrap.fullName),
-            role: bootstrap.role ?? 'employee',
+            // Membership lives in profiles.role. Session metadata is not
+            // authoritative when the profile request itself failed.
+            role: params?.bootstrapInput?.role ?? null,
             provider: bootstrap.provider,
             profile_completed: bootstrap.profileCompleted || Boolean(bootstrap.fullName && bootstrap.role),
             is_suspended: false,
@@ -1241,7 +1251,11 @@ export const useAuthStore = create<AuthState>()(
           (profile ?? (get().profile?.id === nextUserId ? get().profile : null))?.is_suspended
         );
 
-        if (sessionStillCurrent && !sessionIsSuspended) {
+        const sessionHasMembership = Boolean(
+          (profile ?? (get().profile?.id === nextUserId ? get().profile : null))?.role
+        );
+
+        if (sessionStillCurrent && !sessionIsSuspended && sessionHasMembership) {
           notifyAuthSessionRestored(nextUserId);
         }
 
@@ -1256,6 +1270,7 @@ export const useAuthStore = create<AuthState>()(
       locations: [],
       isLoading: true,
       isInitialized: false,
+      readyPending: false,
       viewMode: 'employee',
 
       setSession: (session) => set({ session }),
@@ -1277,6 +1292,7 @@ export const useAuthStore = create<AuthState>()(
         }
       },
       setIsLoading: (isLoading) => set({ isLoading }),
+      setReadyPending: (readyPending) => set({ readyPending }),
       setViewMode: (mode) => set({ viewMode: mode }),
 
       fetchLocations: async () => {
@@ -1471,6 +1487,14 @@ export const useAuthStore = create<AuthState>()(
               return;
             }
 
+            // Provider-based invite acceptance must inspect and claim the
+            // invite before profile repair runs. The provider action keeps
+            // this set until acceptInviteLink succeeds and the caller adopts
+            // the established session.
+            if (providerHydrationDeferred) {
+              return;
+            }
+
             scheduleDeferredAuthTask(async () => {
               assertFreshTransition(transitionId);
 
@@ -1523,6 +1547,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       adoptExternalSession: async (session) => {
+        providerHydrationDeferred = false;
         beginAuthTransition();
         set({ isLoading: true });
         try {
@@ -1538,8 +1563,9 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      signInWithOAuth: async (provider) => {
+      signInWithOAuth: async (provider, options) => {
         beginAuthTransition();
+        providerHydrationDeferred = true;
         set({ isLoading: true });
         try {
           const { data, error } = await supabase.auth.signInWithOAuth({
@@ -1557,7 +1583,8 @@ export const useAuthStore = create<AuthState>()(
           const result = await WebBrowser.openAuthSessionAsync(data.url, OAUTH_REDIRECT_URI);
 
           if (result.type === 'cancel' || result.type === 'dismiss') {
-            throw new Error('OAuth cancelled');
+            providerHydrationDeferred = false;
+            return null;
           }
 
           if (result.type !== 'success' || !result.url) {
@@ -1601,128 +1628,86 @@ export const useAuthStore = create<AuthState>()(
             throw new Error('Missing session after redirect.');
           }
 
+          if (options?.deferHydration) {
+            set({ session: activeSession });
+            return activeSession;
+          }
+
+          providerHydrationDeferred = false;
           await hydrateAuthenticatedSession(activeSession, {
             bootstrapInput: { profileCompleted: false },
             repairIfNeeded: true,
             shouldThrowOnSuspended: true,
           });
+          return activeSession;
         } catch (error) {
+          providerHydrationDeferred = false;
           throw new Error(getAuthErrorMessage(error, 'Unable to sign in. Please try again.'));
         } finally {
           set({ isLoading: false });
         }
       },
 
-      signUp: async (email, password, name, accessCode, locationId) => {
+      signInWithApple: async (options) => {
         beginAuthTransition();
+        providerHydrationDeferred = true;
         set({ isLoading: true });
         try {
-          const normalizedEmail = normalizeEmail(email) ?? email.trim().toLowerCase();
-          const normalizedName = normalizeName(name);
-          const normalizedLocationId = normalizeLocationId(locationId);
-          const role = await validateAccessCode(accessCode, normalizedEmail);
-          const bootstrapInput: SessionBootstrapInput = {
-            email: normalizedEmail,
-            fullName: normalizedName,
-            role,
-            locationId: normalizedLocationId,
-            provider: 'email',
-            profileCompleted: true,
-          };
+          const credential = await AppleAuthentication.signInAsync({
+            requestedScopes: [
+              AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+              AppleAuthentication.AppleAuthenticationScope.EMAIL,
+            ],
+          });
+          if (!credential.identityToken) {
+            throw new Error('Apple did not return an identity token.');
+          }
 
-          const { data, error } = await supabase.auth.signUp({
-            email: normalizedEmail,
-            password,
-            options: {
-              data: {
-                name: normalizedName,
-                full_name: normalizedName,
-                role,
-                provider: 'email',
-                default_location_id: normalizedLocationId,
-              },
-            },
+          const { data, error } = await supabase.auth.signInWithIdToken({
+            provider: 'apple',
+            token: credential.identityToken,
           });
           if (error) throw error;
-          if (!data.user) throw new Error('Failed to create user');
+          if (!data.session) throw new Error('Missing session after Apple sign in.');
 
-          if (!data.session) {
-            applySignedOutState();
-            return {
-              status: 'confirmation_required',
-              email: normalizedEmail,
-            };
+          if (options?.deferHydration) {
+            set({ session: data.session });
+            return data.session;
           }
 
-          const user = await hydrateAuthenticatedSession(data.session, {
-            bootstrapInput,
-            waitForTriggerMs: 500,
-            repairIfNeeded: true,
-            shouldThrowOnSuspended: true,
-          });
-
-          if (!user) {
-            throw new Error('Unable to load your new account. Please try signing in.');
+          const appleName = formatAppleName(credential.fullName);
+          if (appleName) {
+            const { data: appleProfile, error: profileError } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', data.session.user.id)
+              .maybeSingle();
+            if (!profileError && appleProfile?.role === null) {
+              await supabase
+                .from('profiles')
+                .update({ full_name: appleName })
+                .eq('id', data.session.user.id)
+                .is('role', null);
+            }
           }
 
-          return { status: 'authenticated', user };
-        } catch (error) {
-          throw new Error(getAuthErrorMessage(error, 'Unable to create your account. Please try again.'));
-        } finally {
-          set({ isLoading: false });
-        }
-      },
-
-      signUpWithInvite: async (token, email, password, name) => {
-        beginAuthTransition();
-        set({ isLoading: true });
-        try {
-          const normalizedEmail = normalizeEmail(email) ?? email.trim().toLowerCase();
-          const normalizedName = normalizeName(name);
-
-          // accept-invite creates the account server-side (service role),
-          // marks the invite used, and returns the invite's role.
-          const { role } = await acceptInvite({
-            token,
-            email: normalizedEmail,
-            password,
-            name: normalizedName ?? '',
-          });
-
-          // Sign in with the credentials the edge function just created.
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email: normalizedEmail,
-            password,
-          });
-          if (error) throw error;
-          if (!data.session) {
-            applySignedOutState();
-            return {
-              status: 'confirmation_required',
-              email: normalizedEmail,
-            };
-          }
-
-          const user = await hydrateAuthenticatedSession(data.session, {
+          providerHydrationDeferred = false;
+          await hydrateAuthenticatedSession(data.session, {
             bootstrapInput: {
-              email: normalizedEmail,
-              fullName: normalizedName,
-              role,
-              provider: 'email',
-              profileCompleted: true,
+              fullName: appleName,
+              provider: 'apple',
+              profileCompleted: false,
             },
-            waitForTriggerMs: 500,
             repairIfNeeded: true,
             shouldThrowOnSuspended: true,
           });
-
-          if (!user) {
-            throw new Error('Unable to load your new account. Please try signing in.');
-          }
-
-          return { status: 'authenticated', user };
+          return data.session;
         } catch (error) {
-          throw new Error(getAuthErrorMessage(error, 'Unable to create your account. Please try again.'));
+          providerHydrationDeferred = false;
+          if (isAppleCancellation(error)) {
+            return null;
+          }
+          throw new Error(getAuthErrorMessage(error, 'Unable to sign in. Please try again.'));
         } finally {
           set({ isLoading: false });
         }
