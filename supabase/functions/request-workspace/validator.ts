@@ -6,7 +6,8 @@ export interface WorkspaceRequestPayload {
   email: string;
   phone: string | null;
   restaurantName: string;
-  city: string | null;
+  city: string;
+  website: string | null;
   primaryCategory: PrimaryCategory | null;
   locationsCount: number;
 }
@@ -26,7 +27,8 @@ export function parseWorkspaceRequest(input: unknown): ParseWorkspaceResult {
   const raw = input as Record<string, unknown>;
 
   // Honeypot field: silent drop if bots fill this in
-  if (typeof raw.website === 'string' && raw.website.trim().length > 0) {
+  const honeypotVal = raw.hpField ?? raw.faxNumber ?? raw.hp_website;
+  if (typeof honeypotVal === 'string' && honeypotVal.trim().length > 0) {
     return { ok: true, isHoneypot: true };
   }
 
@@ -69,13 +71,22 @@ export function parseWorkspaceRequest(input: unknown): ParseWorkspaceResult {
   }
 
   const cityRaw = typeof raw.city === 'string' ? raw.city : undefined;
-  let city: string | null = null;
-  if (typeof cityRaw === 'string') {
-    const trimmed = cityRaw.trim();
-    if (trimmed.length > 120) {
-      return { ok: false, isHoneypot: false, error: 'City must be 120 characters or fewer' };
+  if (typeof cityRaw !== 'string' || !cityRaw.trim()) {
+    return { ok: false, isHoneypot: false, error: 'City is required' };
+  }
+  const city = cityRaw.trim();
+  if (city.length > 120) {
+    return { ok: false, isHoneypot: false, error: 'City must be 120 characters or fewer' };
+  }
+
+  const websiteRaw = typeof raw.website === 'string' ? raw.website : undefined;
+  let website: string | null = null;
+  if (typeof websiteRaw === 'string') {
+    const trimmed = websiteRaw.trim();
+    if (trimmed.length > 255) {
+      return { ok: false, isHoneypot: false, error: 'Website must be 255 characters or fewer' };
     }
-    city = trimmed || null;
+    website = trimmed || null;
   }
 
   const catRaw =
@@ -98,7 +109,7 @@ export function parseWorkspaceRequest(input: unknown): ParseWorkspaceResult {
       return {
         ok: false,
         isHoneypot: false,
-        error: 'Locations count must be an integer between 1 and 20',
+        error: 'Number of locations must be between 1 and 20',
       };
     }
     locationsCount = parsed;
@@ -113,6 +124,7 @@ export function parseWorkspaceRequest(input: unknown): ParseWorkspaceResult {
       phone,
       restaurantName,
       city,
+      website,
       primaryCategory,
       locationsCount,
     },

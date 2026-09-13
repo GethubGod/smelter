@@ -26,6 +26,7 @@ export type Database = {
           phone: string | null
           restaurant_name: string
           city: string | null
+          website: string | null
           primary_category: string | null
           locations_count: number
           status: string
@@ -43,6 +44,7 @@ export type Database = {
           phone?: string | null
           restaurant_name: string
           city?: string | null
+          website?: string | null
           primary_category?: string | null
           locations_count?: number
           status?: string

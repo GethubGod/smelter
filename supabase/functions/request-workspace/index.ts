@@ -49,9 +49,12 @@ function clientIp(req: Request): string {
   return chain[chain.length - 1] || req.headers.get('x-real-ip')?.trim() || 'unknown';
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeadersForRequest(req) });
+    return new Response(null, {
+      status: 204,
+      headers: corsHeadersForRequest(req),
+    });
   }
 
   if (req.method !== 'POST') {
@@ -62,7 +65,7 @@ Deno.serve(async (req) => {
   try {
     body = await req.json();
   } catch {
-    return jsonResponse(req, { ok: false, error: 'Invalid request body' }, 400);
+    return jsonResponse(req, { ok: false, error: 'Invalid JSON' }, 400);
   }
 
   const parsed = parseWorkspaceRequest(body);
@@ -70,18 +73,20 @@ Deno.serve(async (req) => {
     return jsonResponse(req, { ok: false, error: parsed.error }, 400);
   }
 
-  // Honeypot: drop silently with 200 { ok: true }
+  // Honeypot: silently drop bot submissions with 200 OK
   if (parsed.isHoneypot) {
-    return jsonResponse(req, { ok: true }, 200);
+    return jsonResponse(req, { ok: true });
   }
 
   const ip = clientIp(req);
-  const ipHash = await sha256Hex(ip);
+  const salt = Deno.env.get('WORKSPACE_REQ_IP_SALT') ?? 'smelter_salt_2026';
+  const ipHash = await sha256Hex(`${salt}:${ip}`);
 
-  // Rate limiting: 5 per hashed IP per hour, 2 per email per day
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const now = new Date();
+  const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
+  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
 
+  // Check rate limits: max 5/hr per IP, max 2/day per email
   const [ipLookup, emailLookup] = await Promise.all([
     supabaseAdmin
       .from('workspace_request_rate_limits')
@@ -127,6 +132,7 @@ Deno.serve(async (req) => {
       phone: parsed.value.phone,
       restaurant_name: parsed.value.restaurantName,
       city: parsed.value.city,
+      website: parsed.value.website,
       primary_category: parsed.value.primaryCategory,
       locations_count: parsed.value.locationsCount,
       status: 'pending',
@@ -138,7 +144,7 @@ Deno.serve(async (req) => {
 
   if (insertErr || !data?.id) {
     console.error('Failed to insert workspace request', insertErr);
-    return jsonResponse(req, { ok: false, error: 'Unable to submit workspace request' }, 500);
+    return jsonResponse(req, { ok: false, error: 'Failed to record request' }, 500);
   }
 
   return jsonResponse(req, { ok: true, id: data.id }, 200);

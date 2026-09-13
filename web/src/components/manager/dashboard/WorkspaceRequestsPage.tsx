@@ -21,6 +21,7 @@ export interface WorkspaceRequestRow {
   phone: string | null;
   restaurant_name: string;
   city: string | null;
+  website: string | null;
   primary_category: string | null;
   locations_count: number;
   status: string;
@@ -356,9 +357,24 @@ export function WorkspaceRequestsPage({ ctx }: { ctx: PageContext }) {
                         </span>
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink2">
-                        <span>
-                          Ordering: <strong className="text-ink">{formatCategory(req.primary_category)}</strong>
-                        </span>
+                        {req.primary_category && (
+                          <span>
+                            Ordering: <strong className="text-ink">{formatCategory(req.primary_category)}</strong>
+                          </span>
+                        )}
+                        {req.website && (
+                          <span>
+                            Website:{" "}
+                            <a
+                              href={req.website.startsWith("http") ? req.website : `https://${req.website}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="font-medium text-accent underline hover:text-ink"
+                            >
+                              {req.website.replace(/^https?:\/\//, "")}
+                            </a>
+                          </span>
+                        )}
                         <span>
                           Locations: <strong className="text-ink">{req.locations_count}</strong>
                         </span>
