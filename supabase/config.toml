@@ -58,3 +58,8 @@ verify_jwt = false
 # the anon key as bearer; the WebSocket stream cannot send headers at all.
 [functions.tip-voice-stream]
 verify_jwt = false
+
+# Workspace signup request: submitted anonymously by prospects from
+# smelterpos.com/signup before an account or session exists.
+[functions.request-workspace]
+verify_jwt = false
