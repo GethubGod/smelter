@@ -7,9 +7,21 @@ set -euo pipefail
 
 # The historical QA UDID FCADAB49-3A22-4167-B3EB-F794BEB32D9E is not present
 # in this simulator set. This isolated replacement was created for this pass.
-BABYTUNA_SIM_UDID="EF05F833-2AC4-4383-8688-36C51B956BCF"  # Smelter Release QA iPhone 17 Pro Max, iOS 26.2
+DEFAULT_SIM_UDID="EF05F833-2AC4-4383-8688-36C51B956BCF"   # Smelter Release QA iPhone 17 Pro Max, iOS 26.2
+SECONDARY_SIM_UDID="493660C2-D09B-4B39-AC50-705FFD205948" # Authorized spare iPhone 17 Pro Max
 NELLIT_UDID="7C0CA22A-4895-44BA-BF7E-F53BB5CAF7F8"        # Nellit's device: never target
 NELLIT_APP_ID="com.worthunion.nailit"
+
+# Luna may use the dedicated spare only while another worker owns the default.
+# No arbitrary simulator override is allowed.
+BABYTUNA_SIM_UDID="${SMELTER_SIM_UDID:-$DEFAULT_SIM_UDID}"
+case "$BABYTUNA_SIM_UDID" in
+  "$DEFAULT_SIM_UDID"|"$SECONDARY_SIM_UDID") ;;
+  *)
+    echo "sim.sh: refusing SMELTER_SIM_UDID '$BABYTUNA_SIM_UDID'. Allowed UDIDs: $DEFAULT_SIM_UDID or $SECONDARY_SIM_UDID" >&2
+    exit 1
+    ;;
+esac
 
 for arg in "$@"; do
   if [ "$arg" = "booted" ] || [ "$arg" = "$NELLIT_UDID" ]; then
