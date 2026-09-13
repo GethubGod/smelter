@@ -145,7 +145,7 @@ export default function TabsLayout() {
       <Tabs
         backBehavior="history"
         detachInactiveScreens={false}
-        screenLayout={({ children, route, navigation }) => <GlidePage pushed={route.name === "profile"} onBack={() => navigation.navigate("settings")}>{children}</GlidePage>}
+        screenLayout={({ children, route, navigation }) => <GlidePage pushed={route.name === "profile" || route.name === "receive-delivery"} onBack={() => navigation.navigate(route.name === "receive-delivery" ? "simple-order" : "settings")}>{children}</GlidePage>}
         screenOptions={{ headerShown: false, animation: "fade", transitionSpec: { animation: "timing", config: { duration: 340, easing: Easing.bezier(...motion.ease) } }, sceneStyleInterpolator: () => ({ sceneStyle: {} }) }}
         tabBar={(props) => (
           <EmployeeTabBar
