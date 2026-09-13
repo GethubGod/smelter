@@ -24,6 +24,7 @@ import { OverviewPage } from "./OverviewPage";
 import { Sidebar } from "./Sidebar";
 import { StaffPage } from "./StaffPage";
 import { Toolbar } from "./Toolbar";
+import { WorkspaceRequestsPage } from "./WorkspaceRequestsPage";
 import { btn, ToastProvider, useToast } from "./ui";
 import { useDashboardData } from "./useDashboardData";
 import { useFlagRules } from "./useFlagRules";
@@ -235,6 +236,7 @@ function ShellInner({
             {nav === "ledger" && <LedgerPage ctx={ctx} />}
             {nav === "staff" && <StaffPage ctx={ctx} />}
             {nav === "logdev" && <DevicesPage ctx={ctx} />}
+            {nav === "requests" && <WorkspaceRequestsPage ctx={ctx} />}
           </>
         )}
       </div>
