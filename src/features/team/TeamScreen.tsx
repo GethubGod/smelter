@@ -45,11 +45,9 @@ function summarizeDefaults(
   if (status === 'loading') return 'Loading defaults';
   if (status === 'error' || !defaults) return 'Defaults unavailable';
 
-  const extraLabels = [
-    defaults.ordering_advanced ? 'Advanced ordering' : null,
-    defaults.stock_check ? 'Stock check' : null,
-    defaults.tips ? 'Tips' : null,
-  ].filter((label): label is string => label !== null);
+  const extraLabels = [defaults.tips ? 'Tips' : null].filter(
+    (label): label is string => label !== null,
+  );
   const extras = extraLabels.length === 0
     ? 'everything else off'
     : `${extraLabels.join(', ')} on`;
@@ -164,7 +162,11 @@ export default function TeamScreen() {
               const group = groupForLocationId(locationId, locations);
               const locationSummary = LOCATION_GROUP_LABELS[group];
               const summary = `${locationSummary} · ${
-                user.is_suspended ? 'Suspended' : summarizeModules(modules)
+                user.is_suspended
+                  ? 'Suspended'
+                  : user.role === 'manager'
+                    ? 'Manager'
+                    : summarizeModules(modules)
               }`;
               return (
                 <TeamRow

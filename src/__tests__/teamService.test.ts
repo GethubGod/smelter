@@ -46,26 +46,26 @@ describe('works-at group mapping', () => {
 });
 
 describe('summarizeModules', () => {
-  it('joins enabled module labels in display order', () => {
+  it('joins the visible feature labels and ignores stale hidden overrides', () => {
     expect(
       summarizeModules({
         ordering_simple: true,
-        ordering_advanced: false,
+        ordering_advanced: true,
         stock_check: true,
-        tips: false,
-        fulfillment: false,
+        tips: true,
+        fulfillment: true,
       }),
-    ).toBe('Ordering + Stock check');
+    ).toBe('Checklist + Tips');
   });
 
-  it('handles nothing enabled and missing data', () => {
+  it('handles hidden-only modules, nothing enabled, and missing data', () => {
     expect(
       summarizeModules({
         ordering_simple: false,
-        ordering_advanced: false,
-        stock_check: false,
+        ordering_advanced: true,
+        stock_check: true,
         tips: false,
-        fulfillment: false,
+        fulfillment: true,
       }),
     ).toBe('Nothing enabled');
     expect(summarizeModules(null)).toBe('Loading…');

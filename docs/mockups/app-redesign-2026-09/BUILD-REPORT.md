@@ -35,6 +35,24 @@ Stage C complete:
 - `git diff --check`: exit 0.
 - Worktree dependencies were cloned locally to isolate Expo quoting patches. `pod install --no-repo-update` initially failed in the sandbox on Hermes DNS, then succeeded with network access. Repeated after dependency isolation, it succeeded with 109 dependencies and 110 pods. Pod versions did not change; EXConstants and EXUpdates checksums reflect the required quoting patches.
 
+Stage D complete:
+
+- `npm run typecheck`: exit 0.
+- `npm run lint`: exit 0, no warnings.
+- `npm run test:ci`: exit 0, 98 suites passed, 1 skipped; 1304 tests passed, 1 skipped, 1305 total. `employeeChecklistMeta.test.ts` passes unchanged because its service expectations do not depend on the hidden tabs.
+- `git diff --check`: exit 0.
+- Supabase CLI 2.113.0 created `20260912235714_ui_studio_hidden_module_defaults.sql`. It preserves user overrides and kitchen module defaults, normalizes hidden invite defaults, and keeps old client RPC payload keys accepted. No remote migration was applied.
+- Receive delivery's landing list now uses the shared grouped rows and real order data.
+
+Native build and launch:
+
+- `scripts/sim.sh assert`: exit 0, pinned Smelter QA device booted and Nellit app absent.
+- `npx expo start --port 8091`: Metro started in the worktree.
+- `npx expo run:ios --device "$(scripts/sim.sh udid)" --port 8091 --no-bundler`: failed because Expo rejects these two flags together.
+- `npx expo run:ios --device "$(scripts/sim.sh udid)" --port 8091`: Build Succeeded, 0 errors and 0 warnings; installed on the pinned device.
+- Initial launch displayed `No script URL provided`. `scripts/sim.sh terminate com.babytuna.systems` followed by `scripts/sim.sh launch com.babytuna.systems -RCT_jsLocation localhost:8091` loaded the real welcome screen. Metro bundled 2371 modules. Existing SafeAreaView deprecation and require-cycle warnings appeared.
+- Expo's generated local signing-team changes were removed from the worktree project file after the build. No signing configuration change is part of this UI deliverable.
+
 ## Deviations
 
 - The browser URL policy blocked opening the local `reference-glide.html`. Reference inspection uses its HTML, CSS, and interaction code. Interactive browser comparison has not been performed. No alternate browser or URL workaround was attempted.
@@ -57,4 +75,4 @@ Stage C complete:
 
 ## Remaining work
 
-Complete stage D, run each stage's full checks, build and walk the simulator acceptance checklist, review the integrated diff, and record final commands and risks here.
+Complete simulator acceptance, review the integrated visual corrections, and record final commands and risks here.
