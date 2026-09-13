@@ -879,8 +879,8 @@ export function SimpleOrderScreen() {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{
-              gap: ds.spacing(8),
-              paddingHorizontal: ds.spacing(16),
+              gap: ds.spacing(6),
+              paddingHorizontal: ds.spacing(20),
               paddingTop: ds.spacing(2),
               paddingBottom: ds.spacing(6),
             }}
@@ -918,7 +918,7 @@ export function SimpleOrderScreen() {
                   <Text
                     style={{
                       fontSize: ds.fontSize(typeScale.secondary),
-                      color: selected ? color.onAccent : color.ink3,
+                      color: selected ? color.onInkMuted : color.ink3,
                     }}
                   >
                     {chip.count}

@@ -332,6 +332,7 @@ export function PinnedOrderBar({
             onChangeText={onQueryChange}
             placeholder="Add item"
             placeholderTextColor={color.ink3}
+            autoCapitalize="none"
             autoCorrect={false}
             returnKeyType="search"
             accessibilityLabel="Search inventory to add items"
