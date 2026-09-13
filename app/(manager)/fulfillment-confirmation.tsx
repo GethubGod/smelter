@@ -47,6 +47,7 @@ import { useModuleAccessGuard } from '@/hooks';
 import { color, radius, space, typeScale, weight } from '@/theme/tokens';
 import { Button, Card, ScreenHeader, SectionLabel, StatusPill } from '@/components/ui';
 import { showNotice } from '@/components/ui/NoticeSheet';
+import { showStudioToast } from '@/components/ui/StudioToast';
 import { Sheet } from '@/components/ui/Sheet';
 
 interface ConfirmationDetail {
@@ -2687,7 +2688,7 @@ function FulfillmentConfirmationScreen() {
     }
 
     // Wait for finalization to finish (usually already done by now).
-    await finalizePromise;
+    if (await finalizePromise) showStudioToast(`Sent to ${supplierLabel}`);
   }, [actionsDisabled, finalizeOrder, messageText, supplierLabel]);
 
   const handleCopyToClipboard = useCallback(async () => {
@@ -2705,7 +2706,7 @@ function FulfillmentConfirmationScreen() {
     }
 
     // Always finalize after copy — the order is done.
-    await finalizeOrder('copy');
+    if (await finalizeOrder('copy')) showStudioToast('Copied');
   }, [actionsDisabled, finalizeOrder, messageText]);
 
   return (
