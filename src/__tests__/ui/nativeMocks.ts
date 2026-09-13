@@ -24,6 +24,18 @@ function hostComponent(name: string) {
 /** Replacement for `react-native`. */
 export function reactNative() {
   return {
+    Animated: {
+      View: hostComponent('AnimatedView'),
+      Value: class {
+        constructor(public value: number) {}
+        interpolate({ outputRange }: { outputRange: unknown[] }) { return outputRange[this.value] ?? outputRange[0]; }
+        setValue(value: number) { this.value = value; }
+      },
+      timing: (value: { setValue: (next: number) => void }, config: { toValue: number }) => ({
+        start: () => value.setValue(config.toValue),
+        stop: () => undefined,
+      }),
+    },
     View: hostComponent('View'),
     Text: hostComponent('Text'),
     TextInput: hostComponent('TextInput'),
@@ -79,7 +91,20 @@ export function loadingIndicator() {
 }
 
 export function bottomSheetShell() {
-  const Shell = ({ visible, children }: { visible: boolean; children?: React.ReactNode }) =>
-    visible ? React.createElement('BottomSheetShell', null, children) : null;
+  const Shell = ({
+    visible,
+    header,
+    children,
+    footer,
+    ...props
+  }: {
+    visible: boolean;
+    header?: React.ReactNode;
+    children?: React.ReactNode;
+    footer?: React.ReactNode;
+  }) =>
+    visible
+      ? React.createElement('BottomSheetShell', props, header, children, footer)
+      : null;
   return { BottomSheetShell: Shell };
 }

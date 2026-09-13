@@ -3,30 +3,29 @@
 // through the manager-gated set_user_default_location RPC.
 
 import { useCallback, useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useShallow } from 'zustand/react/shallow';
-import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
 import {
   Button,
-  Card,
   EmptyState,
   Input,
-  ListRow,
   Loading,
   ScreenHeader,
   Sheet,
+  getTabBarClearance,
 } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
 import { useAuthStore } from '@/store';
+import { showNotice } from '@/components/ui/NoticeSheet';
+import { showStudioToast } from '@/components/ui/StudioToast';
 import { triggerNotificationHaptic, NotificationFeedbackType } from '@/lib/haptics';
-import { color, space, typeScale, weight } from '@/theme/tokens';
+import { color, space } from '@/theme/tokens';
 import { listManagedUsers, type ManagedUser } from '@/services/userManagement';
 import { getModulesForUser, setUserModule, type ModuleKey } from '@/services/userModules';
 import {
-  getManageableModuleKeys,
   resolveEffectiveModules,
   type EffectiveModules,
 } from '@/store/moduleStore.helpers';
@@ -34,22 +33,18 @@ import { isValidPin, resetUserCredential } from '@/services/loginCredentials';
 import type { InviteLocationGroup } from '@/services/invites';
 import {
   fetchDefaultLocationIds,
-  fetchLoginCredentialInfo,
   groupForLocationId,
   locationIdForGroup,
   setUserDefaultLocation,
-  type LoginCredentialInfo,
 } from './teamService';
 import { ModuleToggleRow, TeamCard, TeamSectionLabel, WorksAtSegmented } from './components/TeamUI';
 
 /** Screen-local labels per the flow spec. */
 const DETAIL_MODULE_LABELS: Partial<Record<ModuleKey, string>> = {
-  ordering_simple: 'Ordering checklist',
-  ordering_advanced: 'Advanced ordering',
-  stock_check: 'Stock check',
+  ordering_simple: 'Checklist ordering',
   tips: 'Tips',
-  fulfillment: 'Fulfillment',
 };
+const DETAIL_MODULE_KEYS: readonly ModuleKey[] = ['ordering_simple', 'tips'];
 
 export default function MemberDetailScreen() {
   const ds = useScaledStyles();
@@ -61,42 +56,42 @@ export default function MemberDetailScreen() {
   const [user, setUser] = useState<ManagedUser | null>(null);
   const [modules, setModules] = useState<EffectiveModules | null>(null);
   const [group, setGroup] = useState<InviteLocationGroup>('both');
-  const [credential, setCredential] = useState<LoginCredentialInfo | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [pendingKey, setPendingKey] = useState<ModuleKey | null>(null);
   const [groupSaving, setGroupSaving] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
 
   const [resetVisible, setResetVisible] = useState(false);
   const [resetPin, setResetPin] = useState('');
   const [resetBusy, setResetBusy] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
 
-  const showNotice = (message: string) => {
-    setNotice(message);
-    setTimeout(() => setNotice(null), 2200);
-  };
-
   const load = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) {
+      setUser(null);
+      setModules(null);
+      setLoadError('No team member was selected.');
+      return;
+    }
     setLoadError(null);
     try {
-      const [users, locationIds, credentialInfo] = await Promise.all([
+      const [users, locationIds] = await Promise.all([
         listManagedUsers(),
         fetchDefaultLocationIds(),
-        fetchLoginCredentialInfo(userId).catch(() => null),
       ]);
       const found = users.find((candidate) => candidate.id === userId) ?? null;
       if (!found) {
+        setUser(null);
+        setModules(null);
         setLoadError('This person is no longer on the roster.');
         return;
       }
+      const states = await getModulesForUser(userId);
       setUser(found);
-      setCredential(credentialInfo);
       setGroup(groupForLocationId(locationIds.get(userId) ?? null, locations));
-      const states = await getModulesForUser(userId).catch(() => null);
       setModules(resolveEffectiveModules(found.role, states));
     } catch (error) {
+      setUser(null);
+      setModules(null);
       setLoadError(error instanceof Error ? error.message : 'Unable to load this person.');
     }
   }, [userId, locations]);
@@ -114,10 +109,10 @@ export default function MemberDetailScreen() {
     setGroupSaving(true);
     try {
       await setUserDefaultLocation(user.id, locationIdForGroup(nextGroup, locations));
-      showNotice('Works-at updated.');
+      showStudioToast('Works at updated');
     } catch (error) {
       setGroup(previous);
-      Alert.alert('Update failed', error instanceof Error ? error.message : 'Try again.');
+      showNotice('Update failed', error instanceof Error ? error.message : 'Try again.');
     } finally {
       setGroupSaving(false);
     }
@@ -130,50 +125,34 @@ export default function MemberDetailScreen() {
     setPendingKey(key);
     try {
       await setUserModule(user.id, key, enabled);
-      showNotice(`${DETAIL_MODULE_LABELS[key] ?? key} ${enabled ? 'on' : 'off'}.`);
+      showStudioToast(`${DETAIL_MODULE_LABELS[key] ?? key} ${enabled ? 'on' : 'off'}`);
     } catch (error) {
       setModules(previous);
-      Alert.alert('Update failed', error instanceof Error ? error.message : 'Try again.');
+      showNotice('Update failed', error instanceof Error ? error.message : 'Try again.');
     } finally {
       setPendingKey(null);
     }
   };
 
-  const handleResetSubmit = () => {
+  const handleResetSubmit = async () => {
     if (!user) return;
     if (!isValidPin(resetPin)) {
       setResetError('PIN must be exactly 4 digits');
       return;
     }
-    Alert.alert(
-      `Reset ${user.full_name ?? 'this'} PIN?`,
-      `They sign in with ${resetPin} from now on.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reset',
-          style: 'destructive',
-          onPress: () => {
-            void (async () => {
-              setResetBusy(true);
-              setResetError(null);
-              try {
-                await resetUserCredential(user.id, resetPin);
-                triggerNotificationHaptic(NotificationFeedbackType.Success);
-                setResetVisible(false);
-                setResetPin('');
-                setCredential({ kind: 'pin', updatedAt: new Date().toISOString() });
-                showNotice('PIN reset.');
-              } catch (error) {
-                setResetError(error instanceof Error ? error.message : 'Unable to reset the PIN.');
-              } finally {
-                setResetBusy(false);
-              }
-            })();
-          },
-        },
-      ],
-    );
+    setResetBusy(true);
+    setResetError(null);
+    try {
+      await resetUserCredential(user.id, resetPin);
+      void triggerNotificationHaptic(NotificationFeedbackType.Success);
+      setResetVisible(false);
+      setResetPin('');
+      showStudioToast('PIN reset');
+    } catch (error) {
+      setResetError(error instanceof Error ? error.message : 'Unable to reset the PIN.');
+    } finally {
+      setResetBusy(false);
+    }
   };
 
   const handleBack = () => {
@@ -185,159 +164,138 @@ export default function MemberDetailScreen() {
   };
 
   const displayName = user?.full_name ?? 'Team member';
-  const manageableKeys = user ? getManageableModuleKeys(user.role) : [];
+  const firstName = displayName.trim().split(/\s+/)[0] || 'member';
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.page }} edges={['left', 'right']}>
-      <ManagerScaleContainer>
-        <ScreenHeader
-          mode="pushed"
-          title={displayName}
-          subtitle={
-            user?.is_suspended
-              ? 'Suspended'
-              : credential
-                ? `Signs in with a ${credential.kind === 'pin' ? 'PIN' : 'password'}`
-                : 'No app sign-in set up yet'
-          }
-          onBack={handleBack}
-        />
+      <ScreenHeader
+        mode="pushed"
+        title={displayName}
+        onBack={handleBack}
+      />
 
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{
-            paddingHorizontal: ds.spacing(space[4]),
-            paddingBottom: ds.spacing(space[8]),
-          }}
-        >
-          {loadError ? (
-            <EmptyState
-              icon="alert-circle-outline"
-              tone="alert"
-              title="Unable to load this person"
-              body={loadError}
-              action={{ label: 'Retry', onPress: () => void load() }}
-              compact
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: ds.spacing(space[4]),
+          paddingBottom: getTabBarClearance(0),
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        {loadError ? (
+          <EmptyState
+            icon="alert-circle-outline"
+            tone="alert"
+            title="Unable to load this person"
+            body={loadError}
+            action={{ label: 'Retry', onPress: () => void load() }}
+            compact
+          />
+        ) : null}
+
+        {!user && !loadError ? (
+          <View style={{ paddingVertical: ds.spacing(space[8]) }}>
+            <Loading size="inline" label="Loading this person" style={{ alignItems: 'center' }} />
+          </View>
+        ) : null}
+
+        {user ? (
+          <>
+            <TeamSectionLabel label="Works at" />
+            <WorksAtSegmented
+              value={group}
+              onChange={(next) => void handleGroupChange(next)}
+              disabled={groupSaving}
             />
-          ) : null}
 
-          {!user && !loadError ? (
-            <View style={{ paddingVertical: ds.spacing(space[8]) }}>
-              <Loading size="inline" label="Loading this person" style={{ alignItems: 'center' }} />
-            </View>
-          ) : null}
+            <TeamSectionLabel label="Features" />
+            <TeamCard>
+              {modules ? (
+                DETAIL_MODULE_KEYS.map((key, index) => (
+                  <ModuleToggleRow
+                    key={key}
+                    label={DETAIL_MODULE_LABELS[key] ?? key}
+                    value={modules[key]}
+                    disabled={pendingKey !== null}
+                    showBorder={index < DETAIL_MODULE_KEYS.length - 1}
+                    onChange={(value) => void handleModuleChange(key, value)}
+                  />
+                ))
+              ) : (
+                <View style={{ paddingVertical: ds.spacing(space[4]) }}>
+                  <Loading size="inline" label="Loading features" style={{ alignItems: 'center' }} />
+                </View>
+              )}
+            </TeamCard>
 
-          {user ? (
-            <>
-              {notice ? (
-                <Card style={{ marginTop: ds.spacing(space[2]) }}>
-                  <Text
-                    accessibilityRole="alert"
-                    style={{
-                      fontSize: ds.fontSize(typeScale.secondary),
-                      fontWeight: weight.semibold,
-                      color: color.ink,
-                    }}
-                  >
-                    {notice}
-                  </Text>
-                </Card>
-              ) : null}
-
-              <TeamSectionLabel label="Works at · change anytime" />
-              <WorksAtSegmented value={group} onChange={(next) => void handleGroupChange(next)} disabled={groupSaving} />
-
-              <TeamSectionLabel label="Features" />
-              <TeamCard style={{ paddingHorizontal: ds.spacing(space[3] + 2) }}>
-                {modules ? (
-                  manageableKeys.map((key, index) => (
-                    <ModuleToggleRow
-                      key={key}
-                      label={DETAIL_MODULE_LABELS[key] ?? key}
-                      value={modules[key]}
-                      disabled={pendingKey !== null}
-                      showBorder={index < manageableKeys.length - 1}
-                      onChange={(value) => void handleModuleChange(key, value)}
-                    />
-                  ))
-                ) : (
-                  <View style={{ paddingVertical: ds.spacing(space[4]) }}>
-                    <Loading size="inline" label="Loading features" style={{ alignItems: 'center' }} />
-                  </View>
-                )}
-              </TeamCard>
-
-              <View style={{ height: ds.spacing(space[2]) }} />
-              <Card flush style={{ paddingHorizontal: ds.spacing(space[3] + 2) }}>
-                <ListRow
-                  icon="key-outline"
-                  title={`Reset ${displayName.split(' ')[0]}'s PIN`}
-                  chevron
-                  last
-                  disabled={user.is_suspended}
-                  onPress={() => {
-                    setResetPin('');
-                    setResetError(null);
-                    setResetVisible(true);
-                  }}
-                />
-              </Card>
-
+            <View
+              style={{
+                marginTop: ds.spacing(space[4]),
+                gap: ds.spacing(space[2] + 2),
+              }}
+            >
               <Button
-                icon="eye-outline"
-                label={`Preview as ${displayName.split(' ')[0]}`}
+                variant="secondary"
+                label={`Reset ${firstName}'s PIN`}
+                disabled={user.is_suspended}
+                onPress={() => {
+                  setResetPin('');
+                  setResetError(null);
+                  setResetVisible(true);
+                }}
+              />
+              <Button
+                variant="secondary"
+                label={`Preview as ${firstName}`}
                 onPress={() =>
                   router.push({
                     pathname: '/(manager)/manager-settings/team-preview',
-                    params: { userId: user.id, name: displayName, group },
-                  } as Parameters<typeof router.push>[0])
+                    params: {
+                      userId: user.id,
+                      name: displayName,
+                      group,
+                      origin: 'manager',
+                      backTo: String(backTo),
+                    },
+                  })
                 }
-                style={{ marginTop: ds.spacing(space[3]) }}
               />
-            </>
-          ) : null}
-        </ScrollView>
+            </View>
+          </>
+        ) : null}
+      </ScrollView>
 
-        <Sheet
-          visible={resetVisible}
-          title={`Reset ${displayName.split(' ')[0]}'s PIN`}
-          onClose={() => {
-            if (!resetBusy) setResetVisible(false);
+      <Sheet
+        visible={resetVisible}
+        title={`Reset ${firstName}'s PIN`}
+        subtitle="Type a new 4-digit PIN. Tell them in person."
+        dismissible={!resetBusy}
+        onClose={() => {
+          if (!resetBusy) setResetVisible(false);
+        }}
+        primary={{
+          label: 'Reset PIN',
+          loading: resetBusy,
+          disabled: resetPin.length !== 4,
+          onPress: () => void handleResetSubmit(),
+        }}
+      >
+        <Input
+          value={resetPin}
+          onChangeText={(value) => {
+            setResetPin(value.replace(/[^0-9]/g, '').slice(0, 4));
+            if (resetError) setResetError(null);
           }}
-        >
-          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
-            Type a new 4-digit PIN. Tell them in person.
-          </Text>
-          <Input
-            value={resetPin}
-            onChangeText={(value) => {
-              setResetPin(value.replace(/[^0-9]/g, '').slice(0, 4));
-              if (resetError) setResetError(null);
-            }}
-            accessibilityLabel="New PIN"
-            placeholder="New 4-digit PIN"
-            keyboardType="number-pad"
-            secureTextEntry
-            maxLength={4}
-            editable={!resetBusy}
-            autoFocus
-            error={resetError ?? undefined}
-          />
-          <Button
-            label="Reset PIN"
-            loading={resetBusy}
-            disabled={resetPin.length !== 4}
-            onPress={handleResetSubmit}
-          />
-          <Button
-            variant="secondary"
-            label="Cancel"
-            disabled={resetBusy}
-            accessibilityHint="Leaves the PIN unchanged"
-            onPress={() => setResetVisible(false)}
-          />
-        </Sheet>
-      </ManagerScaleContainer>
+          accessibilityLabel="New PIN"
+          placeholder="New 4-digit PIN"
+          keyboardType="number-pad"
+          secureTextEntry
+          maxLength={4}
+          editable={!resetBusy}
+          autoFocus
+          error={resetError ?? undefined}
+        />
+      </Sheet>
     </SafeAreaView>
   );
 }

@@ -1,15 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import {
   FlatList,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button, EmptyState, Loading, ScreenHeader, getTabBarClearance } from '@/components/ui';
+import { Button, Card, EmptyState, ListRow, Loading, ScreenHeader, SectionLabel, getTabBarClearance } from '@/components/ui';
 import { useResolvedActiveLocation } from '@/hooks/useResolvedActiveLocation';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import {
@@ -102,7 +103,7 @@ function ReceiveLineRow({
         <Ionicons
           name={line.checked ? 'checkmark-circle' : 'alert-circle'}
           size={checkSize}
-          color={line.checked ? color.good : color.warning}
+          color={line.checked ? color.accent : color.ink2}
           style={{ marginRight: ds.spacing(12) }}
         />
         <View style={{ flex: 1, paddingRight: ds.spacing(8) }}>
@@ -480,75 +481,25 @@ export function ReceiveDeliveryScreen() {
     );
   } else {
     content = (
-      <FlatList
-        data={orders}
-        keyExtractor={(order) => order.id}
-        contentContainerStyle={{ paddingBottom: bottomInset + ds.spacing(24) }}
-        ListHeaderComponent={
-          actionError ? (
-            <Text
-              style={{
-                paddingVertical: ds.spacing(8),
-                fontSize: ds.fontSize(typeScale.secondary),
-                color: color.alert,
-              }}
-            >
-              {actionError}
-            </Text>
-          ) : null
-        }
-        renderItem={({ item, index }) => (
-          <TouchableOpacity
-            onPress={() => void handleOpenOrder(item)}
-            disabled={openingOrderId !== null}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel={`Receive ${item.supplierName} delivery`}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              minHeight: 64,
-              paddingVertical: ds.spacing(10),
-              borderBottomWidth:
-                index === orders.length - 1 ? 0 : 1,
-              borderBottomColor: color.hairline,
-              opacity: openingOrderId !== null && openingOrderId !== item.id ? 0.5 : 1,
-            }}
-          >
-            <View style={{ flex: 1, paddingRight: ds.spacing(8) }}>
-              <Text
-                numberOfLines={1}
-                style={{
-                  fontSize: ds.fontSize(typeScale.body),
-                  fontWeight: weight.semibold,
-                  color: color.ink,
-                }}
-              >
-                {item.supplierName}
-              </Text>
-              <Text
-                style={{
-                  marginTop: 1,
-                  fontSize: ds.fontSize(typeScale.secondary),
-                  color: color.ink3,
-                }}
-              >
-                {formatRecentOrderDate(item.createdAt)} • {item.itemCount} item
-                {item.itemCount === 1 ? '' : 's'}
-              </Text>
-            </View>
-            {openingOrderId === item.id ? (
-              <Loading size="inline" color={color.accent} label="Loading" />
-            ) : (
-              <Ionicons
-                name="chevron-forward"
-                size={ds.icon(16)}
-                color={color.ink3}
-              />
-            )}
-          </TouchableOpacity>
-        )}
-      />
+      <ScrollView contentContainerStyle={{ paddingBottom: bottomInset }} showsVerticalScrollIndicator={false}>
+        <SectionLabel style={{ marginTop: 0 }}>Arrived today</SectionLabel>
+        {actionError ? <Text style={{ paddingVertical: ds.spacing(8), fontSize: ds.fontSize(typeScale.secondary), color: color.alert }}>{actionError}</Text> : null}
+        <Card flush>
+          {orders.map((order, index) => (
+            <ListRow
+              key={order.id}
+              icon={<MaterialCommunityIcons name="truck-outline" size={ds.icon(18)} color={color.ink2} />}
+              title={order.supplierName}
+              subtitle={`${order.itemCount} items · sent ${formatRecentOrderDate(order.createdAt)}`}
+              onPress={() => void handleOpenOrder(order)}
+              disabled={openingOrderId !== null}
+              last={index === orders.length - 1}
+              chevron
+              right={openingOrderId === order.id ? <Loading size="inline" color={color.accent} label="Loading" /> : undefined}
+            />
+          ))}
+        </Card>
+      </ScrollView>
     );
   }
 
@@ -559,7 +510,7 @@ export function ReceiveDeliveryScreen() {
           <ScreenHeader
             title="Receive delivery"
             includeSafeArea={false}
-            style={{ paddingHorizontal: 0 }}
+            style={{ paddingHorizontal: ds.spacing(4) }}
           />
         ) : (
           <ScreenHeader
@@ -576,7 +527,7 @@ export function ReceiveDeliveryScreen() {
             }
             onBack={handleBack}
             includeSafeArea={false}
-            style={{ paddingHorizontal: 0 }}
+            style={{ paddingHorizontal: ds.spacing(4) }}
           />
         )}
 

@@ -1,7 +1,7 @@
 // Org-wide "new employee defaults" — the module preset every new employee
 // invite starts from. One app_config JSON row
-// (key employee_invite_module_defaults, seeded by
-// 20260820122000_employee_invite_defaults.sql). Reads are plain selects
+// (key employee_invite_module_defaults, normalized by the latest module
+// defaults migration). Reads are plain selects
 // (app_config is readable by authenticated users); writes go through the
 // manager-gated set_employee_invite_defaults RPC. Applies to invites only —
 // existing user_modules rows are never touched from here.
@@ -11,11 +11,9 @@ import type { ModuleKey } from '@/services/userModules';
 
 export const EMPLOYEE_DEFAULTS_CONFIG_KEY = 'employee_invite_module_defaults';
 
-/** Employee-manageable module keys, in display order (no manager-side fulfillment). */
+/** Employee-manageable module keys in display order. */
 export const EMPLOYEE_DEFAULT_KEYS: readonly ModuleKey[] = [
   'ordering_simple',
-  'ordering_advanced',
-  'stock_check',
   'tips',
 ] as const;
 
@@ -26,7 +24,7 @@ export function getBuiltInEmployeeDefaults(): EmployeeInviteDefaults {
   return {
     ordering_simple: true,
     ordering_advanced: false,
-    stock_check: true,
+    stock_check: false,
     tips: false,
   };
 }

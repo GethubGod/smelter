@@ -7,7 +7,7 @@ export type ButtonSize = 'small' | 'medium' | 'large';
 export type Theme = 'light' | 'system' | 'dark';
 export type RepeatType = 'daily' | 'weekly' | 'custom';
 export type InventoryView = 'list' | 'compact';
-export type SimpleOrderDensity = 'comfort' | 'dense';
+export type SimpleOrderDensity = 'comfort' | 'compact' | 'dense';
 
 export interface StockSettings {
   flagUnusualQuantities: boolean;
@@ -94,7 +94,7 @@ export const DEFAULT_EXPORT_FORMAT_SETTINGS: ExportFormatSettings = {
 
 export const DEFAULT_INVENTORY_VIEW: InventoryView = 'list';
 
-export const DEFAULT_SIMPLE_ORDER_DENSITY: SimpleOrderDensity = 'comfort';
+export const DEFAULT_SIMPLE_ORDER_DENSITY: SimpleOrderDensity = 'compact';
 
 // Checklist "Show categories" toggle: grouped under category labels vs one flat list.
 export const DEFAULT_SIMPLE_ORDER_SHOW_CATEGORIES = true;

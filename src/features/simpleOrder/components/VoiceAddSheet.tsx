@@ -9,7 +9,7 @@ import {
   useAudioRecorderState,
   type RecordingOptions,
 } from 'expo-audio';
-import { Button, Loading, Sheet } from '@/components/ui';
+import { Loading, Sheet } from '@/components/ui';
 import { useAmplitudeBuffer } from '@/hooks/useAmplitudeBuffer';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { RollingSpectrogram } from '@/features/ordering/RollingSpectrogram';
@@ -430,47 +430,22 @@ export function VoiceAddSheet({
           </View>
         ) : null}
 
-        <View style={{ flexDirection: 'row', marginTop: ds.spacing(14) }}>
+        <View style={{ alignItems: 'center', marginTop: ds.spacing(14) }}>
           <TouchableOpacity
             onPress={() => void startRecording()}
             activeOpacity={0.7}
             accessibilityRole="button"
             accessibilityLabel="Record again"
             style={{
-              minHeight: 48,
-              paddingHorizontal: ds.spacing(16),
+              width: 48,
+              height: 48,
               borderRadius: radius.pill,
               backgroundColor: color.well,
-              borderWidth: 1,
-              borderColor: color.hairline,
               alignItems: 'center',
               justifyContent: 'center',
-              marginRight: ds.spacing(8),
             }}
           >
             <Ionicons name="mic-outline" size={ds.icon(20)} color={color.ink} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleApply}
-            disabled={additions.length === 0}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel={`Add ${additions.length} items to order`}
-            style={{
-              flex: 1,
-              minHeight: 48,
-              borderRadius: radius.pill,
-              backgroundColor:
-                additions.length === 0 ? color.ink3 : color.accent,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: '700', color: color.card }}>
-              {additions.length === 1
-                ? 'Add 1 item'
-                : `Add ${additions.length} items`}
-            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -482,19 +457,19 @@ export function VoiceAddSheet({
       visible={visible}
       title={phase === 'review' ? 'Heard you' : 'Add by voice'}
       onClose={handleClose}
+      primary={
+        phase === 'review'
+          ? {
+              label:
+                additions.length === 1
+                  ? 'Add 1 item'
+                  : `Add ${additions.length} items`,
+              onPress: handleApply,
+              disabled: additions.length === 0,
+            }
+          : undefined
+      }
     >
-      {/* Sheet dismisses on scrim tap and drag, but recording needs an explicit
-          way out, so the close control the shell version had stays. */}
-      <View style={{ alignItems: 'flex-end' }}>
-        <Button
-          label="Close"
-          variant="secondary"
-          size="small"
-          icon="close"
-          onPress={handleClose}
-          accessibilityHint="Closes voice input"
-        />
-      </View>
       {body}
     </Sheet>
   );

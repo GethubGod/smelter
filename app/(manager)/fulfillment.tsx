@@ -1,3005 +1,749 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
-  LayoutAnimation,
-  Platform,
+  Animated,
+  Easing,
+  Pressable,
   RefreshControl,
   ScrollView,
   Text,
-  TextInput,
-  TouchableOpacity,
-  UIManager,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Redirect, router, useFocusEffect } from 'expo-router';
+import { Redirect, router } from 'expo-router';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { RealtimeChannel } from '@supabase/supabase-js';
-import * as Haptics from 'expo-haptics';
 import { useShallow } from 'zustand/react/shallow';
-import { useAuthStore, useOrderStore } from '@/store';
-import { getCategoryLabel, colors } from '@/constants';
-import { InventoryItem, KNOWN_SUPPLIER_CATEGORIES, OrderWithDetails } from '@/types';
-import { supabase } from '@/lib/supabase';
-import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
-import { GlassSurface, ItemActionSheet } from '@/components';
-import { Loading } from '@/components/ui';
-import type { ItemActionSheetSection } from '@/components';
+import { ItemActionSheet, type ItemActionSheetSection } from '@/components';
 import {
-  FulfillmentHeader,
-  FulfillmentOrderLaterCard,
-  FulfillmentSuppliersCard,
-  FulfillmentSupplierCard,
+  Button,
+  Card,
+  EmptyState,
+  Loading,
+  ScreenHeader,
+  getTabBarClearance,
+} from '@/components/ui';
+import { LocationPill } from '@/components/ui/LocationPill';
+import { showNotice } from '@/components/ui/NoticeSheet';
+import { showStudioToast } from '@/components/ui/StudioToast';
+import {
   OrderLaterAddToSheet,
   OrderLaterScheduleModal,
-  SupplierPickerBottomSheet,
+  type OrderLaterSupplierOption,
 } from '@/features/fulfillment/components';
-import type {
-  FulfillmentSupplierEmployee,
-  FulfillmentSupplierPreviewItem,
-  OrderLaterSupplierOption,
-} from '@/features/fulfillment/components';
+import {
+  isSendableManagerSupplier,
+  type ManagerFulfillmentSupplierGroup,
+} from '@/features/fulfillment/managerFulfillmentModel';
+import { useManagerFulfillmentOverview } from '@/features/fulfillment/useManagerFulfillmentOverview';
 import { buildSendAllSuppliersParam } from '@/features/fulfillment/sendAll/sendAllParams';
-import { loadSupplierLookup, invalidateSupplierCache } from '@/services/supplierResolver';
-import type { PendingFulfillmentDataResult } from '@/services/fulfillmentDataSource';
-import { useManagedRefresh } from '@/hooks/useManagedRefresh';
 import { useModuleAccessGuard } from '@/hooks/useMyModules';
+import { useResolvedActiveLocation } from '@/hooks/useResolvedActiveLocation';
+import { useManagedRefresh } from '@/hooks/useManagedRefresh';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import {
-  glassColors,
-  glassHairlineWidth,
-  glassRadii,
-  glassSpacing,
-  glassTabBarHeight,
-} from '@/theme/design';
-import { color, radius, typeScale, weight } from '@/theme/tokens';
-import { Button } from '@/components/ui/Button';
-import { Sheet } from '@/components/ui/Sheet';
+  ImpactFeedbackStyle,
+  NotificationFeedbackType,
+  triggerImpactHaptic,
+  triggerNotificationHaptic,
+} from '@/lib/haptics';
+import { loadSupplierLookup } from '@/services/supplierResolver';
+import { useOrderStore } from '@/store';
+import type { FulfillmentLocationGroup, OrderLaterItem } from '@/store/orderStore.types';
+import { color, motion, radius, tracking, typeScale, weight } from '@/theme/tokens';
 
-interface AggregatedLocationBreakdown {
-  locationId: string;
-  locationName: string;
-  shortCode: string;
-  quantity: number;
-  remainingReported: number;
-  hasUndecidedRemaining: boolean;
-  notes: string[];
-  orderedBy: string[];
+const SHEET_TRANSITION_MS = 240;
+
+function stripLocationPrefix(name: string): string {
+  return name.replace(/^Babytuna\s+/i, '');
 }
 
-interface AggregatedItem {
-  aggregateKey: string;
-  effectiveSupplierId: string;
-  inventoryItem: InventoryItem;
-  totalQuantity: number;
-  unitType: 'base' | 'pack';
-  isRemainingMode: boolean;
-  remainingReportedTotal: number;
-  notes: string[];
-  locationBreakdown: AggregatedLocationBreakdown[];
-  sourceOrderItemIds: string[];
-  sourceOrderIds: string[];
-  secondarySupplierName: string | null;
-  secondarySupplierId: string | null;
-  isOverridden: boolean;
-  primarySupplierId: string;
+function formatOrderDay(scheduledAt: string): string {
+  const date = new Date(scheduledAt);
+  if (Number.isNaN(date.getTime())) return 'unscheduled';
+  return date.toLocaleDateString(undefined, { weekday: 'short' });
 }
 
-interface CategoryGroup {
-  category: string;
-  items: AggregatedItem[];
+function locationGroupFor(item: OrderLaterItem): FulfillmentLocationGroup {
+  if (item.preferredLocationGroup) return item.preferredLocationGroup;
+  const normalized = (item.locationName ?? '').toLowerCase();
+  return normalized.includes('poki') || normalized.includes('poke') ? 'poki' : 'sushi';
 }
 
-interface SupplierGroup {
-  supplierId: string;
-  supplierName: string;
-  supplierType: string | null;
-  isInactive: boolean;
-  isUnknown: boolean;
-  categoryGroups: CategoryGroup[];
-  totalItems: number;
+function SectionHeading({ label, count }: { label: string; count: number }) {
+  const ds = useScaledStyles();
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingTop: ds.spacing(14),
+        paddingBottom: ds.spacing(4),
+        paddingHorizontal: ds.spacing(2),
+      }}
+    >
+      <Text
+        accessibilityRole="header"
+        style={{
+          flex: 1,
+          fontSize: ds.fontSize(typeScale.caption),
+          fontWeight: weight.bold,
+          letterSpacing: tracking.caption,
+          textTransform: 'uppercase',
+          color: color.ink3,
+        }}
+      >
+        {label}
+      </Text>
+      <Text
+        style={{
+          fontSize: ds.fontSize(typeScale.caption),
+          fontWeight: weight.semibold,
+          color: color.ink2,
+        }}
+      >
+        {count}
+      </Text>
+    </View>
+  );
 }
 
-type LocationGroup = 'sushi' | 'poki';
-
-interface LocationGroupedItem {
-  key: string;
-  aggregateKey: string;
-  effectiveSupplierId: string;
-  locationGroup: LocationGroup;
-  inventoryItem: InventoryItem;
-  totalQuantity: number;
-  unitType: 'base' | 'pack';
-  isRemainingMode: boolean;
-  remainingReportedTotal: number;
-  notes: string[];
-  locationBreakdown: AggregatedLocationBreakdown[];
-  sourceOrderItemIds: string[];
-  sourceOrderIds: string[];
-  secondarySupplierName: string | null;
-  secondarySupplierId: string | null;
-  isOverridden: boolean;
-  primarySupplierId: string;
+function SupplierRow({
+  group,
+  last,
+  onPress,
+}: {
+  group: ManagerFulfillmentSupplierGroup;
+  last: boolean;
+  onPress: () => void;
+}) {
+  const ds = useScaledStyles();
+  const pressed = useRef(new Animated.Value(0)).current;
+  const animatePress = (toValue: number) => Animated.timing(pressed, {
+    toValue,
+    duration: 120,
+    easing: Easing.bezier(...motion.controlEase),
+    useNativeDriver: false,
+  }).start();
+  const peopleLabel = `${group.peopleCount} ${group.peopleCount === 1 ? 'person' : 'people'}`;
+  const sendable = isSendableManagerSupplier(group);
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={!sendable}
+      accessibilityRole="button"
+      accessibilityLabel={`${group.supplierName}, ${group.itemCount} items, ${peopleLabel}`}
+      accessibilityHint={sendable ? 'Opens supplier review' : 'Supplier setup is required'}
+      accessibilityState={{ disabled: !sendable }}
+      onPressIn={() => animatePress(1)}
+      onPressOut={() => animatePress(0)}
+      style={{ backgroundColor: color.card }}
+    >
+      <Animated.View style={{
+        minHeight: ds.spacing(60),
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: ds.spacing(12),
+        paddingHorizontal: ds.spacing(14),
+        paddingVertical: ds.spacing(10),
+        backgroundColor: pressed.interpolate({ inputRange: [0, 1], outputRange: [color.card, color.well] }),
+      }}>
+        <View
+          style={{
+            width: ds.icon(38),
+            height: ds.icon(38),
+            borderRadius: radius.pill,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: color.well,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: ds.fontSize(typeScale.body),
+              fontWeight: weight.semibold,
+              color: color.ink2,
+            }}
+          >
+            {(group.supplierName.trim()[0] || '?').toUpperCase()}
+          </Text>
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text
+            numberOfLines={1}
+            style={{
+              fontSize: ds.fontSize(typeScale.body),
+              fontWeight: weight.semibold,
+              color: color.ink,
+            }}
+          >
+            {group.supplierName}
+          </Text>
+          <Text
+            numberOfLines={2}
+            style={{
+              marginTop: ds.spacing(2),
+              fontSize: ds.fontSize(typeScale.secondary),
+              color: color.ink2,
+            }}
+          >
+            {group.itemCount} {group.itemCount === 1 ? 'item' : 'items'} · {peopleLabel}
+            {group.remainingCount > 0 ? (
+              <Text style={{ color: color.warning }}>
+                {' '}· {group.remainingCount} remaining
+              </Text>
+            ) : null}
+            {!sendable ? (
+              <Text style={{ color: color.warning }}> · Supplier setup needed</Text>
+            ) : null}
+          </Text>
+        </View>
+        <Ionicons
+          name={sendable ? 'chevron-forward' : 'alert-circle-outline'}
+          size={ds.icon(18)}
+          color={sendable ? color.ink3 : color.warning}
+        />
+        {!last ? (
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              left: ds.spacing(14),
+              right: 0,
+              bottom: 0,
+              height: 1,
+              backgroundColor: color.hairline,
+            }}
+          />
+        ) : null}
+      </Animated.View>
+    </Pressable>
+  );
 }
 
-interface ConfirmationRegularItem {
-  id: string;
-  inventoryItemId: string;
-  name: string;
-  category: string;
-  locationGroup: LocationGroup;
-  quantity: number;
-  unitType: 'base' | 'pack';
-  unitLabel: string;
-  sumOfContributorQuantities: number;
-  sourceOrderItemIds: string[];
-  sourceOrderIds: string[];
-  sourceDraftItemIds: string[];
-  contributors: {
-    userId: string | null;
-    name: string;
-    quantity: number;
-  }[];
-  notes: {
-    id: string;
-    author: string;
-    text: string;
-    locationName: string;
-    shortCode: string;
-  }[];
-  details: {
-    locationId: string;
-    locationName: string;
-    orderedBy: string;
-    quantity: number;
-    shortCode: string;
-  }[];
-  secondarySupplierName: string | null;
-  secondarySupplierId: string | null;
-}
-
-interface SupplierOption {
-  id: string;
-  name: string;
-  supplierType: string | null;
-  isDefault: boolean;
-  active: boolean;
-}
-
-interface RemainingConfirmationItem {
-  orderItemId: string;
-  orderId: string;
-  inventoryItemId: string;
-  name: string;
-  category: string;
-  locationGroup: LocationGroup;
-  locationId: string;
-  locationName: string;
-  shortCode: string;
-  unitType: 'base' | 'pack';
-  unitLabel: string;
-  reportedRemaining: number;
-  decidedQuantity: number | null;
-  note: string | null;
-  orderedBy: string;
-  secondarySupplierName: string | null;
-  secondarySupplierId: string | null;
-}
-
-const LOCATION_GROUP_LABELS: Record<LocationGroup, string> = {
-  sushi: 'Sushi',
-  poki: 'Poki',
-};
-
-const LEGACY_SUPPLIER_TYPES: string[] = [...KNOWN_SUPPLIER_CATEGORIES];
-
-const SUPPLIER_DISPLAY_PRIORITY = new Map<string, number>([
-  ['asian markets', 0],
-  ['ocean group', 1],
-  ['mutual', 2],
-  ['restaurant depot', 3],
-]);
-
-const getLocationGroup = (locationName?: string, shortCode?: string): LocationGroup => {
-  const name = (locationName || '').toLowerCase();
-  const code = (shortCode || '').toLowerCase();
-
-  if (name.includes('poki') || name.includes('poke') || code.startsWith('p')) {
-    return 'poki';
-  }
-  if (name.includes('sushi') || code.startsWith('s')) {
-    return 'sushi';
-  }
-
-  return 'sushi';
-};
-
-function toLocationGroup(value: unknown): LocationGroup | null {
-  if (value === 'sushi' || value === 'poki') return value;
-  return null;
-}
-
-function toSafeNumber(value: unknown, fallback = 0) {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return fallback;
-  return parsed;
-}
-
-function toItemCategory(value: unknown): string {
-  if (typeof value === 'string' && value.trim().length > 0) {
-    return value.trim();
-  }
-  return 'dry';
-}
-
-function isSupplierCategory(value: unknown): value is string {
-  return typeof value === 'string' && value.trim().length > 0;
-}
-
-function normalizeSupplierOptions(
-  lookup: PendingFulfillmentDataResult['supplierLookup'],
-): SupplierOption[] {
-  return lookup.suppliers.map((row) => ({
-    id: row.id,
-    name: row.name,
-    supplierType: isSupplierCategory(row.supplierType) ? row.supplierType : null,
-    isDefault: row.isDefault,
-    active: row.active,
-  }));
-}
-
-function areSupplierOptionsEqual(
-  current: SupplierOption[],
-  next: SupplierOption[],
-): boolean {
-  if (current.length !== next.length) return false;
-
-  return current.every((supplier, index) => {
-    const candidate = next[index];
-    return (
-      supplier.id === candidate.id &&
-      supplier.name === candidate.name &&
-      supplier.supplierType === candidate.supplierType &&
-      supplier.isDefault === candidate.isDefault &&
-      supplier.active === candidate.active
-    );
-  });
-}
-
-function toSupplierId(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
-function normalizeSupplierNameKey(value: unknown): string {
-  if (typeof value !== 'string') return '';
-  return value.trim().toLowerCase().replace(/\s+/g, ' ');
-}
-
-function getInitials(name: string) {
-  const parts = name
-    .trim()
-    .split(/\s+/)
-    .filter((part) => part.length > 0);
-
-  if (parts.length === 0) return 'NA';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
-}
-
-function getFirstName(name: string) {
-  const [first] = name.trim().split(/\s+/);
-  return first || name.trim();
-}
-
-function formatQuantity(value: number) {
-  if (!Number.isFinite(value)) return '0';
-  if (Math.abs(value - Math.round(value)) < 0.000001) {
-    return `${Math.round(value)}`;
-  }
-
-  const fixed = value.toFixed(2);
-  return fixed.replace(/\.?0+$/, '');
-}
-
-function animateNextLayout() {
-  LayoutAnimation.configureNext({
-    duration: 240,
-    create: {
-      type: LayoutAnimation.Types.easeInEaseOut,
-      property: LayoutAnimation.Properties.opacity,
-    },
-    update: {
-      type: LayoutAnimation.Types.easeInEaseOut,
-    },
-    delete: {
-      type: LayoutAnimation.Types.easeInEaseOut,
-      property: LayoutAnimation.Properties.opacity,
-    },
-  });
-}
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
-
-interface SupplierCardData {
-  group: SupplierGroup;
-  employees: FulfillmentSupplierEmployee[];
-  employeeSummary: string;
-  previewItems: LocationGroupedItem[];
-  supplierItemCount: number;
-  remainingCount: number;
-  statusLabel: string | null;
+function OrderLaterRow({
+  item,
+  last,
+  onEdit,
+}: {
+  item: OrderLaterItem;
+  last: boolean;
+  onEdit: () => void;
+}) {
+  const ds = useScaledStyles();
+  const pressed = useRef(new Animated.Value(0)).current;
+  const animatePress = (toValue: number) => Animated.timing(pressed, {
+    toValue,
+    duration: 120,
+    easing: Easing.bezier(...motion.controlEase),
+    useNativeDriver: false,
+  }).start();
+  const locationName = item.locationName
+    ? stripLocationPrefix(item.locationName)
+    : 'Unassigned location';
+  return (
+    <Pressable
+      onPress={onEdit}
+      accessibilityRole="button"
+      accessibilityLabel={`Edit ${item.itemName}, order on ${formatOrderDay(item.scheduledAt)}`}
+      onPressIn={() => animatePress(1)}
+      onPressOut={() => animatePress(0)}
+      style={{ backgroundColor: color.card }}
+    >
+      <Animated.View style={{
+        minHeight: ds.spacing(60),
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: ds.spacing(12),
+        paddingHorizontal: ds.spacing(14),
+        paddingVertical: ds.spacing(10),
+        backgroundColor: pressed.interpolate({ inputRange: [0, 1], outputRange: [color.card, color.well] }),
+      }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text
+            numberOfLines={1}
+            style={{
+              fontSize: ds.fontSize(typeScale.body),
+              fontWeight: weight.semibold,
+              color: color.ink,
+            }}
+          >
+            {item.itemName}
+          </Text>
+          <Text
+            numberOfLines={2}
+            style={{
+              marginTop: ds.spacing(2),
+              fontSize: ds.fontSize(typeScale.secondary),
+              color: color.ink2,
+            }}
+          >
+            {locationName} · {item.unit} ·{' '}
+            <Text style={{ color: color.warning }}>
+              Order on {formatOrderDay(item.scheduledAt)}
+            </Text>
+          </Text>
+        </View>
+        <View
+          style={{
+            paddingHorizontal: ds.spacing(9),
+            paddingVertical: ds.spacing(5),
+            borderRadius: radius.pill,
+            backgroundColor: color.well,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: ds.fontSize(typeScale.caption),
+              fontWeight: weight.bold,
+              letterSpacing: tracking.caption,
+              textTransform: 'uppercase',
+              color: color.ink2,
+            }}
+          >
+            Edit
+          </Text>
+        </View>
+        {!last ? (
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              left: ds.spacing(14),
+              right: 0,
+              bottom: 0,
+              height: 1,
+              backgroundColor: color.hairline,
+            }}
+          />
+        ) : null}
+      </Animated.View>
+    </Pressable>
+  );
 }
 
 export default function FulfillmentRoute() {
-  // Phase 3: the fulfillment tab is gated by the fulfillment module (managers
-  // default all-on). Deep links to a disabled module redirect to manager home.
   const guard = useModuleAccessGuard('fulfillment', '/(manager)');
-
-  if (guard.isChecking) {
-    return null;
-  }
-
-  if (guard.redirectTo) {
-    return <Redirect href={guard.redirectTo} />;
-  }
-
+  if (guard.isChecking) return null;
+  if (guard.redirectTo) return <Redirect href={guard.redirectTo} />;
   return <FulfillmentScreen />;
 }
 
 function FulfillmentScreen() {
   const ds = useScaledStyles();
-  const { user, locations } = useAuthStore(useShallow((state) => ({
-    user: state.user,
-    locations: state.locations,
-  })));
+  const insets = useSafeAreaInsets();
+  const { location, locations, setLocation } = useResolvedActiveLocation();
+  const overview = useManagerFulfillmentOverview();
+  const { refreshing, onRefresh } = useManagedRefresh(overview.refresh);
   const {
-    orders,
-    orderLaterQueue,
-    supplierDrafts,
-    getSupplierDraftItems,
-    loadFulfillmentData,
-    fetchPendingFulfillmentOrders,
     moveOrderLaterItemToSupplierDraft,
     removeOrderLaterItem,
     updateOrderLaterItemSchedule,
-    markOrderItemsStatus,
-    setSupplierOverride,
-    clearSupplierOverride,
-    createOrderLaterItem,
-  } = useOrderStore(useShallow((state) => ({
-    orders: state.orders,
-    orderLaterQueue: state.orderLaterQueue,
-    supplierDrafts: state.supplierDrafts,
-    getSupplierDraftItems: state.getSupplierDraftItems,
-    loadFulfillmentData: state.loadFulfillmentData,
-    fetchPendingFulfillmentOrders: state.fetchPendingFulfillmentOrders,
-    moveOrderLaterItemToSupplierDraft: state.moveOrderLaterItemToSupplierDraft,
-    removeOrderLaterItem: state.removeOrderLaterItem,
-    updateOrderLaterItemSchedule: state.updateOrderLaterItemSchedule,
-    markOrderItemsStatus: state.markOrderItemsStatus,
-    setSupplierOverride: state.setSupplierOverride,
-    clearSupplierOverride: state.clearSupplierOverride,
-    createOrderLaterItem: state.createOrderLaterItem,
-  })));
-  const [dataReady, setDataReady] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [supplierOptions, setSupplierOptions] = useState<SupplierOption[]>([]);
-  const [expandedSupplierId, setExpandedSupplierId] = useState<string | null>(null);
-  const [orderLaterExpanded, setOrderLaterExpanded] = useState(false);
-  const [suppliersExpanded, setSuppliersExpanded] = useState(true);
-  const [addToTargetItemId, setAddToTargetItemId] = useState<string | null>(null);
-  const [addToSupplier, setAddToSupplier] = useState<string>('');
-  const [addToSupplierError, setAddToSupplierError] = useState<string | null>(null);
-  const [isAddingToSupplierDraft, setIsAddingToSupplierDraft] = useState(false);
-  const [scheduleEditItemId, setScheduleEditItemId] = useState<string | null>(null);
-  const [overflowItem, setOverflowItem] = useState<LocationGroupedItem | null>(null);
-  const [supplierPickerItem, setSupplierPickerItem] = useState<LocationGroupedItem | null>(null);
-  const [isMovingSupplier, setIsMovingSupplier] = useState(false);
-  const [breakdownItem, setBreakdownItem] = useState<LocationGroupedItem | null>(null);
-  const [noteEditorItem, setNoteEditorItem] = useState<LocationGroupedItem | null>(null);
-  const [noteDraft, setNoteDraft] = useState('');
-  const [isSavingNote, setIsSavingNote] = useState(false);
-  const realtimeChannelRef = useRef<RealtimeChannel | null>(null);
-  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const refreshPromiseRef = useRef<Promise<void> | null>(null);
-  const refreshQueuedRef = useRef(false);
-  const hasLoadedOnceRef = useRef(false);
+  } = useOrderStore(
+    useShallow((state) => ({
+      moveOrderLaterItemToSupplierDraft: state.moveOrderLaterItemToSupplierDraft,
+      removeOrderLaterItem: state.removeOrderLaterItem,
+      updateOrderLaterItemSchedule: state.updateOrderLaterItemSchedule,
+    })),
+  );
+  const [actionsItemId, setActionsItemId] = useState<string | null>(null);
+  const [addToItemId, setAddToItemId] = useState<string | null>(null);
+  const [scheduleItemId, setScheduleItemId] = useState<string | null>(null);
+  const [supplierOptions, setSupplierOptions] = useState<OrderLaterSupplierOption[]>([]);
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
+  const [supplierError, setSupplierError] = useState<string | null>(null);
+  const [isAddingToSupplier, setIsAddingToSupplier] = useState(false);
   const sendTapLockUntilRef = useRef(0);
-  const actionLocksRef = useRef<Set<string>>(new Set());
-  const managerLocationIdsKey = useMemo(
-    () =>
-      locations
-        .map((location) => (typeof location.id === 'string' ? location.id.trim() : ''))
-        .filter((id) => id.length > 0)
-        .sort()
-        .join('|'),
-    [locations]
-  );
-  const managerLocationIds = useMemo(
-    () => (managerLocationIdsKey ? managerLocationIdsKey.split('|') : []),
-    [managerLocationIdsKey],
-  );
-  const runLockedAction = useCallback(async (lockKey: string, action: () => Promise<void>) => {
-    if (actionLocksRef.current.has(lockKey)) {
-      return false;
-    }
 
-    actionLocksRef.current.add(lockKey);
-    try {
-      await action();
-      return true;
-    } finally {
-      actionLocksRef.current.delete(lockKey);
-    }
+  const actionsItem = useMemo(
+    () => overview.orderLater.find((item) => item.id === actionsItemId) ?? null,
+    [actionsItemId, overview.orderLater],
+  );
+  const addToItem = useMemo(
+    () => overview.orderLater.find((item) => item.id === addToItemId) ?? null,
+    [addToItemId, overview.orderLater],
+  );
+  const scheduleItem = useMemo(
+    () => overview.orderLater.find((item) => item.id === scheduleItemId) ?? null,
+    [overview.orderLater, scheduleItemId],
+  );
+
+  const handleOpenSupplier = useCallback((group: ManagerFulfillmentSupplierGroup) => {
+    if (!isSendableManagerSupplier(group)) return;
+    if (Date.now() < sendTapLockUntilRef.current) return;
+    sendTapLockUntilRef.current = Date.now() + 700;
+    void triggerImpactHaptic(ImpactFeedbackStyle.Light);
+    router.push({
+      pathname: '/(manager)/fulfillment-confirmation',
+      params: {
+        supplier: group.supplierId,
+        supplierLabel: group.supplierName,
+        from: 'fulfillment',
+        items: encodeURIComponent(JSON.stringify(group.regularItems)),
+        remaining: encodeURIComponent(JSON.stringify(group.remainingItems)),
+      },
+    });
   }, []);
-
-  const fetchPendingOrders = useCallback(async () => {
-    try {
-      await fetchPendingFulfillmentOrders(managerLocationIds);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-    }
-  }, [fetchPendingFulfillmentOrders, managerLocationIds]);
-
-  const fetchSuppliers = useCallback(async () => {
-    try {
-      // Reuse the cached supplier lookup (same data loadPendingFulfillmentData uses)
-      // so we don't make a duplicate DB query.
-      const lookup = await loadSupplierLookup();
-      const normalized = normalizeSupplierOptions(lookup);
-      setSupplierOptions((current) =>
-        areSupplierOptionsEqual(current, normalized) ? current : normalized,
-      );
-    } catch (error) {
-      console.error('Error fetching suppliers:', error);
-    }
-  }, []);
-
-  const runRefreshCycle = useCallback(async () => {
-    const raceTimeout = <T,>(promise: Promise<T>, ms: number, label: string): Promise<T | void> =>
-      Promise.race([
-        promise,
-        new Promise<void>((resolve) =>
-          setTimeout(() => {
-            console.warn(`[Fulfillment] ${label} timed out after ${ms}ms, proceeding.`);
-            resolve();
-          }, ms)
-        ),
-      ]);
-
-    try {
-      // loadFulfillmentData syncs past-order queue so fetchPendingFulfillmentOrders
-      // can filter out consumed items. Run it first, but with a timeout so a
-      // Supabase client deadlock doesn't block the entire screen forever.
-      if (user?.id) {
-        await raceTimeout(
-          loadFulfillmentData(user.id, managerLocationIds).catch((e) =>
-            console.warn('[Fulfillment] Past-order sync failed.', e)
-          ),
-          15_000,
-          'loadFulfillmentData'
-        );
-      }
-      // Supplier options must be available before pending orders are committed
-      // to the store; otherwise the screen briefly groups rows with an empty
-      // supplier map and flashes the wrong fulfillment state.
-      await raceTimeout(fetchSuppliers(), 15_000, 'fetchSuppliers');
-
-      // Each fetch has its own try/catch so individual failures don't block
-      // the others. Timeouts prevent Supabase client hangs from stalling
-      // the entire screen.
-      await raceTimeout(fetchPendingOrders(), 15_000, 'fetchPendingOrders');
-      setLoadError(null);
-    } catch (error) {
-      console.error('Error refreshing fulfillment data:', error);
-      setLoadError(
-        error instanceof Error && error.message.trim().length > 0
-          ? error.message
-          : 'Unable to load fulfillment data. Pull down to retry.'
-      );
-    } finally {
-      hasLoadedOnceRef.current = true;
-      setDataReady(true);
-    }
-  }, [
-    fetchPendingOrders,
-    fetchSuppliers,
-    loadFulfillmentData,
-    managerLocationIds,
-    user?.id,
-  ]);
-  const refreshAll = useCallback(async () => {
-    if (refreshPromiseRef.current) {
-      refreshQueuedRef.current = true;
-      await refreshPromiseRef.current;
-      return;
-    }
-
-    const run = async () => {
-      do {
-        refreshQueuedRef.current = false;
-        await runRefreshCycle();
-      } while (refreshQueuedRef.current);
-    };
-
-    const refreshPromise = run().finally(() => {
-      refreshPromiseRef.current = null;
-    });
-
-    refreshPromiseRef.current = refreshPromise;
-    await refreshPromise;
-  }, [runRefreshCycle]);
-
-  useFocusEffect(
-    useCallback(() => {
-      if (!hasLoadedOnceRef.current) {
-        setDataReady(false);
-      }
-      void refreshAll();
-    }, [refreshAll])
-  );
-
-  // Realtime: when fulfillment-related tables change, do a full refresh
-  // so order state/order-later state stays in sync across manager devices.
-  useEffect(() => {
-    if (realtimeChannelRef.current) {
-      supabase.removeChannel(realtimeChannelRef.current);
-      realtimeChannelRef.current = null;
-    }
-
-    const scheduleRefresh = () => {
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
-      }
-      refreshTimeoutRef.current = setTimeout(() => {
-        void refreshAll();
-      }, 300);
-    };
-
-    const scheduleSupplierRefresh = () => {
-      invalidateSupplierCache();
-      scheduleRefresh();
-    };
-
-    const locationIds = managerLocationIds;
-    const orderScopeFilter =
-      locationIds.length > 0 ? `location_id=in.(${locationIds.join(',')})` : undefined;
-
-    const channel = supabase
-      .channel(`manager-fulfillment-sync-${locationIds.length > 0 ? locationIds.join(',') : 'all'}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'orders',
-          ...(orderScopeFilter ? { filter: orderScopeFilter } : {}),
-        },
-        scheduleRefresh
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'order_items' },
-        scheduleRefresh
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'suppliers' },
-        scheduleSupplierRefresh
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'order_later_items' },
-        scheduleRefresh
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'past_orders' },
-        scheduleRefresh
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'past_order_items' },
-        scheduleRefresh
-      )
-      .subscribe();
-
-    realtimeChannelRef.current = channel;
-
-    return () => {
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
-        refreshTimeoutRef.current = null;
-      }
-      if (realtimeChannelRef.current) {
-        supabase.removeChannel(realtimeChannelRef.current);
-        realtimeChannelRef.current = null;
-      }
-    };
-  }, [managerLocationIds, refreshAll]);
-
-  const { refreshing, onRefresh } = useManagedRefresh(refreshAll);
-
-  const pendingOrders = useMemo(() => {
-    return (orders as OrderWithDetails[]).filter((order) => order.status === 'submitted');
-  }, [orders]);
-
-  // Employee order notes (checklist sends can attach one). Items aggregate
-  // across orders by supplier, so order-level notes surface as their own
-  // banner above the supplier cards instead of on any single line.
-  const pendingOrderNotes = useMemo(
-    () =>
-      pendingOrders
-        .filter((order) => typeof order.notes === 'string' && order.notes.trim().length > 0)
-        .map((order) => ({
-          orderId: order.id,
-          note: (order.notes as string).trim(),
-          employeeName: order.user?.name || 'Unknown',
-          locationShortCode: order.location?.short_code || null,
-        })),
-    [pendingOrders]
-  );
-
-  const supplierOptionById = useMemo(() => {
-    const map = new Map<string, SupplierOption>();
-    supplierOptions.forEach((supplier) => {
-      map.set(supplier.id, supplier);
-      const normalizedId = supplier.id.toLowerCase();
-      if (normalizedId !== supplier.id) {
-        map.set(normalizedId, supplier);
-      }
-    });
-    return map;
-  }, [supplierOptions]);
-
-  const getSupplierOption = useCallback(
-    (supplierId: string) => {
-      const direct = supplierOptionById.get(supplierId);
-      if (direct) return direct;
-      return supplierOptionById.get(supplierId.toLowerCase()) ?? null;
-    },
-    [supplierOptionById]
-  );
-
-  const supplierOptionByName = useMemo(() => {
-    const map = new Map<string, SupplierOption>();
-    supplierOptions.forEach((supplier) => {
-      const key = normalizeSupplierNameKey(supplier.name);
-      if (!key || map.has(key)) return;
-      map.set(key, supplier);
-    });
-    return map;
-  }, [supplierOptions]);
-
-  const defaultSupplierIdByType = useMemo(() => {
-    const map = new Map<string, string>();
-    LEGACY_SUPPLIER_TYPES.forEach((supplierType) => {
-      const match =
-        supplierOptions.find(
-          (option) => option.active && option.supplierType === supplierType && option.isDefault
-        ) ||
-        supplierOptions.find((option) => option.active && option.supplierType === supplierType) ||
-        supplierOptions.find((option) => option.supplierType === supplierType);
-      if (!match) return;
-      map.set(supplierType, match.id);
-    });
-    return map;
-  }, [supplierOptions]);
-
-  const resolveSupplierId = useCallback(
-    (item: InventoryItem) => {
-      const row = item as InventoryItem & Record<string, unknown>;
-
-      const candidateIds = [
-        row.supplier_id,
-        row.supplierId,
-        row.supplier_uuid,
-        row.supplierUuid,
-      ];
-      for (const rawValue of candidateIds) {
-        const supplierId = toSupplierId(rawValue);
-        if (!supplierId) continue;
-        const option = getSupplierOption(supplierId);
-        if (option) return option.id;
-
-        const mappedByName = supplierOptionByName.get(normalizeSupplierNameKey(supplierId));
-        if (mappedByName) return mappedByName.id;
-      }
-
-      const candidateNames = [
-        row.supplier_name,
-        row.supplierName,
-        row.default_supplier,
-        row.defaultSupplier,
-        row.supplier,
-        row.vendor_name,
-        row.vendorName,
-      ];
-      for (const rawValue of candidateNames) {
-        const match = supplierOptionByName.get(normalizeSupplierNameKey(rawValue));
-        if (match) return match.id;
-      }
-
-      const supplierTypeValue = row.supplier_category ?? item.supplier_category;
-      if (isSupplierCategory(supplierTypeValue)) {
-        const fallback = defaultSupplierIdByType.get(supplierTypeValue);
-        if (fallback) return fallback;
-      }
-
-      return 'unknown:missing';
-    },
-    [defaultSupplierIdByType, getSupplierOption, supplierOptionByName]
-  );
-
-  const resolveSecondarySupplier = useCallback(
-    (item: InventoryItem): { id: string; name: string } | null => {
-      const row = item as InventoryItem & Record<string, unknown>;
-      const candidates = [row.secondary_supplier, row.secondarySupplier];
-      for (const rawValue of candidates) {
-        const match = supplierOptionByName.get(normalizeSupplierNameKey(rawValue));
-        if (match) return { id: match.id, name: match.name };
-      }
-      return null;
-    },
-    [supplierOptionByName]
-  );
-
-  const resolveSupplierType = useCallback(
-    (supplierId: string): string | null => {
-      const optionType = getSupplierOption(supplierId)?.supplierType;
-      if (optionType) return optionType;
-      return null;
-    },
-    [getSupplierOption]
-  );
-
-  const resolveSupplierName = useCallback(
-    (supplierId: string) => {
-      const optionName = getSupplierOption(supplierId)?.name;
-      if (optionName) return optionName;
-      if (supplierId.startsWith('unresolved:')) {
-        return 'UNRESOLVED SUPPLIER';
-      }
-      if (supplierId.startsWith('unknown:')) {
-        return 'Unknown Supplier';
-      }
-      const shortId = supplierId.slice(0, 8);
-      return `Unknown Supplier (${shortId})`;
-    },
-    [getSupplierOption]
-  );
-
-  const isSupplierInactive = useCallback(
-    (supplierId: string) => {
-      const option = getSupplierOption(supplierId);
-      return Boolean(option && option.active === false);
-    },
-    [getSupplierOption]
-  );
-
-  const isUnknownSupplier = useCallback(
-    (supplierId: string) =>
-      supplierId.startsWith('unknown:') ||
-      supplierId.startsWith('unresolved:') ||
-      !getSupplierOption(supplierId),
-    [getSupplierOption]
-  );
-
-  const getOrderItemSupplierResolution = useCallback(
-    (orderItem: Record<string, unknown>, inventoryItem: InventoryItem) => {
-      const existing = (orderItem as any).__supplier_resolution;
-      if (existing && typeof existing.effectiveSupplierId === 'string') {
-        return {
-          primarySupplierId: toSupplierId(existing.primarySupplierId),
-          secondarySupplierId: toSupplierId(existing.secondarySupplierId),
-          secondarySupplierName:
-            typeof existing.secondarySupplierName === 'string' &&
-            existing.secondarySupplierName.trim().length > 0
-              ? existing.secondarySupplierName.trim()
-              : null,
-          effectiveSupplierId: existing.effectiveSupplierId,
-          effectiveSupplierName:
-            typeof existing.effectiveSupplierName === 'string' &&
-            existing.effectiveSupplierName.trim().length > 0
-              ? existing.effectiveSupplierName.trim()
-              : resolveSupplierName(existing.effectiveSupplierId),
-          isOverridden: existing.isOverridden === true,
-        };
-      }
-
-      const fallbackPrimary = resolveSupplierId(inventoryItem);
-      const secondary = resolveSecondarySupplier(inventoryItem);
-      const overrideId = toSupplierId((orderItem as any).supplier_override_id);
-      const hasOverride = Boolean(overrideId && getSupplierOption(overrideId));
-      const effectiveSupplierId = hasOverride ? (overrideId as string) : fallbackPrimary;
-
-      return {
-        primarySupplierId: fallbackPrimary,
-        secondarySupplierId: secondary?.id ?? null,
-        secondarySupplierName: secondary?.name ?? null,
-        effectiveSupplierId,
-        effectiveSupplierName: resolveSupplierName(effectiveSupplierId),
-        isOverridden: hasOverride,
-      };
-    },
-    [getSupplierOption, resolveSecondarySupplier, resolveSupplierId, resolveSupplierName]
-  );
-
-  const availableSuppliers = useMemo(() => {
-    const map = new Map<string, SupplierOption>();
-
-    supplierOptions.filter((row) => row.active).forEach((row) => {
-      map.set(row.id, row);
-    });
-
-    const ensureSupplier = (supplierId: string) => {
-      if (map.has(supplierId)) return;
-      const existing = getSupplierOption(supplierId);
-      const supplierType = resolveSupplierType(supplierId);
-      map.set(supplierId, {
-        id: supplierId,
-        name: existing?.name || resolveSupplierName(supplierId),
-        supplierType: existing?.supplierType || supplierType,
-        isDefault: existing?.isDefault === true,
-        active: existing ? existing.active : true,
-      });
-    };
-
-    Object.keys(supplierDrafts || {}).forEach((supplierId) => {
-      if (supplierId.trim().length > 0) ensureSupplier(supplierId);
-    });
-
-    orderLaterQueue.forEach((item) => {
-      const supplierId = toSupplierId(item.preferredSupplierId);
-      if (supplierId) ensureSupplier(supplierId);
-    });
-
-    return Array.from(map.values()).sort((a, b) => {
-      if (a.active !== b.active) return a.active ? -1 : 1;
-      return a.name.localeCompare(b.name);
-    });
-  }, [
-    orderLaterQueue,
-    resolveSupplierName,
-    resolveSupplierType,
-    supplierDrafts,
-    getSupplierOption,
-    supplierOptions,
-  ]);
-
-  const supplierGroups = useMemo(() => {
-    const itemMap = new Map<string, AggregatedItem>();
-
-    pendingOrders.forEach((order) => {
-      order.order_items?.forEach((orderItem) => {
-        const item = orderItem.inventory_item;
-        if (!item) return;
-
-        const isRemainingMode = orderItem.input_mode === 'remaining';
-        const lineNote =
-          typeof orderItem.note === 'string' && orderItem.note.trim().length > 0
-            ? orderItem.note.trim()
-            : null;
-        const remainingReported = isRemainingMode ? Math.max(0, toSafeNumber(orderItem.remaining_reported, 0)) : 0;
-        const decidedQuantity =
-          orderItem.decided_quantity == null ? null : toSafeNumber(orderItem.decided_quantity, 0);
-        const hasUndecidedRemaining = isRemainingMode && orderItem.decided_quantity == null;
-        const lineQuantity = isRemainingMode
-          ? decidedQuantity == null
-            ? 0
-            : Math.max(0, decidedQuantity)
-          : Math.max(0, toSafeNumber(orderItem.quantity, 0));
-
-        const aggregateModeKey = isRemainingMode ? 'remaining' : 'quantity';
-        const resolution = getOrderItemSupplierResolution(
-          orderItem as unknown as Record<string, unknown>,
-          item
-        );
-        const supplierId = resolution.effectiveSupplierId;
-        const aggregateKey = [
-          item.id,
-          item.name.trim().toLowerCase(),
-          supplierId,
-          item.category,
-          aggregateModeKey,
-          orderItem.unit_type,
-          item.base_unit,
-          item.pack_unit,
-          item.pack_size,
-        ].join('|');
-        const existing = itemMap.get(aggregateKey);
-
-        if (existing) {
-          existing.totalQuantity += lineQuantity;
-          existing.remainingReportedTotal += remainingReported;
-          existing.sourceOrderItemIds.push(orderItem.id);
-          if (!existing.sourceOrderIds.includes(order.id)) {
-            existing.sourceOrderIds.push(order.id);
-          }
-          if (lineNote && !existing.notes.includes(lineNote)) {
-            existing.notes.push(lineNote);
-          }
-
-          const locationEntry = existing.locationBreakdown.find((lb) => lb.locationId === order.location_id);
-          if (locationEntry) {
-            locationEntry.quantity += lineQuantity;
-            locationEntry.remainingReported += remainingReported;
-            locationEntry.hasUndecidedRemaining =
-              locationEntry.hasUndecidedRemaining || hasUndecidedRemaining;
-            if (lineNote && !locationEntry.notes.includes(lineNote)) {
-              locationEntry.notes.push(lineNote);
-            }
-            const orderedByName = order.user?.name || 'Unknown';
-            if (!locationEntry.orderedBy.includes(orderedByName)) {
-              locationEntry.orderedBy.push(orderedByName);
-            }
-          } else {
-            existing.locationBreakdown.push({
-              locationId: order.location_id,
-              locationName: order.location?.name || 'Unknown',
-              shortCode: order.location?.short_code || '??',
-              quantity: lineQuantity,
-              remainingReported,
-              hasUndecidedRemaining,
-              notes: lineNote ? [lineNote] : [],
-              orderedBy: [order.user?.name || 'Unknown'],
-            });
-          }
-          return;
-        }
-
-        const primaryResolved = resolution.primarySupplierId ?? resolution.effectiveSupplierId;
-
-        itemMap.set(aggregateKey, {
-          aggregateKey,
-          effectiveSupplierId: resolution.effectiveSupplierId,
-          inventoryItem: item,
-          totalQuantity: lineQuantity,
-          unitType: orderItem.unit_type,
-          isRemainingMode,
-          remainingReportedTotal: remainingReported,
-          notes: lineNote ? [lineNote] : [],
-          locationBreakdown: [
-            {
-              locationId: order.location_id,
-              locationName: order.location?.name || 'Unknown',
-              shortCode: order.location?.short_code || '??',
-              quantity: lineQuantity,
-              remainingReported,
-              hasUndecidedRemaining,
-              notes: lineNote ? [lineNote] : [],
-              orderedBy: [order.user?.name || 'Unknown'],
-            },
-          ],
-          sourceOrderItemIds: [orderItem.id],
-          sourceOrderIds: [order.id],
-          secondarySupplierName: resolution.secondarySupplierName,
-          secondarySupplierId: resolution.secondarySupplierId,
-          isOverridden: resolution.isOverridden,
-          primarySupplierId: primaryResolved,
-        });
-      });
-    });
-
-    const supplierMap = new Map<string, Map<string, AggregatedItem[]>>();
-    const supplierTypeById = new Map<string, string | null>();
-
-    Array.from(itemMap.values()).forEach((aggregatedItem) => {
-      const supplierId = aggregatedItem.effectiveSupplierId;
-      const itemCategory = aggregatedItem.inventoryItem.category;
-      const supplierType = resolveSupplierType(supplierId);
-      supplierTypeById.set(supplierId, supplierType);
-
-      if (!supplierMap.has(supplierId)) {
-        supplierMap.set(supplierId, new Map());
-      }
-
-      const categoryMap = supplierMap.get(supplierId)!;
-      if (!categoryMap.has(itemCategory)) {
-        categoryMap.set(itemCategory, []);
-      }
-      categoryMap.get(itemCategory)!.push(aggregatedItem);
-    });
-
-    const groups: SupplierGroup[] = [];
-    const supplierIds = new Set<string>([
-      ...Array.from(supplierMap.keys()),
-      ...Object.keys(supplierDrafts || {}),
-    ]);
-
-    Array.from(supplierIds.values())
-      .sort((a, b) => {
-        const aInactive = isSupplierInactive(a);
-        const bInactive = isSupplierInactive(b);
-        if (aInactive !== bInactive) return aInactive ? 1 : -1;
-
-        const aName = resolveSupplierName(a);
-        const bName = resolveSupplierName(b);
-        const aPriority = SUPPLIER_DISPLAY_PRIORITY.get(normalizeSupplierNameKey(aName));
-        const bPriority = SUPPLIER_DISPLAY_PRIORITY.get(normalizeSupplierNameKey(bName));
-
-        if (aPriority != null || bPriority != null) {
-          if (aPriority == null) return 1;
-          if (bPriority == null) return -1;
-          if (aPriority !== bPriority) return aPriority - bPriority;
-        }
-
-        const aType = resolveSupplierType(a);
-        const bType = resolveSupplierType(b);
-        const typeOrder = (value: string | null) => {
-          if (value === 'asian_market') return 0;
-          if (value === 'fish_supplier') return 1;
-          if (value === 'main_distributor') return 2;
-          return 3;
-        };
-        const typeDiff = typeOrder(aType) - typeOrder(bType);
-        if (typeDiff !== 0) return typeDiff;
-
-        return aName.localeCompare(bName);
-      })
-      .forEach((supplierId) => {
-      const categoryMap = supplierMap.get(supplierId);
-      const draftCount = getSupplierDraftItems(supplierId).length;
-      if ((!categoryMap || categoryMap.size === 0) && draftCount === 0) return;
-
-      const supplierType = supplierId.startsWith('unknown:') || supplierId.startsWith('unresolved:')
-        ? null
-        : supplierTypeById.get(supplierId) ?? resolveSupplierType(supplierId);
-      const categoryGroups: CategoryGroup[] = [];
-      let totalItems = draftCount;
-
-      if (categoryMap) {
-        Array.from(categoryMap.entries()).forEach(([category, items]) => {
-          items.sort((a, b) => a.inventoryItem.name.localeCompare(b.inventoryItem.name));
-          categoryGroups.push({ category, items });
-          totalItems += items.length;
-        });
-      }
-
-      categoryGroups.sort((a, b) =>
-        getCategoryLabel(a.category).localeCompare(getCategoryLabel(b.category))
-      );
-
-      groups.push({
-        supplierId,
-        supplierName: resolveSupplierName(supplierId),
-        supplierType,
-        isInactive: isSupplierInactive(supplierId),
-        isUnknown: isUnknownSupplier(supplierId),
-        categoryGroups,
-        totalItems,
-      });
-    });
-
-    // Drop unknown/unresolved suppliers — these are items whose supplier
-    // couldn't be matched to a real suppliers row and can't be ordered.
-    // Exception: if ALL groups are unknown (e.g., supplier lookup failed),
-    // keep them so the user still sees pending orders rather than an empty
-    // screen.
-    const knownGroups = groups.filter((g) => !g.isUnknown);
-    if (knownGroups.length > 0 || groups.length === 0) {
-      return knownGroups;
-    }
-    return groups;
-  }, [
-    getSupplierDraftItems,
-    getOrderItemSupplierResolution,
-    pendingOrders,
-    isSupplierInactive,
-    isUnknownSupplier,
-    resolveSupplierName,
-    resolveSupplierType,
-    supplierDrafts,
-  ]);
-
-  const buildSupplierPreviewItems = useCallback((supplierGroup: SupplierGroup) => {
-    const previewItems: LocationGroupedItem[] = [];
-
-    supplierGroup.categoryGroups.forEach((categoryGroup) => {
-      categoryGroup.items.forEach((item) => {
-        const dominantGroupTotals = item.locationBreakdown.reduce(
-          (totals, location) => {
-            const group = getLocationGroup(location.locationName, location.shortCode);
-            const locationWeight = Math.max(location.quantity, location.remainingReported, 1);
-            totals[group] += locationWeight;
-            return totals;
-          },
-          { sushi: 0, poki: 0 }
-        );
-
-        previewItems.push({
-          key: `preview-${item.aggregateKey}`,
-          aggregateKey: item.aggregateKey,
-          effectiveSupplierId: item.effectiveSupplierId,
-          locationGroup: dominantGroupTotals.poki > dominantGroupTotals.sushi ? 'poki' : 'sushi',
-          inventoryItem: item.inventoryItem,
-          totalQuantity: item.totalQuantity,
-          unitType: item.unitType,
-          isRemainingMode: item.isRemainingMode,
-          remainingReportedTotal: item.remainingReportedTotal,
-          notes: item.notes,
-          locationBreakdown: [...item.locationBreakdown].sort((a, b) =>
-            a.locationName.localeCompare(b.locationName)
-          ),
-          sourceOrderItemIds: item.sourceOrderItemIds,
-          sourceOrderIds: item.sourceOrderIds,
-          secondarySupplierName: item.secondarySupplierName,
-          secondarySupplierId: item.secondarySupplierId,
-          isOverridden: item.isOverridden,
-          primarySupplierId: item.primarySupplierId,
-        });
-      });
-    });
-
-    getSupplierDraftItems(supplierGroup.supplierId).forEach((draftItem) => {
-      const shortCode =
-        typeof draftItem.locationName === 'string' && draftItem.locationName.trim().length > 0
-          ? draftItem.locationName.trim().slice(0, 2).toUpperCase()
-          : draftItem.locationGroup === 'poki'
-            ? 'P'
-            : 'S';
-
-      previewItems.push({
-        key: `draft-${draftItem.id}`,
-        aggregateKey: `draft-${draftItem.id}`,
-        effectiveSupplierId: supplierGroup.supplierId,
-        locationGroup: draftItem.locationGroup,
-        inventoryItem: {
-          id: draftItem.inventoryItemId || `draft-${draftItem.id}`,
-          name: draftItem.name,
-          category: toItemCategory(draftItem.category),
-          supplier_category: supplierGroup.supplierType || 'main_distributor',
-          base_unit: draftItem.unitType === 'base' ? draftItem.unitLabel : 'unit',
-          pack_unit: draftItem.unitType === 'pack' ? draftItem.unitLabel : 'pack',
-          pack_size: 1,
-          active: true,
-          created_at: draftItem.createdAt,
-        },
-        totalQuantity: draftItem.quantity,
-        unitType: draftItem.unitType,
-        isRemainingMode: false,
-        remainingReportedTotal: 0,
-        notes: draftItem.note ? [draftItem.note] : [],
-        locationBreakdown: [
-          {
-            locationId: draftItem.locationId || `draft-${draftItem.id}`,
-            locationName: draftItem.locationName || LOCATION_GROUP_LABELS[draftItem.locationGroup],
-            shortCode,
-            quantity: draftItem.quantity,
-            remainingReported: 0,
-            hasUndecidedRemaining: false,
-            notes: draftItem.note ? [draftItem.note] : [],
-            orderedBy: ['Order Later'],
-          },
-        ],
-        sourceOrderItemIds: [],
-        sourceOrderIds: [],
-        secondarySupplierName: null,
-        secondarySupplierId: null,
-        isOverridden: false,
-        primarySupplierId: supplierGroup.supplierId,
-      });
-    });
-
-    return previewItems.sort((a, b) => {
-      if (a.isRemainingMode !== b.isRemainingMode) return a.isRemainingMode ? -1 : 1;
-      if (a.inventoryItem.name !== b.inventoryItem.name) {
-        return a.inventoryItem.name.localeCompare(b.inventoryItem.name);
-      }
-      return a.unitType.localeCompare(b.unitType);
-    });
-  }, [getSupplierDraftItems]);
-
-  const getItemPeopleNames = useCallback(
-    (item: LocationGroupedItem, options?: { includeOrderLater?: boolean }) => {
-      const people = new Map<string, string>();
-
-      item.locationBreakdown.forEach((location) => {
-        location.orderedBy.forEach((person) => {
-          const normalized = person.trim();
-          if (!normalized) return;
-          if (!options?.includeOrderLater && normalized.toLowerCase() === 'order later') return;
-          const key = normalized.toLowerCase();
-          if (!people.has(key)) {
-            people.set(key, normalized);
-          }
-        });
-      });
-
-      return Array.from(people.values()).sort((a, b) => a.localeCompare(b));
-    },
-    []
-  );
-
-  const supplierCardData = useMemo<SupplierCardData[]>(() => {
-    return supplierGroups.map((group) => {
-      const previewItems = buildSupplierPreviewItems(group);
-      const peopleById = new Map<string, FulfillmentSupplierEmployee>();
-
-      previewItems.forEach((item) => {
-        const uniquePeople = getItemPeopleNames(item);
-        uniquePeople.forEach((person) => {
-          const id = person.toLowerCase();
-          const existing = peopleById.get(id);
-          if (existing) {
-            existing.count += 1;
-            return;
-          }
-          peopleById.set(id, {
-            id,
-            name: person,
-            initials: getInitials(person),
-            count: 1,
-          });
-        });
-      });
-
-      const employees = Array.from(peopleById.values()).sort((a, b) => {
-        if (b.count !== a.count) return b.count - a.count;
-        return a.name.localeCompare(b.name);
-      });
-
-      const employeeSummary =
-        employees.length === 0
-          ? previewItems.every((item) => item.sourceOrderItemIds.length === 0)
-            ? 'Order Later draft'
-            : 'No employee assignments'
-          : `${employees
-              .slice(0, 2)
-              .map((employee) =>
-                employee.count > 1
-                  ? `${getFirstName(employee.name)} (${employee.count})`
-                  : getFirstName(employee.name)
-              )
-              .join(', ')}${employees.length > 2 ? ` +${employees.length - 2} more` : ''}`;
-
-      return {
-        group,
-        employees,
-        employeeSummary,
-        previewItems,
-        supplierItemCount: previewItems.length,
-        remainingCount: previewItems.filter((item) => item.isRemainingMode).length,
-        statusLabel: group.isInactive ? 'Inactive' : null,
-      };
-    });
-  }, [buildSupplierPreviewItems, getItemPeopleNames, supplierGroups]);
-
-  useEffect(() => {
-    if (!expandedSupplierId) return;
-    if (supplierCardData.some((entry) => entry.group.supplierId === expandedSupplierId)) return;
-    setExpandedSupplierId(null);
-  }, [expandedSupplierId, supplierCardData]);
-
-  const toggleSupplier = useCallback((supplierId: string) => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    animateNextLayout();
-    setExpandedSupplierId((current) => (current === supplierId ? null : supplierId));
-  }, []);
-
-  const buildRegularConfirmationItems = useCallback(
-    (supplierGroup: SupplierGroup) => {
-      const merged = new Map<
-        string,
-        {
-          id: string;
-          inventoryItemId: string;
-          name: string;
-          category: string;
-          locationGroup: LocationGroup;
-          unitType: 'base' | 'pack';
-          unitLabel: string;
-          contributors: Map<string, { userId: string | null; name: string; quantity: number }>;
-          details: Map<
-            string,
-            {
-              locationId: string;
-              locationName: string;
-              shortCode: string;
-              quantity: number;
-              orderedBy: Set<string>;
-            }
-          >;
-          notes: Map<
-            string,
-            {
-              id: string;
-              author: string;
-              text: string;
-              locationName: string;
-              shortCode: string;
-            }
-          >;
-          sourceOrderItemIds: Set<string>;
-          sourceOrderIds: Set<string>;
-          sourceDraftItemIds: Set<string>;
-          rawQuantity: number;
-          inventoryItemRef: InventoryItem | null;
-        }
-      >();
-
-      pendingOrders.forEach((order) => {
-        order.order_items?.forEach((orderItem) => {
-          const inventoryItem = orderItem.inventory_item;
-          if (!inventoryItem) return;
-          const resolution = getOrderItemSupplierResolution(
-            orderItem as unknown as Record<string, unknown>,
-            inventoryItem
-          );
-          const effectiveSupplierId = resolution.effectiveSupplierId;
-          if (effectiveSupplierId !== supplierGroup.supplierId) return;
-          if (orderItem.input_mode === 'remaining') return;
-
-          const locationGroup = getLocationGroup(order.location?.name, order.location?.short_code);
-          const unitType = orderItem.unit_type === 'base' ? 'base' : 'pack';
-          const mergeKey = [locationGroup, inventoryItem.id, unitType].join('|');
-          const lineQuantity = Math.max(0, toSafeNumber(orderItem.quantity, 0));
-          if (lineQuantity <= 0) return;
-
-          const orderedByName = order.user?.name?.trim() || 'Unknown';
-          const userId = typeof order.user?.id === 'string' ? order.user.id : null;
-          const locationId = order.location_id;
-          const locationName = order.location?.name || 'Unknown';
-          const shortCode = order.location?.short_code || '??';
-          const note = typeof orderItem.note === 'string' ? orderItem.note.trim() : '';
-
-          const existing = merged.get(mergeKey);
-          if (!existing) {
-            const contributorMap = new Map<string, { userId: string | null; name: string; quantity: number }>();
-            const contributorKey = userId || `name:${orderedByName.toLowerCase()}`;
-            contributorMap.set(contributorKey, {
-              userId,
-              name: orderedByName,
-              quantity: lineQuantity,
-            });
-
-            const detailMap = new Map<
-              string,
-              {
-                locationId: string;
-                locationName: string;
-                shortCode: string;
-                quantity: number;
-                orderedBy: Set<string>;
-              }
-            >();
-            detailMap.set(locationId, {
-              locationId,
-              locationName,
-              shortCode,
-              quantity: lineQuantity,
-              orderedBy: new Set([orderedByName]),
-            });
-
-            const noteMap = new Map<
-              string,
-              {
-                id: string;
-                author: string;
-                text: string;
-                locationName: string;
-                shortCode: string;
-              }
-            >();
-            if (note.length > 0) {
-              const noteId = `${orderItem.id}:${note}`;
-              noteMap.set(noteId, {
-                id: noteId,
-                author: orderedByName,
-                text: note,
-                locationName,
-                shortCode,
-              });
-            }
-
-            merged.set(mergeKey, {
-              id: mergeKey,
-              inventoryItemId: inventoryItem.id,
-              name: inventoryItem.name,
-              category: inventoryItem.category,
-              locationGroup,
-              unitType,
-              unitLabel: unitType === 'pack' ? inventoryItem.pack_unit : inventoryItem.base_unit,
-              contributors: contributorMap,
-              details: detailMap,
-              notes: noteMap,
-              sourceOrderItemIds: new Set([orderItem.id]),
-              sourceOrderIds: new Set([order.id]),
-              sourceDraftItemIds: new Set<string>(),
-              rawQuantity: lineQuantity,
-              inventoryItemRef: inventoryItem,
-            });
-            return;
-          }
-
-          existing.rawQuantity += lineQuantity;
-          existing.sourceOrderItemIds.add(orderItem.id);
-          existing.sourceOrderIds.add(order.id);
-
-          const contributorKey = userId || `name:${orderedByName.toLowerCase()}`;
-          const existingContributor = existing.contributors.get(contributorKey);
-          if (existingContributor) {
-            existingContributor.quantity += lineQuantity;
-          } else {
-            existing.contributors.set(contributorKey, {
-              userId,
-              name: orderedByName,
-              quantity: lineQuantity,
-            });
-          }
-
-          const existingDetail = existing.details.get(locationId);
-          if (existingDetail) {
-            existingDetail.quantity += lineQuantity;
-            existingDetail.orderedBy.add(orderedByName);
-          } else {
-            existing.details.set(locationId, {
-              locationId,
-              locationName,
-              shortCode,
-              quantity: lineQuantity,
-              orderedBy: new Set([orderedByName]),
-            });
-          }
-
-          if (note.length > 0) {
-            const noteId = `${orderItem.id}:${note}`;
-            if (!existing.notes.has(noteId)) {
-              existing.notes.set(noteId, {
-                id: noteId,
-                author: orderedByName,
-                text: note,
-                locationName,
-                shortCode,
-              });
-            }
-          }
-        });
-      });
-
-      const draftItems = getSupplierDraftItems(supplierGroup.supplierId);
-      draftItems.forEach((draftItem) => {
-        const locationGroup = draftItem.locationGroup;
-        const unitType = draftItem.unitType;
-        const baseKey = draftItem.inventoryItemId || draftItem.name.toLowerCase().trim();
-        const mergeKey = [locationGroup, baseKey, unitType].join('|');
-        const lineQuantity = Math.max(0, toSafeNumber(draftItem.quantity, 0));
-        if (lineQuantity <= 0) return;
-
-        const locationId = draftItem.locationId || `draft-${draftItem.id}`;
-        const locationName = draftItem.locationName || LOCATION_GROUP_LABELS[locationGroup];
-        const shortCode = locationName.slice(0, 2).toUpperCase();
-        const orderedByName = 'Order Later';
-        const note = typeof draftItem.note === 'string' ? draftItem.note.trim() : '';
-
-        const existing = merged.get(mergeKey);
-        if (!existing) {
-          const contributorMap = new Map<string, { userId: string | null; name: string; quantity: number }>();
-          contributorMap.set(`draft:${draftItem.id}`, {
-            userId: null,
-            name: orderedByName,
-            quantity: lineQuantity,
-          });
-
-          const detailMap = new Map<
-            string,
-            {
-              locationId: string;
-              locationName: string;
-              shortCode: string;
-              quantity: number;
-              orderedBy: Set<string>;
-            }
-          >();
-          detailMap.set(locationId, {
-            locationId,
-            locationName,
-            shortCode,
-            quantity: lineQuantity,
-            orderedBy: new Set([orderedByName]),
-          });
-
-          const noteMap = new Map<
-            string,
-            {
-              id: string;
-              author: string;
-              text: string;
-              locationName: string;
-              shortCode: string;
-            }
-          >();
-          if (note.length > 0) {
-            const noteId = `draft:${draftItem.id}:${note}`;
-            noteMap.set(noteId, {
-              id: noteId,
-              author: orderedByName,
-              text: note,
-              locationName,
-              shortCode,
-            });
-          }
-
-          merged.set(mergeKey, {
-            id: mergeKey,
-            inventoryItemId: draftItem.inventoryItemId || `draft-${draftItem.id}`,
-            name: draftItem.name,
-            category: toItemCategory(draftItem.category),
-            locationGroup,
-            unitType,
-            unitLabel: draftItem.unitLabel,
-            contributors: contributorMap,
-            details: detailMap,
-            notes: noteMap,
-            sourceOrderItemIds: new Set<string>(),
-            sourceOrderIds: new Set<string>(),
-            sourceDraftItemIds: new Set([draftItem.id]),
-            rawQuantity: lineQuantity,
-            inventoryItemRef: null,
-          });
-          return;
-        }
-
-        existing.rawQuantity += lineQuantity;
-        existing.sourceDraftItemIds.add(draftItem.id);
-
-        const draftContributorKey = `draft:${draftItem.id}`;
-        const existingContributor = existing.contributors.get(draftContributorKey);
-        if (existingContributor) {
-          existingContributor.quantity += lineQuantity;
-        } else {
-          existing.contributors.set(draftContributorKey, {
-            userId: null,
-            name: orderedByName,
-            quantity: lineQuantity,
-          });
-        }
-
-        const existingDetail = existing.details.get(locationId);
-        if (existingDetail) {
-          existingDetail.quantity += lineQuantity;
-          existingDetail.orderedBy.add(orderedByName);
-        } else {
-          existing.details.set(locationId, {
-            locationId,
-            locationName,
-            shortCode,
-            quantity: lineQuantity,
-            orderedBy: new Set([orderedByName]),
-          });
-        }
-
-        if (note.length > 0) {
-          const noteId = `draft:${draftItem.id}:${note}`;
-          if (!existing.notes.has(noteId)) {
-            existing.notes.set(noteId, {
-              id: noteId,
-              author: orderedByName,
-              text: note,
-              locationName,
-              shortCode,
-            });
-          }
-        }
-      });
-
-      return Array.from(merged.values())
-        .map((entry) => {
-          const contributors = Array.from(entry.contributors.values())
-            .filter((person) => person.quantity > 0)
-            .sort((a, b) => a.name.localeCompare(b.name));
-          const details = Array.from(entry.details.values())
-            .map((row) => ({
-              locationId: row.locationId,
-              locationName: row.locationName,
-              shortCode: row.shortCode,
-              quantity: row.quantity,
-              orderedBy: Array.from(row.orderedBy.values()).join(', '),
-            }))
-            .sort((a, b) => a.locationName.localeCompare(b.locationName));
-          const notes = Array.from(entry.notes.values()).sort((a, b) => {
-            if (a.author !== b.author) return a.author.localeCompare(b.author);
-            return a.text.localeCompare(b.text);
-          });
-          const quantity = Math.max(0, entry.rawQuantity);
-
-          const secondary = entry.inventoryItemRef
-            ? resolveSecondarySupplier(entry.inventoryItemRef)
-            : null;
-
-          return {
-            id: entry.id,
-            inventoryItemId: entry.inventoryItemId,
-            name: entry.name,
-            category: entry.category,
-            locationGroup: entry.locationGroup,
-            quantity,
-            unitType: entry.unitType,
-            unitLabel: entry.unitLabel,
-            sumOfContributorQuantities: Math.max(0, entry.rawQuantity),
-            sourceOrderItemIds: Array.from(entry.sourceOrderItemIds),
-            sourceOrderIds: Array.from(entry.sourceOrderIds),
-            sourceDraftItemIds: Array.from(entry.sourceDraftItemIds),
-            contributors,
-            notes,
-            details,
-            secondarySupplierName: secondary?.name ?? null,
-            secondarySupplierId: secondary?.id ?? null,
-          } satisfies ConfirmationRegularItem;
-        })
-        .filter((item) => item.quantity > 0)
-        .sort((a, b) => {
-          if (a.locationGroup !== b.locationGroup) {
-            return a.locationGroup.localeCompare(b.locationGroup);
-          }
-          return a.name.localeCompare(b.name);
-        });
-    },
-    [
-      getOrderItemSupplierResolution,
-      getSupplierDraftItems,
-      pendingOrders,
-      resolveSecondarySupplier,
-    ]
-  );
-
-  const buildRemainingConfirmationItems = useCallback(
-    (supplierGroup: SupplierGroup) => {
-      const rows: RemainingConfirmationItem[] = [];
-
-      pendingOrders.forEach((order) => {
-        order.order_items?.forEach((orderItem) => {
-          const inventoryItem = orderItem.inventory_item;
-          if (!inventoryItem) return;
-          const resolution = getOrderItemSupplierResolution(
-            orderItem as unknown as Record<string, unknown>,
-            inventoryItem
-          );
-          const effectiveSupplierId = resolution.effectiveSupplierId;
-          if (effectiveSupplierId !== supplierGroup.supplierId) return;
-          if (orderItem.input_mode !== 'remaining') return;
-
-          const decidedQuantity =
-            orderItem.decided_quantity == null ? null : Math.max(0, toSafeNumber(orderItem.decided_quantity, 0));
-          const note =
-            typeof orderItem.note === 'string' && orderItem.note.trim().length > 0 ? orderItem.note.trim() : null;
-          const unitType = orderItem.unit_type === 'base' ? 'base' : 'pack';
-          const unitLabel = unitType === 'pack' ? inventoryItem.pack_unit : inventoryItem.base_unit;
-
-          rows.push({
-            orderItemId: orderItem.id,
-            orderId: order.id,
-            inventoryItemId: inventoryItem.id,
-            name: inventoryItem.name,
-            category: inventoryItem.category,
-            locationGroup: getLocationGroup(order.location?.name, order.location?.short_code),
-            locationId: order.location_id,
-            locationName: order.location?.name || 'Unknown',
-            shortCode: order.location?.short_code || '??',
-            unitType,
-            unitLabel,
-            reportedRemaining: Math.max(0, toSafeNumber(orderItem.remaining_reported, 0)),
-            decidedQuantity,
-            note,
-            orderedBy: order.user?.name || 'Unknown',
-            secondarySupplierName: resolution.secondarySupplierName ?? null,
-            secondarySupplierId: resolution.secondarySupplierId ?? null,
-          });
-        });
-      });
-
-      rows.sort((a, b) => {
-        if (a.locationGroup !== b.locationGroup) {
-          return a.locationGroup.localeCompare(b.locationGroup);
-        }
-        return a.name.localeCompare(b.name);
-      });
-
-      return rows;
-    },
-    [getOrderItemSupplierResolution, pendingOrders]
-  );
-
-  const handleSend = useCallback(
-    (supplierGroup: SupplierGroup) => {
-      const nowMs = Date.now();
-      if (nowMs < sendTapLockUntilRef.current) {
-        return;
-      }
-      sendTapLockUntilRef.current = nowMs + 700;
-
-      if (Platform.OS !== 'web') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      }
-
-      const regularItems = buildRegularConfirmationItems(supplierGroup);
-      const remainingItems = buildRemainingConfirmationItems(supplierGroup);
-
-      if (regularItems.length === 0 && remainingItems.length === 0) {
-        Alert.alert('Nothing to Confirm', 'There are no items in this supplier section.');
-        return;
-      }
-
-      router.push({
-        pathname: '/(manager)/fulfillment-confirmation',
-        params: {
-          supplier: supplierGroup.supplierId,
-          supplierLabel: supplierGroup.supplierName,
-          from: 'fulfillment',
-          items: encodeURIComponent(JSON.stringify(regularItems)),
-          remaining: encodeURIComponent(JSON.stringify(remainingItems)),
-        },
-      } as any);
-    },
-    [buildRegularConfirmationItems, buildRemainingConfirmationItems]
-  );
 
   const handleSendAll = useCallback(() => {
-    const nowMs = Date.now();
-    if (nowMs < sendTapLockUntilRef.current) {
+    if (Date.now() < sendTapLockUntilRef.current) return;
+    sendTapLockUntilRef.current = Date.now() + 700;
+    const sendable = overview.groups.filter(isSendableManagerSupplier);
+    if (sendable.length === 0) {
+      showNotice('Nothing to Send', 'There are no supplier orders ready to send.');
       return;
     }
-    sendTapLockUntilRef.current = nowMs + 700;
-
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-
-    const sendableGroups = supplierGroups.filter(
-      (group) => !group.isUnknown && group.totalItems > 0
-    );
-    if (sendableGroups.length === 0) {
-      Alert.alert('Nothing to Send', 'There are no supplier orders ready to send.');
-      return;
-    }
-
+    void triggerImpactHaptic(ImpactFeedbackStyle.Medium);
     router.push({
       pathname: '/(manager)/fulfillment-send-all',
       params: {
-        // Plain id list, handed over unencoded: expo-router encodes route params
-        // once and decodes them twice, so anything encoded here is destroyed in
-        // transit. Send All reads the supplier names from the supplier lookup.
         suppliers: buildSendAllSuppliersParam(
-          sendableGroups.map((group) => ({ id: group.supplierId }))
+          sendable.map((group) => ({ id: group.supplierId })),
         ),
       },
-    } as any);
-  }, [supplierGroups]);
+    });
+  }, [overview.groups]);
 
-  const addToTargetItem = useMemo(
-    () => orderLaterQueue.find((item) => item.id === addToTargetItemId) ?? null,
-    [addToTargetItemId, orderLaterQueue]
-  );
-  const supplierPickerOptions = useMemo<OrderLaterSupplierOption[]>(
-    () =>
-      availableSuppliers
-        .filter((supplier) => supplier.active)
-        .map((supplier) => ({ id: supplier.id, name: supplier.name })),
-    [availableSuppliers]
-  );
-
-  const addToSupplierOptions = useMemo<OrderLaterSupplierOption[]>(
-    () =>
-      availableSuppliers.map((supplier) => ({
+  const loadSupplierOptions = useCallback(async (item: OrderLaterItem) => {
+    setSupplierError(null);
+    try {
+      const lookup = await loadSupplierLookup();
+      const options = lookup.suppliers.map((supplier) => ({
         id: supplier.id,
         name: supplier.active ? supplier.name : `${supplier.name} (Inactive)`,
-      })),
-    [availableSuppliers]
-  );
-  const scheduleEditItem = useMemo(
-    () => orderLaterQueue.find((item) => item.id === scheduleEditItemId) ?? null,
-    [orderLaterQueue, scheduleEditItemId]
-  );
-  const resolveAddToLocationGroup = useCallback((item: (typeof orderLaterQueue)[number]): LocationGroup => {
-    const preferred = toLocationGroup(item.preferredLocationGroup);
-    if (preferred) return preferred;
-
-    const payload = item.payload as Record<string, unknown> | null | undefined;
-    const payloadGroup = payload ? toLocationGroup(payload.locationGroup) : null;
-    if (payloadGroup) return payloadGroup;
-
-    return getLocationGroup(item.locationName ?? undefined);
-  }, []);
-
-  useEffect(() => {
-    if (availableSuppliers.length === 0) return;
-    const hasSelection = availableSuppliers.some((supplier) => supplier.id === addToSupplier);
-    if (!hasSelection) {
-      setAddToSupplier(availableSuppliers[0].id);
-    }
-  }, [addToSupplier, availableSuppliers]);
-
-  useEffect(() => {
-    if (!addToTargetItem) return;
-
-    const defaultSupplierId = toSupplierId(addToTargetItem.preferredSupplierId)
-      ?? toSupplierId(addToTargetItem.suggestedSupplierId);
-    if (
-      defaultSupplierId &&
-      availableSuppliers.some((supplier) => supplier.id === defaultSupplierId)
-    ) {
-      setAddToSupplier(defaultSupplierId);
-    } else if (availableSuppliers.length > 0) {
-      setAddToSupplier(availableSuppliers[0].id);
-    } else {
-      setAddToSupplier('');
-    }
-    setAddToSupplierError(null);
-  }, [addToTargetItem, availableSuppliers]);
-
-  const openAddToModal = useCallback((itemId: string) => {
-    setAddToTargetItemId(itemId);
-    setAddToSupplierError(null);
-    setIsAddingToSupplierDraft(false);
-  }, []);
-
-  const closeAddToModal = useCallback(() => {
-    setAddToTargetItemId(null);
-    setAddToSupplierError(null);
-    setIsAddingToSupplierDraft(false);
-  }, []);
-
-  const handleAddToSupplierChange = useCallback((supplierId: string) => {
-    setAddToSupplier(supplierId);
-    setAddToSupplierError(null);
-  }, []);
-
-  const handleConfirmAddTo = useCallback(async () => {
-    if (!addToTargetItem || isAddingToSupplierDraft) return;
-    if (!addToSupplier) {
-      setAddToSupplierError('Supplier is required.');
-      return;
-    }
-
-    setAddToSupplierError(null);
-    setIsAddingToSupplierDraft(true);
-
-    try {
-      const locationGroup = resolveAddToLocationGroup(addToTargetItem);
-
-      await moveOrderLaterItemToSupplierDraft(
-        addToTargetItem.id,
-        addToSupplier,
-        locationGroup,
-        {
-          locationId: addToTargetItem.locationId ?? null,
-          locationName: addToTargetItem.locationName ?? null,
-        }
-      );
-
-      closeAddToModal();
-      try {
-        await fetchPendingFulfillmentOrders(managerLocationIds);
-      } catch {
-        // Best effort refresh; realtime sync also updates this screen.
-      }
-
-      if (Platform.OS !== 'web') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-      Alert.alert(
-        'Added',
-        `${addToTargetItem.itemName} was added back to ${resolveSupplierName(addToSupplier)}.`
+      }));
+      setSupplierOptions(options);
+      const preferred = item.preferredSupplierId ?? item.suggestedSupplierId;
+      setSelectedSupplierId(
+        options.some((option) => option.id === preferred)
+          ? preferred
+          : options[0]?.id ?? null,
       );
     } catch (error) {
-      console.error('Failed to add order-later item to supplier draft.', error);
-      const message =
-        error instanceof Error && error.message.trim().length > 0
-          ? error.message
-          : 'Unable to add this item right now. Please try again.';
-      setAddToSupplierError(message);
-    } finally {
-      setIsAddingToSupplierDraft(false);
+      setSupplierOptions([]);
+      setSelectedSupplierId(null);
+      setSupplierError(
+        error instanceof Error ? error.message : 'Unable to load suppliers.',
+      );
     }
-  }, [
-    fetchPendingFulfillmentOrders,
-    addToSupplier,
-    addToTargetItem,
-    closeAddToModal,
-    isAddingToSupplierDraft,
-    managerLocationIds,
-    moveOrderLaterItemToSupplierDraft,
-    resolveAddToLocationGroup,
-    resolveSupplierName,
-  ]);
+  }, []);
 
-  const handleRemoveOrderLater = useCallback((itemId: string, itemName: string) => {
-    Alert.alert('Remove Item', `Remove ${itemName} from Order Later?`, [
+  const openAddToSupplier = useCallback((item: OrderLaterItem) => {
+    setActionsItemId(null);
+    setTimeout(() => {
+      setAddToItemId(item.id);
+      void loadSupplierOptions(item);
+    }, SHEET_TRANSITION_MS);
+  }, [loadSupplierOptions]);
+
+  const openSchedule = useCallback((item: OrderLaterItem) => {
+    setActionsItemId(null);
+    setTimeout(() => setScheduleItemId(item.id), SHEET_TRANSITION_MS);
+  }, []);
+
+  const handleRemove = useCallback((item: OrderLaterItem) => {
+    setActionsItemId(null);
+    showNotice('Remove Item', `Remove ${item.itemName} from Order Later?`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Remove',
         style: 'destructive',
         onPress: () => {
-          void removeOrderLaterItem(itemId);
+          void removeOrderLaterItem(item.id)
+            .then(() => overview.refresh())
+            .then(() => {
+              void triggerNotificationHaptic(NotificationFeedbackType.Warning);
+              showStudioToast(`${item.itemName} removed`);
+            })
+            .catch((error: unknown) => {
+              showNotice(
+                'Unable to Remove Item',
+                error instanceof Error ? error.message : 'Please try again.',
+              );
+            });
         },
       },
     ]);
-  }, [removeOrderLaterItem]);
+  }, [overview, removeOrderLaterItem]);
 
-  const formatScheduleLabel = useCallback((scheduledAt: string) => {
-    const date = new Date(scheduledAt);
-    if (Number.isNaN(date.getTime())) return 'Not scheduled';
-    return date.toLocaleString(undefined, {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
-  }, []);
-
-  const [orderLaterScheduleItem, setOrderLaterScheduleItem] = useState<LocationGroupedItem | null>(null);
-
-  const getHasMultiEmployeeBreakdown = useCallback((item: LocationGroupedItem) => {
-    const names = new Set<string>();
-    item.locationBreakdown.forEach((row) => {
-      row.orderedBy.forEach((name) => {
-        const normalized = name.trim();
-        if (normalized.length > 0) {
-          names.add(normalized.toLowerCase());
-        }
-      });
-    });
-    return names.size > 1;
-  }, []);
-
-  const handleMoveToSecondarySupplier = useCallback(
-    (item: LocationGroupedItem) => {
-      if (!item.secondarySupplierId || !item.secondarySupplierName || item.sourceOrderItemIds.length === 0) {
-        return;
-      }
-
-      Alert.alert(
-        `Move to ${item.secondarySupplierName}?`,
-        `${item.inventoryItem.name} will be reassigned to the secondary supplier.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Move',
-            onPress: () => {
-              const lockIds = [...item.sourceOrderItemIds].sort().join(',');
-              void runLockedAction(`move-secondary:${lockIds}`, async () => {
-                const success = await setSupplierOverride(item.sourceOrderItemIds, item.secondarySupplierId!);
-                if (!success) {
-                  Alert.alert('Error', 'Failed to move item. Please try again.');
-                  return;
-                }
-
-                if (Platform.OS !== 'web') {
-                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                }
-                await fetchPendingFulfillmentOrders(managerLocationIds);
-              });
-            },
-          },
-        ]
-      );
-    },
-    [fetchPendingFulfillmentOrders, managerLocationIds, runLockedAction, setSupplierOverride]
-  );
-
-  const handleSupplierPickerSelect = useCallback(
-    async (targetSupplierId: string) => {
-      const item = supplierPickerItem;
-      if (!item || item.sourceOrderItemIds.length === 0) return;
-      if (targetSupplierId === item.effectiveSupplierId) return;
-
-      setIsMovingSupplier(true);
-      try {
-        const lockIds = [...item.sourceOrderItemIds].sort().join(',');
-        const success = await runLockedAction(`move-supplier:${lockIds}`, async () => {
-          const moved = await setSupplierOverride(item.sourceOrderItemIds, targetSupplierId);
-          if (!moved) {
-            Alert.alert('Error', 'Failed to move item. Please try again.');
-            return;
-          }
-
-          if (Platform.OS !== 'web') {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          }
-          setSupplierPickerItem(null);
-          await fetchPendingFulfillmentOrders(managerLocationIds);
-        });
-        if (!success) {
-          Alert.alert('Error', 'Failed to move item. Please try again.');
-        }
-      } finally {
-        setIsMovingSupplier(false);
-      }
-    },
-    [
-      fetchPendingFulfillmentOrders,
-      managerLocationIds,
-      runLockedAction,
-      setSupplierOverride,
-      supplierPickerItem,
-    ]
-  );
-
-  const handleMoveBackToPrimarySupplier = useCallback(
-    (item: LocationGroupedItem) => {
-      if (!item.isOverridden || item.sourceOrderItemIds.length === 0) return;
-      const primaryName = resolveSupplierName(item.primarySupplierId);
-
-      Alert.alert(
-        `Move back to ${primaryName}?`,
-        `${item.inventoryItem.name} will return to its primary supplier.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Move Back',
-            onPress: () => {
-              const lockIds = [...item.sourceOrderItemIds].sort().join(',');
-              void runLockedAction(`move-primary:${lockIds}`, async () => {
-                const success = await clearSupplierOverride(item.sourceOrderItemIds);
-                if (!success) {
-                  Alert.alert('Error', 'Failed to move item back. Please try again.');
-                  return;
-                }
-
-                if (Platform.OS !== 'web') {
-                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                }
-                await fetchPendingFulfillmentOrders(managerLocationIds);
-              });
-            },
-          },
-        ]
-      );
-    },
-    [clearSupplierOverride, fetchPendingFulfillmentOrders, managerLocationIds, resolveSupplierName, runLockedAction]
-  );
-
-  const handleRemoveSupplierItem = useCallback(
-    (item: LocationGroupedItem) => {
-      if (item.sourceOrderItemIds.length === 0) return;
-
-      Alert.alert(
-        'Remove Item',
-        `Remove ${item.inventoryItem.name} from this supplier order?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Remove',
-            style: 'destructive',
-            onPress: () => {
-              const lockIds = [...item.sourceOrderItemIds].sort().join(',');
-              void runLockedAction(`remove-item:${lockIds}`, async () => {
-                const removed = await markOrderItemsStatus(item.sourceOrderItemIds, 'cancelled');
-                if (!removed) {
-                  Alert.alert('Error', 'Failed to remove item. Please try again.');
-                  return;
-                }
-
-                if (Platform.OS !== 'web') {
-                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-                }
-                await fetchPendingFulfillmentOrders(managerLocationIds);
-              });
-            },
-          },
-        ]
-      );
-    },
-    [fetchPendingFulfillmentOrders, managerLocationIds, markOrderItemsStatus, runLockedAction]
-  );
-
-  const handleOpenItemNoteEditor = useCallback((item: LocationGroupedItem) => {
-    setOverflowItem(null);
-    setNoteEditorItem(item);
-    setNoteDraft(item.notes.map((note) => note.trim()).filter((note) => note.length > 0).join(' • '));
-  }, []);
-
-  const handleSaveItemNote = useCallback(async () => {
-    if (!noteEditorItem) return;
-    if (noteEditorItem.sourceOrderItemIds.length === 0) {
-      setNoteEditorItem(null);
-      setNoteDraft('');
-      return;
-    }
-
-    const normalized = noteDraft.trim();
-    setIsSavingNote(true);
-    try {
-      const { error } = await supabase
-        .from('order_items')
-        .update({ note: normalized.length > 0 ? normalized : null } as any)
-        .in('id', noteEditorItem.sourceOrderItemIds);
-
-      if (error) throw error;
-
-      if (Platform.OS !== 'web') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-
-      setNoteEditorItem(null);
-      setNoteDraft('');
-      await fetchPendingFulfillmentOrders(managerLocationIds);
-    } catch (error: any) {
-      Alert.alert('Unable to Save Note', error?.message || 'Please try again.');
-    } finally {
-      setIsSavingNote(false);
-    }
-  }, [fetchPendingFulfillmentOrders, managerLocationIds, noteDraft, noteEditorItem]);
-
-  const breakdownRows = useMemo(() => {
-    if (!breakdownItem) return [] as { name: string; quantity: number; locations: string[] }[];
-    const sourceIds = new Set(breakdownItem.sourceOrderItemIds);
-    const rowsByName = new Map<string, { name: string; quantity: number; locations: Set<string> }>();
-
-    pendingOrders.forEach((order) => {
-      order.order_items?.forEach((orderItem) => {
-        if (!sourceIds.has(orderItem.id)) return;
-
-        const orderedBy = order.user?.name?.trim() || 'Unknown';
-        const locationName = order.location?.name || 'Unknown';
-        const quantity =
-          orderItem.input_mode === 'remaining'
-            ? Math.max(
-                0,
-                toSafeNumber(
-                  orderItem.decided_quantity == null
-                    ? orderItem.remaining_reported
-                    : orderItem.decided_quantity,
-                  0
-                )
-              )
-            : Math.max(0, toSafeNumber(orderItem.quantity, 0));
-        if (quantity <= 0) return;
-
-        const existing = rowsByName.get(orderedBy);
-        if (existing) {
-          existing.quantity += quantity;
-          existing.locations.add(locationName);
-        } else {
-          rowsByName.set(orderedBy, {
-            name: orderedBy,
-            quantity,
-            locations: new Set([locationName]),
-          });
-        }
-      });
-    });
-
-    return Array.from(rowsByName.values())
-      .map((entry) => ({
-        name: entry.name,
-        quantity: entry.quantity,
-        locations: Array.from(entry.locations).sort((a, b) => a.localeCompare(b)),
-      }))
-      .sort((a, b) => {
-        if (b.quantity !== a.quantity) return b.quantity - a.quantity;
-        return a.name.localeCompare(b.name);
-      });
-  }, [breakdownItem, pendingOrders]);
-
-  const getUnitConflictRows = useCallback(
-    (item: LocationGroupedItem) => {
-      const supplierGroup = supplierGroups.find((group) => group.supplierId === item.effectiveSupplierId);
-      if (!supplierGroup) return [] as LocationGroupedItem[];
-
-      return buildSupplierPreviewItems(supplierGroup).filter((row) => {
-        if (row.key === item.key) return false;
-        if (row.inventoryItem.id !== item.inventoryItem.id) return false;
-        return row.unitType !== item.unitType;
-      });
-    },
-    [buildSupplierPreviewItems, supplierGroups]
-  );
-
-  const overflowActionSections = useMemo<ItemActionSheetSection[]>(() => {
-    if (!overflowItem) return [];
-
-    const hasSourceOrderItems = overflowItem.sourceOrderItemIds.length > 0;
-    const sections: ItemActionSheetSection[] = [];
-    const logisticsItems = [];
-
-    if (hasSourceOrderItems) {
-      logisticsItems.push({
-        id: 'move-to-order-later',
-        label: 'Move to Order Later',
-        icon: 'time-outline',
-        detail: 'Schedule this line for later and remove it from active fulfillment.',
-        onPress: () => {
-          setOverflowItem(null);
-          setOrderLaterScheduleItem(overflowItem);
-        },
-      });
-
-      const hasAlternateSupplier = supplierPickerOptions.some(
-        (supplier) => supplier.id !== overflowItem.effectiveSupplierId
-      );
-      if (hasAlternateSupplier) {
-        logisticsItems.push({
-          id: 'move-different-supplier',
-          label: 'Move to Different Supplier',
-          icon: 'swap-horizontal',
-          detail: 'Reassign this line to another supplier for this order.',
-          onPress: () => {
-            setOverflowItem(null);
-            setSupplierPickerItem(overflowItem);
-          },
-        });
-      }
-    }
-
-    if (getHasMultiEmployeeBreakdown(overflowItem)) {
-      logisticsItems.push({
-        id: 'view-breakdown',
-        label: 'View breakdown',
-        icon: 'list-outline',
-        detail: 'See quantity by employee for this item line.',
-        onPress: () => {
-          setOverflowItem(null);
-          setBreakdownItem(overflowItem);
-        },
-      });
-    }
-
-    if (getUnitConflictRows(overflowItem).length > 0) {
-      logisticsItems.push({
-        id: 'resolve-units',
-        label: 'Resolve units / Combine',
-        icon: 'git-merge-outline',
-        detail: 'Convert units in Review before sending, when a conversion exists.',
-        onPress: () => {
-          setOverflowItem(null);
-          Alert.alert(
-            'Resolve in Review',
-            'Open this supplier\'s Review screen and use "Resolve units / Combine" to convert unit lines when a conversion rule exists.'
-          );
-        },
-      });
-    }
-
-    if (logisticsItems.length > 0) {
-      sections.push({
-        id: 'logistics',
-        title: 'Logistics',
-        items: logisticsItems,
-      });
-    }
-
-    const supplierItems = [];
-    if (
-      overflowItem.secondarySupplierId &&
-      overflowItem.secondarySupplierName &&
-      !overflowItem.isOverridden &&
-      hasSourceOrderItems
-    ) {
-      supplierItems.push({
-        id: 'move-secondary',
-        label: `Move to ${overflowItem.secondarySupplierName}`,
-        icon: 'swap-horizontal',
-        onPress: () => {
-          setOverflowItem(null);
-          handleMoveToSecondarySupplier(overflowItem);
-        },
-      });
-    }
-    if (overflowItem.isOverridden && hasSourceOrderItems) {
-      supplierItems.push({
-        id: 'move-primary',
-        label: `Move back to ${resolveSupplierName(overflowItem.primarySupplierId)}`,
-        icon: 'arrow-undo-outline',
-        onPress: () => {
-          setOverflowItem(null);
-          handleMoveBackToPrimarySupplier(overflowItem);
-        },
-      });
-    }
-    if (supplierItems.length > 0) {
-      sections.push({
-        id: 'supplier',
-        title: 'Supplier',
-        items: supplierItems,
-      });
-    }
-
-    if (hasSourceOrderItems) {
-      sections.push({
-        id: 'notes',
-        title: 'Item',
+  const actionSections = useMemo<ItemActionSheetSection[]>(() => {
+    if (!actionsItem) return [];
+    return [
+      {
+        id: 'order-later',
         items: [
           {
-            id: 'note',
-            label: overflowItem.notes.length > 0 ? 'Edit Note' : 'Add Note',
-            icon: 'create-outline',
-            onPress: () => handleOpenItemNoteEditor(overflowItem),
+            id: 'schedule',
+            label: 'Edit schedule',
+            icon: 'calendar-outline',
+            onPress: () => openSchedule(actionsItem),
           },
-        ],
-      });
-
-      sections.push({
-        id: 'danger',
-        title: 'Danger Zone',
-        items: [
+          {
+            id: 'supplier',
+            label: 'Add to supplier',
+            icon: 'add-circle-outline',
+            onPress: () => openAddToSupplier(actionsItem),
+          },
           {
             id: 'remove',
-            label: 'Remove item from this supplier order',
+            label: 'Remove from Order Later',
             icon: 'trash-outline',
             destructive: true,
-            onPress: () => {
-              setOverflowItem(null);
-              handleRemoveSupplierItem(overflowItem);
-            },
+            onPress: () => handleRemove(actionsItem),
           },
         ],
-      });
-    }
+      },
+    ];
+  }, [actionsItem, handleRemove, openAddToSupplier, openSchedule]);
 
-    return sections;
+  const handleAddToSupplier = useCallback(async () => {
+    if (!addToItem || !selectedSupplierId || isAddingToSupplier) return;
+    setIsAddingToSupplier(true);
+    setSupplierError(null);
+    try {
+      await moveOrderLaterItemToSupplierDraft(
+        addToItem.id,
+        selectedSupplierId,
+        locationGroupFor(addToItem),
+        {
+          locationId: addToItem.locationId,
+          locationName: addToItem.locationName,
+        },
+      );
+      setAddToItemId(null);
+      await overview.refresh();
+      void triggerNotificationHaptic(NotificationFeedbackType.Success);
+      showStudioToast(`${addToItem.itemName} added to supplier`);
+    } catch (error) {
+      setSupplierError(
+        error instanceof Error ? error.message : 'Unable to add this item.',
+      );
+    } finally {
+      setIsAddingToSupplier(false);
+    }
   }, [
-    getHasMultiEmployeeBreakdown,
-    getUnitConflictRows,
-    handleMoveBackToPrimarySupplier,
-    handleMoveToSecondarySupplier,
-    handleOpenItemNoteEditor,
-    handleRemoveSupplierItem,
-    overflowItem,
-    resolveSupplierName,
-    supplierPickerOptions,
+    addToItem,
+    isAddingToSupplier,
+    moveOrderLaterItemToSupplierDraft,
+    overview,
+    selectedSupplierId,
   ]);
 
-  const handleItemOverflowMenu = useCallback((item: LocationGroupedItem) => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setOverflowItem(item);
-  }, []);
-
-  const handleOrderLaterFromFulfillment = useCallback(
-    async (scheduledAtIso: string) => {
-      const item = orderLaterScheduleItem;
-      if (!item || !user?.id) return;
-
-      const unitLabel = item.unitType === 'pack' ? item.inventoryItem.pack_unit : item.inventoryItem.base_unit;
-
-      const createdOrderLaterItem = await createOrderLaterItem({
-        createdBy: user.id,
-        scheduledAt: scheduledAtIso,
-        quantity: Math.max(0, item.isRemainingMode ? item.remainingReportedTotal : item.totalQuantity),
-        itemId: item.inventoryItem.id,
-        itemName: item.inventoryItem.name,
-        unit: unitLabel,
-        locationId: item.locationBreakdown[0]?.locationId ?? null,
-        locationName: item.locationBreakdown[0]?.locationName ?? null,
-        notes: item.notes.join('; ') || null,
-        suggestedSupplierId: item.effectiveSupplierId,
-        preferredSupplierId: null,
-        preferredLocationGroup: item.locationGroup,
-        sourceOrderItemIds: item.sourceOrderItemIds,
-      });
-
-      if (item.sourceOrderItemIds.length > 0) {
-        const moved = await markOrderItemsStatus(item.sourceOrderItemIds, 'order_later');
-        if (!moved) {
-          if (createdOrderLaterItem?.id) {
-            await removeOrderLaterItem(createdOrderLaterItem.id);
-          }
-          await fetchPendingFulfillmentOrders(managerLocationIds);
-          Alert.alert(
-            'Already Updated',
-            'These items were already changed on another device. The list has been refreshed.'
-          );
-          return;
-        }
-      }
-
-      if (Platform.OS !== 'web') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-
-      setOrderLaterScheduleItem(null);
-      await fetchPendingFulfillmentOrders(managerLocationIds);
-      Alert.alert('Moved to Order Later', `${item.inventoryItem.name} moved to order later.`);
-    },
-    [
-      createOrderLaterItem,
-      fetchPendingFulfillmentOrders,
-      markOrderItemsStatus,
-      managerLocationIds,
-      orderLaterScheduleItem,
-      removeOrderLaterItem,
-      user?.id,
-    ]
+  const sendableSupplierCount = useMemo(
+    () => overview.groups.filter(isSendableManagerSupplier).length,
+    [overview.groups],
   );
 
-  const buildSupplierPreviewProps = useCallback(
-    (item: LocationGroupedItem): FulfillmentSupplierPreviewItem => {
-      const people = getItemPeopleNames(item, { includeOrderLater: true });
-      const unitLabel = item.unitType === 'pack' ? item.inventoryItem.pack_unit : item.inventoryItem.base_unit;
-      const quantityValue = item.isRemainingMode ? item.remainingReportedTotal : item.totalQuantity;
-      const hasMenuActions =
-        item.sourceOrderItemIds.length > 0 ||
-        (item.secondarySupplierId && !item.isOverridden) ||
-        item.isOverridden;
-
-      return {
-        id: item.key,
-        name: item.inventoryItem.name,
-        quantityLabel: `${formatQuantity(quantityValue)} ${unitLabel}`,
-        summaryLabel:
-          people.length > 0
-            ? `${people
-                .slice(0, 2)
-                .map((person) => (person === 'Order Later' ? person : getFirstName(person)))
-                .join(', ')}${people.length > 2 ? ` +${people.length - 2}` : ''}`
-            : item.locationBreakdown.length > 1
-              ? item.locationBreakdown
-                  .slice(0, 2)
-                  .map((location) => location.shortCode)
-                  .join(' • ')
-              : null,
-        badgeToneIndex: (people[0] || item.locationBreakdown[0]?.shortCode || item.key)
-          .split('')
-          .reduce((total, character) => total + character.charCodeAt(0), 0),
-        badgeLabel: people[0] ? (people[0].trim()[0] || '').toUpperCase() : item.sourceOrderItemIds.length === 0 ? 'OL' : null,
-        badgeOverflowCount: Math.max(0, people.length - 1),
-        isRemaining: item.isRemainingMode,
-        onPress: hasMenuActions ? () => handleItemOverflowMenu(item) : null,
-      };
-    },
-    [getItemPeopleNames, handleItemOverflowMenu]
-  );
-
-  const toggleOrderLater = useCallback(() => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    animateNextLayout();
-    setOrderLaterExpanded((current) => !current);
-  }, []);
-
-  const showInitialLoading = !dataReady && supplierCardData.length === 0 && orderLaterQueue.length === 0;
-  const showErrorState = dataReady && loadError && supplierCardData.length === 0;
+  const headerSubtitle = `${overview.supplierCount} ${overview.supplierCount === 1 ? 'supplier' : 'suppliers'} · ${overview.totalItems} items to send`;
+  const bottomClearance = getTabBarClearance(insets.bottom);
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: glassColors.background }}
-      edges={['top', 'left', 'right']}
-    >
-      <ManagerScaleContainer>
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{
-            paddingHorizontal: glassSpacing.screen,
-            paddingTop: ds.spacing(12),
-            paddingBottom: glassTabBarHeight + ds.spacing(20),
-          }}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary[500]} />
-          }
-        >
-          <FulfillmentHeader onHistoryPress={() => router.push('/(manager)/fulfillment-history')} />
-
-          {pendingOrderNotes.length > 0 ? (
-            <GlassSurface
-              intensity="subtle"
-              style={{
-                borderRadius: glassRadii.surface,
-                paddingHorizontal: ds.spacing(16),
-                paddingVertical: ds.spacing(12),
-                marginTop: ds.spacing(8),
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: ds.spacing(6) }}>
-                <Ionicons
-                  name="document-text-outline"
-                  size={ds.icon(16)}
-                  color={glassColors.accent}
-                  style={{ marginRight: ds.spacing(6) }}
-                />
-                <Text
-                  style={{
-                    fontSize: ds.fontSize(typeScale.secondary),
-                    fontWeight: weight.bold,
-                    letterSpacing: 0.6,
-                    textTransform: 'uppercase',
-                    color: glassColors.textSecondary,
-                  }}
-                >
-                  Order notes
-                </Text>
-              </View>
-              {pendingOrderNotes.map((entry, index) => (
-                <View
-                  key={entry.orderId}
-                  style={{
-                    paddingVertical: ds.spacing(6),
-                    borderTopWidth: index === 0 ? 0 : glassHairlineWidth,
-                    borderTopColor: glassColors.divider,
-                  }}
-                >
-                  <Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.bold, color: glassColors.textPrimary }}>
-                    {entry.employeeName}
-                    {entry.locationShortCode ? ` · ${entry.locationShortCode}` : ''}
-                  </Text>
-                  <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: glassColors.textPrimary, marginTop: 1 }}>
-                    {entry.note}
-                  </Text>
-                </View>
-              ))}
-            </GlassSurface>
-          ) : null}
-
-          {/* Employee reminders banner removed by user request */}
-          <View style={{ marginTop: ds.spacing(8) }}>
-            <FulfillmentSuppliersCard
-              count={supplierCardData.length}
-              expanded={suppliersExpanded}
-              onToggle={() => setSuppliersExpanded((p) => !p)}
-              disabled={!showInitialLoading && !showErrorState && supplierCardData.length === 0}
-            >
-              {showInitialLoading ? (
-                <View style={{ gap: ds.spacing(16), marginTop: ds.spacing(4) }}>
-                  {[1, 2, 3].map((i) => (
-                    <GlassSurface
-                      key={i}
-                      intensity="subtle"
-                      style={{
-                        borderRadius: glassRadii.surface,
-                        paddingHorizontal: ds.spacing(20),
-                        paddingVertical: ds.spacing(20),
-                        opacity: 1 - (i - 1) * 0.2,
-                      }}
-                    >
-                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <View style={{ flex: 1 }}>
-                          <View
-                            style={{
-                              width: 120 - i * 16,
-                              height: 14,
-                              borderRadius: radius.control,
-                              backgroundColor: glassColors.mediumFill,
-                            }}
-                          />
-                          <View
-                            style={{
-                              width: 80,
-                              height: 10,
-                              borderRadius: radius.pill,
-                              backgroundColor: glassColors.subtleFill,
-                              marginTop: ds.spacing(8),
-                            }}
-                          />
-                        </View>
-                        <View
-                          style={{
-                            width: 70,
-                            height: 32,
-                            borderRadius: glassRadii.button,
-                            backgroundColor: glassColors.subtleFill,
-                          }}
-                        />
-                      </View>
-                    </GlassSurface>
-                  ))}
-                  <View style={{ alignItems: 'center', paddingTop: ds.spacing(6) }}>
-                    <Loading size="inline" color={glassColors.accent} label="Loading suppliers" />
-                  </View>
-                </View>
-              ) : showErrorState ? (
-                <GlassSurface
-                  intensity="subtle"
-                  style={{
-                    borderRadius: glassRadii.surface,
-                    paddingHorizontal: ds.spacing(20),
-                    paddingVertical: ds.spacing(28),
-                    alignItems: 'center',
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: radius.sheet,
-                      backgroundColor: color.tint,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginBottom: ds.spacing(12),
-                    }}
-                  >
-                    <Ionicons name="cloud-offline-outline" size={22} color={glassColors.accent} />
-                  </View>
-                  <Text
-                    style={{
-                      color: glassColors.textPrimary,
-                      fontSize: ds.fontSize(typeScale.body),
-                      fontWeight: weight.bold,
-                      textAlign: 'center',
-                    }}
-                  >
-                    Unable to load suppliers
-                  </Text>
-                  <Text
-                    style={{
-                      color: glassColors.textSecondary,
-                      fontSize: ds.fontSize(typeScale.secondary),
-                      lineHeight: ds.fontSize(typeScale.title),
-                      marginTop: ds.spacing(6),
-                      textAlign: 'center',
-                    }}
-                  >
-                    {loadError || 'Something went wrong. Pull down or tap below to retry.'}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={onRefresh}
-                    activeOpacity={0.86}
-                    style={{
-                      backgroundColor: glassColors.accent,
-                      borderRadius: glassRadii.button,
-                      paddingHorizontal: ds.spacing(20),
-                      paddingVertical: ds.spacing(10),
-                      marginTop: ds.spacing(16),
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: glassColors.textOnPrimary,
-                        fontSize: ds.fontSize(typeScale.body),
-                        fontWeight: weight.bold,
-                      }}
-                    >
-                      Retry
-                    </Text>
-                  </TouchableOpacity>
-                </GlassSurface>
-              ) : (
-                <>
-                {supplierCardData.length > 0 ? (
-                  <TouchableOpacity
-                    onPress={handleSendAll}
-                    activeOpacity={0.82}
-                    style={{
-                      minHeight: Math.max(46, ds.buttonH - 4),
-                      borderRadius: glassRadii.button,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexDirection: 'row',
-                      backgroundColor: glassColors.accent,
-                      marginBottom: ds.spacing(16),
-                    }}
-                  >
-                    <Ionicons
-                      name="paper-plane-outline"
-                      size={ds.icon(17)}
-                      color={glassColors.textOnPrimary}
-                    />
-                    <Text
-                      style={{
-                        marginLeft: ds.spacing(8),
-                        fontSize: ds.fontSize(typeScale.body),
-                        fontWeight: weight.bold,
-                        color: glassColors.textOnPrimary,
-                      }}
-                    >
-                      Send All ({supplierCardData.length} supplier{supplierCardData.length === 1 ? '' : 's'})
-                    </Text>
-                  </TouchableOpacity>
-                ) : null}
-                {supplierCardData.map((entry, index) => (
-                  <View 
-                    key={entry.group.supplierId} 
-                    style={{ 
-                      marginBottom: index === supplierCardData.length - 1 ? 0 : ds.spacing(20) 
-                    }}
-                  >
-                    <FulfillmentSupplierCard
-                      name={entry.group.supplierName}
-                      statusLabel={entry.statusLabel}
-                      employees={entry.employees}
-                      employeeSummary={entry.employeeSummary}
-                      summaryStats={`${entry.supplierItemCount} item${entry.supplierItemCount === 1 ? '' : 's'} • ${entry.remainingCount} remaining`}
-                      items={entry.previewItems.map(buildSupplierPreviewProps)}
-                      isExpanded={expandedSupplierId === entry.group.supplierId}
-                      orderLabel={`Order ${entry.supplierItemCount} item${entry.supplierItemCount === 1 ? '' : 's'}`}
-                      onToggle={() => toggleSupplier(entry.group.supplierId)}
-                      onOrderPress={() => handleSend(entry.group)}
-                    />
-                  </View>
-                ))}
-                </>
-              )}
-            </FulfillmentSuppliersCard>
-          </View>
-
-          <View style={{ marginTop: ds.spacing(20), marginBottom: ds.spacing(24) }}>
-            <FulfillmentOrderLaterCard
-              count={orderLaterQueue.length}
-              expanded={orderLaterExpanded}
-              onToggle={toggleOrderLater}
-              disabled={orderLaterQueue.length === 0}
-            >
-              {orderLaterQueue.length > 0 ? (
-                orderLaterQueue.map((item, index) => (
-                  <View
-                    key={item.id}
-                    style={{
-                      paddingTop: ds.spacing(12),
-                      paddingBottom: ds.spacing(12),
-                      borderBottomWidth: index < orderLaterQueue.length - 1 ? glassHairlineWidth : 0,
-                      borderBottomColor: glassColors.divider,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: glassColors.textPrimary,
-                        fontSize: ds.fontSize(typeScale.body),
-                        fontWeight: weight.bold,
-                      }}
-                    >
-                      {item.itemName}
-                    </Text>
-                    <Text
-                      style={{
-                        color: glassColors.textSecondary,
-                        fontSize: ds.fontSize(typeScale.secondary),
-                        marginTop: ds.spacing(4),
-                      }}
-                    >
-                      {item.locationName || 'Unassigned location'} • {item.unit}
-                    </Text>
-                    {item.notes ? (
-                      <Text
-                        style={{
-                          color: glassColors.infoText,
-                          fontSize: ds.fontSize(typeScale.secondary),
-                          marginTop: ds.spacing(4),
-                        }}
-                      >
-                        Note: {item.notes}
-                      </Text>
-                    ) : null}
-                    <Text
-                      style={{
-                        color: glassColors.warningText,
-                        fontSize: ds.fontSize(typeScale.secondary),
-                        marginTop: ds.spacing(6),
-                      }}
-                    >
-                      Order on {formatScheduleLabel(item.scheduledAt)}
-                    </Text>
-
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        flexWrap: 'wrap',
-                        marginTop: ds.spacing(12),
-                      }}
-                    >
-                      <TouchableOpacity
-                        onPress={() => openAddToModal(item.id)}
-                        activeOpacity={0.86}
-                        style={{
-                          backgroundColor: colors.primary[500],
-                          borderRadius: glassRadii.button,
-                          paddingHorizontal: ds.spacing(12),
-                          paddingVertical: ds.spacing(9),
-                          marginRight: ds.spacing(8),
-                          marginBottom: ds.spacing(8),
-                        }}
-                      >
-                        <Text
-                          style={{
-                            color: glassColors.textOnPrimary,
-                            fontSize: ds.fontSize(typeScale.secondary),
-                            fontWeight: weight.bold,
-                          }}
-                        >
-                          Add to...
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        onPress={() => setScheduleEditItemId(item.id)}
-                        activeOpacity={0.86}
-                        style={{
-                          backgroundColor: glassColors.mediumFill,
-                          borderRadius: glassRadii.button,
-                          paddingHorizontal: ds.spacing(12),
-                          paddingVertical: ds.spacing(9),
-                          marginRight: ds.spacing(8),
-                          marginBottom: ds.spacing(8),
-                        }}
-                      >
-                        <Text
-                          style={{
-                            color: glassColors.textPrimary,
-                            fontSize: ds.fontSize(typeScale.secondary),
-                            fontWeight: weight.bold,
-                          }}
-                        >
-                          Edit schedule
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        onPress={() => handleRemoveOrderLater(item.id, item.itemName)}
-                        activeOpacity={0.86}
-                        style={{
-                          backgroundColor: color.tint,
-                          borderWidth: glassHairlineWidth,
-                          borderColor: glassColors.accentBorder,
-                          borderRadius: glassRadii.button,
-                          paddingHorizontal: ds.spacing(12),
-                          paddingVertical: ds.spacing(9),
-                          marginBottom: ds.spacing(8),
-                        }}
-                      >
-                        <Text
-                          style={{
-                            color: glassColors.accent,
-                            fontSize: ds.fontSize(typeScale.secondary),
-                            fontWeight: weight.bold,
-                          }}
-                        >
-                          Remove
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ))
-              ) : null}
-            </FulfillmentOrderLaterCard>
-          </View>
-        </ScrollView>
-
-        <ItemActionSheet
-          visible={Boolean(overflowItem)}
-          title="Item Actions"
-          subtitle={overflowItem ? overflowItem.inventoryItem.name : undefined}
-          sections={overflowActionSections}
-          onClose={() => setOverflowItem(null)}
-        />
-
-        <Sheet
-          visible={Boolean(breakdownItem)}
-          title="Employee Breakdown"
-          onClose={() => setBreakdownItem(null)}
-        >
-          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
-            {breakdownItem?.inventoryItem.name || ''}
-          </Text>
-
-          <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
-            {breakdownRows.length === 0 ? (
-              <View className="border px-4 py-5 items-center" style={{ borderRadius: radius.control, borderColor: color.hairlineStrong, backgroundColor: color.page }}>
-                <Text className="text-center" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>
-                  No per-employee details are available for this line.
-                </Text>
-              </View>
-            ) : (
-              breakdownRows.map((row, index) => (
-                <View
-                  key={`${row.name}-${index}`}
-                  className={`py-3 ${index < breakdownRows.length - 1 ? 'border-b' : ''}`} style={{ borderColor: index < breakdownRows.length - 1 ? color.hairline : undefined }}
-                >
-                  <View className="flex-row items-center justify-between">
-                    <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>{row.name}</Text>
-                    <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>
-                      {row.quantity} {breakdownItem?.unitType === 'pack'
-                        ? breakdownItem?.inventoryItem.pack_unit
-                        : breakdownItem?.inventoryItem.base_unit}
-                    </Text>
-                  </View>
-                  {row.locations.length > 0 && (
-                    <Text className="mt-1" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
-                      {row.locations.join(' • ')}
-                    </Text>
-                  )}
-                </View>
-              ))
-            )}
-          </ScrollView>
-        </Sheet>
-
-        <Sheet
-          visible={Boolean(noteEditorItem)}
-          title={noteEditorItem?.notes.length ? 'Edit Note' : 'Add Note'}
-          onClose={() => {
-            setNoteEditorItem(null);
-            setNoteDraft('');
-          }}
-          primary={{ label: 'Save Note', onPress: handleSaveItemNote, loading: isSavingNote }}
-        >
-          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
-            {noteEditorItem?.inventoryItem.name || ''}
-          </Text>
-
-          <TextInput
-            value={noteDraft}
-            onChangeText={setNoteDraft}
-            placeholder="Add supplier note..."
-            placeholderTextColor={colors.gray[400]}
-            multiline
-            maxLength={240}
-            textAlignVertical="top"
-            className="min-h-[110px] border px-3 py-3" style={{ borderRadius: radius.control, borderColor: color.hairlineStrong, backgroundColor: color.page, fontSize: ds.fontSize(typeScale.body), color: color.ink }}
-          />
-          <Text className="mt-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}>{noteDraft.length}/240</Text>
-
-          <Button
-            variant="secondary"
-            label="Cancel"
-            onPress={() => {
-              setNoteEditorItem(null);
-              setNoteDraft('');
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: color.page }}>
+      <ScreenHeader
+        title="Fulfillment"
+        subtitle={headerSubtitle}
+        includeSafeArea={false}
+        right={
+          <LocationPill
+            location={location}
+            locations={locations}
+            onSelect={(nextLocation) => {
+              void triggerImpactHaptic(ImpactFeedbackStyle.Light);
+              setLocation(nextLocation);
             }}
           />
-        </Sheet>
+        }
+      />
 
-        <SupplierPickerBottomSheet
-          visible={Boolean(supplierPickerItem)}
-          itemName={supplierPickerItem?.inventoryItem.name}
-          suppliers={supplierPickerOptions}
-          currentSupplierId={supplierPickerItem?.effectiveSupplierId ?? null}
-          isMoving={isMovingSupplier}
-          onSelect={(targetSupplierId) => {
-            void handleSupplierPickerSelect(targetSupplierId);
-          }}
-          onClose={() => {
-            if (!isMovingSupplier) {
-              setSupplierPickerItem(null);
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: ds.spacing(16),
+          paddingTop: ds.spacing(2),
+          paddingBottom: bottomClearance,
+        }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={color.accent}
+          />
+        }
+      >
+        <SectionHeading label="Order notes" count={overview.totalNotes} />
+        <Card flush>
+          {overview.notes.length > 0 ? (
+            overview.notes.map((note, index) => (
+              <View
+                key={note.id}
+                style={{
+                  minHeight: ds.spacing(60),
+                  justifyContent: 'center',
+                  paddingHorizontal: ds.spacing(14),
+                  paddingVertical: ds.spacing(10),
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: ds.fontSize(typeScale.body),
+                    fontWeight: weight.semibold,
+                    color: color.ink,
+                  }}
+                >
+                  {note.author} · {note.shortCode}
+                </Text>
+                <Text
+                  style={{
+                    marginTop: ds.spacing(2),
+                    fontSize: ds.fontSize(typeScale.secondary),
+                    color: color.ink2,
+                  }}
+                >
+                  {note.text}
+                </Text>
+                {index < overview.notes.length - 1 ? (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      left: ds.spacing(14),
+                      right: 0,
+                      bottom: 0,
+                      height: 1,
+                      backgroundColor: color.hairline,
+                    }}
+                  />
+                ) : null}
+              </View>
+            ))
+          ) : (
+            <View style={{ padding: ds.spacing(14) }}>
+              <Text
+                style={{
+                  fontSize: ds.fontSize(typeScale.secondary),
+                  color: color.ink2,
+                }}
+              >
+                No order notes.
+              </Text>
+            </View>
+          )}
+        </Card>
+
+        <SectionHeading label="Suppliers" count={overview.supplierCount} />
+        {overview.isLoading && overview.groups.length === 0 ? (
+          <Card>
+            <Loading label="Loading suppliers" />
+          </Card>
+        ) : overview.error && overview.groups.length === 0 ? (
+          <EmptyState
+            icon="cloud-offline-outline"
+            tone="alert"
+            title="Unable to load suppliers"
+            body={overview.error}
+            action={{ label: 'Retry', onPress: () => void overview.refresh() }}
+          />
+        ) : overview.groups.length > 0 ? (
+          <Card flush>
+            {overview.groups.map((group, index) => (
+              <SupplierRow
+                key={group.supplierId}
+                group={group}
+                last={index === overview.groups.length - 1}
+                onPress={() => handleOpenSupplier(group)}
+              />
+            ))}
+          </Card>
+        ) : (
+          <Card>
+            <Text
+              style={{
+                fontSize: ds.fontSize(typeScale.secondary),
+                color: color.ink2,
+                textAlign: 'center',
+              }}
+            >
+              No supplier orders are waiting.
+            </Text>
+          </Card>
+        )}
+
+        {overview.groups.length > 0 ? (
+          <Button
+            label={`Send all · ${sendableSupplierCount} ${sendableSupplierCount === 1 ? 'supplier' : 'suppliers'}`}
+            icon="paper-plane-outline"
+            onPress={handleSendAll}
+            disabled={sendableSupplierCount === 0}
+            accessibilityHint={
+              sendableSupplierCount < overview.supplierCount
+                ? 'Sends suppliers that are configured. Resolve the other supplier rows separately.'
+                : undefined
             }
-          }}
-        />
+            style={{ marginTop: ds.spacing(12) }}
+          />
+        ) : null}
 
-        <OrderLaterAddToSheet
-          visible={Boolean(addToTargetItem)}
-          itemName={addToTargetItem?.itemName}
-          suppliers={addToSupplierOptions}
-          selectedSupplierId={addToSupplier || null}
-          supplierError={addToSupplierError}
-          isSubmitting={isAddingToSupplierDraft}
-          onSupplierChange={handleAddToSupplierChange}
-          onConfirm={() => { void handleConfirmAddTo(); }}
-          onClose={closeAddToModal}
-        />
+        <SectionHeading label="Order later" count={overview.orderLater.length} />
+        <Card flush>
+          {overview.orderLater.length > 0 ? (
+            overview.orderLater.map((item, index) => (
+              <OrderLaterRow
+                key={item.id}
+                item={item}
+                last={index === overview.orderLater.length - 1}
+                onEdit={() => setActionsItemId(item.id)}
+              />
+            ))
+          ) : (
+            <View style={{ padding: ds.spacing(14) }}>
+              <Text
+                style={{
+                  fontSize: ds.fontSize(typeScale.secondary),
+                  color: color.ink2,
+                }}
+              >
+                Nothing scheduled.
+              </Text>
+            </View>
+          )}
+        </Card>
+      </ScrollView>
 
-        <OrderLaterScheduleModal
-          visible={Boolean(scheduleEditItem)}
-          title="Edit Order Later"
-          subtitle={
-            scheduleEditItem
-              ? `Update reminder for ${scheduleEditItem.itemName}.`
-              : 'Update order-later reminder.'
-          }
-          confirmLabel="Save Schedule"
-          initialScheduledAt={scheduleEditItem?.scheduledAt}
-          onClose={() => setScheduleEditItemId(null)}
-          onConfirm={async (scheduledAtIso) => {
-            if (!scheduleEditItem) return;
-            await updateOrderLaterItemSchedule(scheduleEditItem.id, scheduledAtIso);
-            if (Platform.OS !== 'web') {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            }
-            Alert.alert(
-              'Schedule Updated',
-              `${scheduleEditItem.itemName} will remind on ${formatScheduleLabel(scheduledAtIso)}.`
-            );
-          }}
-        />
+      <ItemActionSheet
+        visible={actionsItem !== null}
+        title="Order Later"
+        subtitle={actionsItem?.itemName}
+        sections={actionSections}
+        onClose={() => setActionsItemId(null)}
+      />
 
-        <OrderLaterScheduleModal
-          visible={Boolean(orderLaterScheduleItem)}
-          title="Move to Order Later"
-          subtitle={
-            orderLaterScheduleItem
-              ? `Schedule a reminder for ${orderLaterScheduleItem.inventoryItem.name}.`
-              : 'Schedule an order-later reminder.'
-          }
-          confirmLabel="Move to Order Later"
-          onClose={() => setOrderLaterScheduleItem(null)}
-          onConfirm={handleOrderLaterFromFulfillment}
-        />
-      </ManagerScaleContainer>
+      <OrderLaterAddToSheet
+        visible={addToItem !== null}
+        itemName={addToItem?.itemName}
+        suppliers={supplierOptions}
+        selectedSupplierId={selectedSupplierId}
+        supplierError={supplierError}
+        isSubmitting={isAddingToSupplier}
+        onSupplierChange={(supplierId) => {
+          setSelectedSupplierId(supplierId);
+          setSupplierError(null);
+        }}
+        onConfirm={() => void handleAddToSupplier()}
+        onClose={() => {
+          if (!isAddingToSupplier) setAddToItemId(null);
+        }}
+      />
+
+      <OrderLaterScheduleModal
+        visible={scheduleItem !== null}
+        title="Edit schedule"
+        initialScheduledAt={scheduleItem?.scheduledAt}
+        onClose={() => setScheduleItemId(null)}
+        onConfirm={async (scheduledAt) => {
+          if (!scheduleItem) return;
+          await updateOrderLaterItemSchedule(scheduleItem.id, scheduledAt);
+          await overview.refresh();
+          void triggerNotificationHaptic(NotificationFeedbackType.Success);
+          showStudioToast(`${scheduleItem.itemName} schedule updated`);
+        }}
+      />
     </SafeAreaView>
   );
 }

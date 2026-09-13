@@ -1,22 +1,14 @@
 import React, { useCallback } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Button, Sheet } from '@/components/ui';
+import { Text, TouchableOpacity, View } from 'react-native';
+import { Card, SectionLabel, Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerImpactHaptic } from '@/lib/haptics';
 import { color, radius, typeScale, weight } from '@/theme/tokens';
 import { formatQuantity, type SelectionLine } from '../checklistSelection';
 
-/**
- * Review order sheet: compact one-line rows (item name left, "qty unit"
- * right), the note card when a note exists, and "Send N items". The subtitle
- * flips between manager-review and direct-send wording per the user's send
- * mode. Quantities are adjusted on the list or quantity card, not here.
- */
-
 interface ConfirmOrderSheetProps {
   visible: boolean;
-  /** 'review' routes to manager review; 'direct' continues to the per-supplier send queue. */
+  /** `review` routes to manager review; `direct` continues to the supplier queue. */
   mode: 'review' | 'direct';
   lines: SelectionLine[];
   unmatchedNames: string[];
@@ -27,7 +19,6 @@ interface ConfirmOrderSheetProps {
   onConfirm: () => void;
   onClose: () => void;
 }
-
 export function ConfirmOrderSheet({
   visible,
   mode,
@@ -43,8 +34,7 @@ export function ConfirmOrderSheet({
   const ds = useScaledStyles();
 
   const handleClose = useCallback(() => {
-    if (isSending) return;
-    onClose();
+    if (!isSending) onClose();
   }, [isSending, onClose]);
 
   const handleConfirm = useCallback(() => {
@@ -54,130 +44,136 @@ export function ConfirmOrderSheet({
 
   const sendableCount = lines.length;
   const trimmedNote = note.trim();
+  const itemLabel = sendableCount === 1 ? '1 item' : `${sendableCount} items`;
 
   return (
-    <Sheet visible={visible} title="Review order" onClose={handleClose}>
-      <Text
-        style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginBottom: ds.spacing(12) }}
-      >
-        {sendableCount === 1 ? '1 item' : `${sendableCount} items`} ·{' '}
-        {mode === 'direct' ? 'sends straight to your suppliers' : 'goes to manager review'}
-      </Text>
-
-      <View
-        style={{
-          backgroundColor: color.card,
-          borderWidth: 1,
-          borderColor: color.hairline,
-          borderRadius: radius.card,
-          paddingHorizontal: ds.spacing(16),
-          marginBottom: ds.spacing(12),
-        }}
-      >
-        <ScrollView
-          style={{ maxHeight: ds.spacing(300) }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {lines.map((line, index) => (
-            <View
-              key={line.key}
+    <Sheet
+      visible={visible}
+      title="Review order"
+      subtitle={`${itemLabel} · ${
+        mode === 'direct' ? 'sends straight to your suppliers' : 'goes to manager review'
+      }`}
+      onClose={handleClose}
+      dismissible={!isSending}
+      expandable
+      primary={{
+        label:
+          mode === 'direct'
+            ? 'Continue to send'
+            : sendableCount === 1
+              ? 'Send 1 item'
+              : `Send ${sendableCount} items`,
+        onPress: handleConfirm,
+        loading: isSending,
+        disabled: sendableCount === 0,
+      }}
+    >
+      <Card flush>
+        {lines.map((line, index) => (
+          <View
+            key={line.key}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: ds.spacing(10),
+              paddingHorizontal: ds.spacing(14),
+              paddingVertical: ds.spacing(12),
+              borderBottomWidth: index === lines.length - 1 ? 0 : 1,
+              borderBottomColor: color.hairline,
+            }}
+          >
+            <Text
+              numberOfLines={1}
               style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: ds.spacing(10),
-                minHeight: 40,
-                borderBottomWidth: index === lines.length - 1 ? 0 : 1,
-                borderBottomColor: color.hairline,
+                flex: 1,
+                minWidth: 0,
+                fontSize: ds.fontSize(typeScale.itemDense),
+                fontWeight: weight.regular,
+                color: color.ink,
               }}
             >
-              <Text
-                numberOfLines={1}
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                  fontSize: ds.fontSize(typeScale.body),
-                  fontWeight: weight.semibold,
-                  color: color.ink,
-                }}
-              >
-                {line.itemName}
-              </Text>
-              <Text
-                style={{
-                  fontSize: ds.fontSize(typeScale.secondary),
-                  fontWeight: weight.semibold,
-                  color: color.ink2,
-                }}
-                numberOfLines={1}
-              >
-                {formatQuantity(line.quantity)} {line.unit}
-              </Text>
-            </View>
-          ))}
+              {line.itemName}
+            </Text>
+            <Text
+              numberOfLines={1}
+              style={{
+                fontSize: ds.fontSize(typeScale.itemDense),
+                fontWeight: weight.semibold,
+                color: color.ink,
+              }}
+            >
+              {formatQuantity(line.quantity)} {line.unit}
+            </Text>
+          </View>
+        ))}
+        {lines.length === 0 ? (
+          <Text
+            style={{
+              paddingHorizontal: ds.spacing(14),
+              paddingVertical: ds.spacing(16),
+              fontSize: ds.fontSize(typeScale.body),
+              color: color.ink2,
+              textAlign: 'center',
+            }}
+          >
+            No items left to send.
+          </Text>
+        ) : null}
+      </Card>
 
-          {lines.length === 0 ? (
+      <View>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <SectionLabel>Note</SectionLabel>
+          <TouchableOpacity
+            onPress={onEditNote}
+            accessibilityRole="button"
+            accessibilityLabel={`${trimmedNote ? 'Edit' : 'Add'} order note`}
+            hitSlop={ds.spacing(8)}
+            style={{ paddingTop: ds.spacing(14), paddingBottom: ds.spacing(4) }}
+          >
             <Text
               style={{
-                paddingVertical: ds.spacing(16),
-                fontSize: ds.fontSize(typeScale.body),
-                color: color.ink2,
-                textAlign: 'center',
+                fontSize: ds.fontSize(typeScale.caption),
+                fontWeight: weight.semibold,
+                color: color.accent,
               }}
             >
-              No items left to send.
+              {trimmedNote ? 'Edit' : 'Add'}
             </Text>
-          ) : null}
-        </ScrollView>
-      </View>
-
-      {trimmedNote ? (
+          </TouchableOpacity>
+        </View>
         <TouchableOpacity
           onPress={onEditNote}
           activeOpacity={0.8}
           accessibilityRole="button"
-          accessibilityLabel="Edit the order note"
-          style={{
-            flexDirection: 'row',
-            alignItems: 'flex-start',
-            gap: ds.spacing(9),
-            backgroundColor: color.card,
-            borderWidth: 1,
-            borderColor: color.hairline,
-            borderRadius: radius.card,
-            paddingHorizontal: ds.spacing(16),
-            paddingVertical: ds.spacing(12),
-            marginBottom: ds.spacing(12),
-          }}
+          accessibilityLabel={`${trimmedNote ? 'Edit' : 'Add'} order note`}
         >
-          <Ionicons name="create-outline" size={ds.icon(16)} color={color.accent} />
-          <View style={{ flex: 1, minWidth: 0 }}>
+          <Card>
             <Text
               style={{
-                fontSize: ds.fontSize(typeScale.caption),
-                fontWeight: '700',
-                letterSpacing: 0.5,
-                color: color.ink2,
-                marginBottom: 1,
+                fontSize: ds.fontSize(typeScale.itemDense),
+                color: trimmedNote ? color.ink : color.ink3,
               }}
             >
-              NOTE
+              {trimmedNote || 'No note. The manager sees only the items.'}
             </Text>
-            <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink }} numberOfLines={4}>
-              {trimmedNote}
-            </Text>
-          </View>
+          </Card>
         </TouchableOpacity>
-      ) : null}
+      </View>
 
       {unmatchedNames.length > 0 ? (
         <View
           style={{
-            backgroundColor: color.tint,
+            backgroundColor: color.alertBg,
             borderRadius: radius.control,
             paddingHorizontal: ds.spacing(12),
             paddingVertical: ds.spacing(9),
-            marginBottom: ds.spacing(12),
           }}
         >
           <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.alert }}>
@@ -189,31 +185,17 @@ export function ConfirmOrderSheet({
       {sendError ? (
         <View
           style={{
-            backgroundColor: color.tint,
+            backgroundColor: color.alertBg,
             borderRadius: radius.control,
             paddingHorizontal: ds.spacing(12),
             paddingVertical: ds.spacing(9),
-            marginBottom: ds.spacing(12),
           }}
         >
-          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.alert }}>{sendError}</Text>
+          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.alert }}>
+            {sendError}
+          </Text>
         </View>
       ) : null}
-
-      <Button
-        label={
-          mode === 'direct'
-            ? 'Continue to send'
-            : sendableCount === 1
-              ? 'Send 1 item'
-              : `Send ${sendableCount} items`
-        }
-        onPress={handleConfirm}
-        loading={isSending}
-        disabled={sendableCount === 0}
-        fullWidth
-        accessibilityHint="Confirms and sends this order"
-      />
     </Sheet>
   );
 }

@@ -7,23 +7,29 @@ import {
   TextInput,
   RefreshControl,
   ScrollView,
-  Alert,
   Platform,
   KeyboardAvoidingView,
   Animated,
+  useWindowDimensions,
 } from 'react-native';
-import { FullScreenSheet } from '@/components/ui/FullScreenSheet';
+import type { ReactNode } from 'react';
+import { BottomSheetShell } from '@/components/BottomSheetShell';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useShallow } from 'zustand/react/shallow';
-import { useAuthStore, useInventoryStore, useOrderStore, useSettingsStore } from '@/store';
+import { useAuthStore, useInventoryStore } from '@/store';
 import {
   InventoryItem,
  KNOWN_ITEM_CATEGORIES, KNOWN_SUPPLIER_CATEGORIES } from '@/types';
-import { getCategoryLabel, getSupplierCategoryLabel, categoryColors, colors } from '@/constants';
-import { Loading } from '@/components/ui';
+import { getCategoryLabel, getSupplierCategoryLabel } from '@/constants';
+import { Loading, ListRow, ScreenHeader, getTabBarClearance } from '@/components/ui';
+import { showNotice } from '@/components/ui/NoticeSheet';
+import { useResolvedActiveLocation } from '@/hooks/useResolvedActiveLocation';
+import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
+import { getOrGenerateMyChecklist, type ChecklistItem } from '@/services/orderChecklist';
+import { locationGroupForLocation, formatQuantity } from '@/features/simpleOrder/checklistSelection';
 import { getInventoryWithStock, InventoryWithStock } from '@/lib/api/stock';
 import { supabase } from '@/lib/supabase';
 import { getCheckStatus } from '@/store/stockStore';
@@ -32,14 +38,19 @@ import { useManagedRefresh } from '@/hooks/useManagedRefresh';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { normalizeInventoryPackSize } from '@/lib/inventoryUnits';
 import {
-  ManagerInventoryRow,
   type ManagerInventoryStatus as InventoryStatus,
   type ManagerInventoryStockItem as InventoryStockItem,
 } from '@/features/inventory/ManagerInventoryRow';
-import { selectManagerInventoryOrderState } from '@/features/inventory/managerInventorySelectors';
 import { color, radius, typeScale, weight } from '@/theme/tokens';
 import { Sheet } from '@/components/ui/Sheet';
 
+
+function InventoryFormSheet({ visible, onClose, children }: { visible: boolean; onClose: () => void; children: ReactNode }) {
+  const { height } = useWindowDimensions();
+  return <BottomSheetShell visible={visible} onClose={onClose} horizontalPadding={0} bottomPadding={0}>
+    <View style={{ height: height * 0.88 - 18 }}>{children}</View>
+  </BottomSheetShell>;
+}
 
 const categories = [...KNOWN_ITEM_CATEGORIES];
 const supplierCategories = [...KNOWN_SUPPLIER_CATEGORIES];
@@ -59,7 +70,6 @@ const CATEGORY_EMOJI: Record<string, string> = {
 const COUNT_UNITS = ['portion', 'each', 'lb', 'case', 'bag', 'bottle', 'jar', 'pack'] as const;
 const ORDER_UNITS = ['lb', 'case', 'each', 'bag', 'bottle', 'jar', 'pack'] as const;
 
-const REORDER_BAR_HEIGHT = 72;
 const BULK_BAR_HEIGHT = 88;
 
 const ADD_EMOJIS = ['🐟', '🥩', '🥬', '🧊', '❄️', '🍶', '🍺', '📦', '🥗', '🍜'];
@@ -110,30 +120,27 @@ const getInventoryItemKey = (item: InventoryStockItem) => item.id;
 
 export default function ManagerInventoryScreen() {
   const ds = useScaledStyles();
+  const navigationContext = useSettingsNavigationContext('manager');
+  const { location: activeLocation } = useResolvedActiveLocation();
+  const [usualItems, setUsualItems] = useState<Map<string, ChecklistItem>>(new Map());
+  useEffect(() => {
+    let current = true;
+    void getOrGenerateMyChecklist(locationGroupForLocation(activeLocation?.name, activeLocation?.short_code)).then(checklist => {
+      if (current) setUsualItems(new Map(checklist.items.filter(item => item.itemId !== null).map(item => [item.itemId ?? '', item])));
+    }).catch(() => { if (current) setUsualItems(new Map()); });
+    return () => { current = false; };
+  }, [activeLocation?.name, activeLocation?.short_code]);
   const { user, locations } = useAuthStore(
     useShallow((state) => ({ user: state.user, locations: state.locations })),
   );
   const { addItem, fetchItems } = useInventoryStore(
     useShallow((state) => ({ addItem: state.addItem, fetchItems: state.fetchItems })),
   );
-  const { addToCart, cartCount } = useOrderStore(
-    useShallow(selectManagerInventoryOrderState),
-  );
-  const { inventoryView, setInventoryView } = useSettingsStore(
-    useShallow((state) => ({
-      inventoryView: state.inventoryView,
-      setInventoryView: state.setInventoryView,
-    })),
-  );
   useStockNetworkStatus();
 
-  const headerIconSize = Math.max(44, ds.icon(40));
-  const badgeSize = Math.max(18, ds.icon(20));
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showBulkAddModal, setShowBulkAddModal] = useState(false);
-  const [showLocationModal, setShowLocationModal] = useState(false);
-  const [showActionMenu, setShowActionMenu] = useState(false);
   const [form, setForm] = useState<NewItemForm>(initialForm);
   const [addStep, setAddStep] = useState<'select' | 'create' | 'assign'>('select');
   const [addSearchQuery, setAddSearchQuery] = useState('');
@@ -169,8 +176,8 @@ export default function ManagerInventoryScreen() {
   const [bulkPackUnit, setBulkPackUnit] = useState('case');
   const [bulkPackSize, setBulkPackSize] = useState('1');
 
-  const [locationFilter, setLocationFilter] = useState<string>('all');
-  const [selectedStat, setSelectedStat] = useState<'all' | 'reorder' | 'low' | 'good' | 'overdue'>('all');
+  const [locationFilter, setLocationFilter] = useState<string>(activeLocation?.id ?? 'all');
+  useEffect(() => setLocationFilter(activeLocation?.id ?? 'all'), [activeLocation?.id]);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -181,7 +188,6 @@ export default function ManagerInventoryScreen() {
 
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [addedKeys, setAddedKeys] = useState<Record<string, boolean>>({});
   const toastOpacity = useRef(new Animated.Value(0)).current;
 
   const [showEditModal, setShowEditModal] = useState(false);
@@ -293,27 +299,8 @@ export default function ManagerInventoryScreen() {
     });
   }, [stockItems]);
 
-  const stats = useMemo(() => {
-    return {
-      reorder: stockWithStatus.filter((item) => item.status === 'critical').length,
-      low: stockWithStatus.filter((item) => item.status === 'low').length,
-      good: stockWithStatus.filter((item) => item.status === 'good').length,
-      overdue: stockWithStatus.filter((item) => item.overdue).length,
-    };
-  }, [stockWithStatus]);
-
   const filteredItems = useMemo(() => {
     let items = stockWithStatus;
-    if (selectedStat === 'reorder') {
-      items = items.filter((item) => item.status === 'critical');
-    } else if (selectedStat === 'low') {
-      items = items.filter((item) => item.status === 'low');
-    } else if (selectedStat === 'good') {
-      items = items.filter((item) => item.status === 'good');
-    } else if (selectedStat === 'overdue') {
-      items = items.filter((item) => item.overdue);
-    }
-
     if (categoryFilter) {
       items = items.filter((item) => item.inventory_item.category === categoryFilter);
     }
@@ -324,13 +311,10 @@ export default function ManagerInventoryScreen() {
     }
 
     return items;
-  }, [stockWithStatus, selectedStat, categoryFilter, debouncedQuery]);
+  }, [stockWithStatus, categoryFilter, debouncedQuery]);
 
   const sortedItems = useMemo(() => {
-    const order = { critical: 0, low: 1, good: 2 } as const;
     return [...filteredItems].sort((a, b) => {
-      const statusDiff = order[a.status] - order[b.status];
-      if (statusDiff !== 0) return statusDiff;
       return a.inventory_item.name.localeCompare(b.inventory_item.name);
     });
   }, [filteredItems]);
@@ -352,48 +336,6 @@ export default function ManagerInventoryScreen() {
       }),
     ]).start(() => setShowToast(false));
   }, [toastOpacity]);
-
-  const handleAddToReorder = useCallback((item: InventoryStockItem) => {
-    const quantity = Math.max(item.max_quantity - item.current_quantity, 0);
-    if (quantity <= 0) return;
-
-    addToCart(item.location.id, item.inventory_item.id, quantity, 'base', {
-      context: 'manager',
-    });
-
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-
-    const key = `${item.inventory_item.id}-${item.location.id}`;
-    setAddedKeys((prev) => ({ ...prev, [key]: true }));
-    setTimeout(() => {
-      setAddedKeys((prev) => ({ ...prev, [key]: false }));
-    }, 1500);
-
-    showToastMessage(`Added ${item.inventory_item.name} (${quantity} ${item.unit_type})`);
-  }, [addToCart, showToastMessage]);
-
-  const handleCreateOrderFromReorder = useCallback(() => {
-    const reorderItems = stockWithStatus.filter((item) => item.status === 'critical');
-    if (reorderItems.length === 0) return;
-
-    reorderItems.forEach((item) => {
-      const quantity = Math.max(item.max_quantity - item.current_quantity, 0);
-      if (quantity > 0) {
-        addToCart(item.location.id, item.inventory_item.id, quantity, 'base', {
-          context: 'manager',
-        });
-      }
-    });
-
-    if (Platform.OS !== 'web') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-
-    showToastMessage(`Added ${reorderItems.length} items to cart`);
-    router.push('/(manager)/cart');
-  }, [addToCart, showToastMessage, stockWithStatus]);
 
   const applyAreaItemToForm = useCallback((areaItem: AreaItemEdit) => {
     setSelectedAreaItemId(areaItem.id);
@@ -460,7 +402,7 @@ export default function ManagerInventoryScreen() {
         setSelectedAreaItemId(null);
       }
     } catch (err: any) {
-      Alert.alert('Error', err?.message ?? 'Failed to load item settings.');
+      showNotice('Error', err?.message ?? 'Failed to load item settings.');
     }
   }, [applyAreaItemToForm]);
 
@@ -482,7 +424,7 @@ export default function ManagerInventoryScreen() {
         return;
       }
 
-      Alert.alert(
+      showNotice(
         'Update Stock Levels?',
         'Changing the counting unit may require updating min/max values. Update now?',
         [
@@ -521,23 +463,23 @@ export default function ManagerInventoryScreen() {
     const par = editForm.par ? Number(editForm.par) : null;
 
     if (Number.isNaN(min) || Number.isNaN(max) || min < 0 || max < 0) {
-      Alert.alert('Invalid Values', 'Please enter valid minimum and maximum values.');
+      showNotice('Invalid Values', 'Please enter valid minimum and maximum values.');
       return;
     }
 
     if (min >= max) {
-      Alert.alert('Invalid Range', 'Minimum must be less than maximum.');
+      showNotice('Invalid Range', 'Minimum must be less than maximum.');
       return;
     }
 
     if (par !== null && (par <= min || par >= max)) {
-      Alert.alert('Invalid Par Level', 'Par level must be between min and max.');
+      showNotice('Invalid Par Level', 'Par level must be between min and max.');
       return;
     }
 
     const conversion = editForm.conversion ? Number(editForm.conversion) : null;
     if (conversion !== null && (!Number.isFinite(conversion) || conversion <= 0)) {
-      Alert.alert('Invalid Conversion', 'Conversion factor must be a positive number.');
+      showNotice('Invalid Conversion', 'Conversion factor must be a positive number.');
       return;
     }
 
@@ -561,7 +503,7 @@ export default function ManagerInventoryScreen() {
       setShowEditModal(false);
       fetchInventoryStock();
     } catch (err: any) {
-      Alert.alert('Save Failed', err?.message ?? 'Unable to save changes.');
+      showNotice('Save Failed', err?.message ?? 'Unable to save changes.');
     } finally {
       setIsEditSaving(false);
     }
@@ -626,11 +568,11 @@ export default function ManagerInventoryScreen() {
     const min = Number(moveForm.min);
     const max = Number(moveForm.max);
     if (Number.isNaN(min) || Number.isNaN(max) || min < 0 || max < 0) {
-      Alert.alert('Invalid Values', 'Please enter valid min/max values.');
+      showNotice('Invalid Values', 'Please enter valid min/max values.');
       return;
     }
     if (min >= max) {
-      Alert.alert('Invalid Range', 'Minimum must be less than maximum.');
+      showNotice('Invalid Range', 'Minimum must be less than maximum.');
       return;
     }
 
@@ -639,7 +581,7 @@ export default function ManagerInventoryScreen() {
     try {
       if (existing) {
         if (moveMode === 'duplicate') {
-          Alert.alert('Already Exists', 'This item already exists in the selected area.');
+          showNotice('Already Exists', 'This item already exists in the selected area.');
           setIsMoveSaving(false);
           return;
         }
@@ -703,7 +645,7 @@ export default function ManagerInventoryScreen() {
       setShowEditModal(false);
       fetchInventoryStock();
     } catch (err: any) {
-      Alert.alert('Move Failed', err?.message ?? 'Unable to move item.');
+      showNotice('Move Failed', err?.message ?? 'Unable to move item.');
     } finally {
       setIsMoveSaving(false);
     }
@@ -721,7 +663,7 @@ export default function ManagerInventoryScreen() {
   const handleDeactivateAreaItem = useCallback(() => {
     if (!selectedAreaItem || !editingItem) return;
 
-    Alert.alert(
+    showNotice(
       'Deactivate Item',
       `Remove ${editingItem.inventory_item.name} from ${selectedAreaItem.area.name}?`,
       [
@@ -742,7 +684,7 @@ export default function ManagerInventoryScreen() {
               setShowEditModal(false);
               fetchInventoryStock();
             } catch (err: any) {
-              Alert.alert('Deactivate Failed', err?.message ?? 'Unable to deactivate item.');
+              showNotice('Deactivate Failed', err?.message ?? 'Unable to deactivate item.');
             }
           },
         },
@@ -855,7 +797,7 @@ export default function ManagerInventoryScreen() {
 
   const handleContinueToAreas = useCallback(() => {
     if (!form.name.trim()) {
-      Alert.alert('Missing Name', 'Please enter an item name.');
+      showNotice('Missing Name', 'Please enter an item name.');
       return;
     }
     setAddStep('assign');
@@ -905,13 +847,13 @@ export default function ManagerInventoryScreen() {
       .map(([areaId]) => areaId);
 
     if (selectedAreaIds.length === 0) {
-      Alert.alert('Select Areas', 'Choose at least one storage area.');
+      showNotice('Select Areas', 'Choose at least one storage area.');
       return;
     }
 
     const firstSettings = addAreaSelections[selectedAreaIds[0]];
     if (!firstSettings) {
-      Alert.alert('Missing Settings', 'Please provide stock settings for the selected areas.');
+      showNotice('Missing Settings', 'Please provide stock settings for the selected areas.');
       return;
     }
 
@@ -978,9 +920,9 @@ export default function ManagerInventoryScreen() {
       setNewItemEmoji('');
       fetchInventoryStock();
       fetchItems({ force: true });
-      Alert.alert('Success', 'Item added to selected areas.');
+      showNotice('Success', 'Item added to selected areas.');
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to add item');
+      showNotice('Error', error.message || 'Failed to add item');
     } finally {
       setIsSubmitting(false);
     }
@@ -1006,12 +948,12 @@ export default function ManagerInventoryScreen() {
     const itemNames = parseBulkInput();
 
     if (itemNames.length === 0) {
-      Alert.alert('Error', 'Please enter at least one item name');
+      showNotice('Error', 'Please enter at least one item name');
       return;
     }
 
     if (!bulkBaseUnit.trim() && !bulkPackUnit.trim()) {
-      Alert.alert('Error', 'Please enter at least one unit');
+      showNotice('Error', 'Please enter at least one unit');
       return;
     }
 
@@ -1020,7 +962,7 @@ export default function ManagerInventoryScreen() {
       packSizeInput.length > 0 &&
       (!Number.isFinite(Number(packSizeInput)) || Number(packSizeInput) < 1)
     ) {
-      Alert.alert('Error', 'Please enter a valid pack size');
+      showNotice('Error', 'Please enter a valid pack size');
       return;
     }
     const packSize = packSizeInput.length > 0 ? normalizeInventoryPackSize(packSizeInput) : undefined;
@@ -1056,25 +998,19 @@ export default function ManagerInventoryScreen() {
       fetchInventoryStock();
 
       if (errors.length > 0) {
-        Alert.alert(
+        showNotice(
           'Partial Success',
           `Added ${successCount} item${successCount !== 1 ? 's' : ''}.\n\nErrors:\n${errors.join('\n')}`
         );
       } else {
-        Alert.alert('Success', `Added ${successCount} item${successCount !== 1 ? 's' : ''} successfully`);
+        showNotice('Success', `Added ${successCount} item${successCount !== 1 ? 's' : ''} successfully`);
       }
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to add items');
+      showNotice('Error', error.message || 'Failed to add items');
     } finally {
       setIsSubmitting(false);
     }
   }, [parseBulkInput, bulkCategory, bulkSupplier, bulkBaseUnit, bulkPackUnit, bulkPackSize, addItem, user, fetchInventoryStock]);
-
-  const locationLabel = useMemo(() => {
-    if (locationFilter === 'all') return 'All Locations';
-    const match = locations.find((loc) => loc.id === locationFilter);
-    return match?.name ?? 'Select Location';
-  }, [locationFilter, locations]);
 
   const bulkSelectedItems = useMemo(() => {
     return sortedItems.filter((item) => bulkSelectedIds[item.id]);
@@ -1085,7 +1021,7 @@ export default function ManagerInventoryScreen() {
   const enterBulkMode = useCallback(
     (item?: InventoryStockItem) => {
       if (locationFilter === 'all') {
-        Alert.alert('Select a Location', 'Choose a specific location to use bulk edit mode.');
+        showNotice('Select a Location', 'Choose a specific location to use bulk edit mode.');
         return;
       }
       setIsBulkMode(true);
@@ -1127,11 +1063,11 @@ export default function ManagerInventoryScreen() {
   const handleBulkRemove = useCallback(async () => {
     if (bulkSelectedCount === 0) return;
     if (locationFilter === 'all') {
-      Alert.alert('Select a Location', 'Choose a specific location to remove items.');
+      showNotice('Select a Location', 'Choose a specific location to remove items.');
       return;
     }
 
-    Alert.alert(
+    showNotice(
       'Remove Items',
       `Remove ${bulkSelectedCount} item${bulkSelectedCount !== 1 ? 's' : ''} from this location?`,
       [
@@ -1166,7 +1102,7 @@ export default function ManagerInventoryScreen() {
               exitBulkMode();
               fetchInventoryStock();
             } catch (err: any) {
-              Alert.alert('Remove Failed', err?.message ?? 'Unable to remove items.');
+              showNotice('Remove Failed', err?.message ?? 'Unable to remove items.');
             } finally {
               setIsBulkSaving(false);
             }
@@ -1186,7 +1122,7 @@ export default function ManagerInventoryScreen() {
   const openBulkMove = useCallback(async () => {
     if (bulkSelectedCount === 0) return;
     if (locationFilter === 'all') {
-      Alert.alert('Select a Location', 'Choose a specific location to move items.');
+      showNotice('Select a Location', 'Choose a specific location to move items.');
       return;
     }
 
@@ -1216,7 +1152,7 @@ export default function ManagerInventoryScreen() {
     const min = Number(bulkMoveSettings.min) || 0;
     const max = Number(bulkMoveSettings.max) || 0;
     if (min > 0 && max > 0 && min >= max) {
-      Alert.alert('Invalid Range', 'Minimum must be less than maximum.');
+      showNotice('Invalid Range', 'Minimum must be less than maximum.');
       return;
     }
 
@@ -1284,7 +1220,7 @@ export default function ManagerInventoryScreen() {
       exitBulkMode();
       fetchInventoryStock();
     } catch (err: any) {
-      Alert.alert('Move Failed', err?.message ?? 'Unable to move items.');
+      showNotice('Move Failed', err?.message ?? 'Unable to move items.');
     } finally {
       setIsBulkSaving(false);
     }
@@ -1299,34 +1235,14 @@ export default function ManagerInventoryScreen() {
     showToastMessage,
   ]);
 
-  const renderInventoryItem = useCallback(
-    ({ item }: { item: InventoryStockItem }) => {
-      const key = `${item.inventory_item.id}-${item.location.id}`;
-      return (
-        <ManagerInventoryRow
-          item={item}
-          variant={inventoryView}
-          added={Boolean(addedKeys[key])}
-          isBulkMode={isBulkMode}
-          isSelected={Boolean(bulkSelectedIds[item.id])}
-          onOpen={openEditModal}
-          onEnterBulk={enterBulkMode}
-          onToggleBulk={toggleBulkSelection}
-          onAddToReorder={handleAddToReorder}
-        />
-      );
-    },
-    [
-      addedKeys,
-      bulkSelectedIds,
-      enterBulkMode,
-      handleAddToReorder,
-      inventoryView,
-      isBulkMode,
-      openEditModal,
-      toggleBulkSelection,
-    ],
-  );
+  const renderInventoryItem = useCallback(({ item, index }: { item: InventoryStockItem; index: number }) => {
+    const usual = usualItems.get(item.inventory_item.id);
+    const unit = usual?.unit ?? item.inventory_item.base_unit;
+    return <TouchableOpacity activeOpacity={0.8} onPress={() => isBulkMode ? toggleBulkSelection(item.id) : void openEditModal(item)} onLongPress={() => enterBulkMode(item)} style={{ backgroundColor: isBulkMode && bulkSelectedIds[item.id] ? color.tint : color.card, borderTopLeftRadius: index === 0 ? radius.card : 0, borderTopRightRadius: index === 0 ? radius.card : 0, borderBottomLeftRadius: index === sortedItems.length - 1 ? radius.card : 0, borderBottomRightRadius: index === sortedItems.length - 1 ? radius.card : 0, overflow: 'hidden' }}>
+      <ListRow title={item.inventory_item.name} subtitle={`${getCategoryLabel(item.inventory_item.category)} · per ${unit}`} last={index === sortedItems.length - 1}
+        right={usual?.recommendedQty != null ? <View style={{ paddingHorizontal: ds.spacing(8), paddingVertical: ds.spacing(4), backgroundColor: color.well, borderRadius: radius.pill }}><Text style={{ fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold, color: color.ink2 }}>{formatQuantity(usual.recommendedQty)} {unit}</Text></View> : undefined} />
+    </TouchableOpacity>;
+  }, [bulkSelectedIds, ds, enterBulkMode, isBulkMode, openEditModal, sortedItems.length, toggleBulkSelection, usualItems]);
 
   const renderEmptyState = useCallback(() => {
     let icon = '';
@@ -1341,10 +1257,7 @@ export default function ManagerInventoryScreen() {
       icon = '';
       title = 'No items in this category';
       subtitle = 'Try a different category.';
-    } else if (selectedStat !== 'all') {
-      icon = '';
-      title = 'No items match this filter';
-      subtitle = 'Try a different filter.';
+
     }
 
     return (
@@ -1364,7 +1277,7 @@ export default function ManagerInventoryScreen() {
         </Text>
       </View>
     );
-  }, [categoryFilter, debouncedQuery, ds, selectedStat]);
+  }, [categoryFilter, debouncedQuery, ds]);
 
   const renderListEmpty = useCallback(
     () =>
@@ -1384,12 +1297,10 @@ export default function ManagerInventoryScreen() {
     () => ({
       paddingHorizontal: ds.spacing(16),
       paddingBottom: isBulkMode
-        ? BULK_BAR_HEIGHT + ds.spacing(16)
-        : stats.reorder > 0
-          ? REORDER_BAR_HEIGHT + ds.spacing(16)
-          : ds.spacing(24),
+        ? BULK_BAR_HEIGHT + getTabBarClearance(0)
+        : getTabBarClearance(0),
     }),
-    [ds, isBulkMode, stats.reorder],
+    [ds, isBulkMode],
   );
 
   const inventoryRefreshControl = useMemo(
@@ -1397,7 +1308,7 @@ export default function ManagerInventoryScreen() {
       <RefreshControl
         refreshing={refreshing}
         onRefresh={onRefresh}
-        tintColor={colors.primary[500]}
+        tintColor={color.accent}
       />
     ),
     [onRefresh, refreshing],
@@ -1408,302 +1319,19 @@ export default function ManagerInventoryScreen() {
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: color.page }} edges={['top', 'left', 'right']}>
       <View className="flex-1">
-        {/* Header */}
-        <View className="border-b" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
-          <View
-            className="flex-row items-center"
-            style={{
-              paddingHorizontal: ds.spacing(8),
-              paddingVertical: ds.spacing(8),
-            }}
-          >
-            {isBulkMode ? (
-              <View className="flex-row items-center flex-1 justify-between" style={{ paddingHorizontal: ds.spacing(8) }}>
-                <TouchableOpacity
-                  style={{ minWidth: ds.spacing(60), minHeight: Math.max(44, ds.icon(40)) }}
-                  onPress={exitBulkMode}
-                  className="justify-center"
-                >
-                  <Text className="font-semibold" style={{ color: color.accent, fontSize: ds.fontSize(typeScale.body) }}>Cancel</Text>
-                </TouchableOpacity>
-                <Text className="font-semibold" style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body) }}>
-                  {bulkSelectedCount} selected
-                </Text>
-                <TouchableOpacity
-                  style={{ minWidth: ds.spacing(60), minHeight: Math.max(44, ds.icon(40)), alignItems: 'flex-end' }}
-                  onPress={exitBulkMode}
-                  className="justify-center"
-                >
-                  <Text className="font-semibold" style={{ color: color.accent, fontSize: ds.fontSize(typeScale.body) }}>Done</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <>
-                <TouchableOpacity
-                  onPress={() => router.back()}
-                  style={{
-                    width: headerIconSize,
-                    height: headerIconSize,
-                    borderRadius: radius.control,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Ionicons name="arrow-back" size={ds.icon(22)} color={colors.gray[700]} />
-                </TouchableOpacity>
-
-                <Text
-                  className="font-bold"
-                  style={{ color: color.ink, fontSize: ds.fontSize(typeScale.title), marginLeft: ds.spacing(4), flexShrink: 1 }}
-                  numberOfLines={1}
-                >
-                  Inventory
-                </Text>
-
-                <View className="flex-1" />
-
-                {/* Cart button */}
-                <TouchableOpacity
-                  onPress={() => router.push('/(manager)/cart')}
-                  className="relative items-center justify-center"
-                  style={{ borderRadius: radius.pill, backgroundColor: color.well, width: headerIconSize,
-                    height: headerIconSize,
-                    marginRight: ds.spacing(8) }}
-                >
-                  <Ionicons name="cart-outline" size={ds.icon(20)} color={colors.gray[700]} />
-                  {cartCount > 0 && (
-                    <View
-                      className="absolute items-center justify-center"
-                      style={{ backgroundColor: color.accent, borderRadius: radius.pill, top: -ds.spacing(2),
-                        right: -ds.spacing(2),
-                        minWidth: badgeSize,
-                        height: badgeSize,
-                        paddingHorizontal: ds.spacing(4) }}
-                    >
-                      <Text className="font-bold" style={{ color: color.onAccent, fontSize: ds.fontSize(typeScale.caption) }}>
-                        {cartCount > 99 ? '99+' : cartCount}
-                      </Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-
-                {/* Location Pill */}
-                <TouchableOpacity
-                  onPress={() => setShowLocationModal(true)}
-                  className="flex-row items-center"
-                  style={{ backgroundColor: color.well, borderRadius: radius.pill, paddingHorizontal: ds.spacing(12),
-                    minHeight: headerIconSize,
-                    marginRight: ds.spacing(8),
-                    flexShrink: 1 }}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="location" size={ds.icon(14)} color={colors.primary[500]} />
-                  <Text
-                    className="font-bold"
-                    style={{ color: color.ink, fontSize: ds.fontSize(typeScale.secondary),
-                      marginLeft: ds.spacing(6),
-                      marginRight: ds.spacing(4),
-                      maxWidth: ds.spacing(100) }}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {locationLabel}
-                  </Text>
-                  <Ionicons name="chevron-down" size={ds.icon(14)} color={colors.gray[500]} />
-                </TouchableOpacity>
-
-                {/* Menu button */}
-                <TouchableOpacity
-                  onPress={() => setShowActionMenu(true)}
-                  className="items-center justify-center"
-                  style={{ borderRadius: radius.pill, backgroundColor: color.well, width: headerIconSize,
-                    height: headerIconSize }}
-                >
-                  <Ionicons name="ellipsis-horizontal" size={ds.icon(18)} color={colors.gray[600]} />
-                </TouchableOpacity>
-              </>
-            )}
+        <ScreenHeader title="Inventory" mode="pushed" includeSafeArea={false}
+          onBack={() => isBulkMode ? exitBulkMode() : navigationContext.hasExplicitBackTo ? router.replace(navigationContext.backTo) : router.back()}
+          right={<TouchableOpacity onPress={openAddFlow} accessibilityRole="button" accessibilityLabel="Add item" style={{ width: ds.spacing(40), height: ds.spacing(40), borderRadius: radius.pill, backgroundColor: color.card, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="add" size={ds.icon(20)} color={color.ink} /></TouchableOpacity>} />
+        <View style={{ paddingHorizontal: ds.spacing(16), paddingTop: ds.spacing(2) }}>
+          {stockError ? <Text style={{ color: color.alert, fontSize: ds.fontSize(typeScale.secondary), marginBottom: ds.spacing(10) }}>{stockError}</Text> : null}
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: color.card, borderRadius: radius.control, paddingHorizontal: ds.spacing(14), marginBottom: ds.spacing(10) }}>
+            <Ionicons name="search-outline" size={ds.icon(18)} color={color.ink3} />
+            <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder={`Search ${stockWithStatus.length} items`} placeholderTextColor={color.ink3} accessibilityLabel="Search inventory" autoCapitalize="none" style={{ flex: 1, minHeight: ds.spacing(46), paddingHorizontal: ds.spacing(8), fontSize: ds.fontSize(typeScale.body), color: color.ink }} />
           </View>
-        </View>
-
-        {/* Search Bar */}
-        <View style={{ paddingHorizontal: ds.spacing(16), paddingTop: ds.spacing(12) }}>
-          {stockError && (
-            <View
-
-              style={{ borderRadius: radius.card, backgroundColor: color.alertBg, paddingHorizontal: ds.spacing(16),
-                paddingVertical: ds.spacing(12),
-                marginBottom: ds.spacing(12) }}
-            >
-              <Text style={{ color: color.alert, fontSize: ds.fontSize(typeScale.secondary) }}>{stockError}</Text>
-            </View>
-          )}
-
-          <View
-            className="flex-row items-center border"
-            style={{ backgroundColor: color.card, borderColor: color.hairline, borderRadius: radius.card,
-              paddingHorizontal: ds.spacing(14),
-              height: ds.buttonH,
-              shadowColor: colors.text,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.06,
-              shadowRadius: 10,
-              elevation: 3 }}
-          >
-            <Ionicons name="search-outline" size={ds.icon(20)} color={colors.gray[400]} />
-            <TextInput
-              className="flex-1"
-              style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body), marginLeft: ds.spacing(8) }}
-              placeholder="Search items..."
-              placeholderTextColor={colors.gray[400]}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoCapitalize="none"
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name="close-circle" size={ds.icon(20)} color={colors.gray[400]} />
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingVertical: ds.spacing(12) }}
-          >
-            <View className="flex-row items-end">
-              {([
-                { key: 'reorder', label: 'Reorder', count: stats.reorder, color: colors.error },
-                { key: 'low', label: 'Low', count: stats.low, color: colors.warning },
-                { key: 'good', label: 'Good', count: stats.good, color: colors.success },
-                { key: 'overdue', label: 'Overdue', count: stats.overdue, color: colors.primary[500] },
-              ] as const).map((pill) => {
-                const isSelected = selectedStat === pill.key;
-                const isDimmed = selectedStat !== 'all' && !isSelected;
-                return (
-                  <View
-                    key={pill.key}
-                    style={pill.key === 'overdue' ? { alignItems: 'flex-end', flexDirection: 'row' } : undefined}
-                  >
-                    {pill.key === 'overdue' ? (
-                      <View
-                        style={{
-                          alignSelf: 'stretch',
-                          backgroundColor: colors.gray[200],
-                          marginHorizontal: ds.spacing(12),
-                          width: 1,
-                        }}
-                      />
-                    ) : null}
-                    <View>
-                      {pill.key === 'overdue' ? (
-                        <Text
-                          className="font-semibold"
-                          style={{ color: color.ink3, fontSize: ds.fontSize(typeScale.caption),
-                            letterSpacing: 0.5,
-                            marginBottom: ds.spacing(6) }}
-                        >
-                          COUNT FRESHNESS
-                        </Text>
-                      ) : null}
-                      <TouchableOpacity
-                        className="border"
-                        style={{ borderRadius: radius.card, paddingHorizontal: ds.spacing(16),
-                          paddingVertical: ds.spacing(10),
-                          marginRight: ds.spacing(10),
-                          minWidth: ds.spacing(88),
-                          borderColor: isSelected ? colors.primary[500] : colors.gray[200],
-                          backgroundColor: isSelected ? colors.primary[50] : colors.white,
-                          opacity: isDimmed ? 0.5 : 1 }}
-                        onPress={() =>
-                          setSelectedStat((prev) => (prev === pill.key ? 'all' : pill.key))
-                        }
-                      >
-                        <View className="flex-row items-center" style={{ marginBottom: ds.spacing(2) }}>
-                          <View
-                            style={{
-                              width: ds.spacing(8),
-                              height: ds.spacing(8),
-                              borderRadius: radius.pill,
-                              backgroundColor: pill.color,
-                              marginRight: ds.spacing(6),
-                            }}
-                          />
-                          <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>
-                            {pill.label}
-                          </Text>
-                        </View>
-                        <Text className="font-bold" style={{ fontSize: ds.fontSize(typeScale.title), color: pill.color }}>
-                          {pill.count}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: ds.spacing(8), paddingBottom: ds.spacing(6) }}>
+            {[null, ...categories].map(category => <TouchableOpacity key={category ?? 'all'} onPress={() => setCategoryFilter(category)} accessibilityRole="button" accessibilityState={{ selected: categoryFilter === category }} style={{ borderRadius: radius.pill, paddingHorizontal: ds.spacing(12), paddingVertical: ds.spacing(7), backgroundColor: categoryFilter === category ? color.ink : color.card }}><Text style={{ fontSize: ds.fontSize(typeScale.secondary), fontWeight: weight.semibold, color: categoryFilter === category ? color.onAccent : color.ink2 }}>{category ? getCategoryLabel(category) : 'All'}</Text></TouchableOpacity>)}
           </ScrollView>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: ds.spacing(8) }}
-          >
-            {[null, ...categories].map((category) => {
-              const isSelected = categoryFilter === category;
-              return (
-                <TouchableOpacity
-                  key={category || 'all'}
-
-                  style={{ borderRadius: radius.pill, paddingHorizontal: ds.spacing(16),
-                    paddingVertical: ds.spacing(8),
-                    marginRight: ds.spacing(8),
-                    backgroundColor: isSelected ? colors.primary[500] : colors.gray[100] }}
-                  onPress={() => setCategoryFilter(category)}
-                >
-                  <Text
-                    className="font-semibold"
-                    style={{ color: isSelected ? color.onAccent : color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}
-                  >
-                    {category ? getCategoryLabel(category) : 'All'}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-
-          <View
-            className="flex-row items-center justify-between"
-            style={{ paddingVertical: ds.spacing(8) }}
-          >
-            <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>
-              {sortedItems.length} item{sortedItems.length !== 1 ? 's' : ''}
-            </Text>
-            <View className="flex-row items-center">
-              <TouchableOpacity
-                className="items-center justify-center"
-                style={{ borderRadius: radius.pill, width: Math.max(36, ds.icon(32)),
-                  height: Math.max(36, ds.icon(32)),
-                  backgroundColor: inventoryView === 'list' ? colors.primary[50] : colors.gray[100],
-                  marginRight: ds.spacing(8) }}
-                onPress={() => setInventoryView('list')}
-              >
-                <Ionicons name="list" size={ds.icon(16)} color={inventoryView === 'list' ? colors.primary[600] : colors.gray[500]} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="items-center justify-center"
-                style={{ borderRadius: radius.pill, width: Math.max(36, ds.icon(32)),
-                  height: Math.max(36, ds.icon(32)),
-                  backgroundColor: inventoryView === 'compact' ? colors.primary[50] : colors.gray[100] }}
-                onPress={() => setInventoryView('compact')}
-              >
-                <Ionicons name="grid-outline" size={ds.icon(16)} color={inventoryView === 'compact' ? colors.primary[600] : colors.gray[500]} />
-              </TouchableOpacity>
-            </View>
-          </View>
         </View>
-
         <FlatList
           data={sortedItems}
           renderItem={renderInventoryItem}
@@ -1713,33 +1341,10 @@ export default function ManagerInventoryScreen() {
           refreshControl={inventoryRefreshControl}
         />
 
-        {!isBulkMode && stats.reorder > 0 && (
-          <View
-            className="absolute bottom-0 left-0 right-0 border-t"
-            style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, paddingHorizontal: ds.spacing(16),
-              paddingVertical: ds.spacing(12) }}
-          >
-            <TouchableOpacity
-              className="items-center"
-              style={{ borderRadius: radius.pill, backgroundColor: color.accent, paddingVertical: ds.spacing(14),
-                minHeight: ds.buttonH,
-                justifyContent: 'center' }}
-              onPress={handleCreateOrderFromReorder}
-            >
-              <Text
-                className="font-semibold"
-                style={{ color: color.onAccent, fontSize: ds.buttonFont }}
-              >
-                Create Order from {stats.reorder} Items Needing Reorder
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
         {isBulkMode && (
           <View
-            className="absolute bottom-0 left-0 right-0 border-t"
-            style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, paddingHorizontal: ds.spacing(16),
+            className="absolute left-0 right-0 border-t"
+            style={{ bottom: getTabBarClearance(0, 'pinned'), backgroundColor: color.card, borderColor: color.hairlineStrong, paddingHorizontal: ds.spacing(16),
               paddingVertical: ds.spacing(10) }}
           >
             <View className="flex-row items-center justify-between">
@@ -1803,7 +1408,7 @@ export default function ManagerInventoryScreen() {
       )}
 
       {/* Edit Item Modal */}
-      <FullScreenSheet
+      <InventoryFormSheet
         visible={showEditModal}
         onClose={() => setShowEditModal(false)}
       >
@@ -1811,7 +1416,7 @@ export default function ManagerInventoryScreen() {
           <View className="px-4 py-4 border-b flex-row items-center justify-between" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
             <Text className="font-bold" style={{ fontSize: ds.fontSize(typeScale.title), color: color.ink }}>Edit Stock Settings</Text>
             <TouchableOpacity onPress={() => setShowEditModal(false)}>
-              <Ionicons name="close" size={20} color={colors.gray[500]} />
+              <Ionicons name="close" size={20} color={color.ink2} />
             </TouchableOpacity>
           </View>
 
@@ -1843,7 +1448,7 @@ export default function ManagerInventoryScreen() {
                     <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink }}>
                       {editForm.unit_type}
                     </Text>
-                    <Ionicons name="chevron-down" size={16} color={colors.gray[400]} />
+                    <Ionicons name="chevron-down" size={16} color={color.ink3} />
                   </TouchableOpacity>
 
                   <Text className="font-semibold mt-5 mb-3" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>
@@ -1890,7 +1495,7 @@ export default function ManagerInventoryScreen() {
                     <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink }}>
                       {editForm.order_unit}
                     </Text>
-                    <Ionicons name="chevron-down" size={16} color={colors.gray[400]} />
+                    <Ionicons name="chevron-down" size={16} color={color.ink3} />
                   </TouchableOpacity>
 
                   <Text className="mt-4 mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>Conversion • {editForm.unit_type} per {editForm.order_unit}</Text>
@@ -1938,10 +1543,10 @@ export default function ManagerInventoryScreen() {
             </TouchableOpacity>
           </View>
         </SafeAreaView>
-      </FullScreenSheet>
+      </InventoryFormSheet>
 
       {/* Move Item Modal */}
-      <FullScreenSheet
+      <InventoryFormSheet
         visible={showMoveModal}
         onClose={() => setShowMoveModal(false)}
       >
@@ -1949,7 +1554,7 @@ export default function ManagerInventoryScreen() {
           <View className="px-4 py-4 border-b flex-row items-center justify-between" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
             <Text className="font-bold" style={{ fontSize: ds.fontSize(typeScale.title), color: color.ink }}>Move Item</Text>
             <TouchableOpacity onPress={() => setShowMoveModal(false)}>
-              <Ionicons name="close" size={20} color={colors.gray[500]} />
+              <Ionicons name="close" size={20} color={color.ink2} />
             </TouchableOpacity>
           </View>
 
@@ -1981,7 +1586,7 @@ export default function ManagerInventoryScreen() {
                     return (
                       <TouchableOpacity
                         key={area.id}
-                        className={`border px-4 py-3 mb-3 ${isCurrent ? 'opacity-50' : ''}`} style={{ borderRadius: radius.control, borderColor: isSelected ? color.warning : color.hairlineStrong, backgroundColor: isSelected ? color.warningBg : undefined }}
+                        className={`border px-4 py-3 mb-3 ${isCurrent ? 'opacity-50' : ''}`} style={{ borderRadius: radius.control, borderColor: isSelected ? color.accent : color.hairlineStrong, backgroundColor: isSelected ? color.tint : undefined }}
                         onPress={() => handleSelectMoveArea(area.id)}
                         disabled={isCurrent}
                       >
@@ -1990,7 +1595,7 @@ export default function ManagerInventoryScreen() {
                             <Ionicons
                               name={isSelected ? 'radio-button-on' : 'radio-button-off'}
                               size={18}
-                              color={isCurrent ? colors.gray[300] : colors.primary[500]}
+                              color={isCurrent ? color.disabled : color.accent}
                             />
                             <Text className="ml-2" style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink }}>
                               {area.icon ?? '📦'} {area.name}
@@ -2002,7 +1607,7 @@ export default function ManagerInventoryScreen() {
                         </View>
                         {existing && !isCurrent ? (
                           <View className="flex-row items-center mt-2">
-                            <Ionicons name="alert-circle" size={14} color={colors.warning} />
+                            <Ionicons name="alert-circle" size={14} color={color.warning} />
                             <Text className="ml-1" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.warning }}>Item already exists here</Text>
                           </View>
                         ) : null}
@@ -2023,7 +1628,7 @@ export default function ManagerInventoryScreen() {
                       onPress={() => setShowMoveUnitPicker(true)}
                     >
                       <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink }}>{moveForm.unit_type}</Text>
-                      <Ionicons name="chevron-down" size={16} color={colors.gray[400]} />
+                      <Ionicons name="chevron-down" size={16} color={color.ink3} />
                     </TouchableOpacity>
 
                     <View className="mt-4">
@@ -2053,19 +1658,19 @@ export default function ManagerInventoryScreen() {
                       <Text className="font-semibold mb-2" style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>MOVE TYPE</Text>
                       <View className="flex-row">
                         <TouchableOpacity
-                          className="flex-1 border py-3 items-center mr-2" style={{ borderRadius: radius.control, borderColor: moveMode === 'replace' ? color.warning : color.hairlineStrong, backgroundColor: moveMode === 'replace' ? color.warningBg : undefined }}
+                          className="flex-1 border py-3 items-center mr-2" style={{ borderRadius: radius.control, borderColor: moveMode === 'replace' ? color.accent : color.hairlineStrong, backgroundColor: moveMode === 'replace' ? color.tint : undefined }}
                           onPress={() => setMoveMode('replace')}
                         >
-                          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: moveMode === 'replace' ? color.warning : color.ink2 }}>
+                          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: moveMode === 'replace' ? color.accent : color.ink2 }}>
                             Replace Existing
                           </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                          className={`flex-1 border py-3 items-center ${moveTargetExisting ? 'opacity-50' : ''}`} style={{ borderRadius: radius.control, borderColor: moveMode === 'duplicate' ? color.warning : color.hairlineStrong, backgroundColor: moveMode === 'duplicate' ? color.warningBg : undefined }}
+                          className={`flex-1 border py-3 items-center ${moveTargetExisting ? 'opacity-50' : ''}`} style={{ borderRadius: radius.control, borderColor: moveMode === 'duplicate' ? color.accent : color.hairlineStrong, backgroundColor: moveMode === 'duplicate' ? color.tint : undefined }}
                           onPress={() => setMoveMode('duplicate')}
                           disabled={!!moveTargetExisting}
                         >
-                          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: moveMode === 'duplicate' ? color.warning : color.ink2 }}>
+                          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: moveMode === 'duplicate' ? color.accent : color.ink2 }}>
                             Add Duplicate
                           </Text>
                         </TouchableOpacity>
@@ -2104,10 +1709,10 @@ export default function ManagerInventoryScreen() {
             </TouchableOpacity>
           </View>
         </SafeAreaView>
-      </FullScreenSheet>
+      </InventoryFormSheet>
 
       {/* Bulk Move Modal */}
-      <FullScreenSheet
+      <InventoryFormSheet
         visible={showBulkMoveModal}
         onClose={() => setShowBulkMoveModal(false)}
       >
@@ -2115,7 +1720,7 @@ export default function ManagerInventoryScreen() {
           <View className="px-4 py-4 border-b flex-row items-center justify-between" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong }}>
             <Text className="font-bold" style={{ fontSize: ds.fontSize(typeScale.title), color: color.ink }}>Move Items</Text>
             <TouchableOpacity onPress={() => setShowBulkMoveModal(false)}>
-              <Ionicons name="close" size={20} color={colors.gray[500]} />
+              <Ionicons name="close" size={20} color={color.ink2} />
             </TouchableOpacity>
           </View>
 
@@ -2129,7 +1734,7 @@ export default function ManagerInventoryScreen() {
             {bulkMoveAreas.map((area) => (
               <TouchableOpacity
                 key={area.id}
-                className="border px-4 py-3 mb-3" style={{ borderRadius: radius.control, borderColor: bulkMoveAreaId === area.id ? color.warning : color.hairlineStrong, backgroundColor: bulkMoveAreaId === area.id ? color.warningBg : undefined }}
+                className="border px-4 py-3 mb-3" style={{ borderRadius: radius.control, borderColor: bulkMoveAreaId === area.id ? color.accent : color.hairlineStrong, backgroundColor: bulkMoveAreaId === area.id ? color.tint : undefined }}
                 onPress={() => setBulkMoveAreaId(area.id)}
               >
                 <View className="flex-row items-center justify-between">
@@ -2137,7 +1742,7 @@ export default function ManagerInventoryScreen() {
                     <Ionicons
                       name={bulkMoveAreaId === area.id ? 'radio-button-on' : 'radio-button-off'}
                       size={18}
-                      color={colors.primary[500]}
+                      color={color.accent}
                     />
                     <Text className="ml-2" style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: color.ink }}>
                       {area.icon ?? '📦'} {area.name}
@@ -2158,7 +1763,7 @@ export default function ManagerInventoryScreen() {
                 }}
               >
                 <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>{bulkMoveSettings.unit_type}</Text>
-                <Ionicons name="chevron-down" size={16} color={colors.gray[400]} />
+                <Ionicons name="chevron-down" size={16} color={color.ink3} />
               </TouchableOpacity>
 
               <View className="flex-row gap-3 mt-4">
@@ -2202,7 +1807,7 @@ export default function ManagerInventoryScreen() {
             </TouchableOpacity>
           </View>
         </SafeAreaView>
-      </FullScreenSheet>
+      </InventoryFormSheet>
 
       {/* Count Unit Picker */}
       <Sheet
@@ -2270,75 +1875,8 @@ export default function ManagerInventoryScreen() {
         </TouchableOpacity>
       </Sheet>
 
-      {/* Location Modal */}
-      <Sheet
-        visible={showLocationModal}
-        title="Select Location"
-        onClose={() => setShowLocationModal(false)}
-      >
-        <TouchableOpacity
-          className="py-3"
-          onPress={() => {
-            setLocationFilter('all');
-            setShowLocationModal(false);
-          }}
-        >
-          <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>All Locations</Text>
-        </TouchableOpacity>
-        {locations.map((loc) => (
-          <TouchableOpacity
-            key={loc.id}
-            className="py-3"
-            onPress={() => {
-              setLocationFilter(loc.id);
-              setShowLocationModal(false);
-            }}
-          >
-            <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink2 }}>{loc.name}</Text>
-          </TouchableOpacity>
-        ))}
-        <TouchableOpacity
-          className="mt-2 py-3 items-center"
-          onPress={() => setShowLocationModal(false)}
-        >
-          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>Cancel</Text>
-        </TouchableOpacity>
-      </Sheet>
-
-      {/* Action Menu */}
-      <Sheet
-        visible={showActionMenu}
-        title="Inventory actions"
-        onClose={() => setShowActionMenu(false)}
-      >
-        <TouchableOpacity
-          className="py-3"
-          onPress={() => {
-            setShowActionMenu(false);
-            openAddFlow();
-          }}
-        >
-          <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>Add Item</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          className="py-3"
-          onPress={() => {
-            setShowActionMenu(false);
-            enterBulkMode();
-          }}
-        >
-          <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>Select</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          className="py-3 items-center"
-          onPress={() => setShowActionMenu(false)}
-        >
-          <Text className="font-semibold" style={{ fontSize: ds.fontSize(typeScale.body), color: color.accent }}>Cancel</Text>
-        </TouchableOpacity>
-      </Sheet>
-
       {/* Add Item Modal */}
-      <FullScreenSheet
+      <InventoryFormSheet
         visible={showAddModal}
         onClose={() => {
           setShowAddModal(false);
@@ -2376,11 +1914,11 @@ export default function ManagerInventoryScreen() {
               {addStep === 'select' && (
                 <>
                   <View className="border px-4 py-3 flex-row items-center" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, borderRadius: radius.control }}>
-                    <Ionicons name="search-outline" size={18} color={colors.gray[400]} />
+                    <Ionicons name="search-outline" size={18} color={color.ink3} />
                     <TextInput
                       className="flex-1 ml-2" style={{ color: color.ink }}
                       placeholder="Search existing items..."
-                      placeholderTextColor={colors.gray[400]}
+                      placeholderTextColor={color.ink3}
                       value={addSearchQuery}
                       onChangeText={setAddSearchQuery}
                     />
@@ -2405,7 +1943,7 @@ export default function ManagerInventoryScreen() {
                             {result.areaCount !== 1 ? 's' : ''}
                           </Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={16} color={colors.gray[400]} />
+                        <Ionicons name="chevron-forward" size={16} color={color.ink3} />
                       </View>
                     </TouchableOpacity>
                   ))}
@@ -2431,7 +1969,7 @@ export default function ManagerInventoryScreen() {
                     <TextInput
                       className="border px-4 py-3" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink }}
                       placeholder="e.g., Dragon Fruit"
-                      placeholderTextColor={colors.gray[400]}
+                      placeholderTextColor={color.ink3}
                       value={form.name}
                       onChangeText={(text) => setForm({ ...form, name: text })}
                     />
@@ -2442,15 +1980,14 @@ export default function ManagerInventoryScreen() {
                     <View className="flex-row flex-wrap gap-2">
                       {categories.map((cat) => {
                         const isSelected = form.category === cat;
-                        const categoryColor = categoryColors[cat] || color.ink3;
                         return (
                           <TouchableOpacity
                             key={cat}
                             className="px-3 py-2"
-                            style={{ borderRadius: radius.control, backgroundColor: isSelected ? categoryColor : categoryColor + '20' }}
+                            style={{ borderRadius: radius.control, backgroundColor: isSelected ? color.ink : color.well }}
                             onPress={() => setForm({ ...form, category: cat })}
                           >
-                            <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: isSelected ? colors.white : categoryColor }}>
+                            <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: isSelected ? color.onAccent : color.ink2 }}>
                               {getCategoryLabel(cat)}
                             </Text>
                           </TouchableOpacity>
@@ -2485,7 +2022,7 @@ export default function ManagerInventoryScreen() {
                       {ADD_EMOJIS.map((emoji) => (
                         <TouchableOpacity
                           key={emoji}
-                          className={`h-10 w-10 items-center justify-center ${newItemEmoji === emoji ? 'border' : ''}`} style={{ borderRadius: radius.control, backgroundColor: newItemEmoji === emoji ? color.warningBg : color.well, borderColor: newItemEmoji === emoji ? color.warning : undefined }}
+                          className={`h-10 w-10 items-center justify-center ${newItemEmoji === emoji ? 'border' : ''}`} style={{ borderRadius: radius.control, backgroundColor: newItemEmoji === emoji ? color.tint : color.well, borderColor: newItemEmoji === emoji ? color.accent : undefined }}
                           onPress={() => setNewItemEmoji(emoji)}
                         >
                           <Text style={{ fontSize: ds.fontSize(typeScale.title) }}>{emoji}</Text>
@@ -2542,7 +2079,7 @@ export default function ManagerInventoryScreen() {
                             <Ionicons
                               name={selected ? 'checkbox' : 'square-outline'}
                               size={18}
-                              color={alreadyExists ? colors.gray[300] : selected ? colors.primary[500] : colors.gray[400]}
+                              color={alreadyExists ? color.disabled : selected ? color.accent : color.ink3}
                             />
                             <Text className="font-semibold ml-2" style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>
                               {area.icon ?? '📦'} {area.name}
@@ -2564,7 +2101,7 @@ export default function ManagerInventoryScreen() {
                               }}
                             >
                               <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>{settings?.unit_type}</Text>
-                              <Ionicons name="chevron-down" size={16} color={colors.gray[400]} />
+                              <Ionicons name="chevron-down" size={16} color={color.ink3} />
                             </TouchableOpacity>
 
                             <View className="flex-row gap-3 mt-3">
@@ -2609,7 +2146,7 @@ export default function ManagerInventoryScreen() {
                                   }}
                                 >
                                   <Text style={{ fontSize: ds.fontSize(typeScale.body), color: color.ink }}>{settings?.order_unit}</Text>
-                                  <Ionicons name="chevron-down" size={16} color={colors.gray[400]} />
+                                  <Ionicons name="chevron-down" size={16} color={color.ink3} />
                                 </TouchableOpacity>
                               </View>
                               <View className="flex-1">
@@ -2661,7 +2198,7 @@ export default function ManagerInventoryScreen() {
             </View>
           </KeyboardAvoidingView>
         </SafeAreaView>
-      </FullScreenSheet>
+      </InventoryFormSheet>
 
       {/* Add Item Unit Picker */}
       <Sheet
@@ -2708,7 +2245,7 @@ export default function ManagerInventoryScreen() {
       </Sheet>
 
       {/* Bulk Add Modal */}
-      <FullScreenSheet
+      <InventoryFormSheet
         visible={showBulkAddModal}
         onClose={() => setShowBulkAddModal(false)}
       >
@@ -2728,7 +2265,7 @@ export default function ManagerInventoryScreen() {
             <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
               <View className="p-4 mb-4 border" style={{ backgroundColor: color.tint, borderRadius: radius.control, borderColor: color.tint }}>
                 <View className="flex-row items-start">
-                  <Ionicons name="information-circle" size={20} color={colors.info} />
+                  <Ionicons name="information-circle" size={20} color={color.ink2} />
                   <View className="flex-1 ml-2">
                     <Text style={{ color: color.accent, fontWeight: weight.semibold }}>How to use</Text>
                     <Text className="mt-1" style={{ color: color.accent, fontSize: ds.fontSize(typeScale.body) }}>
@@ -2743,7 +2280,7 @@ export default function ManagerInventoryScreen() {
                 <TextInput
                   className="border px-4 py-3"
                   placeholder={"Salmon\nTuna\nYellowtail\nMackerel"}
-                  placeholderTextColor={colors.gray[400]}
+                  placeholderTextColor={color.ink3}
                   value={bulkInput}
                   onChangeText={setBulkInput}
                   multiline
@@ -2764,15 +2301,14 @@ export default function ManagerInventoryScreen() {
                 <View className="flex-row flex-wrap gap-2">
                   {categories.map((cat) => {
                     const isSelected = bulkCategory === cat;
-                    const categoryColor = categoryColors[cat] || color.ink3;
                     return (
                       <TouchableOpacity
                         key={cat}
                         className="px-3 py-2"
-                        style={{ borderRadius: radius.control, backgroundColor: isSelected ? categoryColor : categoryColor + '20' }}
+                        style={{ borderRadius: radius.control, backgroundColor: isSelected ? color.ink : color.well }}
                         onPress={() => setBulkCategory(cat)}
                       >
-                        <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: isSelected ? colors.white : categoryColor }}>
+                        <Text style={{ fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold, color: isSelected ? color.onAccent : color.ink2 }}>
                           {getCategoryLabel(cat)}
                         </Text>
                       </TouchableOpacity>
@@ -2807,7 +2343,7 @@ export default function ManagerInventoryScreen() {
                   <TextInput
                     className="border px-4 py-3" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink }}
                     placeholder="e.g., lb"
-                    placeholderTextColor={colors.gray[400]}
+                    placeholderTextColor={color.ink3}
                     value={bulkBaseUnit}
                     onChangeText={setBulkBaseUnit}
                   />
@@ -2817,7 +2353,7 @@ export default function ManagerInventoryScreen() {
                   <TextInput
                     className="border px-4 py-3" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink }}
                     placeholder="e.g., case"
-                    placeholderTextColor={colors.gray[400]}
+                    placeholderTextColor={color.ink3}
                     value={bulkPackUnit}
                     onChangeText={setBulkPackUnit}
                   />
@@ -2829,7 +2365,7 @@ export default function ManagerInventoryScreen() {
                 <TextInput
                   className="border px-4 py-3" style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, borderRadius: radius.control, color: color.ink }}
                   placeholder="10"
-                  placeholderTextColor={colors.gray[400]}
+                  placeholderTextColor={color.ink3}
                   value={bulkPackSize}
                   onChangeText={setBulkPackSize}
                   keyboardType="number-pad"
@@ -2855,7 +2391,7 @@ export default function ManagerInventoryScreen() {
             </View>
           </KeyboardAvoidingView>
         </SafeAreaView>
-      </FullScreenSheet>
+      </InventoryFormSheet>
     </SafeAreaView>
   );
 }

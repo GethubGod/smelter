@@ -18,6 +18,7 @@ import {
   View,
 } from 'react-native';
 import { FullScreenSheet } from '@/components/ui/FullScreenSheet';
+import { getTabBarClearance } from '@/components/ui';
 import { router } from 'expo-router';
 import { FlashList, FlashListRef } from '@shopify/flash-list';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,7 +33,6 @@ import {
   LocationSelectorButton,
 } from '@/components';
 import {
-  getFloatingPillClearance,
   getTabBarBottomInset,
 } from '@/components/navigation';
 import { getCategoryLabel, colors, getSupplierCategoryLabel } from '@/constants';
@@ -144,7 +144,7 @@ export function BrowseInventoryScreenView({
   const tabBarSafeBottomPadding =
     Math.max(
       60 + getTabBarBottomInset(insets.bottom),
-      getFloatingPillClearance(insets.bottom),
+      getTabBarClearance(insets.bottom),
     ) + ds.spacing(24);
   const headerBackButtonSize = Math.max(48, ds.icon(44));
   const headerCartButtonSize = headerBackButtonSize;

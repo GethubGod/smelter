@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
-import { Button, Card, Input, ListRow, ScreenHeader } from '@/components/ui';
+import { showNotice } from '@/components/ui/NoticeSheet';
+import { Button, Card, Input, ListRow, ScreenHeader, getTabBarClearance } from '@/components/ui';
 import { SettingsSectionLabel } from '@/components/settings';
 import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
 import { useSettingsStore } from '@/store';
@@ -37,7 +37,7 @@ export default function ExportFormatSettingsScreen() {
   };
 
   const handleReset = () => {
-    Alert.alert(
+    showNotice(
       'Reset format',
       'Reset the message template to the default format?',
       [
@@ -53,7 +53,6 @@ export default function ExportFormatSettingsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.page }} edges={['left', 'right']}>
-      <ManagerScaleContainer>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex: 1 }}
@@ -66,7 +65,7 @@ export default function ExportFormatSettingsScreen() {
             right={<Button size="small" variant="secondary" label="Reset" onPress={handleReset} />}
           />
 
-          <View style={{ flex: 1 }}>
+          <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: ds.spacing(space[4]) }}>
             <SettingsSectionLabel label="Template" />
 
             <View style={{ paddingHorizontal: ds.spacing(space[4]) }}>
@@ -108,19 +107,18 @@ export default function ExportFormatSettingsScreen() {
                 ))}
               </Card>
             </View>
-          </View>
+          </ScrollView>
 
           <View
             style={{
               paddingHorizontal: ds.spacing(space[4]),
               paddingTop: ds.spacing(space[3] + 2),
-              paddingBottom: ds.spacing(space[5]),
+              paddingBottom: getTabBarClearance(0, 'pinned'),
             }}
           >
             <Button icon="save-outline" label="Save format" onPress={handleSave} />
           </View>
         </KeyboardAvoidingView>
-      </ManagerScaleContainer>
     </SafeAreaView>
   );
 }

@@ -24,6 +24,8 @@ const mockOrderSubscription = jest.fn();
 const mockInventoryCleanup = jest.fn();
 const mockOrderCleanup = jest.fn();
 
+jest.mock('@/components/ui/NoticeSheet', () => ({ NoticeSheet: () => null, showNotice: jest.fn() }));
+jest.mock('@/components/ui/StudioToast', () => ({ StudioToast: () => null, showStudioToast: jest.fn() }));
 jest.mock('@/store', () => ({
   useAuthStore: mockUseAuthStore,
   useDisplayStore: mockUseDisplayStore,

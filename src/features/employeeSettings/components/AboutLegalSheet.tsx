@@ -1,7 +1,9 @@
 import React from 'react';
-import { Alert, Linking, Text } from 'react-native';
+import { Linking, Text, View } from 'react-native';
 import Constants from 'expo-constants';
 import { Sheet } from '@/components/ui';
+import { BrandLockup } from '@/components/ui/BrandFooter';
+import { showNotice } from '@/components/ui/NoticeSheet';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { color, typeScale } from '@/theme/tokens';
 import { PRIVACY_URL, SUPPORT_URL, TERMS_URL } from '@/features/auth/legal';
@@ -18,7 +20,7 @@ export async function openExternalUrl(url: string): Promise<void> {
     if (!supported) throw new Error('unsupported');
     await Linking.openURL(url);
   } catch {
-    Alert.alert('Unable to open the link', url);
+    showNotice('Unable to open the link', url);
   }
 }
 
@@ -31,36 +33,39 @@ interface AboutLegalSheetProps {
 export function AboutLegalSheet({ visible, onClose, onShowLicenses }: AboutLegalSheetProps) {
   const ds = useScaledStyles();
   const appVersion = Constants.expoConfig?.version || '1.0.0';
+  const buildNumber = Constants.expoConfig?.ios?.buildNumber ?? '';
 
   return (
-    <Sheet visible={visible} title="About and legal" onClose={onClose}>
-      <Text
+    <Sheet
+      visible={visible}
+      title="About and legal"
+      subtitle={`Smelter ${appVersion} (${buildNumber})`}
+      onClose={onClose}
+    >
+      <View
         style={{
-          fontSize: ds.fontSize(typeScale.secondary),
-          color: color.ink2,
+          alignItems: 'center',
+          paddingTop: ds.spacing(6),
+          paddingBottom: ds.spacing(14),
         }}
       >
-        Smelter {appVersion}
-      </Text>
+        <BrandLockup height={30} />
+      </View>
 
       <SettingsCard>
         <SettingsCardRow
-          icon="shield-checkmark-outline"
           title="Privacy policy"
           onPress={() => void openExternalUrl(PRIVACY_URL)}
         />
         <SettingsCardRow
-          icon="receipt-outline"
           title="Terms of service"
           onPress={() => void openExternalUrl(TERMS_URL)}
         />
         <SettingsCardRow
-          icon="document-text-outline"
           title="Open-source licenses"
           onPress={onShowLicenses}
         />
         <SettingsCardRow
-          icon="help-circle-outline"
           title="Contact support"
           onPress={() => void openExternalUrl(SUPPORT_URL)}
           isLast

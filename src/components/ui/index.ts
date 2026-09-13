@@ -26,6 +26,7 @@ export { StatusPill, type StatusPillProps, type StatusTone } from './StatusPill'
 export {
   TabBar,
   getTabBarClearance,
+  type TabBarClearanceMode,
   type TabBarProps,
   type TabBarItem,
   type TabBarQuickActions,

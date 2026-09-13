@@ -16,7 +16,7 @@ export interface CardProps {
   style?: StyleProp<ViewStyle>;
 }
 
-/** The grouping surface. White, card radius, hairline border, no shadow. */
+/** The grouping surface. Flat white with no border or shadow. */
 export function Card({
   children,
   flush = false,
@@ -33,9 +33,10 @@ export function Card({
       testID={testID}
       style={[
         {
-          backgroundColor: onDark ? auth.well : color.card,
+          backgroundColor: onDark ? auth.well : selected ? color.tint : color.card,
           borderRadius: radius.card,
-          borderWidth: 1,
+          overflow: 'hidden',
+          borderWidth: selected ? 1.5 : onDark ? 1 : 0,
           borderColor,
           paddingHorizontal: flush ? 0 : ds.spacing(space[3] + 2),
           paddingVertical: flush ? 0 : ds.spacing(space[3]),

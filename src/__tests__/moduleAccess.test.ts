@@ -14,6 +14,7 @@ jest.mock('@/services/userModules', () => ({
 
 /* eslint-disable import/first -- Dependencies must be mocked before importing. */
 import {
+  MODULE_KEYS,
   getManageableModuleKeys,
   getRoleDefaultModules,
   getVisibleEmployeeTabs,
@@ -28,21 +29,21 @@ async function flushPromises() {
 }
 
 describe('role default modules', () => {
-  it('gives employees the ordering checklist and stock check by default', () => {
+  it('gives employees only the ordering checklist by default', () => {
     expect(getRoleDefaultModules('employee')).toEqual({
       ordering_simple: true,
       ordering_advanced: false,
-      stock_check: true,
+      stock_check: false,
       tips: false,
       fulfillment: false,
     });
   });
 
-  it('gives managers everything by default', () => {
+  it('keeps Advanced and Stock check off for managers too', () => {
     expect(getRoleDefaultModules('manager')).toEqual({
       ordering_simple: true,
-      ordering_advanced: true,
-      stock_check: true,
+      ordering_advanced: false,
+      stock_check: false,
       tips: true,
       fulfillment: true,
     });
@@ -81,7 +82,7 @@ describe('resolveEffectiveModules', () => {
     ]);
 
     expect(effective.fulfillment).toBe(false);
-    expect(effective.ordering_advanced).toBe(true);
+    expect(effective.ordering_advanced).toBe(false);
   });
 });
 
@@ -102,21 +103,19 @@ describe('employee tab list (floating pill)', () => {
     ]);
   });
 
-  it('adds Advanced and Cart when ordering_advanced is on', () => {
+  it('never adds Advanced or Cart for a stale ordering_advanced override', () => {
     const modules = {
       ...getRoleDefaultModules('employee'),
       ordering_simple: false,
       ordering_advanced: true,
     };
     expect(getVisibleEmployeeTabs(modules)).toEqual([
-      'quick-order',
-      'cart',
       'history',
       'settings',
     ]);
   });
 
-  it('widens the pill to Order / Advanced / Cart / History / Settings when both are on', () => {
+  it('keeps Order / History / Settings when both ordering keys are on', () => {
     const modules = {
       ...getRoleDefaultModules('employee'),
       ordering_simple: true,
@@ -124,8 +123,6 @@ describe('employee tab list (floating pill)', () => {
     };
     expect(getVisibleEmployeeTabs(modules)).toEqual([
       'simple-order',
-      'quick-order',
-      'cart',
       'history',
       'settings',
     ]);
@@ -144,11 +141,11 @@ describe('employee tab list (floating pill)', () => {
 });
 
 describe('manager tab list', () => {
-  it('includes fulfillment for default managers', () => {
+  it('uses Home, Fulfillment, History, and Settings for default managers', () => {
     expect(getVisibleManagerTabs(getRoleDefaultModules('manager'))).toEqual([
       'index',
-      'quick-order',
       'fulfillment',
+      'fulfillment-history',
       'profile',
     ]);
   });
@@ -157,33 +154,43 @@ describe('manager tab list', () => {
     const modules = { ...getRoleDefaultModules('manager'), fulfillment: false };
     expect(getVisibleManagerTabs(modules)).toEqual([
       'index',
-      'quick-order',
+      'fulfillment-history',
       'profile',
     ]);
   });
 
-  it('drops the quick-order tab when ordering_advanced is off', () => {
-    const modules = { ...getRoleDefaultModules('manager'), ordering_advanced: false };
+  it('never adds Quick Order for a stale ordering_advanced override', () => {
+    const modules = { ...getRoleDefaultModules('manager'), ordering_advanced: true };
     expect(getVisibleManagerTabs(modules)).toEqual([
       'index',
       'fulfillment',
+      'fulfillment-history',
       'profile',
     ]);
   });
 });
 
 describe('manageable module keys', () => {
-  it('excludes the manager-side fulfillment module for employees', () => {
+  it('excludes hidden and manager-side modules for employees', () => {
     expect(getManageableModuleKeys('employee')).toEqual([
       'ordering_simple',
-      'ordering_advanced',
-      'stock_check',
       'tips',
     ]);
   });
 
-  it('exposes all five keys for managers', () => {
-    expect(getManageableModuleKeys('manager')).toContain('fulfillment');
+  it('excludes hidden modules from manager editing', () => {
+    expect(getManageableModuleKeys('manager')).toEqual([
+      'ordering_simple',
+      'tips',
+      'fulfillment',
+    ]);
+  });
+
+  it('retains hidden compatibility keys for guards and stored overrides', () => {
+    expect(MODULE_KEYS).toEqual(expect.arrayContaining([
+      'ordering_advanced',
+      'stock_check',
+    ]));
   });
 });
 
@@ -218,7 +225,7 @@ describe('module store', () => {
       status: 'error',
     });
     // Downstream consumers resolve to role defaults so nobody is locked out.
-    expect(resolveEffectiveModules('employee', null).stock_check).toBe(true);
+    expect(resolveEffectiveModules('employee', null).stock_check).toBe(false);
   });
 
   it('keeps last-known data when a refresh for the same user fails', async () => {

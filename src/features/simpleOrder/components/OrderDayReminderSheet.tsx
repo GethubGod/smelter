@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Loading, Sheet } from '@/components/ui';
+import { Loading, SectionLabel, Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import {
   ImpactFeedbackStyle,
@@ -24,25 +24,19 @@ import {
   findMyChecklistOrderDayRule,
   formatTimeLabel,
   mapRuleToOrderDayForm,
+  REMINDER_EARLIEST_TIME,
+  REMINDER_LATEST_TIME,
   REMINDER_TIME_STEP_MINUTES,
   shiftTime,
-  summarizeOrderDayRule,
   toggleDay,
   WEEKDAY_LABELS,
   type OrderDayReminderFormState,
 } from '../orderDayReminder';
 
-/**
- * Employee self-serve order-day reminder sheet (Phase 5c). Sets, edits, or
- * removes the caller's own checklist order-day recurring rule for the active
- * location group. Deliberately minimal: days of week + time, nothing else.
- */
-
 interface OrderDayReminderSheetProps {
   visible: boolean;
   locationGroup: 'sushi' | 'poki';
   onClose: () => void;
-  /** Lets the host screen refresh its bell state after save/remove. */
   onRuleChanged?: (rule: RecurringReminderRule | null) => void;
 }
 
@@ -91,16 +85,22 @@ export function OrderDayReminderSheet({
 
   const handleToggleDay = useCallback((day: number) => {
     void triggerSelectionHaptic();
-    setForm((prev) => ({ ...prev, daysOfWeek: toggleDay(prev.daysOfWeek, day) }));
+    setForm((previous) => ({
+      ...previous,
+      daysOfWeek: toggleDay(previous.daysOfWeek, day),
+    }));
   }, []);
 
   const handleShiftTime = useCallback((deltaMinutes: number) => {
     void triggerImpactHaptic(ImpactFeedbackStyle.Light);
-    setForm((prev) => ({ ...prev, timeOfDay: shiftTime(prev.timeOfDay, deltaMinutes) }));
+    setForm((previous) => ({
+      ...previous,
+      timeOfDay: shiftTime(previous.timeOfDay, deltaMinutes),
+    }));
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (isSaving || isRemoving) return;
+    if (isLoading || loadError || isSaving || isRemoving) return;
     const { input, error } = buildOrderDayReminderInput(
       form,
       locationGroup,
@@ -119,15 +119,25 @@ export function OrderDayReminderSheet({
       setExistingRule(saved);
       onRuleChanged?.(saved);
       onClose();
-    } catch (err) {
+    } catch (error) {
       void triggerNotificationHaptic(NotificationFeedbackType.Error);
       setSaveError(
-        err instanceof Error ? err.message : 'Could not save your reminder.',
+        error instanceof Error ? error.message : 'Could not save your reminder.',
       );
     } finally {
       setIsSaving(false);
     }
-  }, [existingRule?.id, form, isRemoving, isSaving, locationGroup, onClose, onRuleChanged]);
+  }, [
+    existingRule?.id,
+    form,
+    isLoading,
+    isRemoving,
+    isSaving,
+    loadError,
+    locationGroup,
+    onClose,
+    onRuleChanged,
+  ]);
 
   const handleRemove = useCallback(async () => {
     if (isSaving || isRemoving || !existingRule) return;
@@ -140,15 +150,19 @@ export function OrderDayReminderSheet({
       setForm(defaultOrderDayReminderForm());
       onRuleChanged?.(null);
       onClose();
-    } catch (err) {
+    } catch (error) {
       void triggerNotificationHaptic(NotificationFeedbackType.Error);
       setSaveError(
-        err instanceof Error ? err.message : 'Could not remove your reminder.',
+        error instanceof Error ? error.message : 'Could not remove your reminder.',
       );
     } finally {
       setIsRemoving(false);
     }
   }, [existingRule, isRemoving, isSaving, onClose, onRuleChanged]);
+
+  const formDisabled = isLoading || Boolean(loadError) || isSaving || isRemoving;
+  const earlierDisabled = form.timeOfDay <= REMINDER_EARLIEST_TIME;
+  const laterDisabled = form.timeOfDay >= REMINDER_LATEST_TIME;
 
   let body: React.ReactNode;
   if (isLoading) {
@@ -173,46 +187,12 @@ export function OrderDayReminderSheet({
   } else {
     body = (
       <View>
-        {existingRule ? (
-          <Text
-            style={{
-              fontSize: ds.fontSize(typeScale.secondary),
-              color: color.ink2,
-              marginBottom: ds.spacing(12),
-            }}
-          >
-            Currently: {summarizeOrderDayRule(existingRule)}
-            {existingRule.enabled === false ? ' (paused)' : ''}
-          </Text>
-        ) : (
-          <Text
-            style={{
-              fontSize: ds.fontSize(typeScale.secondary),
-              color: color.ink2,
-              marginBottom: ds.spacing(12),
-            }}
-          >
-            Get a push on your order days if you have not sent an order yet.
-          </Text>
-        )}
-
-        <Text
-          style={{
-            fontSize: ds.fontSize(typeScale.secondary),
-            fontWeight: '700',
-            letterSpacing: 0.6,
-            textTransform: 'uppercase',
-            color: color.ink2,
-            marginBottom: ds.spacing(8),
-          }}
-        >
-          Remind me on
-        </Text>
+        <SectionLabel>Remind me on</SectionLabel>
         <View
           style={{
             flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginBottom: ds.spacing(16),
+            gap: ds.spacing(6),
+            marginBottom: ds.spacing(2),
           }}
         >
           {WEEKDAY_LABELS.map((label, day) => {
@@ -221,28 +201,26 @@ export function OrderDayReminderSheet({
               <TouchableOpacity
                 key={label}
                 onPress={() => handleToggleDay(day)}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
+                activeOpacity={0.75}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: selected }}
                 accessibilityLabel={`Remind on ${label}`}
                 style={{
-                  width: ds.spacing(42),
-                  minHeight: ds.spacing(42),
-                  borderRadius: radius.card,
-                  borderWidth: 1,
-                  borderColor: selected
-                    ? color.hairlineStrong
-                    : color.hairline,
-                  backgroundColor: selected ? color.tint : color.well,
+                  flex: 1,
+                  borderRadius: radius.control,
+                  borderWidth: 1.5,
+                  borderColor: selected ? color.accent : color.card,
+                  backgroundColor: selected ? color.tint : color.card,
                   alignItems: 'center',
                   justifyContent: 'center',
+                  paddingVertical: ds.spacing(12),
                 }}
               >
                 <Text
                   style={{
                     fontSize: ds.fontSize(typeScale.secondary),
-                    fontWeight: '700',
-                    color: selected ? color.accent : color.ink2,
+                    fontWeight: weight.semibold,
+                    color: selected ? color.accent : color.ink,
                   }}
                 >
                   {label}
@@ -252,55 +230,42 @@ export function OrderDayReminderSheet({
           })}
         </View>
 
-        <Text
-          style={{
-            fontSize: ds.fontSize(typeScale.secondary),
-            fontWeight: '700',
-            letterSpacing: 0.6,
-            textTransform: 'uppercase',
-            color: color.ink2,
-            marginBottom: ds.spacing(8),
-          }}
-        >
-          At
-        </Text>
+        <SectionLabel>At</SectionLabel>
         <View
           style={{
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
-            minHeight: 52,
-            borderRadius: radius.card,
-            borderWidth: 1,
-            borderColor: color.hairline,
-            backgroundColor: color.well,
+            borderRadius: radius.control,
+            backgroundColor: color.card,
             paddingHorizontal: ds.spacing(8),
-            marginBottom: ds.spacing(16),
+            paddingVertical: ds.spacing(8),
           }}
         >
           <TouchableOpacity
             onPress={() => handleShiftTime(-REMINDER_TIME_STEP_MINUTES)}
-            activeOpacity={0.7}
+            disabled={earlierDisabled}
+            activeOpacity={0.75}
             accessibilityRole="button"
             accessibilityLabel="Earlier reminder time"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityState={{ disabled: earlierDisabled }}
             style={{
-              width: ds.spacing(40),
-              minHeight: ds.spacing(40),
+              width: 40,
+              height: 40,
+              borderRadius: radius.pill,
+              backgroundColor: color.well,
               alignItems: 'center',
               justifyContent: 'center',
+              opacity: earlierDisabled ? 0.5 : 1,
             }}
           >
-            <Ionicons
-              name="remove-circle-outline"
-              size={ds.icon(22)}
-              color={color.accent}
-            />
+            <Ionicons name="remove" size={ds.icon(20)} color={color.ink} />
           </TouchableOpacity>
           <Text
             style={{
-              fontSize: ds.fontSize(typeScale.title),
-              fontWeight: '700',
+              fontSize: ds.fontSize(typeScale.time),
+              fontWeight: weight.bold,
+              fontVariant: ['tabular-nums'],
               color: color.ink,
             }}
           >
@@ -308,66 +273,36 @@ export function OrderDayReminderSheet({
           </Text>
           <TouchableOpacity
             onPress={() => handleShiftTime(REMINDER_TIME_STEP_MINUTES)}
-            activeOpacity={0.7}
+            disabled={laterDisabled}
+            activeOpacity={0.75}
             accessibilityRole="button"
             accessibilityLabel="Later reminder time"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityState={{ disabled: laterDisabled }}
             style={{
-              width: ds.spacing(40),
-              minHeight: ds.spacing(40),
+              width: 40,
+              height: 40,
+              borderRadius: radius.pill,
+              backgroundColor: color.well,
               alignItems: 'center',
               justifyContent: 'center',
+              opacity: laterDisabled ? 0.5 : 1,
             }}
           >
-            <Ionicons
-              name="add-circle-outline"
-              size={ds.icon(22)}
-              color={color.accent}
-            />
+            <Ionicons name="add" size={ds.icon(20)} color={color.ink} />
           </TouchableOpacity>
         </View>
 
         {saveError ? (
           <Text
             style={{
+              marginTop: ds.spacing(10),
               fontSize: ds.fontSize(typeScale.secondary),
               color: color.alert,
-              marginBottom: ds.spacing(10),
             }}
           >
             {saveError}
           </Text>
         ) : null}
-
-        <TouchableOpacity
-          onPress={() => void handleSave()}
-          disabled={isSaving || isRemoving}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel={existingRule ? 'Update reminder' : 'Set reminder'}
-          style={{
-            minHeight: 52,
-            borderRadius: radius.card,
-            backgroundColor: color.accent,
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: isSaving || isRemoving ? 0.6 : 1,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: ds.fontSize(typeScale.body),
-              fontWeight: '700',
-              color: color.card,
-            }}
-          >
-            {isSaving
-              ? 'Saving…'
-              : existingRule
-                ? 'Update reminder'
-                : 'Set reminder'}
-          </Text>
-        </TouchableOpacity>
 
         {existingRule ? (
           <TouchableOpacity
@@ -380,7 +315,7 @@ export function OrderDayReminderSheet({
               minHeight: 44,
               alignItems: 'center',
               justifyContent: 'center',
-              marginTop: ds.spacing(6),
+              marginTop: ds.spacing(8),
               opacity: isSaving || isRemoving ? 0.6 : 1,
             }}
           >
@@ -400,7 +335,19 @@ export function OrderDayReminderSheet({
   }
 
   return (
-    <Sheet visible={visible} title="Order-day reminder" onClose={onClose}>
+    <Sheet
+      visible={visible}
+      title="Order-day reminder"
+      subtitle="A push on your order days if you have not sent one yet."
+      onClose={onClose}
+      dismissible={!isSaving && !isRemoving}
+      primary={{
+        label: 'Set reminder',
+        onPress: () => void handleSave(),
+        loading: isSaving,
+        disabled: formDisabled,
+      }}
+    >
       {body}
     </Sheet>
   );

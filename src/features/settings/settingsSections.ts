@@ -1,285 +1,178 @@
-import type { Href } from 'expo-router';
 import type { Ionicons } from '@expo/vector-icons';
-import {
-  settingsSectionPalettes,
-  type SettingsRowProps,
-} from '@/components/settings';
+import type { Href } from 'expo-router';
 import {
   buildSettingsHref,
-  EMPLOYEE_SETTINGS_ROOT,
   MANAGER_SETTINGS_ROOT,
-  type SettingsOrigin,
 } from '@/lib/settingsNavigation';
 
 type SettingsIconName = keyof typeof Ionicons.glyphMap;
-type SettingsSectionKey =
-  | 'account'
-  | 'preferences'
-  | 'orderingInventory'
-  | 'management'
-  | 'supportHistory'
-  | 'viewSwitching';
 
-export type SettingsViewMode = 'employee' | 'manager';
-
-export type SettingsItem = Omit<
-  SettingsRowProps,
-  'showBorder' | 'borderColor'
-> & {
+export interface SettingsItem {
   key: string;
-};
+  icon: SettingsIconName;
+  title: string;
+  subtitle?: string;
+  rightText?: string;
+  chevron?: 'right' | 'down';
+  onPress: () => void;
+}
 
 export interface SettingsGroupModel {
-  key: SettingsSectionKey;
+  key: 'team' | 'ordering' | 'help' | 'employee';
+  label: 'Team' | 'Ordering' | 'Help' | 'Employee';
   items: SettingsItem[];
 }
 
-interface BuildSettingsGroupsOptions {
-  view: SettingsViewMode;
-  canSwitchViews: boolean;
-  onNavigate: (href: Href | string) => void;
+interface BuildManagerSettingsGroupsOptions {
+  teamCountLabel: string;
+  inventoryCountLabel: string;
+  reminderSubtitle: string;
+  checklistSubtitle: string;
+  appVersion: string;
+  onNavigate: (href: Href) => void;
+  onOpenReminder: () => void;
+  onOpenChecklist: () => void;
+  onOpenAbout: () => void;
+  onContactSupport: () => void;
   onSwitchToEmployee: () => void;
-  onSwitchToManager: () => void;
 }
 
-const settingsRoots: Record<SettingsViewMode, string> = {
-  employee: EMPLOYEE_SETTINGS_ROOT,
-  manager: MANAGER_SETTINGS_ROOT,
-};
-
-function routeFor(
-  view: SettingsViewMode,
-  pathname: string,
-): Href {
+function managerRoute(pathname: string): Href {
   return buildSettingsHref(pathname, {
-    origin: view as SettingsOrigin,
-    backTo: settingsRoots[view],
+    origin: 'manager',
+    backTo: MANAGER_SETTINGS_ROOT,
   });
 }
 
-function withSectionPalette(
-  section: SettingsSectionKey,
-  item: Omit<SettingsItem, 'iconColor' | 'iconBgColor'>,
-): SettingsItem {
-  const palette = settingsSectionPalettes[section];
-
-  return {
-    ...item,
-    iconColor: palette.icon,
-    iconBgColor: palette.background,
-  };
-}
-
-function makeItem(
-  section: SettingsSectionKey,
-  item: Omit<SettingsItem, 'iconColor' | 'iconBgColor'> & {
-    icon: SettingsIconName;
-  },
-): SettingsItem {
-  return withSectionPalette(section, item);
-}
-
-export function buildSettingsGroups({
-  view,
-  canSwitchViews,
+export function buildManagerSettingsGroups({
+  teamCountLabel,
+  inventoryCountLabel,
+  reminderSubtitle,
+  checklistSubtitle,
+  appVersion,
   onNavigate,
+  onOpenReminder,
+  onOpenChecklist,
+  onOpenAbout,
+  onContactSupport,
   onSwitchToEmployee,
-  onSwitchToManager,
-}: BuildSettingsGroupsOptions): SettingsGroupModel[] {
-  const groups: SettingsGroupModel[] = [
+}: BuildManagerSettingsGroupsOptions): SettingsGroupModel[] {
+  return [
     {
-      key: 'account',
+      key: 'team',
+      label: 'Team',
       items: [
-        makeItem('account', {
-          key: 'profile',
-          icon: 'person-outline',
-          title: 'Profile',
-          subtitle:
-            view === 'manager'
-              ? 'Manage account details and locations'
-              : 'Manage your account details',
+        {
+          key: 'team',
+          icon: 'people-outline',
+          title: 'Team',
+          subtitle: `${teamCountLabel} · invites and features`,
+          chevron: 'right',
+          onPress: () => onNavigate(managerRoute('/(manager)/manager-settings/team')),
+        },
+        {
+          key: 'access-codes',
+          icon: 'key-outline',
+          title: 'Access codes',
+          subtitle: 'Employee and manager sign-up codes',
+          chevron: 'right',
           onPress: () =>
-            onNavigate(
-              view === 'manager'
-                ? routeFor(view, '/(manager)/manager-settings/profile')
-                : routeFor(view, '/settings/profile'),
-            ),
-        }),
+            onNavigate(managerRoute('/(manager)/manager-settings/access-codes')),
+        },
+        {
+          key: 'supplier-contacts',
+          icon: 'call-outline',
+          title: 'Supplier contacts',
+          subtitle: 'Numbers and send channels',
+          chevron: 'right',
+          onPress: () =>
+            onNavigate(managerRoute('/(manager)/manager-settings/supplier-contacts')),
+        },
+        {
+          key: 'user-management',
+          icon: 'lock-closed-outline',
+          title: 'User management',
+          subtitle: 'Suspend or delete accounts',
+          chevron: 'right',
+          onPress: () =>
+            onNavigate(managerRoute('/(manager)/manager-settings/user-management')),
+        },
       ],
     },
     {
-      key: 'preferences',
+      key: 'ordering',
+      label: 'Ordering',
       items: [
-        makeItem('preferences', {
-          key: 'display',
-          icon: 'eye-outline',
-          title: 'Display & Accessibility',
-          subtitle: 'Text size, button size, and interaction settings',
+        {
+          key: 'inventory',
+          icon: 'cube-outline',
+          title: 'Inventory',
+          subtitle: `${inventoryCountLabel} · stations and units`,
+          chevron: 'right',
+          onPress: () => onNavigate(managerRoute('/(manager)/inventory')),
+        },
+        {
+          key: 'export-format',
+          icon: 'document-text-outline',
+          title: 'Export format',
+          subtitle: 'Supplier message template',
+          chevron: 'right',
           onPress: () =>
-            onNavigate(routeFor(view, '/settings/display-accessibility')),
-        }),
-        makeItem('preferences', {
-          key: 'notifications',
+            onNavigate(managerRoute('/(manager)/manager-settings/export-format')),
+        },
+        {
+          key: 'order-reminders',
           icon: 'notifications-outline',
-          title: 'Notifications',
-          subtitle: 'Control alerts, sounds, and quiet hours',
-          onPress: () => onNavigate(routeFor(view, '/settings/notifications')),
-        }),
-        makeItem('preferences', {
-          key: 'reminders',
-          icon: 'alarm-outline',
-          title: 'Reminders',
-          subtitle: 'Configure quick and custom reminders',
-          onPress: () => onNavigate(routeFor(view, '/settings/reminders')),
-        }),
+          title: 'Order reminders',
+          subtitle: reminderSubtitle,
+          chevron: 'down',
+          onPress: onOpenReminder,
+        },
+        {
+          key: 'checklist-display',
+          icon: 'options-outline',
+          title: 'Checklist display',
+          subtitle: checklistSubtitle,
+          chevron: 'down',
+          onPress: onOpenChecklist,
+        },
       ],
     },
     {
-      key: 'orderingInventory',
+      key: 'help',
+      label: 'Help',
       items: [
-        ...(view === 'manager'
-          ? [
-              makeItem('orderingInventory', {
-                key: 'quick-order-ai',
-                icon: 'sparkles-outline',
-                title: 'Quick Order',
-                subtitle: 'Manage aliases and parser examples',
-                onPress: () =>
-                  onNavigate(
-                    routeFor(
-                      view,
-                      '/(manager)/manager-settings/quick-order-config',
-                    ),
-                  ),
-              }),
-            ]
-          : []),
-        makeItem('orderingInventory', {
-          key: 'quick-search',
-          icon: 'search-outline',
-          title: 'Quick Search',
-          subtitle: 'Use the classic item search ordering flow',
-          onPress: () => onNavigate(routeFor(view, '/settings/quick-search')),
-        }),
-        ...(view === 'employee'
-          ? [
-              makeItem('orderingInventory', {
-                key: 'stock-settings',
-                icon: 'clipboard-outline',
-                title: 'Stock Settings',
-                subtitle: 'Count inventory, warnings, and preferences',
-                onPress: () =>
-                  onNavigate(routeFor(view, '/settings/stock-settings')),
-              }),
-            ]
-          : [
-              makeItem('orderingInventory', {
-                key: 'inventory',
-                icon: 'cube-outline',
-                title: 'Inventory',
-                subtitle: 'Manage station inventory and stock levels',
-                onPress: () => onNavigate('/(manager)/inventory'),
-              }),
-            ]),
+        {
+          key: 'contact-support',
+          icon: 'help-circle-outline',
+          title: 'Contact support',
+          subtitle: 'Report a problem',
+          chevron: 'right',
+          onPress: onContactSupport,
+        },
+        {
+          key: 'about-legal',
+          icon: 'shield-checkmark-outline',
+          title: 'About and legal',
+          rightText: `v${appVersion}`,
+          chevron: 'down',
+          onPress: onOpenAbout,
+        },
+      ],
+    },
+    {
+      key: 'employee',
+      label: 'Employee',
+      items: [
+        {
+          key: 'switch-employee',
+          icon: 'swap-horizontal',
+          title: 'Switch to Employee view',
+          subtitle: 'Place an order from the checklist',
+          chevron: 'right',
+          onPress: onSwitchToEmployee,
+        },
       ],
     },
   ];
-
-  if (view === 'manager') {
-    groups.push({
-      key: 'management',
-      items: [
-        makeItem('management', {
-          key: 'team',
-          icon: 'person-add-outline',
-          title: 'Team',
-          subtitle: 'Invites, features, and sign-in resets',
-          onPress: () =>
-            onNavigate(routeFor(view, '/(manager)/manager-settings/team')),
-        }),
-        makeItem('management', {
-          key: 'access-codes',
-          icon: 'key-outline',
-          title: 'Access Codes',
-          subtitle: 'Update employee and manager sign-up codes',
-          onPress: () =>
-            onNavigate(
-              routeFor(view, '/(manager)/manager-settings/access-codes'),
-            ),
-        }),
-        makeItem('management', {
-          key: 'supplier-contacts',
-          icon: 'call-outline',
-          title: 'Supplier Contacts',
-          subtitle: 'Phone numbers and send channels for Send All',
-          onPress: () =>
-            onNavigate(
-              routeFor(view, '/(manager)/manager-settings/supplier-contacts'),
-            ),
-        }),
-        makeItem('management', {
-          key: 'user-management',
-          icon: 'people-outline',
-          title: 'User Management',
-          subtitle: 'Suspend inactive users and delete accounts',
-          onPress: () =>
-            onNavigate(
-              routeFor(view, '/(manager)/manager-settings/user-management'),
-            ),
-        }),
-      ],
-    });
-  }
-
-  groups.push({
-    key: 'supportHistory',
-    items: [
-      makeItem('supportHistory', {
-        key: 'about-support',
-        icon: 'information-circle-outline',
-        title: 'About & Support',
-        subtitle: 'Version info, support, and policies',
-        onPress: () => onNavigate(routeFor(view, '/settings/about-support')),
-      }),
-      makeItem('supportHistory', {
-        key: view === 'manager' ? 'past-orders' : 'my-orders',
-        icon: 'receipt-outline',
-        title: view === 'manager' ? 'Past Orders' : 'My Orders',
-        subtitle:
-          view === 'manager'
-            ? 'View fulfillment and order history'
-            : 'View your order history',
-        onPress: () =>
-          onNavigate(
-            view === 'manager'
-              ? '/(manager)/past-orders'
-              : `/orders/history?backTo=${encodeURIComponent(EMPLOYEE_SETTINGS_ROOT)}`,
-          ),
-      }),
-    ],
-  });
-
-  if (canSwitchViews) {
-    groups.push({
-      key: 'viewSwitching',
-      items: [
-        makeItem('viewSwitching', {
-          key: view === 'manager' ? 'switch-employee' : 'switch-manager',
-          icon: 'swap-horizontal',
-          title:
-            view === 'manager'
-              ? 'Switch to Employee View'
-              : 'Switch to Manager View',
-          subtitle:
-            view === 'manager'
-              ? 'Place orders in employee mode'
-              : 'Manage orders and fulfillment',
-          onPress:
-            view === 'manager' ? onSwitchToEmployee : onSwitchToManager,
-        }),
-      ],
-    });
-  }
-
-  return groups;
 }

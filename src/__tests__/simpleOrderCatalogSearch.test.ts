@@ -48,8 +48,8 @@ function makeVoiceAction(overrides: Partial<VoiceParsedAction> = {}): VoiceParse
 
 describe('filterCatalogItems', () => {
   const catalog = [
-    makeInventoryItem({ id: 'a', name: 'Salmon (Fresh)' }),
     makeInventoryItem({ id: 'b', name: 'Smoked Salmon' }),
+    makeInventoryItem({ id: 'a', name: 'Salmon (Fresh)' }),
     makeInventoryItem({ id: 'c', name: 'Tuna', aliases: ['maguro', 'saku salmon cut'] }),
     makeInventoryItem({ id: 'd', name: 'Rice' }),
   ];
@@ -59,14 +59,14 @@ describe('filterCatalogItems', () => {
     expect(filterCatalogItems(catalog, '   ')).toEqual([]);
   });
 
-  it('ranks name-prefix matches ahead of substring, then alias matches', () => {
+  it('matches item-name substrings case-insensitively in catalogue order', () => {
     const results = filterCatalogItems(catalog, 'salmon');
-    expect(results.map((item) => item.id)).toEqual(['a', 'b', 'c']);
+    expect(results.map((item) => item.id)).toEqual(['b', 'a']);
+    expect(filterCatalogItems(catalog, 'SMOKED').map((item) => item.id)).toEqual(['b']);
   });
 
-  it('matches aliases case-insensitively', () => {
-    const results = filterCatalogItems(catalog, 'MAGURO');
-    expect(results.map((item) => item.id)).toEqual(['c']);
+  it('does not include alias-only matches', () => {
+    expect(filterCatalogItems(catalog, 'MAGURO')).toEqual([]);
   });
 
   it('respects the result limit', () => {
@@ -74,9 +74,22 @@ describe('filterCatalogItems', () => {
     expect(results).toHaveLength(2);
   });
 
-  it('indexes item text once across repeated queries', () => {
+  it('returns only the first six matches by default', () => {
+    const matches = Array.from({ length: 8 }, (_, index) =>
+      makeInventoryItem({ id: `match-${index}`, name: `Match ${index}` }),
+    );
+    expect(filterCatalogItems(matches, 'match').map((item) => item.id)).toEqual([
+      'match-0',
+      'match-1',
+      'match-2',
+      'match-3',
+      'match-4',
+      'match-5',
+    ]);
+  });
+
+  it('indexes each item name once across repeated queries', () => {
     let nameReads = 0;
-    let aliasReads = 0;
     const indexedCatalog = Array.from({ length: 40 }, (_, index) => {
       const item = makeInventoryItem({ id: `indexed-${index}` });
       Object.defineProperties(item, {
@@ -88,25 +101,16 @@ describe('filterCatalogItems', () => {
             return `Ingredient ${index}`;
           },
         },
-        aliases: {
-          configurable: true,
-          enumerable: true,
-          get: () => {
-            aliasReads += 1;
-            return [`alias ${index}`];
-          },
-        },
       });
       return item;
     });
 
     const index = buildCatalogSearchIndex(indexedCatalog);
-    for (const query of ['ingredient', 'alias', 'ingredient 3', 'missing']) {
+    for (const query of ['ingredient', 'ingredient 3', 'missing']) {
       filterCatalogSearchIndex(index, query);
     }
 
     expect(nameReads).toBe(indexedCatalog.length);
-    expect(aliasReads).toBe(indexedCatalog.length);
   });
 });
 

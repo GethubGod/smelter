@@ -10,12 +10,34 @@ import renderer, { type ReactTestInstance } from 'react-test-renderer';
 
 /* A jest.mock factory may only `require`; an import would hoist above the mock. */
 /* eslint-disable @typescript-eslint/no-require-imports */
-jest.mock('react-native', () => require('./nativeMocks').reactNative());
+jest.mock('react-native', () => ({
+  ...require('./nativeMocks').reactNative(),
+  PanResponder: {
+    create: (handlers: object) => ({ panHandlers: handlers }),
+  },
+}));
 jest.mock('@expo/vector-icons', () => require('./nativeMocks').vectorIcons());
 jest.mock('react-native-safe-area-context', () => require('./nativeMocks').safeAreaContext());
 jest.mock('@/hooks/useScaledStyles', () => require('./nativeMocks').scaledStyles());
 jest.mock('@/components/LoadingIndicator', () => require('./nativeMocks').loadingIndicator());
 jest.mock('@/components/BottomSheetShell', () => require('./nativeMocks').bottomSheetShell());
+jest.mock('react-native-reanimated', () => {
+  const native = require('./nativeMocks').reactNative();
+  const react = require('react');
+  return {
+    __esModule: true,
+    default: { View: native.View },
+    cancelAnimation: jest.fn(),
+    Easing: {
+      bezier: jest.fn(() => (value: number) => value),
+      cubic: (value: number) => value,
+      out: (easing: (value: number) => number) => easing,
+    },
+    useAnimatedStyle: (factory: () => object) => factory(),
+    useSharedValue: (value: number) => react.useRef({ value }).current,
+    withTiming: (value: number) => value,
+  };
+});
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 // The mocks above must land before the primitives load.
@@ -191,6 +213,18 @@ describe('StatusPill', () => {
     );
     expect(withRole(root, 'text')[0].props.accessibilityLabel).toBe('Status: 1 ready');
   });
+
+  it('can omit a redundant visual dot without changing the spoken status', () => {
+    const root = render(
+      React.createElement(StatusPill, {
+        status: 'submitted',
+        label: 'Ready',
+        showDot: false,
+      }),
+    );
+    expect(withRole(root, 'text')[0].props.accessibilityLabel).toBe('Status: Ready');
+    expect(byHost(root, 'View')).toHaveLength(1);
+  });
 });
 
 describe('ScreenHeader', () => {
@@ -358,7 +392,7 @@ describe('Sheet', () => {
       }),
     );
     expect(withRole(root, 'header')[0].props.children).toBe('Add a note');
-    expect(labels(withRole(root, 'button'))).toEqual(['Save note']);
+    expect(labels(withRole(root, 'button'))).toEqual(['Close Add a note', 'Save note']);
   });
 });
 

@@ -1,3 +1,5 @@
+import { NoticeSheet } from "@/components/ui/NoticeSheet";
+import { StudioToast } from "@/components/ui/StudioToast";
 import React, { useEffect } from "react";
 import {
   LogBox,
@@ -160,18 +162,22 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: colors.background },
           animation: reduceMotion ? "none" : "simple_push",
           gestureEnabled: true,
+          animationDuration: 280,
+          gestureResponseDistance: { start: 28 },
         }}
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="(manager)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: "none" }} />
+        <Stack.Screen name="(manager)" options={{ headerShown: false, animation: "none" }} />
         <Stack.Screen name="inventory-browse" options={{ headerShown: false }} />
         <Stack.Screen name="settings" options={{ headerShown: false }} />
         <Stack.Screen name="orders" options={{ headerShown: false }} />
         <Stack.Screen name="suspended" options={{ headerShown: false }} />
         <Stack.Screen name="join" options={{ headerShown: false }} />
       </Stack>
+      <StudioToast />
+      <NoticeSheet />
     </GestureHandlerRootView>
   );
 

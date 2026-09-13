@@ -1,12 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useShallow } from 'zustand/react/shallow';
-import { getFloatingPillClearance } from '@/components/navigation';
-import { useMyModules } from '@/hooks';
 import { useResolvedActiveLocation } from '@/hooks/useResolvedActiveLocation';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { useSignOutAction } from '@/hooks/useSignOutAction';
@@ -15,8 +13,10 @@ import {
   type RecurringReminderRule,
 } from '@/services/employeeReminders';
 import { useAuthStore, useSettingsStore } from '@/store';
-import { Button, Card, ScreenHeader } from '@/components/ui';
-import { color, radius, space, typeScale, weight } from '@/theme/tokens';
+import { Button, Card, ScreenHeader, SectionLabel, getTabBarClearance } from '@/components/ui';
+import { BrandFooter } from '@/components/ui/BrandFooter';
+import { switchViewMode } from '@/lib/switchViewMode';
+import { color, radius, space, tracking, typeScale, weight } from '@/theme/tokens';
 import { ChecklistSettingsSheet } from '@/features/simpleOrder/components/ChecklistSettingsSheet';
 import { OrderDayReminderSheet } from '@/features/simpleOrder/components/OrderDayReminderSheet';
 import {
@@ -34,7 +34,7 @@ import { SettingsCard, SettingsCardRow } from './components/SettingsCardRow';
 
 /**
  * Trimmed employee Settings (checklist-first restructure): profile card,
- * Order reminders, Checklist display, module-gated extras, Contact support,
+ * Order reminders, Checklist display, Contact support,
  * About and legal, Sign out. Everything else moved off this screen; the
  * order-day reminder editor lives here (not in quick actions).
  */
@@ -42,12 +42,11 @@ import { SettingsCard, SettingsCardRow } from './components/SettingsCardRow';
 export function EmployeeSettingsScreen() {
   const ds = useScaledStyles();
   const insets = useSafeAreaInsets();
-  const { user, profile, session, setViewMode } = useAuthStore(
+  const { user, profile, session } = useAuthStore(
     useShallow((state) => ({
       user: state.user,
       profile: state.profile,
       session: state.session,
-      setViewMode: state.setViewMode,
     })),
   );
   const { isSigningOut, requestSignOut } = useSignOutAction();
@@ -64,7 +63,6 @@ export function EmployeeSettingsScreen() {
     | 'manager'
     | null;
   const isManager = resolvedRole === 'manager';
-  const { modules } = useMyModules(resolvedRole);
 
   const density = useSettingsStore((state) => state.simpleOrderDensity);
   const setSimpleOrderDensity = useSettingsStore((state) => state.setSimpleOrderDensity);
@@ -94,16 +92,13 @@ export function EmployeeSettingsScreen() {
     };
   }, [locationGroup]);
 
-  const handleSwitchToManager = useCallback(() => {
-    setViewMode('manager');
-    router.replace('/(manager)');
-  }, [setViewMode]);
-
   const appVersion = Constants.expoConfig?.version || '1.0.0';
   const displayName = user?.name?.trim() || 'Your profile';
   const initial = (displayName[0] ?? '?').toUpperCase();
   const locationLabel = location?.name?.replace(/^Babytuna\s+/i, '') ?? null;
   const roleLabel = isManager ? 'Manager' : 'Employee';
+  const densityLabel =
+    density === 'comfort' ? 'Comfortable' : density === 'dense' ? 'Dense' : 'Compact';
 
   const reminderSubtitle =
     reminderRule === null
@@ -112,18 +107,42 @@ export function EmployeeSettingsScreen() {
         ? 'Off'
         : summarizeOrderDayRule(reminderRule);
 
-  const bottomPadding = getFloatingPillClearance(insets.bottom) + ds.spacing(24);
+  const bottomPadding = getTabBarClearance(insets.bottom) + ds.spacing(24);
 
   return (
     <SafeAreaView edges={['left', 'right']} style={{ flex: 1, backgroundColor: color.page }}>
-      <ScreenHeader title="Settings" />
+      <ScreenHeader
+        title="Settings"
+        right={
+          <View
+            style={{
+              paddingHorizontal: ds.spacing(space[2]),
+              paddingVertical: ds.spacing(space[1]),
+              borderRadius: radius.pill,
+              backgroundColor: color.well,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: ds.fontSize(typeScale.caption),
+                fontWeight: weight.bold,
+                letterSpacing: tracking.caption,
+                textTransform: 'uppercase',
+                color: color.ink2,
+              }}
+            >
+              Employee
+            </Text>
+          </View>
+        }
+      />
 
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{
           paddingHorizontal: ds.spacing(space[4]),
           paddingBottom: bottomPadding,
-          gap: ds.spacing(space[3]),
+          gap: 0,
         }}
         showsVerticalScrollIndicator={false}
       >
@@ -136,12 +155,21 @@ export function EmployeeSettingsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Open your profile"
         >
-          <Card>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: ds.spacing(space[3]) }}>
+          <Card flush>
+            <View
+              style={{
+                minHeight: ds.spacing(60),
+                paddingHorizontal: ds.spacing(14),
+                paddingVertical: ds.spacing(7),
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: ds.spacing(space[3]),
+              }}
+            >
               <View
                 style={{
-                  width: ds.icon(48),
-                  height: ds.icon(48),
+                  width: ds.icon(46),
+                  height: ds.icon(46),
                   borderRadius: radius.pill,
                   backgroundColor: color.tint,
                   alignItems: 'center',
@@ -178,40 +206,26 @@ export function EmployeeSettingsScreen() {
           </Card>
         </TouchableOpacity>
 
+        <SectionLabel>Ordering</SectionLabel>
         <SettingsCard>
           <SettingsCardRow
             icon={reminderRule && reminderRule.enabled !== false ? 'notifications' : 'notifications-outline'}
             title="Order reminders"
             subtitle={reminderSubtitle}
             onPress={() => setReminderSheetVisible(true)}
+            showChevron="down"
           />
           <SettingsCardRow
             icon="options-outline"
             title="Checklist display"
-            subtitle={`${density === 'comfort' ? 'Comfortable' : 'Compact'} · categories ${
-              showCategories ? 'on' : 'off'
-            }`}
+            subtitle={`${densityLabel} · categories ${showCategories ? 'on' : 'off'}`}
             onPress={() => setDisplaySheetVisible(true)}
+            showChevron="down"
             isLast
           />
         </SettingsCard>
 
-        {modules.stock_check ? (
-          <SettingsCard>
-            <SettingsCardRow
-              icon="clipboard-outline"
-              title="Stock settings"
-              subtitle="Count inventory, warnings, and preferences"
-              onPress={() =>
-                router.push(
-                  '/settings/stock-settings' as Parameters<typeof router.push>[0],
-                )
-              }
-              isLast
-            />
-          </SettingsCard>
-        ) : null}
-
+        <SectionLabel>Help</SectionLabel>
         <SettingsCard>
           <SettingsCardRow
             icon="help-circle-outline"
@@ -228,7 +242,7 @@ export function EmployeeSettingsScreen() {
                 <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}>
                   v{appVersion}
                 </Text>
-                <Ionicons name="chevron-forward" size={ds.icon(16)} color={color.ink3} />
+                <Ionicons name="chevron-down" size={ds.icon(16)} color={color.ink3} />
               </View>
             }
             isLast
@@ -236,15 +250,18 @@ export function EmployeeSettingsScreen() {
         </SettingsCard>
 
         {isManager ? (
-          <SettingsCard>
-            <SettingsCardRow
-              icon="swap-horizontal"
-              title="Switch to Manager view"
-              subtitle="Manage orders and fulfillment"
-              onPress={handleSwitchToManager}
-              isLast
-            />
-          </SettingsCard>
+          <>
+            <SectionLabel>Manager</SectionLabel>
+            <SettingsCard>
+              <SettingsCardRow
+                icon="swap-horizontal"
+                title="Switch to Manager view"
+                subtitle="Fulfillment, team and inventory"
+                onPress={() => switchViewMode('manager')}
+                isLast
+              />
+            </SettingsCard>
+          </>
         ) : null}
 
         <Button
@@ -252,8 +269,10 @@ export function EmployeeSettingsScreen() {
           label="Sign out"
           loading={isSigningOut}
           onPress={requestSignOut}
-          style={{ marginTop: ds.spacing(space[2]) }}
+          style={{ marginTop: ds.spacing(14) }}
         />
+
+        <BrandFooter name={displayName} />
       </ScrollView>
 
       <OrderDayReminderSheet
@@ -277,7 +296,7 @@ export function EmployeeSettingsScreen() {
         onClose={() => setAboutVisible(false)}
         onShowLicenses={() => {
           setAboutVisible(false);
-          setLicensesVisible(true);
+          setTimeout(() => setLicensesVisible(true), 240);
         }}
       />
 

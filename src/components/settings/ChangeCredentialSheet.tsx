@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomSheetShell } from '@/components/BottomSheetShell';
+import { Text, View } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Segment } from '@/components/ui/Segment';
+import { Sheet } from '@/components/ui/Sheet';
+import { showStudioToast } from '@/components/ui/StudioToast';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import {
   isValidPassword,
@@ -29,7 +29,7 @@ interface ChangeCredentialSheetProps {
 }
 
 const KIND_OPTIONS = [
-  { value: 'pin' as CredentialKind, label: 'Restaurant PIN' },
+  { value: 'pin' as CredentialKind, label: 'PIN' },
   { value: 'password' as CredentialKind, label: 'Password' },
 ];
 
@@ -41,7 +41,6 @@ export function ChangeCredentialSheet({
   onBusyChange,
 }: ChangeCredentialSheetProps) {
   const ds = useScaledStyles();
-  const insets = useSafeAreaInsets();
   const [credentialKind, setCredentialKind] = useState<CredentialKind>(initialKind);
   const [secretDraft, setSecretDraft] = useState('');
   const [secretConfirm, setSecretConfirm] = useState('');
@@ -85,12 +84,7 @@ export function ChangeCredentialSheet({
     try {
       await setMyCredential(credentialKind, secret);
       onClose();
-      Alert.alert(
-        'Saved',
-        credentialKind === 'pin'
-          ? 'Sign in with your name and this PIN from now on.'
-          : 'Sign in with your name and this password from now on.',
-      );
+      showStudioToast(credentialKind === 'pin' ? 'PIN updated' : 'Password updated');
     } catch (error) {
       setSheetError(error instanceof Error ? error.message : 'Could not save your sign-in.');
     } finally {
@@ -98,31 +92,8 @@ export function ChangeCredentialSheet({
     }
   }, [credentialKind, onClose, secretConfirm, secretDraft]);
 
-  const form = (
+  const fields = (
     <View style={{ gap: ds.spacing(space[3]) }}>
-      <View>
-        <Text
-          accessibilityRole="header"
-          style={{
-            fontSize: ds.fontSize(typeScale.title),
-            fontWeight: weight.bold,
-            letterSpacing: tracking.title,
-            color: color.ink,
-          }}
-        >
-          Change PIN or password
-        </Text>
-        <Text
-          style={{
-            marginTop: ds.spacing(space[1]),
-            fontSize: ds.fontSize(typeScale.secondary),
-            color: color.ink2,
-          }}
-        >
-          You sign in with your name and this.
-        </Text>
-      </View>
-
       <Segment
         options={KIND_OPTIONS}
         value={credentialKind}
@@ -135,61 +106,82 @@ export function ChangeCredentialSheet({
         }}
       />
 
-      <Input
-        value={secretDraft}
-        onChangeText={setSecretDraft}
-        placeholder={credentialKind === 'pin' ? 'New 4-digit PIN' : 'New password'}
-        secureTextEntry
-        keyboardType={credentialKind === 'pin' ? 'number-pad' : 'default'}
-        maxLength={credentialKind === 'pin' ? 4 : undefined}
-        autoCapitalize="none"
-        autoCorrect={false}
-        textContentType="newPassword"
-        accessibilityLabel={credentialKind === 'pin' ? 'New PIN' : 'New password'}
-      />
-      <Input
-        value={secretConfirm}
-        onChangeText={setSecretConfirm}
-        placeholder={credentialKind === 'pin' ? 'Repeat the PIN' : 'Repeat the password'}
-        secureTextEntry
-        keyboardType={credentialKind === 'pin' ? 'number-pad' : 'default'}
-        maxLength={credentialKind === 'pin' ? 4 : undefined}
-        autoCapitalize="none"
-        autoCorrect={false}
-        accessibilityLabel={
-          credentialKind === 'pin' ? 'Repeat the new PIN' : 'Repeat the new password'
-        }
-        error={sheetError ?? undefined}
-      />
-
-      <Button
-        variant="primary"
-        label={credentialKind === 'pin' ? 'Save PIN' : 'Save password'}
-        loading={isSaving}
-        onPress={() => void handleSaveCredential()}
-      />
-      <Button
-        variant="secondary"
-        label="Cancel"
-        disabled={isSaving}
-        accessibilityHint="Stops changing your sign-in details"
-        onPress={closeSheet}
-      />
+      <View style={{ gap: ds.spacing(space[2]) }}>
+        <Input
+          value={secretDraft}
+          onChangeText={setSecretDraft}
+          placeholder={credentialKind === 'pin' ? 'New 4-digit PIN' : 'New password'}
+          secureTextEntry
+          keyboardType={credentialKind === 'pin' ? 'number-pad' : 'default'}
+          maxLength={credentialKind === 'pin' ? 4 : undefined}
+          autoCapitalize="none"
+          autoCorrect={false}
+          textContentType="newPassword"
+          accessibilityLabel={credentialKind === 'pin' ? 'New PIN' : 'New password'}
+        />
+        <Input
+          value={secretConfirm}
+          onChangeText={setSecretConfirm}
+          placeholder={credentialKind === 'pin' ? 'Repeat the PIN' : 'Repeat the password'}
+          secureTextEntry
+          keyboardType={credentialKind === 'pin' ? 'number-pad' : 'default'}
+          maxLength={credentialKind === 'pin' ? 4 : undefined}
+          autoCapitalize="none"
+          autoCorrect={false}
+          accessibilityLabel={
+            credentialKind === 'pin' ? 'Repeat the new PIN' : 'Repeat the new password'
+          }
+          error={sheetError ?? undefined}
+        />
+      </View>
     </View>
   );
 
   if (presentation === 'content') {
-    return visible ? form : null;
+    return visible ? (
+      <View style={{ gap: ds.spacing(space[3]) }}>
+        <Text
+          accessibilityRole="header"
+          style={{
+            fontSize: ds.fontSize(typeScale.title),
+            fontWeight: weight.bold,
+            letterSpacing: tracking.title,
+            color: color.ink,
+          }}
+        >
+          Change PIN or password
+        </Text>
+        {fields}
+        <Button
+          variant="primary"
+          label={credentialKind === 'pin' ? 'Save PIN' : 'Save password'}
+          loading={isSaving}
+          onPress={() => void handleSaveCredential()}
+        />
+        <Button
+          variant="secondary"
+          label="Cancel"
+          disabled={isSaving}
+          accessibilityHint="Stops changing your sign-in details"
+          onPress={closeSheet}
+        />
+      </View>
+    ) : null;
   }
 
   return (
-    <BottomSheetShell
+    <Sheet
       visible={visible}
+      title="Change PIN or password"
       presentation={presentation}
       onClose={closeSheet}
-      bottomPadding={Math.max(insets.bottom, ds.spacing(space[3] + 2))}
+      primary={{
+        label: credentialKind === 'pin' ? 'Save PIN' : 'Save password',
+        loading: isSaving,
+        onPress: () => void handleSaveCredential(),
+      }}
     >
-      {form}
-    </BottomSheetShell>
+      {fields}
+    </Sheet>
   );
 }

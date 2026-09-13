@@ -1,9 +1,7 @@
-// Phase 3 — pure module-access logic. Role defaults here MUST mirror the SQL
-// defaults in get_effective_modules (supabase/migrations/20260820121000_ordering_simple_default_on.sql):
-// employee → ordering_simple=true, ordering_advanced=false, stock_check=true,
-// tips=false, fulfillment=false; manager → all true. They exist client-side only
-// as the fallback when the RPC cannot be reached, so nobody gets locked out of
-// the tab bar by a network failure.
+// Pure module-access logic. Role defaults here MUST mirror the latest SQL
+// get_effective_modules definition. Advanced ordering and Stock check remain
+// compatibility keys for guarded routes and stored overrides, but 2.4 does not
+// expose either module in daily navigation or manager-facing controls.
 
 import type { ModuleKey, ModuleState } from '@/services/userModules';
 import type { UserRole } from '@/types';
@@ -26,22 +24,28 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   fulfillment: 'Fulfillment',
 };
 
+const MANAGEABLE_MODULE_KEYS: readonly ModuleKey[] = [
+  'ordering_simple',
+  'tips',
+  'fulfillment',
+] as const;
+
 /**
  * Module keys a manager can toggle for a given user. Fulfillment is a
  * manager-side surface, so employee rows never expose it.
  */
 export function getManageableModuleKeys(role: UserRole): ModuleKey[] {
   return role === 'manager'
-    ? [...MODULE_KEYS]
-    : MODULE_KEYS.filter((key) => key !== 'fulfillment');
+    ? [...MANAGEABLE_MODULE_KEYS]
+    : MANAGEABLE_MODULE_KEYS.filter((key) => key !== 'fulfillment');
 }
 
 export function getRoleDefaultModules(role: UserRole | null): EffectiveModules {
   const isManager = role === 'manager';
   return {
     ordering_simple: true,
-    ordering_advanced: isManager,
-    stock_check: true,
+    ordering_advanced: false,
+    stock_check: false,
     tips: isManager,
     fulfillment: isManager,
   };
@@ -66,13 +70,9 @@ export function resolveEffectiveModules(
 }
 
 /**
- * Employee tab-bar entries, in display order, for a given module map — the
- * single source the floating pill toolbar, the invite live-preview card, and
- * Preview-as all render from. Checklist-first restructure: Home and Cart are
- * gone for checklist-only employees; Advanced (and Cart, which only serves
- * the advanced flow) appear only with ordering_advanced. Screens that are
- * hidden by design (stock check opens from Settings, voice, drafts, …) never
- * appear here — they are module-guarded at the route level.
+ * Employee tab-bar entries, in display order. Advanced and Cart stay hidden
+ * even if an older explicit override still enables ordering_advanced. Their
+ * route guards remain intact for compatibility.
  *
  * TODO-PHASE4: append a 'tips' tab (gated by modules.tips) once the tips
  * surface ships. The gate exists today but must never show a broken screen,
@@ -81,10 +81,6 @@ export function resolveEffectiveModules(
 export function getVisibleEmployeeTabs(modules: EffectiveModules): string[] {
   const tabs: string[] = [];
   if (modules.ordering_simple) tabs.push('simple-order');
-  if (modules.ordering_advanced) {
-    tabs.push('quick-order');
-    tabs.push('cart');
-  }
   tabs.push('history');
   tabs.push('settings');
   return tabs;
@@ -93,8 +89,8 @@ export function getVisibleEmployeeTabs(modules: EffectiveModules): string[] {
 /** Manager tab-bar entries, in display order, for a given module map. */
 export function getVisibleManagerTabs(modules: EffectiveModules): string[] {
   const tabs: string[] = ['index'];
-  if (modules.ordering_advanced) tabs.push('quick-order');
   if (modules.fulfillment) tabs.push('fulfillment');
+  tabs.push('fulfillment-history');
   tabs.push('profile');
   return tabs;
 }

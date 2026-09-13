@@ -17,17 +17,20 @@ describe('deriveInvitePreview', () => {
     const expectedKeys = getVisibleEmployeeTabs({ ...ALL_ON, fulfillment: false });
     expect(model.tabLabels).toEqual(expectedKeys.map((key) => EMPLOYEE_TAB_META[key].label));
     expect(model.tabLabels).toContain('Order');
-    expect(model.tabLabels).toContain('Advanced');
+    expect(model.tabLabels).not.toContain('Advanced');
+    expect(model.tabLabels).not.toContain('Cart');
   });
 
-  it('drops the Order tab from the card when ordering_simple is off', () => {
+  it('falls back to History when Order is off, even with a stale Advanced flag', () => {
     const model = deriveInvitePreview('Nate', 'sushi', {
       ...ALL_ON,
       ordering_simple: false,
-      ordering_advanced: false,
+      ordering_advanced: true,
     });
     expect(model.tabLabels).not.toContain('Order');
     expect(model.tabLabels).not.toContain('Advanced');
+    expect(model.opensOn).toContain('order history');
+    expect(model.warning).toContain("won't be able to send orders");
   });
 
   it('warns when no ordering module is enabled', () => {
@@ -41,19 +44,19 @@ describe('deriveInvitePreview', () => {
     expect(model.warning).toContain("won't be able to send orders");
   });
 
-  it('clears the warning as soon as either ordering module turns on', () => {
+  it('clears the warning only when the visible Order module turns on', () => {
     expect(
       deriveInvitePreview('Nate', 'sushi', { ...ALL_ON, ordering_advanced: false }).warning,
     ).toBeNull();
     expect(
       deriveInvitePreview('Nate', 'sushi', { ...ALL_ON, ordering_simple: false }).warning,
-    ).toBeNull();
+    ).not.toBeNull();
   });
 
-  it('mentions the works-at list and stock check surface', () => {
+  it('mentions the works-at list without advertising hidden Stock check', () => {
     const sushi = deriveInvitePreview('Nate', 'sushi', ALL_ON);
     expect(sushi.opensOn).toContain('Sushi');
-    expect(sushi.extras.join(' ')).toContain('Stock check');
+    expect(sushi.extras.join(' ')).not.toContain('Stock check');
 
     const poki = deriveInvitePreview('Nate', 'poki', ALL_ON);
     expect(poki.opensOn).toContain('Poki & Pho');
