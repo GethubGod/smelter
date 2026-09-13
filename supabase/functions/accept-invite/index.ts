@@ -422,14 +422,15 @@ Deno.serve(async (req) => {
     });
   }
 
-  if (!validity.valid || !lookup.invite) {
-    const reason = validity.valid ? "invalid" : validity.reason;
-    return jsonResponse(req, { error: reasonMessage(reason), reason }, 409);
-  }
-
   if (parsed.value.action === "link") {
     if (!linkUserId) {
       return jsonResponse(req, { error: "Unauthorized" }, 401);
+    }
+    if (!lookup.invite) {
+      return jsonResponse(req, {
+        error: reasonMessage("invalid"),
+        reason: "invalid",
+      }, 409);
     }
     const claim = await claimInviteWithRecovery({
       inviteId: lookup.invite.id,
@@ -454,6 +455,11 @@ Deno.serve(async (req) => {
       role: claim.role,
       locationGroup: claim.locationGroup,
     });
+  }
+
+  if (!validity.valid || !lookup.invite) {
+    const reason = validity.valid ? "invalid" : validity.reason;
+    return jsonResponse(req, { error: reasonMessage(reason), reason }, 409);
   }
 
   if (
