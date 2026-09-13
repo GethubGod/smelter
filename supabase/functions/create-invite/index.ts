@@ -6,7 +6,7 @@ import {
   mergeInviteModulePreset,
   parseCreateInviteInput,
 } from "../_shared/invites.ts";
-import { normalizeLoginName } from "../_shared/loginNames.ts";
+import { parseInvitedEmail } from "./input.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -83,45 +83,9 @@ Deno.serve(async (req) => {
 
   const parsed = parseCreateInviteInput(payload);
   if (!parsed.ok) return jsonResponse(req, { error: parsed.error }, 400);
-
-  // Sign-in names must stay unique (case/whitespace-insensitive) among
-  // credential holders and open invites, so collisions surface here — at
-  // creation, where the manager can adjust the name — not at accept time.
-  const normalizedName = normalizeLoginName(parsed.value.invitedName);
-  if (normalizedName) {
-    const [identityLookup, openInvitesLookup] = await Promise.all([
-      supabaseAdmin
-        .from("login_identities")
-        .select("user_id")
-        .eq("login_name", normalizedName)
-        .maybeSingle(),
-      supabaseAdmin
-        .from("invites")
-        .select("invited_name")
-        .is("used_at", null)
-        .is("revoked_at", null)
-        .gt("expires_at", new Date().toISOString()),
-    ]);
-
-    if (identityLookup.error || openInvitesLookup.error) {
-      console.error(
-        "Unable to check invite name uniqueness",
-        identityLookup.error ?? openInvitesLookup.error,
-      );
-      return jsonResponse(req, { error: "Unable to create invite" }, 500);
-    }
-
-    const openInviteCollision = (openInvitesLookup.data ?? []).some(
-      (invite) => normalizeLoginName(invite.invited_name) === normalizedName,
-    );
-
-    if (identityLookup.data || openInviteCollision) {
-      return jsonResponse(req, {
-        error:
-          `Someone already signs in as "${parsed.value.invitedName}". Use a different name, like a last initial.`,
-        reason: "name_taken",
-      }, 409);
-    }
+  const invitedEmail = parseInvitedEmail(payload);
+  if (!invitedEmail.ok) {
+    return jsonResponse(req, { error: invitedEmail.error }, 400);
   }
 
   // Seed employee invites from the org-wide defaults when the caller did not
@@ -156,6 +120,7 @@ Deno.serve(async (req) => {
       .insert({
         token,
         invited_name: parsed.value.invitedName,
+        invited_email: invitedEmail.value.invitedEmail,
         role: parsed.value.role,
         module_preset: modulePreset,
         expires_at: expiresAt,
@@ -171,6 +136,7 @@ Deno.serve(async (req) => {
         token,
         joinUrl: `https://tips.babytunasystems.com/join/${token}`,
         locationGroup: parsed.value.locationGroup,
+        invitedEmail: invitedEmail.value.invitedEmail,
       });
     }
 

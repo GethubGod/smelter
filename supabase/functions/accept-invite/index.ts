@@ -8,9 +8,8 @@ import {
   type InviteState,
   isInviteLocationGroup,
   isInviteRole,
-  parseAcceptInviteInput,
-  resolveLocationGroupToLocationId,
 } from "../_shared/invites.ts";
+import { normalizeEmail, parseAcceptInviteRequest } from "./input.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -20,7 +19,9 @@ const publishableKeys = [
   ...(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS") ?? "").split(","),
 ].map((key) => key?.trim()).filter((key): key is string => Boolean(key));
 
-if (!supabaseUrl || !serviceRoleKey || (!anonKey && publishableKeys.length === 0)) {
+if (
+  !supabaseUrl || !serviceRoleKey || (!anonKey && publishableKeys.length === 0)
+) {
   throw new Error(
     "Missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, or a public API key",
   );
@@ -33,8 +34,8 @@ const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
 interface InviteRow {
   id: string;
   invited_name: string;
+  invited_email: string | null;
   role: string;
-  module_preset: unknown;
   created_by: string | null;
   expires_at: string;
   used_at: string | null;
@@ -42,15 +43,57 @@ interface InviteRow {
   location_group: string | null;
 }
 
-const MODULE_KEYS = new Set([
-  "ordering_simple",
-  "ordering_advanced",
-  "stock_check",
-  "tips",
-  "fulfillment",
-  "kitchen_requests",
-  "kitchen_display",
-]);
+interface ClaimResult {
+  ok: boolean;
+  reason?: string;
+  role?: InviteRole;
+  locationGroup?: InviteLocationGroup;
+}
+
+interface AuthClient {
+  getUser(token: string): Promise<{
+    data: { user: { id: string } | null };
+    error: unknown;
+  }>;
+  admin: {
+    createUser(input: {
+      email: string;
+      password: string;
+      email_confirm: boolean;
+      user_metadata: Record<string, unknown>;
+    }): Promise<{
+      data: { user: { id: string } | null };
+      error: unknown;
+    }>;
+    deleteUser(userId: string): Promise<{ error: unknown }>;
+  };
+}
+
+function requireAuthClient(value: unknown): AuthClient {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Supabase Auth client is unavailable");
+  }
+  const candidate = value as Record<string, unknown>;
+  const admin = candidate.admin;
+  if (
+    typeof candidate.getUser !== "function" ||
+    !admin ||
+    typeof admin !== "object" ||
+    Array.isArray(admin)
+  ) {
+    throw new Error("Supabase Auth client is unavailable");
+  }
+  const adminMethods = admin as Record<string, unknown>;
+  if (
+    typeof adminMethods.createUser !== "function" ||
+    typeof adminMethods.deleteUser !== "function"
+  ) {
+    throw new Error("Supabase Auth admin client is unavailable");
+  }
+  return value as AuthClient;
+}
+
+const authClient = requireAuthClient(supabaseAdmin.auth);
 
 function jsonResponse(
   req: Request,
@@ -66,7 +109,7 @@ function jsonResponse(
   });
 }
 
-function hasAnonKey(req: Request): boolean {
+function hasPublicApiKey(req: Request): boolean {
   const apiKey = req.headers.get("apikey")?.trim();
   const authorization = req.headers.get("Authorization")?.trim();
 
@@ -74,9 +117,13 @@ function hasAnonKey(req: Request): boolean {
     return true;
   }
 
-  // Legacy anon JWTs may be bearer tokens. Publishable keys are not JWTs and
-  // are deliberately accepted only through the apikey header.
-  return Boolean(anonKey && authorization === `Bearer ${anonKey}`);
+  return Boolean(anonKey && authorization === "Bearer " + anonKey);
+}
+
+function bearerToken(req: Request): string | null {
+  const authorization = req.headers.get("Authorization")?.trim();
+  if (!authorization?.startsWith("Bearer ")) return null;
+  return authorization.slice("Bearer ".length).trim() || null;
 }
 
 function inviteStateFromRow(invite: InviteRow | null): InviteState | null {
@@ -94,7 +141,7 @@ function inviteStateFromRow(invite: InviteRow | null): InviteState | null {
   };
 }
 
-function reasonMessage(reason: InviteInvalidReason): string {
+function reasonMessage(reason: InviteInvalidReason | string): string {
   switch (reason) {
     case "used":
       return "This invite has already been used";
@@ -102,6 +149,10 @@ function reasonMessage(reason: InviteInvalidReason): string {
       return "This invite has expired";
     case "revoked":
       return "This invite has been revoked";
+    case "already_on_team":
+      return "This account is already on a team";
+    case "email_mismatch":
+      return "This invite was sent to a different email";
     default:
       return "This invite is invalid";
   }
@@ -113,7 +164,7 @@ async function findInvite(
   const { data, error } = await supabaseAdmin
     .from("invites")
     .select(
-      "id, invited_name, role, module_preset, created_by, expires_at, used_at, revoked_at, location_group",
+      "id, invited_name, invited_email, role, created_by, expires_at, used_at, revoked_at, location_group",
     )
     .eq("token", token)
     .maybeSingle();
@@ -126,123 +177,65 @@ async function findInvite(
   return { invite: (data as InviteRow | null) ?? null, failed: false };
 }
 
-function isModulePreset(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
-}
+async function findInviterName(createdBy: string | null): Promise<{
+  name: string | null;
+  failed: boolean;
+}> {
+  if (!createdBy) return { name: null, failed: false };
 
-async function applyInviteModulePreset(
-  invite: InviteRow,
-  userId: string,
-): Promise<boolean> {
-  if (!isModulePreset(invite.module_preset)) return true;
-
-  const rows = Object.entries(invite.module_preset).flatMap(
-    ([moduleKey, enabled]) => {
-      if (!MODULE_KEYS.has(moduleKey) || typeof enabled !== "boolean") {
-        return [];
-      }
-
-      return [{
-        user_id: userId,
-        module_key: moduleKey,
-        enabled,
-        updated_by: invite.created_by,
-      }];
-    },
-  );
-
-  if (rows.length === 0) return true;
-
-  const { error } = await supabaseAdmin
-    .from("user_modules")
-    .upsert(rows, { onConflict: "user_id,module_key" });
-
+  const { data, error } = await supabaseAdmin
+    .from("profiles")
+    .select("full_name")
+    .eq("id", createdBy)
+    .maybeSingle();
   if (error) {
-    console.error("Unable to apply invite module preset", error);
-    return false;
+    console.error("Unable to read invite creator", error);
+    return { name: null, failed: true };
   }
-
-  return true;
+  return { name: data?.full_name ?? null, failed: false };
 }
 
-async function installOnboardingCredential(input: {
+function parseClaimResult(value: unknown): ClaimResult | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  if (typeof record.ok !== "boolean") return null;
+  return {
+    ok: record.ok,
+    reason: typeof record.reason === "string" ? record.reason : undefined,
+    role: isInviteRole(record.role) ? record.role : undefined,
+    locationGroup: isInviteLocationGroup(record.locationGroup)
+      ? record.locationGroup
+      : undefined,
+  };
+}
+
+async function claimInvite(input: {
+  token: string;
   userId: string;
-  kind: "pin" | "password";
-  secret: string;
-}): Promise<boolean> {
-  const { error } = await supabaseAdmin.rpc(
-    "set_onboarding_login_credential",
-    {
-      p_user_id: input.userId,
-      p_kind: input.kind,
-      p_secret: input.secret,
-    },
-  );
-
+  rejectExistingMembership: boolean;
+  requireInvitedEmailMatch: boolean;
+}): Promise<ClaimResult | null> {
+  const { data, error } = await supabaseAdmin.rpc("claim_invite_for_user", {
+    p_token: input.token,
+    p_user_id: input.userId,
+    p_reject_existing_membership: input.rejectExistingMembership,
+    p_require_invited_email_match: input.requireInvitedEmailMatch,
+  });
   if (error) {
-    console.error("Unable to install onboarding credential", error);
-    return false;
+    console.error("Unable to claim invite", error);
+    return null;
   }
-  return true;
-}
-
-/** 32 random bytes, base64url — set once at account creation, never used again. */
-function generateDiscardedPassword(): string {
-  const raw = new Uint8Array(32);
-  crypto.getRandomValues(raw);
-  let binary = "";
-  for (const byte of raw) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-/**
- * Resolves the invite's works-at group to users.default_location_id.
- * Best-effort: a resolution failure must not strand a created account, so
- * errors are logged and acceptance continues (location is manager-editable
- * from the employee detail screen at any time).
- */
-async function applyInviteLocation(
-  locationGroup: InviteLocationGroup,
-  userId: string,
-): Promise<void> {
-  if (locationGroup === "both") return;
-
-  const { data: locations, error: locationsError } = await supabaseAdmin
-    .from("locations")
-    .select("id, short_code")
-    .eq("active", true);
-  if (locationsError) {
-    console.error("Unable to read locations for invite", locationsError);
-    return;
-  }
-
-  const locationId = resolveLocationGroupToLocationId(
-    locationGroup,
-    locations ?? [],
-  );
-  if (!locationId) {
-    console.error(`No active location matches invite group ${locationGroup}`);
-    return;
-  }
-
-  const { error: updateError } = await supabaseAdmin
-    .from("users")
-    .update({ default_location_id: locationId })
-    .eq("id", userId);
-  if (updateError) {
-    console.error("Unable to set invited user's location", updateError);
-  }
+  return parseClaimResult(data);
 }
 
 async function removeUnclaimedUser(userId: string): Promise<void> {
-  const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(
+  const { error: authError } = await authClient.admin.deleteUser(
     userId,
   );
   if (authError) {
     console.error("Unable to delete unclaimed auth user", authError);
   }
 
-  // Match the repository's auth-delete cleanup for environments without cascades.
   const [{ error: profileError }, { error: userError }] = await Promise.all([
     supabaseAdmin.from("profiles").delete().eq("id", userId),
     supabaseAdmin.from("users").delete().eq("id", userId),
@@ -255,36 +248,23 @@ async function removeUnclaimedUser(userId: string): Promise<void> {
   }
 }
 
-async function writeInviteeIdentity(input: {
-  userId: string;
-  email: string;
-  fullName: string;
-  role: InviteRole;
-}): Promise<boolean> {
-  const [{ error: profileError }, { error: userError }] = await Promise.all([
-    supabaseAdmin.from("profiles").upsert({
-      id: input.userId,
-      email: input.email,
-      full_name: input.fullName,
-      role: input.role,
-      provider: "email",
-      profile_completed: true,
-    }),
-    supabaseAdmin.from("users").upsert({
-      id: input.userId,
-      email: input.email,
-      name: input.fullName,
-      role: input.role,
-    }),
-  ]);
-
-  if (profileError) {
-    console.error("Unable to set invited user profile", profileError);
+function claimFailureResponse(req: Request, claim: ClaimResult) {
+  const reason = claim.reason ?? "invalid";
+  if (reason === "already_on_team") {
+    return jsonResponse(
+      req,
+      { error: reasonMessage(reason), reason: "already_on_team" },
+      409,
+    );
   }
-  if (userError) {
-    console.error("Unable to set invited legacy user record", userError);
+  if (
+    ["invalid", "used", "expired", "revoked", "email_mismatch"].includes(
+      reason,
+    )
+  ) {
+    return jsonResponse(req, { error: reasonMessage(reason), reason }, 409);
   }
-  return !profileError && !userError;
+  return jsonResponse(req, { error: "Unable to apply invite" }, 500);
 }
 
 Deno.serve(async (req) => {
@@ -296,10 +276,6 @@ Deno.serve(async (req) => {
     return jsonResponse(req, { error: "Method not allowed" }, 405);
   }
 
-  if (!hasAnonKey(req)) {
-    return jsonResponse(req, { error: "Unauthorized" }, 401);
-  }
-
   let payload: unknown;
   try {
     payload = await req.json();
@@ -307,8 +283,28 @@ Deno.serve(async (req) => {
     return jsonResponse(req, { error: "Invalid request body" }, 400);
   }
 
-  const parsed = parseAcceptInviteInput(payload);
+  const parsed = parseAcceptInviteRequest(payload);
   if (!parsed.ok) return jsonResponse(req, { error: parsed.error }, 400);
+
+  if (parsed.value.action !== "link" && !hasPublicApiKey(req)) {
+    return jsonResponse(req, { error: "Unauthorized" }, 401);
+  }
+
+  let linkUserId: string | null = null;
+  if (parsed.value.action === "link") {
+    const accessToken = bearerToken(req);
+    if (!accessToken) {
+      return jsonResponse(req, { error: "Unauthorized" }, 401);
+    }
+
+    const { data: authData, error: authError } = await authClient.getUser(
+      accessToken,
+    );
+    if (authError || !authData.user) {
+      return jsonResponse(req, { error: "Unauthorized" }, 401);
+    }
+    linkUserId = authData.user.id;
+  }
 
   const lookup = await findInvite(parsed.value.token);
   if (lookup.failed) {
@@ -316,19 +312,40 @@ Deno.serve(async (req) => {
   }
 
   const validity = inspectInviteState(inviteStateFromRow(lookup.invite));
-  if (parsed.value.validateOnly) {
+  if (parsed.value.action === "preview") {
     if (!validity.valid) {
+      let invitedBy: string | null = null;
+      if (
+        lookup.invite &&
+        (validity.reason === "expired" || validity.reason === "used")
+      ) {
+        const inviter = await findInviterName(lookup.invite.created_by);
+        if (inviter.failed) {
+          return jsonResponse(req, { error: "Unable to validate invite" }, 500);
+        }
+        invitedBy = inviter.name;
+      }
       return jsonResponse(req, {
         valid: false,
-        invitedName: null,
-        role: null,
+        error: reasonMessage(validity.reason),
         reason: validity.reason,
+        invitedBy,
       });
+    }
+    if (!lookup.invite) {
+      return jsonResponse(req, { error: "Unable to validate invite" }, 500);
+    }
+
+    const inviter = await findInviterName(lookup.invite.created_by);
+    if (inviter.failed) {
+      return jsonResponse(req, { error: "Unable to validate invite" }, 500);
     }
 
     return jsonResponse(req, {
       valid: true,
       invitedName: validity.invitedName,
+      invitedEmail: lookup.invite.invited_email,
+      invitedBy: inviter.name,
       role: validity.role,
       locationGroup: validity.locationGroup,
     });
@@ -339,132 +356,85 @@ Deno.serve(async (req) => {
     return jsonResponse(req, { error: reasonMessage(reason), reason }, 409);
   }
 
-  // Onboarding mode (the in-app invited setup flow) has no email/password:
-  // the account is minted under a synthetic address on a domain we own and a
-  // discarded random password. The user signs in with name + PIN/password via
-  // login-with-name from then on; this response's one-shot tokenHash gives the
-  // client its first session so it can store that credential.
-  const onboarding = parsed.value.mode === "onboarding";
-  const accountEmail = onboarding
-    ? `join-${lookup.invite.id}@members.babytunasystems.com`
-    : parsed.value.email!;
-  const accountPassword = onboarding
-    ? generateDiscardedPassword()
-    : parsed.value.password!;
+  if (parsed.value.action === "link") {
+    if (!linkUserId) {
+      return jsonResponse(req, { error: "Unauthorized" }, 401);
+    }
+    const claim = await claimInvite({
+      token: parsed.value.token,
+      userId: linkUserId,
+      rejectExistingMembership: true,
+      requireInvitedEmailMatch: false,
+    });
+    if (!claim) {
+      return jsonResponse(req, { error: "Unable to apply invite" }, 500);
+    }
+    if (!claim.ok) return claimFailureResponse(req, claim);
+    if (!claim.role || !claim.locationGroup) {
+      return jsonResponse(req, { error: "Unable to apply invite" }, 500);
+    }
 
-  const fullName = parsed.value.name ?? validity.invitedName;
-  const { data: created, error: createError } = await supabaseAdmin.auth.admin
+    return jsonResponse(req, {
+      ok: true,
+      role: claim.role,
+      locationGroup: claim.locationGroup,
+    });
+  }
+
+  if (
+    lookup.invite.invited_email &&
+    normalizeEmail(parsed.value.email) !== lookup.invite.invited_email
+  ) {
+    return jsonResponse(req, {
+      error: reasonMessage("email_mismatch"),
+      reason: "email_mismatch",
+    }, 409);
+  }
+
+  const invitedName = validity.invitedName;
+  const { data: created, error: createError } = await authClient.admin
     .createUser({
-      email: accountEmail,
-      password: accountPassword,
+      email: parsed.value.email,
+      password: parsed.value.password,
       email_confirm: true,
       user_metadata: {
-        name: fullName,
-        full_name: fullName,
+        name: invitedName,
+        full_name: invitedName,
         provider: "email",
       },
     });
 
   if (createError || !created.user) {
     console.error("Unable to create invited auth user", createError);
-    return jsonResponse(req, {
-      error: onboarding
-        ? "Unable to create the account for this invite"
-        : "Unable to create account with this email",
-    }, 409);
-  }
-
-  const invitedUserId = created.user.id;
-  const identityWritten = await writeInviteeIdentity({
-    userId: invitedUserId,
-    email: accountEmail,
-    fullName,
-    role: validity.role,
-  });
-  if (!identityWritten) {
-    await removeUnclaimedUser(invitedUserId);
     return jsonResponse(
       req,
-      { error: "Unable to prepare invited account" },
-      500,
-    );
-  }
-
-  if (!await applyInviteModulePreset(lookup.invite, invitedUserId)) {
-    await removeUnclaimedUser(invitedUserId);
-    return jsonResponse(
-      req,
-      { error: "Unable to prepare invited account" },
-      500,
-    );
-  }
-
-  if (
-    onboarding &&
-    !await installOnboardingCredential({
-      userId: invitedUserId,
-      kind: parsed.value.credentialKind!,
-      secret: parsed.value.credentialSecret!,
-    })
-  ) {
-    await removeUnclaimedUser(invitedUserId);
-    return jsonResponse(
-      req,
-      { error: "Unable to save sign-in details for this account" },
-      500,
-    );
-  }
-
-  await applyInviteLocation(validity.locationGroup, invitedUserId);
-
-  // Mint the onboarding session token BEFORE consuming the invite so a
-  // failure here still leaves the invite reusable after cleanup.
-  let sessionTokenHash: string | null = null;
-  if (onboarding) {
-    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin
-      .generateLink({ type: "magiclink", email: accountEmail });
-    sessionTokenHash = linkData?.properties?.hashed_token ?? null;
-    if (linkError || !sessionTokenHash) {
-      console.error("Unable to mint onboarding session link", linkError);
-      await removeUnclaimedUser(invitedUserId);
-      return jsonResponse(
-        req,
-        { error: "Unable to prepare invited account" },
-        500,
-      );
-    }
-  }
-
-  // This PostgREST call is a single SQL UPDATE ... WHERE ... RETURNING request.
-  // The conditions make consumption atomic even when two clients submit the token together.
-  const { data: consumed, error: consumeError } = await supabaseAdmin
-    .from("invites")
-    .update({ used_at: new Date().toISOString(), used_by: invitedUserId })
-    .eq("token", parsed.value.token)
-    .is("used_at", null)
-    .is("revoked_at", null)
-    .gt("expires_at", new Date().toISOString())
-    .select("id, role")
-    .maybeSingle();
-
-  if (consumeError || !consumed || !isInviteRole(consumed.role)) {
-    if (consumeError) console.error("Unable to consume invite", consumeError);
-    await removeUnclaimedUser(invitedUserId);
-    return jsonResponse(
-      req,
-      { error: "This invite is no longer available", reason: "invalid" },
+      { error: "Unable to create account with this email" },
       409,
     );
   }
 
-  if (onboarding) {
-    return jsonResponse(req, {
-      ok: true,
-      role: consumed.role,
-      locationGroup: validity.locationGroup,
-      tokenHash: sessionTokenHash,
-    });
+  const claim = await claimInvite({
+    token: parsed.value.token,
+    userId: created.user.id,
+    rejectExistingMembership: false,
+    requireInvitedEmailMatch: true,
+  });
+  if (!claim) {
+    await removeUnclaimedUser(created.user.id);
+    return jsonResponse(req, { error: "Unable to apply invite" }, 500);
+  }
+  if (!claim.ok) {
+    await removeUnclaimedUser(created.user.id);
+    return claimFailureResponse(req, claim);
+  }
+  if (!claim.role || !claim.locationGroup) {
+    await removeUnclaimedUser(created.user.id);
+    return jsonResponse(req, { error: "Unable to apply invite" }, 500);
   }
 
-  return jsonResponse(req, { ok: true, role: consumed.role });
+  return jsonResponse(req, {
+    ok: true,
+    role: claim.role,
+    locationGroup: claim.locationGroup,
+  });
 });
