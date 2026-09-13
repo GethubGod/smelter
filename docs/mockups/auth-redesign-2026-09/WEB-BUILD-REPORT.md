@@ -4,7 +4,7 @@
 
 Implementation and desktop/mobile refinement of the public restaurant sign-up request flow at `smelterpos.com/signup` and corresponding manager review interface in `dashboard.smelterpos.com`. Built on branch `feat/web-signup-request` within an isolated worktree.
 
-The sign-up request experience is designed for restaurant operators seeking to onboard to Smelter. It features a responsive layout: on desktop, a two-column layout pairs a prominent hero column ("Talk to an expert to get set up.", expectation timeline, support connectivity, and trust highlights) alongside a focused form card; on mobile, a clean stacked layout delivers a fast, distraction-free flow titled "Talk to an expert".
+The sign-up request experience is designed for restaurant operators seeking to onboard to Smelter. It features a responsive layout: on desktop, a two-column layout pairs a prominent hero column ("Talk to an expert to get set up.", expectation timeline, and support connectivity) alongside a focused form card; on mobile, a clean stacked layout delivers a fast, distraction-free flow titled "Talk to an expert".
 
 ---
 
@@ -32,7 +32,7 @@ The sign-up request experience is designed for restaurant operators seeking to o
 - **Component**: `marketing/src/components/signup/SignupFlow.tsx`
   - **Top Navigation**: Fixed header with Smelter logo on the left and dashboard sign-in link. Card header has top-right sign-in button removed.
   - **Desktop Layout (Two-Column Split)**:
-    - Left Column: Large headline "Talk to an expert to get set up.", numbered "What to expect" list (1. Submit this form, 2. We will reach out within 1 business day, 3. Get started using smelter immediately), "Already using smelter? Connect with Support", and trust badges.
+    - Left Column: Large headline "Talk to an expert to get set up.", numbered "What to expect" list (1. Submit this form, 2. We will reach out within 1 business day, 3. Get started using smelter immediately), "Already using smelter? Connect with Support".
     - Right Column: Focused card containing the 3-step form.
   - **Mobile Layout**:
     - Headline: "Talk to an expert".
@@ -48,6 +48,7 @@ The sign-up request experience is designed for restaurant operators seeking to o
     - Fields: Restaurant name (required), City (required), Website (optional link field), Locations stepper (1 to 20).
     - Submit button: "Submit Request".
   - **Step 3 (Request Received)**:
+    - Description: "An expert will reach out in one to three business days."
     - Green check ring (`#E6F4EA` background, `#22883E` icon; the only green element in the UI).
     - Read-only summary card displaying Restaurant name, Requester email, City, Website (if provided), and Locations count.
     - "Back to smelterpos.com" action button and link to Support.

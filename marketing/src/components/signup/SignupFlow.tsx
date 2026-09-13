@@ -179,26 +179,7 @@ export function SignupFlow() {
               </p>
             </div>
 
-            {/* Social Proof & Trust Badges */}
-            <div className="pt-8 border-t border-black/[0.08]">
-              <p className="text-[12.5px] font-bold uppercase tracking-wider text-ink3 mb-4">
-                Built for modern restaurant teams
-              </p>
-              <div className="flex flex-wrap items-center gap-6 text-[13px] text-ink2 font-medium">
-                <span className="inline-flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-accent" />
-                  Fast 1-business-day onboarding
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-accent" />
-                  No card required
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-accent" />
-                  Invite your managers later
-                </span>
-              </div>
-            </div>
+
           </div>
 
           {/* Right Column: The Form Card */}
@@ -640,7 +621,7 @@ export function SignupFlow() {
                     Request received
                   </h1>
                   <p className="text-[14px] text-ink2 leading-[1.45] mb-5 max-w-[340px]">
-                    We will send your invite link by email within one business day. Open it on your phone and the smelter app takes it from there.
+                    An expert will reach out in one to three business days.
                   </p>
 
                   {/* Read-only summary card */}
