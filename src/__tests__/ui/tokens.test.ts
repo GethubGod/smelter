@@ -15,6 +15,7 @@ import {
   auth,
   color,
   radius,
+  size,
   space,
   statusTone,
   typeScale,
@@ -71,6 +72,11 @@ it('keeps the contract type sizes and three weights', () => {
 it('keeps four radii and the spacing grid', () => {
   expect(radius).toEqual({ pill: 999, card: 22, control: 14, sheet: 30 });
   expect(Object.values(space)).toEqual([4, 8, 12, 16, 20, 24, 32]);
+});
+
+it('keeps the auth sheet grabber distinct from the shared sheet grabber', () => {
+  expect(size.sheetHandleHeight).toBe(4);
+  expect(size.authSheetHandleHeight).toBe(5);
 });
 
 it('reserves the status colours for the five order states', () => {

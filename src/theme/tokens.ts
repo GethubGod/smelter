@@ -168,6 +168,7 @@ export const size = {
   authButton: 52,
   authInput: 50,
   authClose: 30,
+  authSheetHandleHeight: 5,
   authToastBottom: 120,
   authReadyTop: 80,
   authReadyRing: 88,

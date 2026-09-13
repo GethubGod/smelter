@@ -35,6 +35,8 @@ interface BottomSheetShellProps {
   scrollable?: boolean;
   /** Allows an upward drag to expand the sheet to 88% of the screen height. */
   expandable?: boolean;
+  /** Override the shared 4pt grabber for a documented surface variant. */
+  handleHeight?: number;
   horizontalPadding?: number;
   bottomPadding?: number;
   /**
@@ -67,6 +69,7 @@ export function BottomSheetShell({
   fadeOut = false,
   scrollable = false,
   expandable = false,
+  handleHeight,
   horizontalPadding,
   bottomPadding,
   dismissible = true,
@@ -517,7 +520,7 @@ export function BottomSheetShell({
               <View
                 style={{
                   width: ds.spacing(size.sheetHandleWidth),
-                  height: ds.spacing(size.sheetHandleHeight),
+                  height: ds.spacing(handleHeight ?? size.sheetHandleHeight),
                   borderRadius: radius.pill,
                   backgroundColor: color.sheetHandle,
                 }}

@@ -178,6 +178,7 @@ export function SignInSheet({ visible, onClose, onComplete }: SignInSheetProps) 
       visible={visible}
       title="Sign in"
       onClose={handleClose}
+      authChrome
       expandable={false}
       fadeOut={finishing}
       overlay={<AuthToast message={toast} onHidden={() => setToast(null)} />}

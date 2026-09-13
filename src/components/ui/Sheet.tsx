@@ -17,6 +17,8 @@ export interface SheetProps {
   overlay?: React.ReactNode;
   /** Fade the whole modal while the next screen is presented. */
   fadeOut?: boolean;
+  /** Use the reference auth close control and grabber dimensions. */
+  authChrome?: boolean;
   /** The single action at the foot of the sheet. */
   primary?: Pick<ButtonProps, 'label' | 'onPress' | 'loading' | 'disabled' | 'variant'>;
   /** Review and order-detail sheets can expand to 88% height. */
@@ -41,6 +43,7 @@ export function Sheet({
   children,
   overlay,
   fadeOut = false,
+  authChrome = false,
   primary,
   expandable = false,
   presentation = 'modal',
@@ -51,6 +54,9 @@ export function Sheet({
   const insets = useSafeAreaInsets();
   const sidePadding = ds.spacing(space[5]);
   const closeScale = useRef(new Animated.Value(1)).current;
+  const closeSize = authChrome ? size.authClose : space[8];
+  const closeIconSize = authChrome ? 14 : space[4];
+  const closeHitSlop = authChrome ? 7 : 6;
 
   const animateCloseScale = (toValue: number) => {
     Animated.timing(closeScale, {
@@ -101,20 +107,20 @@ export function Sheet({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Close ${title}`}
-            hitSlop={ds.spacing(7)}
+            hitSlop={ds.spacing(closeHitSlop)}
             onPress={onClose}
             onPressIn={() => animateCloseScale(0.92)}
             onPressOut={() => animateCloseScale(1)}
             style={{
-              width: ds.spacing(size.authClose),
-              height: ds.spacing(size.authClose),
+              width: ds.spacing(closeSize),
+              height: ds.spacing(closeSize),
               borderRadius: ds.radius(radius.pill),
               alignItems: 'center',
               justifyContent: 'center',
               backgroundColor: color.card,
             }}
           >
-            <Ionicons name="close" size={ds.icon(14)} color={color.ink} />
+            <Ionicons name="close" size={ds.icon(closeIconSize)} color={color.ink} />
           </Pressable>
         </Animated.View>
       ) : null}
@@ -150,6 +156,7 @@ export function Sheet({
       footer={footer}
       overlay={overlay}
       fadeOut={fadeOut}
+      handleHeight={authChrome ? size.authSheetHandleHeight : undefined}
       scrollable
       expandable={expandable}
       horizontalPadding={sidePadding}
