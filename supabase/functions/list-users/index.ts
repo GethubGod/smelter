@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2?no-dts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { hasListedUserRole, resolveListedUserRole } from "./user-role.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -167,14 +168,11 @@ Deno.serve(async (req) => {
       const profile = profileById.get(authUser.id);
       const legacyUser = legacyUserById.get(authUser.id);
 
-      const resolvedRole =
-        profile?.role === "manager" || profile?.role === "employee"
-          ? profile.role
-          : profile
-          ? null
-          : legacyUser?.role === "manager" || legacyUser?.role === "employee"
-          ? legacyUser.role
-          : null;
+      const resolvedRole = resolveListedUserRole(
+        profile?.role,
+        Boolean(profile),
+        legacyUser?.role,
+      );
 
       const metadataName = authUser.user_metadata?.full_name ??
         authUser.user_metadata?.name ??
@@ -195,6 +193,7 @@ Deno.serve(async (req) => {
         created_at: profile?.created_at ?? authUser.created_at ?? null,
       };
     })
+    .filter(hasListedUserRole)
     .sort((a, b) => {
       const aName = (a.full_name || a.email || "").toLowerCase();
       const bName = (b.full_name || b.email || "").toLowerCase();
