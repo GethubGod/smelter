@@ -36,6 +36,8 @@ export const color = {
   tint: '#FBEAE7',
   /** Text and icons on top of `accent`. */
   onAccent: '#FFFFFF',
+  /** Count suffix inside a selected (ink) category pill. */
+  onInkMuted: 'rgba(255, 255, 255, 0.6)',
   /** Destructive and error text. */
   alert: '#C03520',
   alertBg: '#FBE7E7',
@@ -116,6 +118,8 @@ export const tracking = {
   display: -0.9,
   title: -0.2,
   caption: 0.88,
+  /** Tags: .04em at the 11pt caption size. */
+  tag: 0.44,
 } as const;
 
 /* ── Radius and spacing ────────────────────────────────────────────── */
