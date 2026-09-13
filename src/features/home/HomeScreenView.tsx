@@ -26,7 +26,7 @@ import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { switchViewMode } from '@/lib/switchViewMode';
 import { useInventoryStore, useOrderStore, type PastOrder } from '@/store';
 import { useSimpleOrderUiStore } from '@/store/simpleOrderUiStore';
-import { color, radius, space, typeScale, weight } from '@/theme/tokens';
+import { color, radius, space, tracking, typeScale, weight } from '@/theme/tokens';
 import type { HomeScreenMode } from './modes';
 
 interface HomeScreenViewProps {
@@ -389,6 +389,8 @@ function ManagerHomeContent({ mode }: { mode: HomeScreenMode }) {
                 style={{
                   fontSize: ds.fontSize(typeScale.caption),
                   fontWeight: weight.bold,
+                  letterSpacing: tracking.tag,
+                  textTransform: 'uppercase',
                   color: color.warning,
                 }}
               >

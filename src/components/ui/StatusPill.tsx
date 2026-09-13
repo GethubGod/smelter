@@ -57,7 +57,8 @@ export function StatusPill({ status, label, showDot = true, testID }: StatusPill
         style={{
           fontSize: ds.fontSize(typeScale.caption),
           fontWeight: weight.bold,
-          letterSpacing: tracking.caption,
+          letterSpacing: tracking.tag,
+          textTransform: 'uppercase',
           color: tone.text,
         }}
       >
