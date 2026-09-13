@@ -8,7 +8,7 @@ import { LocationPill } from '@/components/ui/LocationPill';
 import { useResolvedActiveLocation } from '@/hooks/useResolvedActiveLocation';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { ImpactFeedbackStyle, triggerImpactHaptic } from '@/lib/haptics';
-import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { color, radius, tracking, typeScale, weight } from '@/theme/tokens';
 import { useSimpleOrderUiStore } from '@/store/simpleOrderUiStore';
 import { locationGroupForLocation } from '@/features/simpleOrder/checklistSelection';
 import { OrderDetailSheet } from './components/OrderDetailSheet';
@@ -46,18 +46,18 @@ export function HistoryScreen() {
     subtitle={`${order.itemCount ?? order.reorderItems.length} items · ${order.supplierName} · ${formatSentTime(order.createdAt)}`}
     onPress={() => setDetailOrder(order)} last={index === items.length - 1}
     right={order.reorderItems.length ? <Pressable onPress={event => { event.stopPropagation(); reorder(order); }} accessibilityRole="button" accessibilityLabel={`Reorder ${formatHistoryDate(order.createdAt)}`} hitSlop={8}
-      style={{ backgroundColor: color.tint, borderRadius: radius.pill, paddingHorizontal: ds.spacing(9), paddingVertical: ds.spacing(5) }}>
-      <Text style={{ color: color.accent, fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold, textTransform: 'uppercase' }}>Reorder</Text>
+      style={{ backgroundColor: color.tint, borderRadius: radius.pill, paddingHorizontal: ds.spacing(8), paddingVertical: ds.spacing(4) }}>
+      <Text style={{ color: color.accent, fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.bold, letterSpacing: tracking.tag, textTransform: 'uppercase' }}>Reorder</Text>
     </Pressable> : undefined} />)}</Card>;
   return <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: color.page }}>
     <ScreenHeader title="Past orders" includeSafeArea={false} right={<LocationPill location={location} locations={locations} onSelect={setLocation} />} />
     {orders === null && !loadError ? <Loading label="Loading past orders" /> : loadError ? <EmptyState icon="alert-circle-outline" title="History unavailable" body={loadError} action={{ label: 'Try again', onPress: () => void load() }} /> :
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: ds.spacing(16), paddingTop: ds.spacing(2), paddingBottom: getTabBarClearance(insets.bottom) }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} tintColor={color.accent} />}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}><SectionLabel>This week</SectionLabel><Text style={{ color: color.ink3, fontSize: ds.fontSize(typeScale.caption) }}>{groups.week.length} sent</Text></View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}><SectionLabel>This week</SectionLabel><Text style={{ color: color.ink3, fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.semibold }}>{groups.week.length} sent</Text></View>
         {groups.week.length ? rows(groups.week) : null}
         <SectionLabel>Earlier</SectionLabel>
-        {groups.earlier.length ? rows(groups.earlier) : <View style={{ alignItems: 'center', paddingVertical: ds.spacing(28), gap: ds.spacing(8) }}>
-          <View style={{ width: ds.spacing(56), height: ds.spacing(56), backgroundColor: color.card, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="receipt-outline" size={ds.icon(24)} color={color.ink3} /></View>
+        {groups.earlier.length ? rows(groups.earlier) : <View style={{ alignItems: 'center', paddingVertical: ds.spacing(34), paddingHorizontal: ds.spacing(24), gap: ds.spacing(6) }}>
+          <View style={{ width: ds.spacing(56), height: ds.spacing(56), marginBottom: ds.spacing(6), backgroundColor: color.card, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="receipt-outline" size={ds.icon(28)} color={color.ink3} /></View>
           <Text style={{ color: color.ink, fontSize: ds.fontSize(typeScale.body), fontWeight: weight.semibold }}>Nothing older yet</Text>
           <Text style={{ color: color.ink2, fontSize: ds.fontSize(typeScale.secondary) }}>Orders stay here for 90 days.</Text>
         </View>}
