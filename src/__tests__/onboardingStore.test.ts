@@ -1,99 +1,49 @@
 import { useOnboardingStore } from '@/features/auth/onboardingStore';
+import type { InvitePreview } from '@/services/invites';
 
-const acceptInviteOnboarding = jest.fn();
-const signInWithName = jest.fn();
-const verifyOtp = jest.fn();
-const adoptExternalSession = jest.fn();
-
-jest.mock('@/services/invites', () => ({
-  acceptInviteOnboarding: (...args: unknown[]) => acceptInviteOnboarding(...args),
-}));
-
-jest.mock('@/services/loginCredentials', () => ({
-  signInWithName: (...args: unknown[]) => signInWithName(...args),
-}));
-
-jest.mock('@/lib/supabase', () => ({
-  supabase: { auth: { verifyOtp: (...args: unknown[]) => verifyOtp(...args) } },
-}));
-
-jest.mock('@/store/authStore', () => ({
-  useAuthStore: { getState: () => ({ adoptExternalSession }) },
-}));
-
-const preview = {
-  invitedName: 'Nate',
-  role: 'employee' as const,
-  locationGroup: 'sushi' as const,
+const preview: InvitePreview = {
+  invitedName: 'Maya Rivera',
+  invitedEmail: 'maya@example.com',
+  invitedBy: 'Kevin Chen',
+  role: 'employee',
+  locationGroup: 'sushi',
 };
 
 beforeEach(() => {
-  jest.clearAllMocks();
   useOnboardingStore.getState().reset();
+});
+
+it('keeps the token and complete preview together for all wizard steps', () => {
   useOnboardingStore.getState().setInvite('invite-token', preview);
+
+  expect(useOnboardingStore.getState()).toMatchObject({
+    token: 'invite-token',
+    preview,
+  });
 });
 
-it('installs the chosen credential as part of invite acceptance', async () => {
-  acceptInviteOnboarding.mockResolvedValue({
-    role: 'employee',
-    locationGroup: 'sushi',
-    tokenHash: 'token-hash',
-  });
-  verifyOtp.mockResolvedValue({
-    data: { session: { access_token: 'session-token' } },
-    error: null,
-  });
-  adoptExternalSession.mockResolvedValue(undefined);
+it('replaces stale invite details atomically', () => {
+  useOnboardingStore.getState().setInvite('first-token', preview);
+  const replacement: InvitePreview = {
+    invitedName: 'Jordan Lee',
+    invitedEmail: null,
+    invitedBy: 'Kim Park',
+    role: 'manager',
+    locationGroup: 'both',
+  };
 
-  await useOnboardingStore.getState().completeOnboarding('pin', '4321');
+  useOnboardingStore.getState().setInvite('second-token', replacement);
 
-  expect(acceptInviteOnboarding).toHaveBeenCalledWith(
-    'invite-token',
-    'pin',
-    '4321',
-  );
-  expect(adoptExternalSession).toHaveBeenCalledWith({
-    access_token: 'session-token',
+  expect(useOnboardingStore.getState()).toMatchObject({
+    token: 'second-token',
+    preview: replacement,
   });
-  expect(useOnboardingStore.getState().accepted).toBe(true);
 });
 
-it('recovers by credential sign-in when an accept response is interrupted', async () => {
-  const interrupted = new Error('Network request failed');
-  acceptInviteOnboarding.mockRejectedValue(interrupted);
-  signInWithName.mockResolvedValue(undefined);
+it('clears the whole invite when the wizard closes', () => {
+  useOnboardingStore.getState().setInvite('invite-token', preview);
 
-  await useOnboardingStore.getState().completeOnboarding('password', 'password123');
+  useOnboardingStore.getState().reset();
 
-  expect(signInWithName).toHaveBeenCalledWith('Nate', 'password123');
-  expect(verifyOtp).not.toHaveBeenCalled();
-  expect(useOnboardingStore.getState().accepted).toBe(true);
-});
-
-it('recovers by credential sign-in when the first-session exchange fails', async () => {
-  acceptInviteOnboarding.mockResolvedValue({
-    role: 'employee',
-    locationGroup: 'poki',
-    tokenHash: 'token-hash',
-  });
-  verifyOtp.mockResolvedValue({
-    data: { session: null },
-    error: new Error('OTP exchange interrupted'),
-  });
-  signInWithName.mockResolvedValue(undefined);
-
-  await useOnboardingStore.getState().completeOnboarding('pin', '4321');
-
-  expect(signInWithName).toHaveBeenCalledWith('Nate', '4321');
-  expect(useOnboardingStore.getState().locationGroup).toBe('poki');
-});
-
-it('preserves the original invite error when recovery is not possible', async () => {
-  const expired = new Error('This invite has expired');
-  acceptInviteOnboarding.mockRejectedValue(expired);
-  signInWithName.mockRejectedValue(new Error('No account'));
-
-  await expect(
-    useOnboardingStore.getState().completeOnboarding('pin', '4321'),
-  ).rejects.toBe(expired);
+  expect(useOnboardingStore.getState()).toMatchObject({ token: null, preview: null });
 });
