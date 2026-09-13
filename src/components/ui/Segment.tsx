@@ -21,7 +21,7 @@ export interface SegmentProps<T extends string> {
 
 /**
  * Picks exactly one of two to four options. Fills the width, sits on the well
- * track, active option takes the accent. Use `Chip` for list filters.
+ * track, active option is ink with white text. Use `Chip` for list filters.
  */
 export function Segment<T extends string>({
   options,
@@ -78,7 +78,7 @@ export function Segment<T extends string>({
               minHeight: optionHeight,
               paddingVertical: ds.spacing(space[2] - 1),
               borderRadius: radius.pill,
-              backgroundColor: selected ? color.accent : 'transparent',
+              backgroundColor: selected ? color.ink : 'transparent',
             }}
           >
             <Text
