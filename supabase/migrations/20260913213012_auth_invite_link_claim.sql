@@ -67,8 +67,7 @@ begin
     btrim(
       coalesce(
         v_auth_user.raw_user_meta_data->>'full_name',
-        v_auth_user.raw_user_meta_data->>'name',
-        split_part(coalesce(v_auth_user.email, ''), '@', 1)
+        v_auth_user.raw_user_meta_data->>'name'
       )
     ),
     ''
@@ -95,22 +94,26 @@ begin
   values (
     v_auth_user.id,
     coalesce(v_email, ''),
-    coalesce(v_full_name, 'User'),
+    coalesce(
+      v_full_name,
+      nullif(split_part(coalesce(v_email, ''), '@', 1), ''),
+      'User'
+    ),
     coalesce(v_granted_role, 'employee'::public.user_role),
     v_default_location_id
   )
   on conflict (id) do update
   set
     email = excluded.email,
-    name = case
-      when exists (
-        select 1
+    name = coalesce(
+      (
+        select nullif(btrim(p.full_name), '')
         from public.profiles as p
         where p.id = v_auth_user.id
-          and p.role in ('employee', 'manager')
-      ) then public.users.name
-      else excluded.name
-    end,
+      ),
+      v_full_name,
+      public.users.name
+    ),
     role = coalesce(v_granted_role, public.users.role),
     default_location_id = coalesce(excluded.default_location_id, public.users.default_location_id);
 
@@ -128,11 +131,7 @@ begin
   on conflict (id) do update
   set
     email = coalesce(excluded.email, public.profiles.email),
-    full_name = case
-      when public.profiles.role in ('employee', 'manager')
-        then public.profiles.full_name
-      else coalesce(excluded.full_name, public.profiles.full_name)
-    end,
+    full_name = coalesce(public.profiles.full_name, excluded.full_name),
     role = coalesce(v_granted_role::text, public.profiles.role),
     provider = coalesce(public.profiles.provider, excluded.provider),
     profile_completed = public.profiles.profile_completed
@@ -143,6 +142,11 @@ $$;
 
 revoke all on function public.upsert_identity_from_auth_user(uuid) from public, anon, authenticated;
 grant execute on function public.upsert_identity_from_auth_user(uuid) to service_role;
+
+-- The retired onboarding path was the only caller. New invite acceptance uses
+-- the auth provider or email/password account itself and never stores a PIN or
+-- secondary app password.
+drop function if exists public.set_onboarding_login_credential(uuid, text, text);
 
 -- The Edge Function calls this service-role-only RPC after authenticating the
 -- caller or creating the email user. One transaction applies all membership
@@ -195,6 +199,19 @@ begin
     return jsonb_build_object('ok', false, 'reason', 'revoked');
   end if;
   if v_invite.used_at is not null then
+    if v_invite.used_by = p_user_id
+      and exists (
+        select 1
+        from public.profiles as p
+        where p.id = p_user_id
+          and p.role = v_invite.role
+      ) then
+      return jsonb_build_object(
+        'ok', true,
+        'role', v_invite.role,
+        'locationGroup', v_invite.location_group
+      );
+    end if;
     return jsonb_build_object('ok', false, 'reason', 'used');
   end if;
   if v_invite.expires_at <= now() then

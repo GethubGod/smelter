@@ -9,7 +9,11 @@ import {
   isInviteLocationGroup,
   isInviteRole,
 } from "../_shared/invites.ts";
-import { normalizeEmail, parseAcceptInviteRequest } from "./input.ts";
+import {
+  classifyAuthCreateError,
+  normalizeEmail,
+  parseAcceptInviteRequest,
+} from "./input.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -199,6 +203,13 @@ function parseClaimResult(value: unknown): ClaimResult | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const record = value as Record<string, unknown>;
   if (typeof record.ok !== "boolean") return null;
+  if (
+    record.ok &&
+    (!isInviteRole(record.role) ||
+      !isInviteLocationGroup(record.locationGroup))
+  ) {
+    return null;
+  }
   return {
     ok: record.ok,
     reason: typeof record.reason === "string" ? record.reason : undefined,
@@ -226,6 +237,66 @@ async function claimInvite(input: {
     return null;
   }
   return parseClaimResult(data);
+}
+
+async function reconcileClaim(input: {
+  inviteId: string;
+  userId: string;
+}): Promise<ClaimResult | null> {
+  const [inviteLookup, profileLookup] = await Promise.all([
+    supabaseAdmin
+      .from("invites")
+      .select("used_by, role, location_group")
+      .eq("id", input.inviteId)
+      .maybeSingle(),
+    supabaseAdmin
+      .from("profiles")
+      .select("role")
+      .eq("id", input.userId)
+      .maybeSingle(),
+  ]);
+  if (inviteLookup.error || profileLookup.error) {
+    console.error(
+      "Unable to reconcile invite claim",
+      inviteLookup.error ?? profileLookup.error,
+    );
+    return null;
+  }
+
+  const invite = inviteLookup.data;
+  if (
+    invite?.used_by !== input.userId ||
+    !isInviteRole(invite.role) ||
+    !isInviteLocationGroup(invite.location_group) ||
+    profileLookup.data?.role !== invite.role
+  ) {
+    return null;
+  }
+  return {
+    ok: true,
+    role: invite.role,
+    locationGroup: invite.location_group,
+  };
+}
+
+async function claimInviteWithRecovery(input: {
+  inviteId: string;
+  token: string;
+  userId: string;
+  rejectExistingMembership: boolean;
+  requireInvitedEmailMatch: boolean;
+}): Promise<ClaimResult | null> {
+  const firstAttempt = await claimInvite(input);
+  if (firstAttempt) return firstAttempt;
+
+  const reconciled = await reconcileClaim(input);
+  if (reconciled) return reconciled;
+
+  // The SQL claim is idempotent for the same invite/user pair, so one retry
+  // safely resolves a response lost after commit without consuming it twice.
+  const retry = await claimInvite(input);
+  if (retry) return retry;
+  return await reconcileClaim(input);
 }
 
 async function removeUnclaimedUser(userId: string): Promise<void> {
@@ -360,14 +431,18 @@ Deno.serve(async (req) => {
     if (!linkUserId) {
       return jsonResponse(req, { error: "Unauthorized" }, 401);
     }
-    const claim = await claimInvite({
+    const claim = await claimInviteWithRecovery({
+      inviteId: lookup.invite.id,
       token: parsed.value.token,
       userId: linkUserId,
       rejectExistingMembership: true,
       requireInvitedEmailMatch: false,
     });
     if (!claim) {
-      return jsonResponse(req, { error: "Unable to apply invite" }, 500);
+      return jsonResponse(req, {
+        error: "Invite status could not be confirmed. Try again.",
+        reason: "service_unavailable",
+      }, 503);
     }
     if (!claim.ok) return claimFailureResponse(req, claim);
     if (!claim.role || !claim.locationGroup) {
@@ -405,31 +480,39 @@ Deno.serve(async (req) => {
     });
 
   if (createError || !created.user) {
-    console.error("Unable to create invited auth user", createError);
-    return jsonResponse(
-      req,
-      { error: "Unable to create account with this email" },
-      409,
-    );
+    const failure = classifyAuthCreateError(createError);
+    console.error("Unable to create invited auth user", {
+      reason: failure.reason,
+      status: failure.status,
+    });
+    return jsonResponse(req, {
+      error: failure.error,
+      reason: failure.reason,
+    }, failure.status);
   }
 
-  const claim = await claimInvite({
+  const claim = await claimInviteWithRecovery({
+    inviteId: lookup.invite.id,
     token: parsed.value.token,
     userId: created.user.id,
     rejectExistingMembership: false,
     requireInvitedEmailMatch: true,
   });
   if (!claim) {
-    await removeUnclaimedUser(created.user.id);
-    return jsonResponse(req, { error: "Unable to apply invite" }, 500);
+    return jsonResponse(req, {
+      error: "Account setup status could not be confirmed. Try again.",
+      reason: "service_unavailable",
+    }, 503);
   }
   if (!claim.ok) {
     await removeUnclaimedUser(created.user.id);
     return claimFailureResponse(req, claim);
   }
   if (!claim.role || !claim.locationGroup) {
-    await removeUnclaimedUser(created.user.id);
-    return jsonResponse(req, { error: "Unable to apply invite" }, 500);
+    return jsonResponse(req, {
+      error: "Account setup status could not be confirmed. Try again.",
+      reason: "service_unavailable",
+    }, 503);
   }
 
   return jsonResponse(req, {

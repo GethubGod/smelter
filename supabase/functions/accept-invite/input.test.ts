@@ -1,5 +1,5 @@
 import { INVITE_TOKEN_LENGTH } from "../_shared/invites.ts";
-import { parseAcceptInviteRequest } from "./input.ts";
+import { classifyAuthCreateError, parseAcceptInviteRequest } from "./input.ts";
 
 const token = "A".repeat(INVITE_TOKEN_LENGTH);
 
@@ -37,6 +37,15 @@ Deno.test("credential acceptance normalizes email and preserves password whitesp
   }
 });
 
+Deno.test("credential acceptance rejects malformed email before Auth", () => {
+  const result = parseAcceptInviteRequest({
+    token,
+    email: "not-an-email",
+    password: "long enough",
+  });
+  if (result.ok) throw new Error("Expected malformed email to fail");
+});
+
 Deno.test("retired onboarding mode is rejected", () => {
   const result = parseAcceptInviteRequest({
     token,
@@ -55,5 +64,27 @@ Deno.test("link mode rejects credential fields", () => {
   });
   if (result.ok) {
     throw new Error("Expected link mode credential fields to fail");
+  }
+});
+
+Deno.test("auth create errors expose safe structured reasons", () => {
+  const cases = [
+    [{ code: "email_exists", status: 422 }, "email_exists", 409],
+    [{ code: "user_already_exists", status: 422 }, "email_exists", 409],
+    [{ code: "weak_password", status: 422 }, "password_rejected", 422],
+    [{ code: "email_address_invalid", status: 422 }, "email_invalid", 422],
+    [{ code: "request_timeout", status: 504 }, "service_unavailable", 503],
+    [{ name: "AuthRetryableFetchError" }, "service_unavailable", 503],
+    [{ code: "email_provider_disabled", status: 400 }, "account_rejected", 422],
+  ] as const;
+
+  for (const [error, reason, status] of cases) {
+    const result = classifyAuthCreateError(error);
+    if (result.reason !== reason || result.status !== status) {
+      throw new Error(
+        "Expected " + reason + "/" + status + ", got " +
+          result.reason + "/" + result.status,
+      );
+    }
   }
 });
