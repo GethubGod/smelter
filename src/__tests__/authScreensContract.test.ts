@@ -48,6 +48,10 @@ jest.mock('@/components/LoadingIndicator', () => {
 });
 jest.mock('react-native-safe-area-context', () => ({ SafeAreaView: 'SafeAreaView' }));
 jest.mock('expo-status-bar', () => ({ StatusBar: 'StatusBar' }));
+jest.mock('expo-web-browser', () => ({
+  openBrowserAsync: jest.fn(),
+  WebBrowserPresentationStyle: { FULL_SCREEN: 'fullScreen' },
+}));
 jest.mock('expo-router', () => {
   const ReactActual = jest.requireActual<typeof import('react')>('react');
   return {
@@ -185,11 +189,11 @@ describe('auth screens contract', () => {
     renderer.act(() => component.unmount());
   });
 
-  test('the light loading state stays light for the post-auth layouts', () => {
+  test('the post-auth loading state uses the Studio page colour', () => {
     const component = renderScreen(React.createElement(AuthLoadingScreen));
 
     const root = component.root.findAllByType('View' as unknown as TestElement)[0];
-    expect(flatten(root.props.style).backgroundColor).not.toBe(auth.bg);
+    expect(flatten(root.props.style).backgroundColor).toBe(auth.bg);
 
     renderer.act(() => component.unmount());
   });

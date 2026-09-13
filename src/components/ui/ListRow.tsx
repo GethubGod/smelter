@@ -66,7 +66,7 @@ export function ListRow({
           minHeight: ds.spacing(44),
           paddingVertical: ds.spacing(space[3] - 2),
           borderBottomWidth: last ? 0 : 1,
-          borderBottomColor: onDark ? auth.wellBorder : color.hairline,
+          borderBottomColor: onDark ? auth.hair : color.hairline,
           opacity: disabled ? 0.5 : 1,
         },
         style,
@@ -80,7 +80,7 @@ export function ListRow({
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: radius.control,
-            backgroundColor: onDark ? auth.wellBorder : color.well,
+            backgroundColor: onDark ? auth.hair : color.well,
           }}
         >
           {typeof icon === 'string' ? (

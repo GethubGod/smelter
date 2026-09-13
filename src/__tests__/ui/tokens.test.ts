@@ -24,10 +24,10 @@ import {
 
 it('matches the contract palette', () => {
   expect(color).toMatchObject({
-    page: '#F5F5F4',
+    page: '#F3F3F1',
     card: '#FFFFFF',
-    well: '#EDEDEC',
-    hairline: 'rgba(0, 0, 0, 0.06)',
+    well: '#EAEAE8',
+    hairline: 'rgba(0, 0, 0, 0.05)',
     accent: '#E84D38',
     tint: '#FBEAE7',
     alert: '#C03520',
@@ -42,21 +42,33 @@ it('matches the contract palette', () => {
 
 it('matches the contract auth palette', () => {
   expect(auth).toMatchObject({
-    bg: '#000000',
-    text: '#FFFFFF',
-    dim: 'rgba(255, 255, 255, 0.55)',
-    well: 'rgba(255, 255, 255, 0.09)',
-    wellBorder: 'rgba(255, 255, 255, 0.18)',
+    bg: '#F3F3F1',
+    text: '#1A1A1A',
+    dim: '#5F5F5F',
+    faint: '#9C9890',
+    well: '#FFFFFF',
+    wellFocus: '#1A1A1A',
+    wellError: '#C03520',
+    disabled: '#C9C5BC',
+    hair: 'rgba(0, 0, 0, 0.10)',
   });
 });
 
 it('keeps five type sizes and three weights', () => {
-  expect(typeScale).toEqual({ display: 28, title: 20, body: 15, secondary: 13, caption: 11 });
+  expect(typeScale).toEqual({
+    display: 30,
+    title: 20,
+    body: 15,
+    secondary: 13,
+    caption: 11,
+    meta: 12,
+    option: 16,
+  });
   expect(Object.values(weight).sort()).toEqual(['400', '600', '700']);
 });
 
 it('keeps four radii and the spacing grid', () => {
-  expect(radius).toEqual({ pill: 999, card: 16, control: 12, sheet: 24 });
+  expect(radius).toEqual({ pill: 999, card: 22, control: 14, sheet: 30 });
   expect(Object.values(space)).toEqual([4, 8, 12, 16, 20, 24, 32]);
 });
 

@@ -34,7 +34,7 @@ export function PinDots({ filled, error = false }: PinDotsProps) {
               height: dot,
               borderRadius: radius.pill,
               borderWidth: 1,
-              borderColor: on ? color.accent : auth.wellBorder,
+              borderColor: on ? color.accent : auth.hair,
               backgroundColor: on ? color.accent : auth.well,
               opacity: error ? 0.55 : 1,
             }}

@@ -23,6 +23,26 @@ function hostComponent(name: string) {
 
 /** Replacement for `react-native`. */
 export function reactNative() {
+  class AnimatedValue {
+    value: number;
+
+    constructor(value: number) {
+      this.value = value;
+    }
+
+    setValue(value: number) {
+      this.value = value;
+    }
+
+    interpolate() {
+      return this;
+    }
+  }
+
+  const start = (callback?: (result: { finished: boolean }) => void) => {
+    callback?.({ finished: true });
+  };
+
   return {
     View: hostComponent('View'),
     Text: hostComponent('Text'),
@@ -32,6 +52,23 @@ export function reactNative() {
     TouchableOpacity: hostComponent('TouchableOpacity'),
     ActivityIndicator: hostComponent('ActivityIndicator'),
     Modal: hostComponent('Modal'),
+    Animated: {
+      Value: AnimatedValue,
+      View: hostComponent('Animated.View'),
+      timing: (value: AnimatedValue, config: { toValue: number }) => ({
+        start: (callback?: (result: { finished: boolean }) => void) => {
+          value.setValue(config.toValue);
+          start(callback);
+        },
+      }),
+      parallel: (animations: Array<{ start: typeof start }>) => ({
+        start: (callback?: (result: { finished: boolean }) => void) => {
+          animations.forEach((animation) => animation.start());
+          start(callback);
+        },
+      }),
+    },
+    Easing: { bezier: () => (value: number) => value },
     StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1 },
     Platform: {
       OS: 'ios',

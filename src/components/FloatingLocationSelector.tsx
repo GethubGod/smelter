@@ -103,10 +103,10 @@ function getLocationTone(location: Location | null): LocationTone {
 
   return {
     dot: color.card,
-    halo: auth.wellBorder,
-    border: auth.wellBorder,
+    halo: auth.hair,
+    border: auth.hair,
     selectedBackground: auth.well,
-    selectedBorder: auth.wellBorder,
+    selectedBorder: auth.hair,
     surface: auth.well,
   };
 }

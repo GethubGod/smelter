@@ -119,7 +119,7 @@ export default function LoginScreen() {
   const noteStyle = {
     backgroundColor: auth.well,
     borderWidth: 1,
-    borderColor: auth.wellBorder,
+    borderColor: auth.hair,
     borderRadius: radius.control,
     paddingHorizontal: ds.spacing(space[3]),
     paddingVertical: ds.spacing(space[2]),

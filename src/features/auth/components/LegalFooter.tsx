@@ -1,25 +1,15 @@
 import React from 'react';
-import { Alert, Linking, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { auth, size, space, typeScale } from '@/theme/tokens';
-import { PRIVACY_URL, TERMS_URL } from '../legal';
-
-async function openLegalUrl(url: string) {
-  try {
-    const supported = await Linking.canOpenURL(url);
-    if (!supported) throw new Error('unsupported');
-    await Linking.openURL(url);
-  } catch {
-    Alert.alert('Unable to open the link', url);
-  }
-}
+import { openAuthBrowser, PRIVACY_URL, TERMS_URL } from '../legal';
 
 /** Terms and Privacy policy, pinned to the bottom of every auth screen. */
 export function LegalFooter() {
   const ds = useScaledStyles();
   const linkStyle = {
-    fontSize: ds.fontSize(typeScale.caption),
-    color: auth.dim,
+    fontSize: ds.fontSize(typeScale.meta),
+    color: auth.faint,
     textDecorationLine: 'underline' as const,
   };
   // Caption type on its own is a 14pt target. The links carry the full 44pt
@@ -36,28 +26,28 @@ export function LegalFooter() {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: ds.spacing(space[2]),
+        paddingBottom: ds.spacing(size.authClose),
         gap: ds.spacing(space[2]),
       }}
     >
       <TouchableOpacity
         accessibilityRole="link"
         accessibilityLabel="Terms of service"
-        onPress={() => openLegalUrl(TERMS_URL)}
+        onPress={() => void openAuthBrowser(TERMS_URL)}
         hitSlop={{ top: 6, bottom: 6 }}
         style={targetStyle}
       >
         <Text style={linkStyle}>Terms</Text>
       </TouchableOpacity>
-      <Text style={{ fontSize: ds.fontSize(typeScale.caption), color: auth.dim }}>·</Text>
+      <Text style={{ fontSize: ds.fontSize(typeScale.meta), color: auth.faint }}>·</Text>
       <TouchableOpacity
         accessibilityRole="link"
         accessibilityLabel="Privacy policy"
-        onPress={() => openLegalUrl(PRIVACY_URL)}
+        onPress={() => void openAuthBrowser(PRIVACY_URL)}
         hitSlop={{ top: 6, bottom: 6 }}
         style={targetStyle}
       >
-        <Text style={linkStyle}>Privacy policy</Text>
+        <Text style={linkStyle}>Privacy</Text>
       </TouchableOpacity>
     </View>
   );

@@ -21,15 +21,15 @@ import { Platform } from 'react-native';
 
 export const color = {
   /** Screen background. */
-  page: '#F5F5F4',
+  page: '#F3F3F1',
   /** Cards, sheets, the tab bar pill. */
   card: '#FFFFFF',
   /** Inputs, tracks, icon tiles, segment tracks. */
-  well: '#EDEDEC',
+  well: '#EAEAE8',
   /** Row separators and card borders. */
-  hairline: 'rgba(0, 0, 0, 0.06)',
+  hairline: 'rgba(0, 0, 0, 0.05)',
   /** Heavier divider, used inside the tab bar pill. */
-  hairlineStrong: 'rgba(0, 0, 0, 0.12)',
+  hairlineStrong: 'rgba(0, 0, 0, 0.14)',
   /** The only action colour. */
   accent: '#E84D38',
   /** Selected and active fills behind the accent. */
@@ -54,23 +54,35 @@ export const color = {
   warning: '#B45309',
   warningBg: '#FFF4DC',
   /** Sheet and modal backdrop, 30% per the contract. */
-  scrim: 'rgba(0, 0, 0, 0.3)',
+  scrim: 'rgba(20, 18, 14, 0.5)',
   /** Inactive tab glyph inside the floating pill. */
   tabInactive: '#8A8781',
+  sheetBg: '#F3F3F1',
+  sheetHandle: 'rgba(0, 0, 0, 0.2)',
 } as const;
 
 /* ── Colour: auth surfaces (black) ─────────────────────────────────── */
 
-/** Setup and sign-in are black. Daily work is `color.page`. One auth look. */
+/** Auth uses the Studio page palette. */
 export const auth = {
-  bg: '#000000',
-  text: '#FFFFFF',
-  dim: 'rgba(255, 255, 255, 0.55)',
-  well: 'rgba(255, 255, 255, 0.09)',
-  wellBorder: 'rgba(255, 255, 255, 0.18)',
-  /** Secondary buttons on black use a brighter border than the wells. */
-  buttonBorder: 'rgba(255, 255, 255, 0.35)',
+  bg: '#F3F3F1',
+  text: '#1A1A1A',
+  dim: '#5F5F5F',
+  faint: '#9C9890',
+  well: '#FFFFFF',
+  wellFocus: '#1A1A1A',
+  wellError: '#C03520',
   accent: color.accent,
+  disabled: '#C9C5BC',
+  hair: 'rgba(0, 0, 0, 0.10)',
+} as const;
+
+/** Provider marks keep their official brand colours. */
+export const providerColor = {
+  googleRed: '#EA4335',
+  googleBlue: '#4285F4',
+  googleYellow: '#FBBC05',
+  googleGreen: '#34A853',
 } as const;
 
 /* ── Type: five sizes, three weights ───────────────────────────────── */
@@ -81,7 +93,7 @@ export const auth = {
  */
 export const typeScale = {
   /** Root screen titles. */
-  display: 28,
+  display: 30,
   /** Pushed screen titles, sheet titles, big numbers. */
   title: 20,
   /** Item names, row titles, inputs, buttons. */
@@ -90,6 +102,8 @@ export const typeScale = {
   secondary: 13,
   /** Section labels, status pills, badges. Always uppercase. */
   caption: 11,
+  meta: 12,
+  option: 16,
 } as const;
 
 /** The only three weights. 500, 800 and 900 are gone. */
@@ -101,7 +115,7 @@ export const weight = {
 
 /** Tracking, in points, matching the contract's em values at each size. */
 export const tracking = {
-  display: -0.56,
+  display: -0.9,
   title: -0.2,
   caption: 0.66,
 } as const;
@@ -112,11 +126,11 @@ export const radius = {
   /** Buttons, chips, segments, tab bar, badges, avatars. */
   pill: 999,
   /** Cards, list groups, stat tiles. */
-  card: 16,
+  card: 22,
   /** Inputs, icon tiles, small thumbnails. */
-  control: 12,
+  control: 14,
   /** Bottom sheet top corners only. */
-  sheet: 24,
+  sheet: 30,
 } as const;
 
 export const space = {
@@ -147,6 +161,10 @@ export const size = {
   sheetHandleHeight: 4,
   badge: 15,
   tabDivider: 22,
+  authStatusBar: 54,
+  authButton: 52,
+  authInput: 50,
+  authClose: 30,
 } as const;
 
 /* ── Elevation ─────────────────────────────────────────────────────── */
@@ -188,3 +206,10 @@ export const statusTone: Record<StatusTone, { background: string; text: string; 
   fulfilled: { background: color.goodBg, text: color.good, label: 'Fulfilled' },
   cancelled: { background: color.alertBg, text: color.alert, label: 'Cancelled' },
 };
+
+/** Cubic-bezier control points and durations shared by auth motion. */
+export const motion = {
+  ease: [0.2, 0.8, 0.2, 1] as const,
+  dur: 280,
+  pop: [0.34, 1.5, 0.64, 1] as const,
+} as const;

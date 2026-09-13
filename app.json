@@ -20,6 +20,7 @@
         "webcredentials:tips.babytunasystems.com"
       ],
       "supportsTablet": false,
+      "usesAppleSignIn": true,
       "bundleIdentifier": "com.babytuna.systems",
       "buildNumber": "21",
       "config": {
@@ -161,6 +162,7 @@
       ],
       "expo-font",
       "expo-asset",
+      "expo-apple-authentication",
       "expo-web-browser"
     ],
     "experiments": {
