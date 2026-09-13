@@ -14,6 +14,7 @@ import {
   Loading,
   ScreenHeader,
   Sheet,
+  getTabBarClearance,
 } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
@@ -177,7 +178,7 @@ export default function MemberDetailScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={{
           paddingHorizontal: ds.spacing(space[4]),
-          paddingBottom: ds.spacing(space[8]),
+          paddingBottom: getTabBarClearance(0),
         }}
         showsVerticalScrollIndicator={false}
       >

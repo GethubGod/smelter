@@ -12,19 +12,33 @@ import { motion } from '@/theme/tokens';
 import { ImpactFeedbackStyle, triggerImpactHaptic } from '@/lib/haptics';
 
 const ROOT_ROUTES = new Set(['index', 'fulfillment', 'fulfillment-history', 'profile']);
-const HIDDEN_DOCK_ROUTES = new Set(['orders', 'orders/pending', 'inventory', 'cart', 'fulfillment-confirmation', 'fulfillment-send-all', 'past-orders/index', 'past-orders/[id]']);
+const PUSHED_DOCK_ROUTES = new Set([
+  'inventory', 'fulfillment-confirmation', 'manager-settings/export-format',
+  'manager-settings/team', 'manager-settings/team-invite',
+  'manager-settings/team-member', 'manager-settings/team-defaults',
+]);
+const HIDDEN_DOCK_ROUTES = new Set(['orders', 'orders/pending', 'cart', 'fulfillment-send-all', 'past-orders/index', 'past-orders/[id]']);
 
 function ManagerTabBar({ state, navigation, fulfillmentEnabled }: BottomTabBarProps & { fulfillmentEnabled: boolean }) {
   const { supplierCount } = useManagerFulfillmentOverview();
   const current = state.routes[state.index]?.name ?? 'index';
-  if (HIDDEN_DOCK_ROUTES.has(current) || current.startsWith('manager-settings/') || current.startsWith('employee-reminders')) return null;
+  if (!PUSHED_DOCK_ROUTES.has(current) && (HIDDEN_DOCK_ROUTES.has(current) || current.startsWith('manager-settings/') || current.startsWith('employee-reminders'))) return null;
   const tabs: TabBarItem[] = [
     { name: 'index', label: 'Home', icon: 'home-outline' },
     ...(fulfillmentEnabled ? [{ name: 'fulfillment', label: 'Fulfillment', icon: 'clipboard-outline' as const, badge: supplierCount }] : []),
     { name: 'fulfillment-history', label: 'History', icon: 'time-outline' },
     { name: 'profile', label: 'Settings', icon: 'person-outline' },
   ];
-  return <TabBar tabs={tabs} active={ROOT_ROUTES.has(current) ? current : current.includes('history') ? 'fulfillment-history' : 'index'} onPress={name => {
+  const visibleRoots = new Set(tabs.map(tab => tab.name));
+  const parent = [...state.history].reverse().flatMap(entry => {
+    if (entry.type !== 'route') return [];
+    const route = state.routes.find(candidate => candidate.key === entry.key);
+    return route && visibleRoots.has(route.name) ? [route.name] : [];
+  })[0];
+  const fallback = current.startsWith('manager-settings/') ? 'profile'
+    : current === 'fulfillment-confirmation' && fulfillmentEnabled ? 'fulfillment'
+      : current.includes('history') ? 'fulfillment-history' : 'index';
+  return <TabBar tabs={tabs} active={visibleRoots.has(current) ? current : parent ?? fallback} onPress={name => {
     const route = state.routes.find(entry => entry.name === name);
     const event = navigation.emit({ type: 'tabPress', target: route?.key, canPreventDefault: true });
     if (!event.defaultPrevented) { void triggerImpactHaptic(ImpactFeedbackStyle.Light); navigation.navigate(name); }
@@ -52,26 +66,26 @@ export default function ManagerLayout() {
       {/* Hidden screens (accessible via navigation) */}
       <Tabs.Screen name="orders" options={{ href: null, tabBarStyle: { display: "none" } }} />
       <Tabs.Screen name="orders/pending" options={{ href: null, tabBarStyle: { display: "none" } }} />
-      <Tabs.Screen name="inventory" options={{ href: null, tabBarStyle: { display: "none" } }} />
+      <Tabs.Screen name="inventory" options={{ href: null }} />
       <Tabs.Screen name="cart" options={{ href: null, tabBarStyle: { display: "none" } }} />
       <Tabs.Screen name="export-fish-order" options={{ href: null }} />
-      <Tabs.Screen name="fulfillment-confirmation" options={{ href: null, tabBarStyle: { display: "none" } }} />
+      <Tabs.Screen name="fulfillment-confirmation" options={{ href: null }} />
       <Tabs.Screen name="fulfillment-send-all" options={{ href: null, tabBarStyle: { display: "none" } }} />
       <Tabs.Screen name="fulfillment-history-detail" options={{ href: null }} />
       <Tabs.Screen name="past-orders/index" options={{ href: null, tabBarStyle: { display: "none" } }} />
       <Tabs.Screen name="past-orders/[id]" options={{ href: null, tabBarStyle: { display: "none" } }} />
-      <Tabs.Screen name="manager-settings/export-format" options={{ href: null, tabBarStyle: { display: "none" } }} />
+      <Tabs.Screen name="manager-settings/export-format" options={{ href: null }} />
       <Tabs.Screen name="manager-settings/user-management" options={{ href: null, tabBarStyle: { display: "none" } }} />
       <Tabs.Screen name="manager-settings/profile" options={{ href: null, tabBarStyle: { display: "none" } }} />
       <Tabs.Screen name="manager-settings/access-codes" options={{ href: null, tabBarStyle: { display: "none" } }} />
       <Tabs.Screen name="manager-settings/quick-order-config" options={{ href: null, tabBarStyle: { display: "none" } }} />
       <Tabs.Screen name="manager-settings/supplier-contacts" options={{ href: null, tabBarStyle: { display: "none" } }} />
-      <Tabs.Screen name="manager-settings/team" options={{ href: null, tabBarStyle: { display: "none" } }} />
-      <Tabs.Screen name="manager-settings/team-invite" options={{ href: null, tabBarStyle: { display: "none" } }} />
+      <Tabs.Screen name="manager-settings/team" options={{ href: null }} />
+      <Tabs.Screen name="manager-settings/team-invite" options={{ href: null }} />
       <Tabs.Screen name="manager-settings/team-invite-link" options={{ href: null, tabBarStyle: { display: "none" } }} />
-      <Tabs.Screen name="manager-settings/team-member" options={{ href: null, tabBarStyle: { display: "none" } }} />
+      <Tabs.Screen name="manager-settings/team-member" options={{ href: null }} />
       <Tabs.Screen name="manager-settings/team-preview" options={{ href: null, tabBarStyle: { display: "none" } }} />
-      <Tabs.Screen name="manager-settings/team-defaults" options={{ href: null, tabBarStyle: { display: "none" } }} />
+      <Tabs.Screen name="manager-settings/team-defaults" options={{ href: null }} />
       <Tabs.Screen name="employee-reminders" options={{ href: null, tabBarStyle: { display: "none" } }} />
       <Tabs.Screen name="employee-reminders-recurring" options={{ href: null, tabBarStyle: { display: "none" } }} />
       <Tabs.Screen name="employee-reminders-settings" options={{ href: null, tabBarStyle: { display: "none" } }} />

@@ -5,7 +5,7 @@ import { useCallback, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
-import { Card, EmptyState, Loading, ScreenHeader } from '@/components/ui';
+import { Card, EmptyState, Loading, ScreenHeader, getTabBarClearance } from '@/components/ui';
 import { showNotice } from '@/components/ui/NoticeSheet';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
@@ -85,7 +85,7 @@ export default function DefaultsScreen() {
         contentContainerStyle={{
           paddingHorizontal: ds.spacing(space[4]),
           paddingTop: ds.spacing(space[2]),
-          paddingBottom: ds.spacing(space[8]),
+          paddingBottom: getTabBarClearance(0),
           gap: ds.spacing(space[3]),
         }}
         showsVerticalScrollIndicator={false}

@@ -6,7 +6,16 @@ import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { useShallow } from 'zustand/react/shallow';
-import { Button, Card, EmptyState, ListRow, Loading, ScreenHeader, SectionLabel } from '@/components/ui';
+import {
+  Button,
+  Card,
+  EmptyState,
+  ListRow,
+  Loading,
+  ScreenHeader,
+  SectionLabel,
+  getTabBarClearance,
+} from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
 import { buildSettingsHref } from '@/lib/settingsNavigation';
@@ -135,7 +144,7 @@ export default function TeamScreen() {
         contentContainerStyle={{
           paddingHorizontal: ds.spacing(space[4]),
           paddingTop: ds.spacing(space[2]),
-          paddingBottom: ds.spacing(space[8]),
+          paddingBottom: getTabBarClearance(0),
         }}
         showsVerticalScrollIndicator={false}
       >

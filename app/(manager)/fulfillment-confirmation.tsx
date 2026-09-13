@@ -2711,7 +2711,7 @@ function FulfillmentConfirmationScreen() {
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: color.page }}
-      edges={['left', 'right', 'bottom']}
+      edges={['left', 'right']}
     >
       <ScreenHeader
         mode="pushed"
@@ -2731,8 +2731,9 @@ function FulfillmentConfirmationScreen() {
         keyExtractor={(entry) => entry.key}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
-          paddingHorizontal: ds.spacing(space[5]),
-          paddingBottom: ds.spacing(space[4]),
+          paddingHorizontal: ds.spacing(space[4]),
+          paddingTop: ds.spacing(2),
+          paddingBottom: ds.spacing(120),
         }}
         ListHeaderComponent={
           <View>
@@ -2740,7 +2741,6 @@ function FulfillmentConfirmationScreen() {
               style={{
                 flexDirection: 'row',
                 gap: ds.spacing(10),
-                marginTop: ds.spacing(space[2]),
                 marginBottom: ds.spacing(12),
               }}
             >
@@ -2795,6 +2795,7 @@ function FulfillmentConfirmationScreen() {
                     <Text
                       style={{
                         fontSize: ds.fontSize(typeScale.itemDense),
+                        lineHeight: ds.fontSize(typeScale.itemDense) * 1.45,
                         color: color.accent,
                       }}
                     >

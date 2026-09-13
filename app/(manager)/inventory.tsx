@@ -24,7 +24,7 @@ import {
   InventoryItem,
  KNOWN_ITEM_CATEGORIES, KNOWN_SUPPLIER_CATEGORIES } from '@/types';
 import { getCategoryLabel, getSupplierCategoryLabel } from '@/constants';
-import { Loading, ListRow, ScreenHeader } from '@/components/ui';
+import { Loading, ListRow, ScreenHeader, getTabBarClearance } from '@/components/ui';
 import { showNotice } from '@/components/ui/NoticeSheet';
 import { useResolvedActiveLocation } from '@/hooks/useResolvedActiveLocation';
 import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
@@ -1297,8 +1297,8 @@ export default function ManagerInventoryScreen() {
     () => ({
       paddingHorizontal: ds.spacing(16),
       paddingBottom: isBulkMode
-        ? BULK_BAR_HEIGHT + ds.spacing(16)
-        : ds.spacing(24),
+        ? BULK_BAR_HEIGHT + getTabBarClearance(0)
+        : getTabBarClearance(0),
     }),
     [ds, isBulkMode],
   );
@@ -1343,8 +1343,8 @@ export default function ManagerInventoryScreen() {
 
         {isBulkMode && (
           <View
-            className="absolute bottom-0 left-0 right-0 border-t"
-            style={{ backgroundColor: color.card, borderColor: color.hairlineStrong, paddingHorizontal: ds.spacing(16),
+            className="absolute left-0 right-0 border-t"
+            style={{ bottom: getTabBarClearance(0, 'pinned'), backgroundColor: color.card, borderColor: color.hairlineStrong, paddingHorizontal: ds.spacing(16),
               paddingVertical: ds.spacing(10) }}
           >
             <View className="flex-row items-center justify-between">

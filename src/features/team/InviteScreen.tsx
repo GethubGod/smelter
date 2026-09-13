@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Button, Chip, Input, ScreenHeader } from '@/components/ui';
+import { Button, Chip, Input, ScreenHeader, getTabBarClearance } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
 import { color, space, typeScale } from '@/theme/tokens';
@@ -132,7 +132,7 @@ export default function InviteScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={{
           paddingHorizontal: ds.spacing(space[4]),
-          paddingBottom: ds.spacing(space[8]),
+          paddingBottom: getTabBarClearance(0),
         }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

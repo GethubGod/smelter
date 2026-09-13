@@ -53,6 +53,14 @@ Native build and launch:
 - Initial launch displayed `No script URL provided`. `scripts/sim.sh terminate com.babytuna.systems` followed by `scripts/sim.sh launch com.babytuna.systems -RCT_jsLocation localhost:8091` loaded the real welcome screen. Metro bundled 2371 modules. Existing SafeAreaView deprecation and require-cycle warnings appeared.
 - Expo's generated local signing-team changes were removed from the worktree project file after the build. No signing configuration change is part of this UI deliverable.
 
+Integrated visual correction gate:
+
+- Escalated the supplier-review visual correction to GPT-6 Astra at medium effort after the remaining 20pt versus 16pt padding mismatch was found. Restored the dock on in-scope pushed routes and its active parent from navigation history. Added scroll and footer clearance to Inventory, Export format and Team screens.
+- `npm run typecheck`: exit 0.
+- `npm run lint`: exit 0, no warnings.
+- `npm run test:ci`: exit 0, 99 suites passed, 1 skipped; 1315 tests passed, 1 skipped, 1316 total.
+- `git diff --check`: exit 0.
+
 ## Deviations
 
 - The browser URL policy blocked opening the local `reference-glide.html`. Reference inspection uses its HTML, CSS, and interaction code. Interactive browser comparison has not been performed. No alternate browser or URL workaround was attempted.
@@ -67,6 +75,8 @@ Native build and launch:
 
 - Supplier review retains the unit pill and overflow menu for existing conversion, supplier reassignment, order-later, note, removal and breakdown actions. Multiple real notes appear on separate accent lines. Secondary logistics forms retain their existing controls.
 - Inventory uses the reference list and search layout. Existing edit and bulk actions remain available through row press and long press. A usual quantity tag appears only when the checklist service supplies a real recommendation.
+
+- Legacy manager Settings leaf routes outside the redesign retain their existing dock hiding. Inventory, supplier review, Export format, Team, Invite, member detail and Defaults retain the dock as the reference shows.
 
 ## Reference discrepancies
 
