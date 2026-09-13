@@ -61,6 +61,14 @@ Integrated visual correction gate:
 - `npm run test:ci`: exit 0, 99 suites passed, 1 skipped; 1315 tests passed, 1 skipped, 1316 total.
 - `git diff --check`: exit 0.
 
+Checklist density correction gate:
+
+- Astra corrected row geometry, exact check/step SVG paths, group edge spacing, separator offsets, checkbox fill versus checkmark motion, and control press timing. Dense section labels and counts now match the reference. Added `motion.controlEase` for the default CSS easing used by the reference's unqualified control transitions.
+- `npm run typecheck`: exit 0.
+- `npm run lint`: exit 0.
+- `npm run test:ci`: exit 0, 99 suites passed, 1 skipped; 1315 tests passed, 1 skipped, 1316 total.
+- `docker exec -i supabase_db_ui-studio-2.4 psql -U postgres -d postgres -v ON_ERROR_STOP=1 < scripts/local-db/ui_studio_modules_fixture.sql`: exit 0. Fresh employee and manager defaults, kitchen parity, stored overrides, authorization denial, and legacy payload normalization passed. Transaction rolled back.
+
 ## Deviations
 
 - The browser URL policy blocked opening the local `reference-glide.html`. Reference inspection uses its HTML, CSS, and interaction code. Interactive browser comparison has not been performed. No alternate browser or URL workaround was attempted.

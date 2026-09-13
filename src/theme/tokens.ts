@@ -217,5 +217,7 @@ export const statusTone: Record<StatusTone, { background: string; text: string; 
 export const motion = {
   ease: [0.2, 0.8, 0.2, 1],
   dur: 280,
+  // Default CSS ease used by the reference's unqualified control transitions.
+  controlEase: [0.25, 0.1, 0.25, 1],
   pop: [0.34, 1.5, 0.64, 1],
 } as const;

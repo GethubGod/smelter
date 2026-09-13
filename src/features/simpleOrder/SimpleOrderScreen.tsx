@@ -749,8 +749,8 @@ export function SimpleOrderScreen() {
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          paddingTop: ds.spacing(14),
-          paddingBottom: ds.spacing(4),
+          paddingTop: ds.spacing(density === 'dense' ? 10 : 14),
+          paddingBottom: ds.spacing(density === 'dense' ? 2 : 4),
           paddingHorizontal: ds.spacing(2),
           backgroundColor: color.page,
         }}
@@ -771,24 +771,12 @@ export function SimpleOrderScreen() {
           style={{
             fontSize: ds.fontSize(typeScale.caption),
             fontWeight: weight.semibold,
-            color: color.ink2,
+            color: color.ink3,
           }}
         >
           {section.selectedCount}/{section.totalCount}
         </Text>
       </View>
-    ),
-    [ds],
-  );
-
-  const renderSectionFooter = useCallback(
-    () => (
-      <View
-        style={{
-          height: density === 'comfort' ? 0 : ds.spacing(2),
-          backgroundColor: color.page,
-        }}
-      />
     ),
     [density, ds],
   );
@@ -837,7 +825,6 @@ export function SimpleOrderScreen() {
         keyExtractor={(item) => item.key}
         renderItem={renderItem}
         renderSectionHeader={renderSectionHeader}
-        renderSectionFooter={renderSectionFooter}
         stickySectionHeadersEnabled={false}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
