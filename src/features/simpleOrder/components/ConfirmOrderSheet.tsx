@@ -88,7 +88,7 @@ export function ConfirmOrderSheet({
                 flex: 1,
                 minWidth: 0,
                 fontSize: ds.fontSize(typeScale.itemDense),
-                fontWeight: weight.semibold,
+                fontWeight: weight.regular,
                 color: color.ink,
               }}
             >
@@ -139,7 +139,7 @@ export function ConfirmOrderSheet({
           >
             <Text
               style={{
-                fontSize: ds.fontSize(typeScale.secondary),
+                fontSize: ds.fontSize(typeScale.caption),
                 fontWeight: weight.semibold,
                 color: color.accent,
               }}
