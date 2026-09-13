@@ -38,7 +38,8 @@ jest.mock('@expo/vector-icons', () => ({ Ionicons: 'Ionicons' }));
 jest.mock('@/components/LoadingIndicator', () => require('./ui/nativeMocks').loadingIndicator());
 jest.mock('@/theme/design', () => ({ colors: { white: '#fff' }, radii: { card: 12 }, hairline: 1, glassHairlineWidth: 1, tipsTheme: {} }));
 jest.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ bottom: 0 }) }));
-jest.mock('@/hooks/useScaledStyles', () => ({ useScaledStyles: () => ({ spacing: (n: number) => n, fontSize: (n: number) => n, icon: (n: number) => n }) }));
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+jest.mock('@/hooks/useScaledStyles', () => require('./ui/nativeMocks').scaledStyles());
 jest.mock('@/services/loginCredentials', () => ({ getMyCredentialKind: (id: string) => credentialKind(id), isValidPin: (value: string) => /^\d{4}$/.test(value), isValidPassword: (value: string) => value.length >= 8, setMyCredential: (kind: string, secret: string) => setCredential(kind, secret) }));
 jest.mock('@/components/ui/StudioToast', () => ({ showStudioToast: (message: string) => studioToast(message) }));
 const mockAuthState = { session: { user: { id: 'user-1' } }, isLoading: false };

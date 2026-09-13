@@ -9,6 +9,7 @@ import {
   View,
   useWindowDimensions,
   type LayoutChangeEvent,
+  type GestureResponderEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
@@ -75,6 +76,10 @@ export function BottomSheetShell({
   const scrimOpacity = useRef(new Animated.Value(0)).current;
   const animatedHeight = useRef(new Animated.Value(0)).current;
   const bodyScrollY = useRef(0);
+  const bodyPull = useRef<{
+    startX: number; startY: number; startTime: number;
+    distance: number; dragging: boolean;
+  } | null>(null);
   const compactHeight = useRef(0);
   const sheetHeight = useRef(0);
   const expanded = useRef(false);
@@ -268,15 +273,22 @@ export function BottomSheetShell({
   );
 
   const createPanResponder = useCallback(
-    (body: boolean) =>
+    () =>
       PanResponder.create({
+        onStartShouldSetPanResponder: () => dismissible,
         onMoveShouldSetPanResponder: (_, gestureState) =>
           dismissible &&
-          (!body || bodyScrollY.current <= 0) &&
           Math.abs(gestureState.dy) > ds.spacing(DRAG_START_DISTANCE) &&
           Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
+        onMoveShouldSetPanResponderCapture: (_, gestureState) =>
+          dismissible &&
+          Math.abs(gestureState.dy) > ds.spacing(DRAG_START_DISTANCE) &&
+          Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
+        onPanResponderGrant: () => translateY.stopAnimation(),
+        onPanResponderTerminationRequest: () => false,
         onPanResponderMove: (_, gestureState) => {
           const distance = gestureState.dy;
+          if (Math.abs(distance) <= ds.spacing(DRAG_START_DISTANCE)) return;
           const multiplier =
             distance >= 0
               ? 1
@@ -294,13 +306,54 @@ export function BottomSheetShell({
   );
 
   const chromePanResponder = useMemo(
-    () => createPanResponder(false),
+    () => createPanResponder(),
     [createPanResponder],
   );
-  const bodyPanResponder = useMemo(
-    () => createPanResponder(true),
-    [createPanResponder],
-  );
+  const cancelBodyPull = useCallback(() => {
+    const wasDragging = bodyPull.current?.dragging;
+    bodyPull.current = null;
+    if (wasDragging) animateToRest();
+  }, [animateToRest]);
+
+  const handleBodyTouchStart = useCallback((event: GestureResponderEvent) => {
+    cancelBodyPull();
+    if (!dismissible || bodyScrollY.current > 0 || event.nativeEvent.touches.length !== 1) return;
+    const { pageX, pageY, timestamp } = event.nativeEvent;
+    bodyPull.current = {
+      startX: pageX, startY: pageY, startTime: timestamp,
+      distance: 0, dragging: false,
+    };
+  }, [cancelBodyPull, dismissible]);
+
+  const handleBodyTouchMove = useCallback((event: GestureResponderEvent) => {
+    const pull = bodyPull.current;
+    if (!pull) return;
+    const { pageX, pageY, touches } = event.nativeEvent;
+    if (!dismissible || bodyScrollY.current > 0 || touches.length !== 1) {
+      cancelBodyPull();
+      return;
+    }
+    const distance = pageY - pull.startY;
+    const horizontal = Math.abs(pageX - pull.startX);
+    if (!pull.dragging && (distance < 0 || horizontal > Math.abs(distance))) {
+      bodyPull.current = null;
+      return;
+    }
+    pull.distance = Math.max(0, distance);
+    if (!pull.dragging && distance <= ds.spacing(DRAG_START_DISTANCE)) return;
+    if (!pull.dragging) translateY.stopAnimation();
+    pull.dragging = true;
+    translateY.setValue(pull.distance);
+  }, [cancelBodyPull, dismissible, ds, translateY]);
+
+  const handleBodyTouchEnd = useCallback((event: GestureResponderEvent) => {
+    const pull = bodyPull.current;
+    bodyPull.current = null;
+    if (!pull?.dragging) return;
+    const elapsed = event.nativeEvent.timestamp - pull.startTime;
+    const velocity = elapsed > 0 ? pull.distance / elapsed : 0;
+    finishDrag(pull.distance, velocity);
+  }, [finishDrag]);
 
   useEffect(() => {
     if (visible) {
@@ -353,23 +406,26 @@ export function BottomSheetShell({
 
   const sidePadding = horizontalPadding ?? ds.spacing(space[5]);
   const body = scrollable ? (
-    <ScrollView
-      style={{ flexShrink: 1, flexGrow: usesAnimatedHeight ? 1 : 0 }}
-      contentContainerStyle={{
-        paddingTop: ds.spacing(space[1]),
-        paddingHorizontal: sidePadding,
-        paddingBottom: ds.spacing(space[2]),
-      }}
-      keyboardShouldPersistTaps="handled"
-      automaticallyAdjustKeyboardInsets
-      showsVerticalScrollIndicator={false}
-      bounces={false}
-      scrollEventThrottle={16}
-      onScroll={handleBodyScroll}
-      {...bodyPanResponder.panHandlers}
-    >
-      {children}
-    </ScrollView>
+      <ScrollView
+        style={{ flexShrink: 1, flexGrow: usesAnimatedHeight ? 1 : 0 }}
+        contentContainerStyle={{
+          paddingTop: ds.spacing(space[1]),
+          paddingHorizontal: sidePadding,
+          paddingBottom: ds.spacing(space[2]),
+        }}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        scrollEventThrottle={16}
+        onScroll={handleBodyScroll}
+        onTouchStart={handleBodyTouchStart}
+        onTouchMove={handleBodyTouchMove}
+        onTouchEnd={handleBodyTouchEnd}
+        onTouchCancel={cancelBodyPull}
+      >
+        {children}
+      </ScrollView>
   ) : (
     <View
       style={{
@@ -403,44 +459,46 @@ export function BottomSheetShell({
         />
       </Animated.View>
 
-      <Animated.View
-        accessibilityViewIsModal
-        onLayout={handleSheetLayout}
-        style={[
-          {
-            maxHeight: maxSheetHeight,
-            backgroundColor: color.sheetBg,
-            borderTopLeftRadius: radius.sheet,
-            borderTopRightRadius: radius.sheet,
-            transform: [{ translateY }],
-            overflow: 'hidden',
-          },
-          shadow.sheet,
-          usesAnimatedHeight ? { height: animatedHeight } : null,
-        ]}
-      >
-        <View {...chromePanResponder.panHandlers}>
-          <View
-            accessible={false}
-            style={{
-              alignItems: 'center',
-              paddingTop: ds.spacing(10),
-              paddingBottom: ds.spacing(space[1]),
-            }}
-          >
+      {/* Native translation and JS layout animation must use separate views. */}
+      <Animated.View style={{ maxHeight: maxSheetHeight, transform: [{ translateY }] }}>
+        <Animated.View
+          accessibilityViewIsModal
+          onLayout={handleSheetLayout}
+          style={[
+            {
+              maxHeight: maxSheetHeight,
+              backgroundColor: color.sheetBg,
+              borderTopLeftRadius: radius.sheet,
+              borderTopRightRadius: radius.sheet,
+              overflow: 'hidden',
+            },
+            shadow.sheet,
+            usesAnimatedHeight ? { height: animatedHeight } : null,
+          ]}
+        >
+          <View {...chromePanResponder.panHandlers}>
             <View
+              accessible={false}
               style={{
-                width: ds.spacing(size.sheetHandleWidth),
-                height: ds.spacing(size.sheetHandleHeight),
-                borderRadius: radius.pill,
-                backgroundColor: color.sheetHandle,
+                alignItems: 'center',
+                paddingTop: ds.spacing(10),
+                paddingBottom: ds.spacing(space[1]),
               }}
-            />
+            >
+              <View
+                style={{
+                  width: ds.spacing(size.sheetHandleWidth),
+                  height: ds.spacing(size.sheetHandleHeight),
+                  borderRadius: radius.pill,
+                  backgroundColor: color.sheetHandle,
+                }}
+              />
+            </View>
+            {header}
           </View>
-          {header}
-        </View>
-        {body}
-        {footer}
+          {body}
+          {footer}
+        </Animated.View>
       </Animated.View>
     </View>
   );

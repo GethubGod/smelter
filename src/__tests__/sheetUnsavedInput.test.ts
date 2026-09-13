@@ -15,6 +15,9 @@ interface MockGesture {
 }
 
 interface MockPanConfig {
+  onStartShouldSetPanResponder: () => boolean;
+  onMoveShouldSetPanResponderCapture: (event: unknown, gesture: { dy: number; dx: number }) => boolean;
+  onPanResponderGrant: () => void;
   onMoveShouldSetPanResponder: (event: unknown, gesture: { dy: number; dx: number }) => boolean;
   onPanResponderMove: (event: unknown, gesture: MockGesture) => void;
   onPanResponderRelease: (event: unknown, gesture: MockGesture) => void;
@@ -54,6 +57,7 @@ jest.mock('react-native', () => ({
       setValue(value: number) {
         this.value = value;
       }
+      stopAnimation() {}
     },
     View: 'AnimatedView',
     timing: (
@@ -85,7 +89,10 @@ jest.mock('react-native', () => ({
   PanResponder: {
     create: (config: MockPanConfig) => {
       mockPanConfigs.push(config);
-      return { panHandlers: {} };
+      return { panHandlers: {
+        onStartShouldSetResponder: config.onStartShouldSetPanResponder,
+        onMoveShouldSetResponderCapture: config.onMoveShouldSetPanResponderCapture,
+      } };
     },
   },
 }));
@@ -140,6 +147,10 @@ async function renderSheet(dismissible: boolean, onClose: () => void, expandable
   return tree;
 }
 
+function measuredSheet(tree: renderer.ReactTestRenderer) {
+  return tree.root.find(node => String(node.type) === 'AnimatedView' && typeof node.props.onLayout === 'function');
+}
+
 it('closes on a scrim tap and a drag while the sheet holds nothing', async () => {
   const onClose = jest.fn();
   const tree = await renderSheet(true, onClose);
@@ -158,6 +169,7 @@ it('ignores a scrim tap and a drag while the sheet is not dismissable', async ()
   const scrim = tree.root.findAll((node) => String(node.type) === 'Pressable')[0];
 
   expect(scrim.props.onPress).toBeUndefined();
+  expect(mockPanConfigs.every(config => !config.onStartShouldSetPanResponder())).toBe(true);
   expect(mockPanConfigs.at(-1)?.onMoveShouldSetPanResponder(null, { dy: 20, dx: 0 })).toBe(false);
   expect(onClose).not.toHaveBeenCalled();
   await act(async () => tree.unmount());
@@ -187,12 +199,11 @@ it('renders the shared subtitle, close control and fixed action footer', async (
   expect(text).toEqual(
     expect.arrayContaining(['Review order', '3 items · goes to manager review', 'Send 3 items']),
   );
-  expect(
-    tree.root.find(
-      (node) =>
-        String(node.type) === 'Pressable' && node.props.accessibilityLabel === 'Close Review order',
-    ),
-  ).toBeTruthy();
+  const close = tree.root.find(
+    node => String(node.type) === 'Pressable' && node.props.accessibilityLabel === 'Close Review order',
+  );
+  expect(typeof close.props.style).toBe('object');
+  expect(close.props.style).toMatchObject({ width: 32, height: 32, backgroundColor: '#FFFFFF' });
   expect(
     tree.root.find(
       (node) =>
@@ -207,8 +218,7 @@ it('renders the shared subtitle, close control and fixed action footer', async (
 it('uses the measured sheet height for straight open and close timing', async () => {
   const onClose = jest.fn();
   const tree = await renderSheet(true, onClose);
-  const animatedViews = tree.root.findAll((node) => String(node.type) === 'AnimatedView');
-  const sheet = animatedViews[1];
+  const sheet = measuredSheet(tree);
   const sheetStyle = sheet.props.style[0] as {
     maxHeight: number;
     backgroundColor: string;
@@ -250,17 +260,19 @@ it('uses the measured sheet height for straight open and close timing', async ()
 it('expands, collapses, then dismisses at the contract drag thresholds', async () => {
   const onClose = jest.fn();
   const tree = await renderSheet(true, onClose, true);
-  const sheet = tree.root.findAll((node) => String(node.type) === 'AnimatedView')[1];
-  const translateY = (sheet.props.style[0] as {
-    transform: { translateY: { value: number } }[];
-  }).transform[0].translateY;
+  const sheet = measuredSheet(tree);
+  const translationLayer = tree.root.find(node => String(node.type) === 'AnimatedView' && Array.isArray(node.props.style?.transform));
+  const translateY = translationLayer.props.style.transform[0].translateY;
   const chromeDrag = mockPanConfigs[0];
-  const bodyDrag = mockPanConfigs[1];
 
   await act(async () => {
     sheet.props.onLayout({ nativeEvent: { layout: { height: 400 } } });
   });
+  expect(chromeDrag.onStartShouldSetPanResponder()).toBe(true);
   expect(chromeDrag.onMoveShouldSetPanResponder(null, { dy: -7, dx: 0 })).toBe(true);
+  chromeDrag.onPanResponderGrant();
+  chromeDrag.onPanResponderMove(null, { dy: -6, dx: 0, vy: 0 });
+  expect(translateY.value).toBe(0);
 
   chromeDrag.onPanResponderMove(null, { dy: -100, dx: 0, vy: 0 });
   expect(translateY.value).toBeCloseTo(-55);
@@ -279,6 +291,20 @@ it('expands, collapses, then dismisses at the contract drag thresholds', async (
     ]),
   );
 
+  const heightStyle = sheet.props.style.find((style: unknown) =>
+    style !== null && typeof style === 'object' && 'height' in style,
+  );
+  expect(heightStyle).toBeDefined();
+  expect(translationLayer).not.toBe(sheet);
+  expect(translationLayer.props.style.height).toBeUndefined();
+  expect(sheet.props.style.some((style: unknown) =>
+    style !== null && typeof style === 'object' && 'transform' in style,
+  )).toBe(false);
+  const heightCalls = mockTimingCalls.filter(call => call.value === heightStyle.height);
+  expect(heightCalls.length).toBeGreaterThan(0);
+  expect(heightCalls.every(call => !call.config.useNativeDriver)).toBe(true);
+  expect(mockTimingCalls.some(call => call.value === translateY && call.config.useNativeDriver)).toBe(true);
+
   await act(async () => {
     chromeDrag.onPanResponderRelease(null, { dy: 91, dx: 0, vy: 0 });
   });
@@ -288,9 +314,6 @@ it('expands, collapses, then dismisses at the contract drag thresholds', async (
   });
   expect(onClose).toHaveBeenCalledTimes(1);
 
-  const body = tree.root.find((node) => String(node.type) === 'ScrollView');
-  body.props.onScroll({ nativeEvent: { contentOffset: { y: 12 } } });
-  expect(bodyDrag.onMoveShouldSetPanResponder(null, { dy: 20, dx: 0 })).toBe(false);
   await act(async () => tree.unmount());
 });
 
@@ -306,7 +329,7 @@ it('cancels a stale close before reopening the sheet', async () => {
       ),
     );
   });
-  const sheet = tree.root.findAll((node) => String(node.type) === 'AnimatedView')[1];
+  const sheet = measuredSheet(tree);
   await act(async () => {
     sheet.props.onLayout({ nativeEvent: { layout: { height: 300 } } });
   });
@@ -333,5 +356,57 @@ it('cancels a stale close before reopening the sheet', async () => {
 
   expect(tree.root.findAll((node) => String(node.type) === 'Modal')).toHaveLength(1);
   expect(onClose).not.toHaveBeenCalled();
+  await act(async () => tree.unmount());
+});
+
+
+function touch(pageY: number, timestamp: number, pageX = 220) {
+  return { nativeEvent: { pageX, pageY, timestamp, touches: [{}] } };
+}
+
+it('dismisses from forwarded body touches without installing a ScrollView responder', async () => {
+  const onClose = jest.fn();
+  const tree = await renderSheet(true, onClose, true);
+  const body = tree.root.find(node => String(node.type) === 'ScrollView');
+  const translation = tree.root.find(node => String(node.type) === 'AnimatedView' && node.props.style?.transform).props.style.transform[0].translateY;
+  await act(async () => measuredSheet(tree).props.onLayout({ nativeEvent: { layout: { height: 400 } } }));
+  expect(body.props.onMoveShouldSetResponderCapture).toBeUndefined();
+  expect(mockPanConfigs).toHaveLength(1);
+  body.props.onTouchStart(touch(500, 0));
+  body.props.onTouchMove(touch(506, 100));
+  expect(translation.value).toBe(0);
+  body.props.onTouchMove(touch(600, 600));
+  expect(translation.value).toBe(100);
+  await act(async () => body.props.onTouchEnd(touch(600, 650)));
+  expect(onClose).toHaveBeenCalledTimes(1);
+  await act(async () => tree.unmount());
+});
+
+it.each(['upward', 'horizontal', 'scrolled', 'locked', 'cancelled'])('leaves the sheet in place for %s body touches', async kind => {
+  const onClose = jest.fn();
+  const tree = await renderSheet(kind !== 'locked', onClose, true);
+  const body = tree.root.find(node => String(node.type) === 'ScrollView');
+  const translation = tree.root.find(node => String(node.type) === 'AnimatedView' && node.props.style?.transform).props.style.transform[0].translateY;
+  await act(async () => measuredSheet(tree).props.onLayout({ nativeEvent: { layout: { height: 400 } } }));
+  if (kind === 'scrolled') body.props.onScroll({ nativeEvent: { contentOffset: { y: 12 } } });
+  body.props.onTouchStart(touch(500, 0));
+  body.props.onTouchMove(touch(kind === 'upward' ? 400 : 600, 600, kind === 'horizontal' ? 420 : 220));
+  await act(async () => {
+    if (kind === 'cancelled') body.props.onTouchCancel();
+    body.props.onTouchEnd(touch(600, 650));
+  });
+  expect(translation.value).toBe(0);
+  expect(onClose).not.toHaveBeenCalled();
+  await act(async () => tree.unmount());
+});
+
+it('uses the reference velocity threshold for a short fast body pull', async () => {
+  const onClose = jest.fn();
+  const tree = await renderSheet(true, onClose);
+  const body = tree.root.find(node => String(node.type) === 'ScrollView');
+  body.props.onTouchStart(touch(500, 100));
+  body.props.onTouchMove(touch(530, 120));
+  await act(async () => body.props.onTouchEnd(touch(530, 125)));
+  expect(onClose).toHaveBeenCalledTimes(1);
   await act(async () => tree.unmount());
 });
