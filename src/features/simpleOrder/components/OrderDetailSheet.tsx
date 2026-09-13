@@ -27,14 +27,14 @@ export function OrderDetailSheet({ order, onClose, onReorder }: {
             <Text style={{ fontSize: ds.fontSize(typeScale.meta), color: color.ink2 }}>{stat.label}</Text>
           </View>)}
       </View>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}><SectionLabel>Items</SectionLabel><Text style={{ fontSize: ds.fontSize(typeScale.caption), color: color.ink3 }}>{count}</Text></View>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}><SectionLabel>Items</SectionLabel><Text style={{ fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.semibold, color: color.ink3 }}>{count}</Text></View>
       <Card flush>{order.reorderItems.map((item, index) => <View key={`${item.itemId ?? item.itemName}-${index}`} style={{ marginHorizontal: ds.spacing(14), paddingVertical: ds.spacing(12), flexDirection: 'row', gap: ds.spacing(12), borderBottomWidth: index === order.reorderItems.length - 1 ? 0 : 1, borderBottomColor: color.hairline }}>
         <Text style={{ flex: 1, fontSize: ds.fontSize(typeScale.itemDense), color: color.ink }}>{item.itemName}</Text>
         <Text style={{ fontSize: ds.fontSize(typeScale.itemDense), color: color.ink, fontWeight: weight.semibold }}>{item.quantity}{item.unit ? ` ${item.unit}` : ''}</Text>
       </View>)}</Card>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
         <SectionLabel>Message as sent</SectionLabel>
-        <Pressable accessibilityRole="button" accessibilityLabel={showMessage ? 'Hide message' : 'Show message'} onPress={() => setShowMessage(!showMessage)} hitSlop={10}><Text style={{ fontSize: ds.fontSize(typeScale.caption), color: color.accent }}>{showMessage ? 'Hide' : 'Show'}</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel={showMessage ? 'Hide message' : 'Show message'} onPress={() => setShowMessage(!showMessage)} hitSlop={10}><Text style={{ fontSize: ds.fontSize(typeScale.caption), fontWeight: weight.semibold, color: color.accent }}>{showMessage ? 'Hide' : 'Show'}</Text></Pressable>
       </View>
       {showMessage ? <Card><Text style={{ fontSize: ds.fontSize(typeScale.itemDense), lineHeight: ds.fontSize(typeScale.itemDense) * 1.45, color: color.ink }}>{order.messageText || 'No message text was archived for this order.'}</Text></Card> : null}
     </> : null}
