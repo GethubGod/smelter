@@ -11,8 +11,10 @@ import {
 } from "../_shared/invites.ts";
 import {
   classifyAuthCreateError,
+  meetsInvitePasswordRequirements,
   normalizeEmail,
   parseAcceptInviteRequest,
+  PASSWORD_REJECTED_MESSAGE,
 } from "./input.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -359,6 +361,16 @@ Deno.serve(async (req) => {
 
   if (parsed.value.action !== "link" && !hasPublicApiKey(req)) {
     return jsonResponse(req, { error: "Unauthorized" }, 401);
+  }
+
+  if (
+    parsed.value.action === "credentials" &&
+    !meetsInvitePasswordRequirements(parsed.value.password)
+  ) {
+    return jsonResponse(req, {
+      error: PASSWORD_REJECTED_MESSAGE,
+      reason: "password_rejected",
+    }, 422);
   }
 
   let linkUserId: string | null = null;

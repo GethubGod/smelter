@@ -23,6 +23,19 @@ export interface AuthCreateFailure {
 }
 
 const SIMPLE_EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const COMMON_PASSWORDS = new Set([
+  "password",
+  "password1",
+  "12345678",
+  "123456789",
+  "qwerty123",
+  "iloveyou",
+  "sushi1234",
+  "letmein1",
+]);
+
+export const PASSWORD_REJECTED_MESSAGE =
+  "This password does not meet the server requirements";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -36,6 +49,13 @@ function optionalTrimmedString(value: unknown): string | null {
 
 export function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
+}
+
+export function meetsInvitePasswordRequirements(password: string): boolean {
+  return password.length >= 8 &&
+    /[A-Za-z]/.test(password) &&
+    /\d/.test(password) &&
+    !COMMON_PASSWORDS.has(password.toLowerCase());
 }
 
 export function classifyAuthCreateError(error: unknown): AuthCreateFailure {
@@ -55,7 +75,7 @@ export function classifyAuthCreateError(error: unknown): AuthCreateFailure {
   }
   if (code === "weak_password" || code === "validation_failed") {
     return {
-      error: "This password does not meet the server requirements",
+      error: PASSWORD_REJECTED_MESSAGE,
       reason: "password_rejected",
       status: 422,
     };

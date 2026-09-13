@@ -1,5 +1,9 @@
 import { INVITE_TOKEN_LENGTH } from "../_shared/invites.ts";
-import { classifyAuthCreateError, parseAcceptInviteRequest } from "./input.ts";
+import {
+  classifyAuthCreateError,
+  meetsInvitePasswordRequirements,
+  parseAcceptInviteRequest,
+} from "./input.ts";
 
 const token = "A".repeat(INVITE_TOKEN_LENGTH);
 
@@ -23,7 +27,7 @@ Deno.test("credential acceptance normalizes email and preserves password whitesp
   const result = parseAcceptInviteRequest({
     token,
     email: "  Alex@Example.COM ",
-    password: " pass word ",
+    password: " pass word 2 ",
     name: "Ignored in favor of invite name",
   });
   if (!result.ok || result.value.action !== "credentials") {
@@ -31,9 +35,44 @@ Deno.test("credential acceptance normalizes email and preserves password whitesp
   }
   if (
     result.value.email !== "alex@example.com" ||
-    result.value.password !== " pass word "
+    result.value.password !== " pass word 2 "
   ) {
     throw new Error("Expected normalized email and unchanged password");
+  }
+});
+
+Deno.test("invite passwords reject weak forms", () => {
+  for (const password of ["x1", "longpassword", "1234567890"]) {
+    if (meetsInvitePasswordRequirements(password)) {
+      throw new Error(`Expected ${password} to be rejected`);
+    }
+  }
+});
+
+Deno.test("invite passwords reject the current common-password list", () => {
+  for (
+    const password of [
+      "password",
+      "PASSWORD1",
+      "12345678",
+      "123456789",
+      "qwerty123",
+      "iloveyou",
+      "sushi1234",
+      "letmein1",
+    ]
+  ) {
+    if (meetsInvitePasswordRequirements(password)) {
+      throw new Error(`Expected ${password} to be rejected`);
+    }
+  }
+});
+
+Deno.test("invite passwords accept the approved requirements", () => {
+  for (const password of ["strongpass9", " pass word 2 "]) {
+    if (!meetsInvitePasswordRequirements(password)) {
+      throw new Error(`Expected ${password} to be accepted`);
+    }
   }
 });
 
