@@ -13,7 +13,7 @@ import { openAuthBrowser, SIGNUP_URL } from './legal';
 interface WelcomeOptionProps {
   title: string;
   subtitle: string;
-  icon: 'chevron-forward' | 'open-outline';
+  icon: 'chevron-forward' | 'arrow-up-right';
   onPress: () => void;
 }
 
@@ -61,7 +61,7 @@ function WelcomeOption({ title, subtitle, icon, onPress }: WelcomeOptionProps) {
           backgroundColor: 'transparent',
           flexDirection: 'row',
           alignItems: 'center',
-          gap: ds.spacing(space[3]),
+          gap: ds.spacing(14),
         }}
       >
         <View style={{ flex: 1 }}>
@@ -76,7 +76,7 @@ function WelcomeOption({ title, subtitle, icon, onPress }: WelcomeOptionProps) {
           </Text>
           <Text
             style={{
-              marginTop: ds.spacing(space[1]),
+              marginTop: ds.spacing(2),
               fontSize: ds.fontSize(typeScale.secondary),
               fontWeight: weight.regular,
               color: auth.dim,
@@ -95,7 +95,13 @@ function WelcomeOption({ title, subtitle, icon, onPress }: WelcomeOptionProps) {
             justifyContent: 'center',
           }}
         >
-          <Ionicons name={icon} size={ds.icon(typeScale.body)} color={auth.text} />
+          <Ionicons
+            name={icon === 'arrow-up-right' ? 'arrow-forward' : icon}
+            size={ds.icon(typeScale.body)}
+            color={auth.text}
+            // The reference's leaves-the-app glyph points up and right.
+            style={icon === 'arrow-up-right' ? { transform: [{ rotate: '-45deg' }] } : undefined}
+          />
         </View>
       </Pressable>
     </Animated.View>
@@ -156,7 +162,7 @@ export default function WelcomeScreen() {
           <WelcomeOption
             title="I'm setting up a restaurant"
             subtitle="Create your account on smelterpos.com"
-            icon="open-outline"
+            icon="arrow-up-right"
             onPress={() => void openAuthBrowser(SIGNUP_URL)}
           />
         </View>
