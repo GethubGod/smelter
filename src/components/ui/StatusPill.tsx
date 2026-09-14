@@ -9,16 +9,18 @@ export interface StatusPillProps {
   status: StatusTone;
   /** Overrides the default word, for example "1 ready" on a supplier card. */
   label?: string;
+  /** Tags can omit the status dot when the text and tone fully name the state. */
+  showDot?: boolean;
   testID?: string;
 }
 
 /**
  * The only place status colours appear in the app.
  *
- * Always a dot plus a word, never colour alone, so the state survives
- * greyscale and colour blindness. Five states, fixed mapping.
+ * Usually a dot plus a word, never colour alone, so the state survives
+ * greyscale and colour blindness. Named header tags can omit the redundant dot.
  */
-export function StatusPill({ status, label, testID }: StatusPillProps) {
+export function StatusPill({ status, label, showDot = true, testID }: StatusPillProps) {
   const ds = useScaledStyles();
   const tone = statusTone[status];
   const text = label ?? tone.label;
@@ -40,20 +42,23 @@ export function StatusPill({ status, label, testID }: StatusPillProps) {
         backgroundColor: tone.background,
       }}
     >
-      <View
-        style={{
-          width: dot,
-          height: dot,
-          borderRadius: radius.pill,
-          backgroundColor: tone.text,
-        }}
-      />
+      {showDot ? (
+        <View
+          style={{
+            width: dot,
+            height: dot,
+            borderRadius: radius.pill,
+            backgroundColor: tone.text,
+          }}
+        />
+      ) : null}
       <Text
         numberOfLines={1}
         style={{
           fontSize: ds.fontSize(typeScale.caption),
           fontWeight: weight.bold,
-          letterSpacing: tracking.caption,
+          letterSpacing: tracking.tag,
+          textTransform: 'uppercase',
           color: tone.text,
         }}
       >

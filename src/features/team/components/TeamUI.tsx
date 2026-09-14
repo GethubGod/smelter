@@ -1,12 +1,12 @@
 // Shared building blocks for the Team screens, composed from the UI contract
 // primitives (docs/mockups/ui-contract/index.html).
 
-import type { ReactNode } from 'react';
-import { Platform, Switch, Text, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native';
+import { useRef, type ReactNode } from 'react';
+import { Animated, Easing, Platform, Pressable, Switch, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, ListRow, SectionLabel, Segment } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { color, radius, size, space, typeScale, weight } from '@/theme/tokens';
+import { color, motion, radius, size, space, typeScale, weight } from '@/theme/tokens';
 import type { InviteLocationGroup } from '@/services/invites';
 import { LOCATION_GROUP_LABELS } from '../invitePreview';
 
@@ -102,53 +102,54 @@ interface TeamRowProps {
   subtitle: string;
   badge?: string;
   onPress: () => void;
-  muted?: boolean;
-  icon?: keyof typeof Ionicons.glyphMap;
+  last?: boolean;
 }
 
 /**
- * Roster row: avatar initial (or icon), name, summary, chevron.
- *
- * `ListRow` takes an icon name, not an avatar, so the left tile is built from
- * tokens here. Pending invites keep the muted well fill, which `Card` (white
- * only) cannot carry.
+ * Roster row: 38pt tint avatar, name, location/features summary, chevron.
+ * TeamScreen groups these inside one flush card.
  */
-export function TeamRow({ initial, title, subtitle, badge, onPress, muted = false, icon }: TeamRowProps) {
+export function TeamRow({ initial, title, subtitle, badge, onPress, last = false }: TeamRowProps) {
   const ds = useScaledStyles();
-  const avatar = Math.max(size.touchMin, ds.icon(36));
+  const avatar = ds.icon(38);
+  const pressed = useRef(new Animated.Value(0)).current;
+  const animatePress = (toValue: number) => Animated.timing(pressed, {
+    toValue,
+    duration: 120,
+    easing: Easing.bezier(...motion.controlEase),
+    useNativeDriver: false,
+  }).start();
 
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
-      activeOpacity={0.82}
       accessibilityRole="button"
       accessibilityLabel={`${title}, ${subtitle}${badge ? `, ${badge}` : ''}`}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: ds.spacing(space[3]),
-        backgroundColor: muted ? color.well : color.card,
-        borderWidth: 1,
-        borderColor: muted ? color.well : color.hairline,
-        borderRadius: radius.card,
-        paddingHorizontal: ds.spacing(space[3] + 2),
-        paddingVertical: ds.spacing(space[3]),
-        marginBottom: ds.spacing(space[2]),
-      }}
+      onPressIn={() => animatePress(1)}
+      onPressOut={() => animatePress(0)}
+      style={{ backgroundColor: color.card }}
     >
-      <View
+      <Animated.View
         style={{
-          width: avatar,
-          height: avatar,
-          borderRadius: radius.pill,
+          backgroundColor: pressed.interpolate({ inputRange: [0, 1], outputRange: [color.card, color.well] }),
+          minHeight: ds.spacing(60),
+          paddingHorizontal: ds.spacing(14),
+          paddingVertical: ds.spacing(space[3] - 2),
+          flexDirection: 'row',
           alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: muted ? color.card : color.tint,
+          gap: ds.spacing(space[3]),
         }}
       >
-        {icon ? (
-          <Ionicons name={icon} size={ds.icon(size.icon)} color={color.ink2} />
-        ) : (
+        <View
+          style={{
+            width: avatar,
+            height: avatar,
+            borderRadius: radius.pill,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: color.tint,
+          }}
+        >
           <Text
             style={{
               fontSize: ds.fontSize(typeScale.body),
@@ -158,50 +159,62 @@ export function TeamRow({ initial, title, subtitle, badge, onPress, muted = fals
           >
             {initial}
           </Text>
-        )}
-      </View>
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: ds.spacing(space[2]) }}>
-          <Text
-            numberOfLines={1}
-            style={{
-              flexShrink: 1,
-              fontSize: ds.fontSize(typeScale.body),
-              fontWeight: weight.semibold,
-              color: color.ink,
-            }}
-          >
-            {title}
-          </Text>
-          {badge ? (
-            <View
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: ds.spacing(space[2]) }}>
+            <Text
+              numberOfLines={1}
               style={{
-                paddingHorizontal: ds.spacing(space[2]),
-                paddingVertical: ds.spacing(space[1]),
-                borderRadius: radius.pill,
-                backgroundColor: color.well,
+                flexShrink: 1,
+                fontSize: ds.fontSize(typeScale.body),
+                fontWeight: weight.semibold,
+                color: color.ink,
               }}
             >
-              <Text
+              {title}
+            </Text>
+            {badge ? (
+              <View
                 style={{
-                  fontSize: ds.fontSize(typeScale.meta),
-                  fontWeight: weight.semibold,
-                  color: color.ink2,
+                  paddingHorizontal: ds.spacing(space[2]),
+                  paddingVertical: ds.spacing(space[1]),
+                  borderRadius: radius.pill,
+                  backgroundColor: color.well,
                 }}
               >
-                {badge}
-              </Text>
-            </View>
-          ) : null}
+                <Text
+                  style={{
+                    fontSize: ds.fontSize(typeScale.meta),
+                    fontWeight: weight.semibold,
+                    color: color.ink2,
+                  }}
+                >
+                  {badge}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+          <Text
+            numberOfLines={1}
+            style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}
+          >
+            {subtitle}
+          </Text>
         </View>
-        <Text
-          numberOfLines={1}
-          style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}
-        >
-          {subtitle}
-        </Text>
-      </View>
-      <Ionicons name="chevron-forward" size={ds.icon(size.icon)} color={color.ink3} />
-    </TouchableOpacity>
+        <Ionicons name="chevron-forward" size={ds.icon(size.icon)} color={color.ink3} />
+        {!last ? (
+          <View
+            style={{
+              position: 'absolute',
+              left: ds.spacing(14),
+              right: 0,
+              bottom: 0,
+              height: 1,
+              backgroundColor: color.hairline,
+            }}
+          />
+        ) : null}
+      </Animated.View>
+    </Pressable>
   );
 }

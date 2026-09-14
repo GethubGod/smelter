@@ -33,6 +33,22 @@ jest.mock('@expo/vector-icons', () => require('./ui/nativeMocks').vectorIcons())
 jest.mock('react-native-safe-area-context', () => require('./ui/nativeMocks').safeAreaContext());
 jest.mock('@/hooks/useScaledStyles', () => require('./ui/nativeMocks').scaledStyles());
 jest.mock('@/components/LoadingIndicator', () => require('./ui/nativeMocks').loadingIndicator());
+jest.mock('react-native-reanimated', () => {
+  const native = require('./ui/nativeMocks').reactNative();
+  return {
+    __esModule: true,
+    default: { View: native.View },
+    cancelAnimation: jest.fn(),
+    Easing: {
+      bezier: jest.fn(() => (value: number) => value),
+      cubic: (value: number) => value,
+      out: (easing: (value: number) => number) => easing,
+    },
+    useAnimatedStyle: (factory: () => object) => factory(),
+    useSharedValue: (value: number) => ({ value }),
+    withTiming: (value: number) => value,
+  };
+});
 /* The barrel still exports the deprecated header, which drags the router and
    the auth store in behind it. Neither is part of what these tests check. */
 jest.mock('@/components/ui/StackScreenHeader', () => ({ StackScreenHeader: 'StackScreenHeader' }));
@@ -51,20 +67,19 @@ jest.mock('@/components/BottomSheetShell', () => {
   return {
     BottomSheetShell: ({
       visible,
-      children,
       header,
+      children,
       footer,
       ...props
     }: {
       visible: boolean;
-      children?: unknown;
       header?: unknown;
+      children?: unknown;
       footer?: unknown;
-    }) => (
+    }) =>
       visible
         ? reactModule.createElement('BottomSheetShell', props, header, children, footer)
-        : null
-    ),
+        : null,
   };
 });
 /* eslint-enable @typescript-eslint/no-require-imports */
@@ -72,6 +87,8 @@ jest.mock('@/components/BottomSheetShell', () => {
 // The mocks above must land before the components load.
 /* eslint-disable import/first */
 import { NoteSheet } from '@/features/simpleOrder/components/NoteSheet';
+import { ChecklistSettingsSheet } from '@/features/simpleOrder/components/ChecklistSettingsSheet';
+import { ConfirmOrderSheet } from '@/features/simpleOrder/components/ConfirmOrderSheet';
 import { QuantityCardSheet } from '@/features/simpleOrder/components/QuantityCardSheet';
 import { QuickActionsSheet } from '@/features/simpleOrder/components/QuickActionsSheet';
 import { StationPickerBottomSheet } from '@/features/stock-check/components/StationPickerBottomSheet';
@@ -112,10 +129,9 @@ function noteSheet(note = ''): ReactTestInstance {
 }
 
 describe('order note sheet', () => {
-  it('keeps Save inside the keyboard-avoiding region', () => {
+  it('uses the sheet footer for its primary Save action', () => {
     const root = noteSheet();
-    const [avoider] = hosts(root, (node) => String(node.type) === 'KeyboardAvoidingView');
-    const save = withRole(avoider, 'button').filter(
+    const save = withRole(root, 'button').filter(
       (node) => node.props.accessibilityLabel === 'Save note',
     );
     expect(save).toHaveLength(1);
@@ -231,5 +247,97 @@ describe('quick actions sheet', () => {
     expect(header.props.children).toBe('Quick actions');
     const shell = root.find((node) => String(node.type) === 'BottomSheetShell');
     expect(shell.props.bottomPadding).toBeGreaterThanOrEqual(BOTTOM_INSET);
+  });
+
+  it('uses the approved action names and descriptions', () => {
+    const root = render(
+      React.createElement(QuickActionsSheet, {
+        visible: true,
+        hasNote: false,
+        density: 'compact',
+        showCategories: true,
+        onAction: jest.fn(),
+        onClose: jest.fn(),
+      }),
+    );
+    const labels = withRole(root, 'button').map((node) => node.props.accessibilityLabel);
+    expect(labels).toEqual(
+      expect.arrayContaining([
+        'Clear checklist, Uncheck everything, reset amounts',
+        'Save as default, Checked items start the next order',
+        'Add note, Attach a message to this order',
+        'Checklist display',
+        'Receive delivery',
+        'Recent orders',
+      ]),
+    );
+  });
+});
+
+describe('checklist display sheet', () => {
+  it('offers all three density choices and marks Compact as selected', () => {
+    const root = render(
+      React.createElement(ChecklistSettingsSheet, {
+        visible: true,
+        density: 'compact',
+        showCategories: true,
+        onSelectDensity: jest.fn(),
+        onToggleCategories: jest.fn(),
+        onClose: jest.fn(),
+      }),
+    );
+    const choices = withRole(root, 'radio');
+    expect(choices.map((node) => node.props.accessibilityLabel)).toEqual([
+      'Comfortable',
+      'Compact',
+      'Dense',
+    ]);
+    expect(choices.map((node) => node.props.accessibilityState.checked)).toEqual([
+      false,
+      true,
+      false,
+    ]);
+    expect(withRole(root, 'radiogroup')).toHaveLength(1);
+  });
+});
+
+describe('review order sheet', () => {
+  it('is expandable and always offers the note action and primary Send action', () => {
+    const root = render(
+      React.createElement(ConfirmOrderSheet, {
+        visible: true,
+        mode: 'review',
+        lines: [
+          {
+            key: 'item-1',
+            source: 'checklist',
+            itemId: 'item-1',
+            itemName: 'Salmon',
+            unit: 'case',
+            quantity: 2,
+            recommendedQty: 2,
+            checked: true,
+            bucket: 'frequent',
+            lastOrderedAt: null,
+          },
+        ],
+        unmatchedNames: [],
+        note: '',
+        onEditNote: jest.fn(),
+        isSending: false,
+        sendError: null,
+        onConfirm: jest.fn(),
+        onClose: jest.fn(),
+      }),
+    );
+    const shell = root.find((node) => String(node.type) === 'BottomSheetShell');
+    expect(shell.props.expandable).toBe(true);
+    const labels = withRole(root, 'button').map((node) => node.props.accessibilityLabel);
+    expect(labels).toEqual(expect.arrayContaining(['Add order note', 'Send 1 item']));
+    expect(
+      hosts(root, (node) =>
+        node.props.children === 'No note. The manager sees only the items.',
+      ),
+    ).toHaveLength(1);
   });
 });

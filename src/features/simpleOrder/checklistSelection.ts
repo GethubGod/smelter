@@ -77,6 +77,19 @@ export function defaultQuantityFor(item: Pick<ChecklistItem, 'recommendedQty'>):
   return 1;
 }
 
+/** Half cases and fractional usual amounts keep their natural half step. */
+export function quantityStepFor(
+  line: Pick<SelectionLine, 'unit' | 'recommendedQty'>,
+): 0.5 | 1 {
+  const recommended = line.recommendedQty;
+  return line.unit.trim().toLowerCase() === 'case' ||
+    (typeof recommended === 'number' &&
+      Number.isFinite(recommended) &&
+      !Number.isInteger(recommended))
+    ? 0.5
+    : 1;
+}
+
 function lineFromChecklistItem(item: ChecklistItem): SelectionLine {
   return {
     key: item.id,
@@ -153,13 +166,9 @@ export function selectionReducer(
 
     case 'adjustQuantity':
       return updateLine(state, action.key, (line) => {
-        // Whole-unit stepping: fractional values snap to the nearest whole
-        // step first so "+" from 2.5 goes to 3, not 3.5.
-        const stepped =
-          action.delta > 0
-            ? Math.floor(line.quantity) + action.delta
-            : Math.ceil(line.quantity) + action.delta;
-        const quantity = clampQuantity(Math.max(1, stepped));
+        const direction = action.delta < 0 ? -1 : 1;
+        const step = quantityStepFor(line);
+        const quantity = clampQuantity(Math.max(step, line.quantity + direction * step));
         // Stepping an unchecked row is an intent to order it: check it too,
         // so the always-visible steppers can activate rows in one tap.
         if (line.quantity === quantity && line.checked) return line;

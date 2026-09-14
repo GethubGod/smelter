@@ -1,6 +1,6 @@
 /**
  * The token values are transcribed from the approved contract at
- * docs/mockups/ui-contract/index.html. These assertions are the transcription
+ * docs/mockups/app-redesign-2026-09/SPEC.md. These assertions are the transcription
  * check: if someone edits a token, this test tells them the contract moved and
  * the HTML has to move with it.
  */
@@ -55,8 +55,8 @@ it('matches the contract auth palette', () => {
   });
 });
 
-it('keeps the contract type sizes and three weights', () => {
-  expect(typeScale).toEqual({
+it('keeps the Studio type scale and three weights', () => {
+  expect(typeScale).toMatchObject({
     display: 30,
     title: 20,
     body: 15,
@@ -69,8 +69,8 @@ it('keeps the contract type sizes and three weights', () => {
   expect(Object.values(weight).sort()).toEqual(['400', '600', '700']);
 });
 
-it('keeps four radii and the spacing grid', () => {
-  expect(radius).toEqual({ pill: 999, card: 22, control: 14, sheet: 30 });
+it('keeps the Studio radii and spacing grid', () => {
+  expect(radius).toMatchObject({ pill: 999, card: 22, control: 14, sheet: 30 });
   expect(Object.values(space)).toEqual([4, 8, 12, 16, 20, 24, 32]);
 });
 

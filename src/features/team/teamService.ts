@@ -8,13 +8,10 @@ import type { InviteLocationGroup } from '@/services/invites';
 import type { ModuleKey } from '@/services/userModules';
 import type { EffectiveModules } from '@/store/moduleStore.helpers';
 
-/** Short display labels for roster subtitles ("Sushi · Ordering + Stock check"). */
+/** Feature labels shown in roster subtitles ("Sushi · Checklist + Tips"). */
 const MODULE_SUMMARY_LABELS: Partial<Record<ModuleKey, string>> = {
-  ordering_simple: 'Ordering',
-  ordering_advanced: 'Advanced',
-  stock_check: 'Stock check',
+  ordering_simple: 'Checklist',
   tips: 'Tips',
-  fulfillment: 'Fulfillment',
 };
 
 export function summarizeModules(modules: EffectiveModules | null): string {

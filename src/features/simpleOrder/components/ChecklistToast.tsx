@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Text, TouchableOpacity } from 'react-native';
+import { Animated, Easing, Text, TouchableOpacity } from 'react-native';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { color, motion, radius, typeScale, weight } from '@/theme/tokens';
 
 /**
  * Lightweight toast for the checklist surface, with an optional action button
@@ -29,7 +29,7 @@ export function ChecklistToast({
   toast,
   bottom,
   onExpire,
-  durationMs = 3200,
+  durationMs = 2200,
 }: ChecklistToastProps) {
   const ds = useScaledStyles();
   const opacity = useRef(new Animated.Value(0)).current;
@@ -42,13 +42,13 @@ export function ChecklistToast({
       return;
     }
     opacity.setValue(0);
-    Animated.timing(opacity, { toValue: 1, duration: 160, useNativeDriver: true }).start();
+    Animated.timing(opacity, { toValue: 1, duration: 220, easing: Easing.bezier(...motion.ease), useNativeDriver: true }).start();
     const timer = setTimeout(() => {
-      Animated.timing(opacity, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => {
-        expireRef.current();
+      Animated.timing(opacity, { toValue: 0, duration: 220, useNativeDriver: true }).start(({ finished }) => {
+        if (finished) expireRef.current();
       });
-    }, durationMs);
-    return () => clearTimeout(timer);
+    }, Math.max(0, durationMs - 220));
+    return () => { clearTimeout(timer); opacity.stopAnimation(); };
   }, [durationMs, opacity, toast]);
 
   if (!toast) return null;
@@ -63,6 +63,7 @@ export function ChecklistToast({
         bottom,
         alignItems: 'center',
         opacity,
+        transform: [{ translateY: opacity.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
       }}
     >
       <TouchableOpacity
@@ -78,9 +79,9 @@ export function ChecklistToast({
           alignItems: 'center',
           gap: ds.spacing(10),
           backgroundColor: color.ink,
-          borderRadius: radius.pill,
+          borderRadius: radius.control,
           paddingHorizontal: ds.spacing(16),
-          paddingVertical: ds.spacing(10),
+          paddingVertical: ds.spacing(11),
           maxWidth: '86%',
         }}
       >

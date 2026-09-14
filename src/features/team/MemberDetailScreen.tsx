@@ -3,26 +3,26 @@
 // through the manager-gated set_user_default_location RPC.
 
 import { useCallback, useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useShallow } from 'zustand/react/shallow';
-import { ManagerScaleContainer } from '@/components/ManagerScaleContainer';
 import {
   Button,
-  Card,
   EmptyState,
   Loading,
   ScreenHeader,
+  getTabBarClearance,
 } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
 import { useAuthStore } from '@/store';
-import { color, space, typeScale, weight } from '@/theme/tokens';
+import { showNotice } from '@/components/ui/NoticeSheet';
+import { showStudioToast } from '@/components/ui/StudioToast';
+import { color, space } from '@/theme/tokens';
 import { listManagedUsers, type ManagedUser } from '@/services/userManagement';
 import { getModulesForUser, setUserModule, type ModuleKey } from '@/services/userModules';
 import {
-  getManageableModuleKeys,
   resolveEffectiveModules,
   type EffectiveModules,
 } from '@/store/moduleStore.helpers';
@@ -37,12 +37,10 @@ import { ModuleToggleRow, TeamCard, TeamSectionLabel, WorksAtSegmented } from '.
 
 /** Screen-local labels per the flow spec. */
 const DETAIL_MODULE_LABELS: Partial<Record<ModuleKey, string>> = {
-  ordering_simple: 'Ordering checklist',
-  ordering_advanced: 'Advanced ordering',
-  stock_check: 'Stock check',
+  ordering_simple: 'Checklist ordering',
   tips: 'Tips',
-  fulfillment: 'Fulfillment',
 };
+const DETAIL_MODULE_KEYS: readonly ModuleKey[] = ['ordering_simple', 'tips'];
 
 export default function MemberDetailScreen() {
   const ds = useScaledStyles();
@@ -57,15 +55,14 @@ export default function MemberDetailScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [pendingKey, setPendingKey] = useState<ModuleKey | null>(null);
   const [groupSaving, setGroupSaving] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
-
-  const showNotice = (message: string) => {
-    setNotice(message);
-    setTimeout(() => setNotice(null), 2200);
-  };
 
   const load = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) {
+      setUser(null);
+      setModules(null);
+      setLoadError('No team member was selected.');
+      return;
+    }
     setLoadError(null);
     try {
       const [users, locationIds] = await Promise.all([
@@ -74,14 +71,18 @@ export default function MemberDetailScreen() {
       ]);
       const found = users.find((candidate) => candidate.id === userId) ?? null;
       if (!found) {
+        setUser(null);
+        setModules(null);
         setLoadError('This person is no longer on the roster.');
         return;
       }
+      const states = await getModulesForUser(userId);
       setUser(found);
       setGroup(groupForLocationId(locationIds.get(userId) ?? null, locations));
-      const states = await getModulesForUser(userId).catch(() => null);
       setModules(resolveEffectiveModules(found.role, states));
     } catch (error) {
+      setUser(null);
+      setModules(null);
       setLoadError(error instanceof Error ? error.message : 'Unable to load this person.');
     }
   }, [userId, locations]);
@@ -99,10 +100,10 @@ export default function MemberDetailScreen() {
     setGroupSaving(true);
     try {
       await setUserDefaultLocation(user.id, locationIdForGroup(nextGroup, locations));
-      showNotice('Works-at updated.');
+      showStudioToast('Works at updated');
     } catch (error) {
       setGroup(previous);
-      Alert.alert('Update failed', error instanceof Error ? error.message : 'Try again.');
+      showNotice('Update failed', error instanceof Error ? error.message : 'Try again.');
     } finally {
       setGroupSaving(false);
     }
@@ -115,10 +116,10 @@ export default function MemberDetailScreen() {
     setPendingKey(key);
     try {
       await setUserModule(user.id, key, enabled);
-      showNotice(`${DETAIL_MODULE_LABELS[key] ?? key} ${enabled ? 'on' : 'off'}.`);
+      showStudioToast(`${DETAIL_MODULE_LABELS[key] ?? key} ${enabled ? 'on' : 'off'}`);
     } catch (error) {
       setModules(previous);
-      Alert.alert('Update failed', error instanceof Error ? error.message : 'Try again.');
+      showNotice('Update failed', error instanceof Error ? error.message : 'Try again.');
     } finally {
       setPendingKey(null);
     }
@@ -133,104 +134,103 @@ export default function MemberDetailScreen() {
   };
 
   const displayName = user?.full_name ?? 'Team member';
-  const manageableKeys = user ? getManageableModuleKeys(user.role) : [];
+  const firstName = displayName.trim().split(/\s+/)[0] || 'member';
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.page }} edges={['left', 'right']}>
-      <ManagerScaleContainer>
-        <ScreenHeader
-          mode="pushed"
-          title={displayName}
-          subtitle={
-            user?.is_suspended
-              ? 'Suspended'
-              : user?.legacy_name_login
-                ? 'Needs a new invite'
-                : 'Team member'
-          }
-          onBack={handleBack}
-        />
+      <ScreenHeader
+        mode="pushed"
+        title={displayName}
+        subtitle={
+          user?.is_suspended
+            ? 'Suspended'
+            : user?.legacy_name_login
+              ? 'Needs a new invite'
+              : undefined
+        }
+        onBack={handleBack}
+      />
 
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{
-            paddingHorizontal: ds.spacing(space[4]),
-            paddingBottom: ds.spacing(space[8]),
-          }}
-        >
-          {loadError ? (
-            <EmptyState
-              icon="alert-circle-outline"
-              tone="alert"
-              title="Unable to load this person"
-              body={loadError}
-              action={{ label: 'Retry', onPress: () => void load() }}
-              compact
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: ds.spacing(space[4]),
+          paddingBottom: getTabBarClearance(0),
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        {loadError ? (
+          <EmptyState
+            icon="alert-circle-outline"
+            tone="alert"
+            title="Unable to load this person"
+            body={loadError}
+            action={{ label: 'Retry', onPress: () => void load() }}
+            compact
+          />
+        ) : null}
+
+        {!user && !loadError ? (
+          <View style={{ paddingVertical: ds.spacing(space[8]) }}>
+            <Loading size="inline" label="Loading this person" style={{ alignItems: 'center' }} />
+          </View>
+        ) : null}
+
+        {user ? (
+          <>
+            <TeamSectionLabel label="Works at" />
+            <WorksAtSegmented
+              value={group}
+              onChange={(next) => void handleGroupChange(next)}
+              disabled={groupSaving}
             />
-          ) : null}
 
-          {!user && !loadError ? (
-            <View style={{ paddingVertical: ds.spacing(space[8]) }}>
-              <Loading size="inline" label="Loading this person" style={{ alignItems: 'center' }} />
-            </View>
-          ) : null}
+            <TeamSectionLabel label="Features" />
+            <TeamCard>
+              {modules ? (
+                DETAIL_MODULE_KEYS.map((key, index) => (
+                  <ModuleToggleRow
+                    key={key}
+                    label={DETAIL_MODULE_LABELS[key] ?? key}
+                    value={modules[key]}
+                    disabled={pendingKey !== null}
+                    showBorder={index < DETAIL_MODULE_KEYS.length - 1}
+                    onChange={(value) => void handleModuleChange(key, value)}
+                  />
+                ))
+              ) : (
+                <View style={{ paddingVertical: ds.spacing(space[4]) }}>
+                  <Loading size="inline" label="Loading features" style={{ alignItems: 'center' }} />
+                </View>
+              )}
+            </TeamCard>
 
-          {user ? (
-            <>
-              {notice ? (
-                <Card style={{ marginTop: ds.spacing(space[2]) }}>
-                  <Text
-                    accessibilityRole="alert"
-                    style={{
-                      fontSize: ds.fontSize(typeScale.secondary),
-                      fontWeight: weight.semibold,
-                      color: color.ink,
-                    }}
-                  >
-                    {notice}
-                  </Text>
-                </Card>
-              ) : null}
-
-              <TeamSectionLabel label="Works at · change anytime" />
-              <WorksAtSegmented value={group} onChange={(next) => void handleGroupChange(next)} disabled={groupSaving} />
-
-              <TeamSectionLabel label="Features" />
-              <TeamCard style={{ paddingHorizontal: ds.spacing(space[3] + 2) }}>
-                {modules ? (
-                  manageableKeys.map((key, index) => (
-                    <ModuleToggleRow
-                      key={key}
-                      label={DETAIL_MODULE_LABELS[key] ?? key}
-                      value={modules[key]}
-                      disabled={pendingKey !== null}
-                      showBorder={index < manageableKeys.length - 1}
-                      onChange={(value) => void handleModuleChange(key, value)}
-                    />
-                  ))
-                ) : (
-                  <View style={{ paddingVertical: ds.spacing(space[4]) }}>
-                    <Loading size="inline" label="Loading features" style={{ alignItems: 'center' }} />
-                  </View>
-                )}
-              </TeamCard>
-
+            <View
+              style={{
+                marginTop: ds.spacing(space[4]),
+                gap: ds.spacing(space[2] + 2),
+              }}
+            >
               <Button
-                icon="eye-outline"
-                label={`Preview as ${displayName.split(' ')[0]}`}
+                variant="secondary"
+                label={`Preview as ${firstName}`}
                 onPress={() =>
                   router.push({
                     pathname: '/(manager)/manager-settings/team-preview',
-                    params: { userId: user.id, name: displayName, group },
-                  } as Parameters<typeof router.push>[0])
+                    params: {
+                      userId: user.id,
+                      name: displayName,
+                      group,
+                      origin: 'manager',
+                      backTo: String(backTo),
+                    },
+                  })
                 }
-                style={{ marginTop: ds.spacing(space[3]) }}
               />
-            </>
-          ) : null}
-        </ScrollView>
-
-      </ManagerScaleContainer>
+            </View>
+          </>
+        ) : null}
+      </ScrollView>
     </SafeAreaView>
   );
 }

@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Button, Loading, Sheet } from '@/components/ui';
+import { Button, Card, Loading, Sheet } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
 import { triggerSelectionHaptic } from '@/lib/haptics';
-import { color, radius, typeScale, weight } from '@/theme/tokens';
+import { color, typeScale, weight } from '@/theme/tokens';
 import {
   formatRecentOrderDate,
   listMyRecentOrders,
@@ -86,31 +86,17 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
     );
   } else if (detailOrder) {
     body = (
-      <ScrollView
-        style={{ maxHeight: ds.spacing(360) }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View
+      <Card>
+        <Text
           style={{
-            borderRadius: radius.card,
-            borderWidth: 1,
-            borderColor: color.hairline,
-            backgroundColor: color.well,
-            paddingHorizontal: ds.spacing(14),
-            paddingVertical: ds.spacing(12),
+            fontSize: ds.fontSize(typeScale.secondary),
+            lineHeight: ds.fontSize(typeScale.title),
+            color: color.ink,
           }}
         >
-          <Text
-            style={{
-              fontSize: ds.fontSize(typeScale.secondary),
-              lineHeight: ds.fontSize(typeScale.title),
-              color: color.ink,
-            }}
-          >
-            {detailOrder.messageText || 'No message text was saved for this order.'}
-          </Text>
-        </View>
-      </ScrollView>
+          {detailOrder.messageText || 'No message text was saved for this order.'}
+        </Text>
+      </Card>
     );
   } else if (orders.length === 0) {
     body = (
@@ -127,10 +113,7 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
     );
   } else {
     body = (
-      <ScrollView
-        style={{ maxHeight: ds.spacing(360) }}
-        showsVerticalScrollIndicator={false}
-      >
+      <Card flush>
         {orders.map((order, index) => (
           <TouchableOpacity
             key={order.id}
@@ -142,6 +125,7 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
               flexDirection: 'row',
               alignItems: 'center',
               minHeight: 52,
+              paddingHorizontal: ds.spacing(14),
               paddingVertical: ds.spacing(8),
               borderBottomWidth:
                 index === orders.length - 1 ? 0 : 1,
@@ -175,7 +159,7 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
             />
           </TouchableOpacity>
         ))}
-      </ScrollView>
+      </Card>
     );
   }
 
@@ -183,10 +167,22 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
     <Sheet
       visible={visible}
       title={detailOrder ? detailOrder.supplierName : 'Recent orders'}
+      subtitle={
+        detailOrder
+          ? `${formatRecentOrderDate(detailOrder.createdAt)}${
+              detailOrder.itemCount !== null
+                ? ` · ${detailOrder.itemCount} item${
+                    detailOrder.itemCount === 1 ? '' : 's'
+                  }`
+                : ''
+            }`
+          : undefined
+      }
       onClose={handleClose}
+      expandable={Boolean(detailOrder)}
     >
       {detailOrder ? (
-        <View style={{ gap: ds.spacing(8) }}>
+        <View>
           <Button
             label="Back to recent orders"
             variant="secondary"
@@ -194,12 +190,6 @@ export function RecentOrdersSheet({ visible, onClose }: RecentOrdersSheetProps) 
             icon="chevron-back"
             onPress={handleBackToList}
           />
-          <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink3 }}>
-            {formatRecentOrderDate(detailOrder.createdAt)}
-            {detailOrder.itemCount !== null
-              ? ` • ${detailOrder.itemCount} item${detailOrder.itemCount === 1 ? '' : 's'}`
-              : ''}
-          </Text>
         </View>
       ) : null}
 

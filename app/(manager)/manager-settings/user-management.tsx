@@ -64,6 +64,10 @@ const SEARCH_DEBOUNCE_MS = 220;
 const MANAGERS_ONLY_MESSAGE = 'Managers only';
 const SUSPEND_CONFIRM_MESSAGE =
   'They will be signed out and will not be able to sign in again until reinstated.';
+const HIDDEN_MANAGER_TOGGLE_KEYS: ReadonlySet<ModuleKey> = new Set([
+  'ordering_advanced',
+  'stock_check',
+]);
 
 function toDate(value: string | null): Date | null {
   if (!value) return null;
@@ -433,7 +437,9 @@ export default function UserManagementScreen() {
     const moduleRow = modulesByUser[item.id];
     const loadedModules = moduleRow?.modules ?? null;
     const isModulesExpanded = expandedModulesUserId === item.id;
-    const manageableKeys = getManageableModuleKeys(item.role);
+    const manageableKeys = getManageableModuleKeys(item.role).filter(
+      (moduleKey) => !HIDDEN_MANAGER_TOGGLE_KEYS.has(moduleKey),
+    );
 
     const roleLabel = item.role === 'manager' ? 'Manager' : 'Employee';
 

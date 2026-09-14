@@ -10,9 +10,8 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassSurface } from '@/components';
-import { Loading } from '@/components/ui';
+import { Loading, getTabBarClearance } from '@/components/ui';
 import {
-  getFloatingPillClearance,
   getTabBarBottomInset,
 } from '@/components/navigation';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
@@ -62,7 +61,7 @@ export const HomeScreenScroll = memo(function HomeScreenScroll({
   // the employee pill), so reserve whichever is taller plus a scroll gap.
   const bottomChrome = Math.max(
     60 + getTabBarBottomInset(insets.bottom),
-    getFloatingPillClearance(insets.bottom),
+    getTabBarClearance(insets.bottom),
   );
 
   return (

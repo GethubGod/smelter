@@ -19,7 +19,9 @@ export interface OrderDayReminderFormState {
 
 export const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
-export const REMINDER_TIME_STEP_MINUTES = 30;
+export const REMINDER_TIME_STEP_MINUTES = 60;
+export const REMINDER_EARLIEST_TIME = '05:00';
+export const REMINDER_LATEST_TIME = '20:00';
 
 export function timeZoneDefault(): string {
   try {
@@ -73,11 +75,16 @@ export function toggleDay(days: number[], day: number): number[] {
   return [...set].sort((left, right) => left - right);
 }
 
-/** Shifts an "HH:MM" time by deltaMinutes, wrapping across midnight. */
+/** Shifts an "HH:MM" time within the reminder sheet's 5 AM to 8 PM range. */
 export function shiftTime(time: string, deltaMinutes: number): string {
   const normalized = normalizeTime(time) ?? '10:00';
   const [hours, minutes] = normalized.split(':').map(Number);
-  const total = (((hours * 60 + minutes + deltaMinutes) % 1440) + 1440) % 1440;
+  const earliest = 5 * 60;
+  const latest = 20 * 60;
+  const total = Math.min(
+    latest,
+    Math.max(earliest, hours * 60 + minutes + deltaMinutes),
+  );
   const outHours = Math.floor(total / 60);
   const outMinutes = total % 60;
   return `${String(outHours).padStart(2, '0')}:${String(outMinutes).padStart(2, '0')}`;

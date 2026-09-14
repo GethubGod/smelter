@@ -60,16 +60,13 @@ export function deriveInvitePreview(
     ? locationGroup === 'both'
       ? 'Opens on the order checklist, covering both stores.'
       : `Opens on the ${LOCATION_GROUP_LABELS[locationGroup]} order checklist.`
-    : modules.ordering_advanced
-      ? `Opens on Advanced ordering${locationGroup === 'both' ? ' for both stores' : ` at ${LOCATION_GROUP_LABELS[locationGroup]}`}.`
-      : 'Opens on order history, no ordering surface is on.';
+    : 'Opens on order history, no ordering surface is on.';
 
   const extras: string[] = [];
-  if (modules.stock_check) extras.push('Stock check opens from inside the app.');
   if (modules.tips) extras.push('Tips is on (its in-app screen ships in a later phase).');
 
   const warning =
-    !modules.ordering_simple && !modules.ordering_advanced
+    !modules.ordering_simple
       ? `No ordering is on. ${displayName === 'Their' ? 'They' : displayName} won't be able to send orders.`
       : null;
 

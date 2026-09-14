@@ -11,7 +11,7 @@ export interface SectionLabelProps {
   style?: StyleProp<TextStyle>;
 }
 
-/** Caption token in ink3, uppercase, 10 above and 6 below. */
+/** Caption token in ink3, uppercase, 14 above and 4 below. */
 export function SectionLabel({ children, onDark = false, testID, style }: SectionLabelProps) {
   const ds = useScaledStyles();
 
@@ -21,8 +21,8 @@ export function SectionLabel({ children, onDark = false, testID, style }: Sectio
       testID={testID}
       style={[
         {
-          marginTop: ds.spacing(space[3] - 2),
-          marginBottom: ds.spacing(space[2] - 2),
+          marginTop: ds.spacing(space[3] + 2),
+          marginBottom: ds.spacing(space[1]),
           fontSize: ds.fontSize(typeScale.caption),
           fontWeight: weight.bold,
           letterSpacing: tracking.caption,

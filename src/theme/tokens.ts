@@ -1,8 +1,8 @@
 /**
- * Smelter UI tokens — the single source of truth.
+ * Smelter UI tokens, the single source of truth.
  *
  * Transcribed from the approved UI contract at
- * `docs/mockups/ui-contract/index.html` (header variant H1, tab bar variant T1).
+ * `docs/mockups/app-redesign-2026-09/SPEC.md` and reference-glide.html.
  * Nothing here is invented: every value appears in that document.
  *
  * Rules:
@@ -38,6 +38,8 @@ export const color = {
   tint: '#FBEAE7',
   /** Text and icons on top of `accent`. */
   onAccent: '#FFFFFF',
+  /** Count suffix inside a selected (ink) category pill. */
+  onInkMuted: 'rgba(255, 255, 255, 0.6)',
   /** Destructive and error text. */
   alert: '#C03520',
   alertBg: '#FBE7E7',
@@ -55,10 +57,13 @@ export const color = {
   /** Status only. */
   warning: '#B45309',
   warningBg: '#FFF4DC',
-  /** Sheet and modal backdrop, 30% per the contract. */
+  /** Sheet and modal backdrop. */
   scrim: 'rgba(20, 18, 14, 0.5)',
   /** Inactive tab glyph inside the floating pill. */
-  tabInactive: '#8A8781',
+  tabInactive: 'rgba(255, 255, 255, 0.62)',
+  dockBg: '#1A1A1A',
+  dockFg: 'rgba(255, 255, 255, 0.62)',
+  dockDivider: 'rgba(255, 255, 255, 0.18)',
   sheetBg: '#F3F3F1',
   sheetHandle: 'rgba(0, 0, 0, 0.2)',
 } as const;
@@ -106,9 +111,15 @@ export const typeScale = {
   secondary: 13,
   /** Section labels, status pills, badges. Always uppercase. */
   caption: 11,
+  itemComfort: 16,
+  itemDense: 14,
   meta: 12,
   link: 14,
   option: 16,
+  quantityComfort: 19,
+  hero: 17,
+  stat: 22,
+  time: 26,
 } as const;
 
 /** The only three weights. 500, 800 and 900 are gone. */
@@ -122,7 +133,9 @@ export const weight = {
 export const tracking = {
   display: -0.9,
   title: -0.2,
-  caption: 0.66,
+  caption: 0.88,
+  /** Tags: .04em at the 11pt caption size. */
+  tag: 0.44,
 } as const;
 
 /* ── Radius and spacing ────────────────────────────────────────────── */
@@ -136,6 +149,11 @@ export const radius = {
   control: 14,
   /** Bottom sheet top corners only. */
   sheet: 30,
+  tile: 12,
+  checkComfort: 11,
+  checkCompact: 9,
+  checkDense: 8,
+  addBar: 26,
 } as const;
 
 export const space = {
@@ -179,14 +197,21 @@ export const size = {
 
 /* ── Elevation ─────────────────────────────────────────────────────── */
 
-/** The two shadows in the contract. Everything else is flat. */
+/** The three shadows in the Studio contract. Everything else is flat. */
 export const shadow = {
-  /** Floating pill tab bar: 0 10px 28px rgba(20,18,14,.14). */
+  /** Floating pill tab bar: 0 10px 28px rgba(20,18,14,.16). */
   tabBar: {
     shadowColor: '#14120E',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.14,
+    shadowOpacity: 0.16,
     shadowRadius: 28,
+    elevation: Platform.OS === 'android' ? 10 : 0,
+  },
+  addBar: {
+    shadowColor: '#14120E',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.16,
+    shadowRadius: 34,
     elevation: Platform.OS === 'android' ? 10 : 0,
   },
   /** Bottom sheet: 0 -10px 30px rgba(0,0,0,.12). */
@@ -217,9 +242,11 @@ export const statusTone: Record<StatusTone, { background: string; text: string; 
   cancelled: { background: color.alertBg, text: color.alert, label: 'Cancelled' },
 };
 
-/** Cubic-bezier control points and durations shared by auth motion. */
+/** Cubic-bezier control points shared by Animated and Reanimated. */
 export const motion = {
-  ease: [0.2, 0.8, 0.2, 1] as const,
+  ease: [0.2, 0.8, 0.2, 1],
   dur: 280,
-  pop: [0.34, 1.5, 0.64, 1] as const,
+  // Default CSS ease used by the reference's unqualified control transitions.
+  controlEase: [0.25, 0.1, 0.25, 1],
+  pop: [0.34, 1.5, 0.64, 1],
 } as const;

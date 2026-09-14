@@ -159,9 +159,9 @@ function resolvePalette(
     return { background: auth.well, text: auth.text, border: auth.buttonRing };
   }
   if (variant === 'destructive') {
-    return { background: color.alertBg, text: color.alert };
+    return { background: color.card, text: color.alert };
   }
   return onDark
     ? { background: auth.well, text: auth.text, border: auth.hair }
-    : { background: color.card, text: color.ink, border: color.hairlineStrong };
+    : { background: color.card, text: color.ink };
 }

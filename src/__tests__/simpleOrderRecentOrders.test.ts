@@ -14,6 +14,7 @@ import {
   formatRecentOrderDate,
   listMyRecentOrders,
   mapRecentOrderRow,
+  mapSubmittedHistoryOrder,
 } from '../features/simpleOrder/recentOrders';
 
 describe('countItemsInPayload', () => {
@@ -163,5 +164,21 @@ describe('listMyRecentOrders', () => {
     });
     mockQuery({ data: null, error: new Error('boom') });
     await expect(listMyRecentOrders()).rejects.toThrow('boom');
+  });
+});
+
+
+describe('submitted checklist history', () => {
+  it('uses saved quantities and unit labels without inventing a sent message', () => {
+    expect(mapSubmittedHistoryOrder({ id: 'order-1', created_at: '2026-09-12T12:00:00Z', status: 'submitted', order_items: [
+      { inventory_item_id: 'fish', quantity: 4, quantity_requested: 0.5, unit_type: 'pack', unit_label: 'case', inventory_item: { name: 'Salmon', pack_unit: 'box', supplier: { name: 'Mutual' } } },
+      { quantity: -1, inventory_item: { name: 'Invalid' } },
+    ] })).toEqual({ id: 'order-1', createdAt: '2026-09-12T12:00:00Z', supplierName: 'Mutual', itemCount: 1, status: 'Pending', messageText: '',
+      reorderItems: [{ itemId: 'fish', itemName: 'Salmon', quantity: 0.5, unit: 'case' }] });
+  });
+  it('rejects malformed records and preserves fulfilled status', () => {
+    expect(mapSubmittedHistoryOrder(null)).toBeNull();
+    expect(mapSubmittedHistoryOrder({ id: 3 })).toBeNull();
+    expect(mapSubmittedHistoryOrder({ id: 'done', created_at: '2026-09-12', status: 'fulfilled', order_items: [] })?.status).toBe('Sent');
   });
 });

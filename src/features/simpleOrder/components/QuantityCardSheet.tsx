@@ -108,20 +108,17 @@ export function QuantityCardSheet({
     <Sheet
       visible={visible}
       title={line.itemName}
+      subtitle={
+        line.recommendedQty !== null
+          ? `Usually ${formatQuantity(line.recommendedQty)} ${line.unit}`
+          : `Counted in ${line.unit}`
+      }
       onClose={onClose}
       primary={{
         label: `Set ${formatQuantity(quantity)} ${line.unit}`,
         onPress: handleCommit,
       }}
     >
-      <Text
-        style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2, marginBottom: ds.spacing(12) }}
-      >
-        {line.recommendedQty !== null
-          ? `Usually ${formatQuantity(line.recommendedQty)} ${line.unit}`
-          : `Counted in ${line.unit}`}
-      </Text>
-
       <Segment
         options={unitSegmentOptions}
         value={selectedUnit}

@@ -34,8 +34,8 @@ export function reactNative() {
       this.value = value;
     }
 
-    interpolate() {
-      return this;
+    interpolate({ outputRange }: { outputRange: unknown[] }) {
+      return outputRange[this.value] ?? outputRange[0];
     }
   }
 
@@ -60,6 +60,7 @@ export function reactNative() {
           value.setValue(config.toValue);
           start(callback);
         },
+        stop: () => undefined,
       }),
       parallel: (animations: { start: typeof start }[]) => ({
         start: (callback?: (result: { finished: boolean }) => void) => {
