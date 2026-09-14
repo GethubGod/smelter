@@ -19,6 +19,8 @@ const mockSetReadyPending = jest.fn();
 const mockSetViewMode = jest.fn();
 const mockAlreadyOnTeamError = new Error('already_on_team');
 
+jest.mock('../../assets/images/smelter-lockup.png', () => 1);
+
 const mockAuthState: {
   signIn: typeof mockSignIn;
   signInWithOAuth: typeof mockSignInWithOAuth;
@@ -47,8 +49,12 @@ const mockAuthState: {
 };
 
 jest.mock('react-native', () => {
+  const ReactActual = jest.requireActual<typeof import('react')>('react');
   const native = jest.requireActual<typeof import('./ui/nativeMocks')>('./ui/nativeMocks');
-  return native.reactNative();
+  return {
+    ...native.reactNative(),
+    Image: (props: Record<string, unknown>) => ReactActual.createElement('Image', props),
+  };
 });
 jest.mock('expo-router', () => {
   const ReactActual = jest.requireActual<typeof import('react')>('react');
@@ -148,6 +154,17 @@ jest.mock('@/features/auth/components/AuthToast', () => {
     AuthToast: (props: Record<string, unknown>) => ReactActual.createElement('AuthToast', props),
   };
 });
+jest.mock('@/features/auth/components/SignInSheet', () => {
+  const ReactActual = jest.requireActual<typeof import('react')>('react');
+  return {
+    SignInSheet: (props: Record<string, unknown>) =>
+      ReactActual.createElement('SignInSheet', props),
+  };
+});
+jest.mock('@/features/auth/legal', () => ({
+  openAuthBrowser: jest.fn(),
+  SIGNUP_URL: 'https://smelterpos.com/signup',
+}));
 jest.mock('@/store/authStore', () => ({
   useAuthStore: (selector: (state: typeof mockAuthState) => unknown) => selector(mockAuthState),
 }));
@@ -173,6 +190,8 @@ import InviteHelloScreen, {
 import InviteLoginScreen, { isInviteEmailValid } from '@/features/auth/InviteLoginScreen';
 // eslint-disable-next-line import/first -- mocks must initialize before screen imports
 import ReadyScreen from '@/features/auth/ReadyScreen';
+// eslint-disable-next-line import/first -- mocks must initialize before screen imports
+import WelcomeScreen from '@/features/auth/WelcomeScreen';
 // eslint-disable-next-line import/first -- shared wizard state under test
 import { useOnboardingStore } from '@/features/auth/onboardingStore';
 
@@ -222,6 +241,17 @@ beforeEach(() => {
   mockAuthState.profile = null;
   mockAuthState.location = null;
   useOnboardingStore.getState().reset();
+});
+
+it('constrains the Welcome lockup to its delivered aspect ratio', () => {
+  const tree = render(React.createElement(WelcomeScreen));
+  const lockup = findHost(tree, 'Image');
+
+  expect(lockup.props.style).toMatchObject({
+    width: 112,
+    height: 112 * (257 / 1198),
+  });
+  act(() => tree.unmount());
 });
 
 it('keeps invalid input local and shows the exact link error without a request', () => {

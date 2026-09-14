@@ -118,7 +118,10 @@ export default function WelcomeScreen() {
           <Image
             source={require('../../../assets/images/smelter-lockup.png')}
             resizeMode="contain"
-            style={{ width: ds.spacing(112), aspectRatio: 1198 / 257 }}
+            style={{
+              width: ds.spacing(112),
+              height: ds.spacing(112 * (257 / 1198)),
+            }}
           />
         </View>
 
