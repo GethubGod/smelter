@@ -18,6 +18,91 @@ export type Database = {
   }
   public: {
     Tables: {
+      workspace_requests: {
+        Row: {
+          id: string
+          full_name: string
+          email: string
+          phone: string | null
+          restaurant_name: string
+          city: string | null
+          website: string | null
+          primary_category: string | null
+          locations_count: number
+          status: string
+          invite_id: string | null
+          reviewed_by: string | null
+          reviewed_at: string | null
+          ip_hash: string | null
+          user_agent: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          full_name: string
+          email: string
+          phone?: string | null
+          restaurant_name: string
+          city?: string | null
+          website?: string | null
+          primary_category?: string | null
+          locations_count?: number
+          status?: string
+          invite_id?: string | null
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          ip_hash?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          full_name?: string
+          email?: string
+          phone?: string | null
+          restaurant_name?: string
+          city?: string | null
+          primary_category?: string | null
+          locations_count?: number
+          status?: string
+          invite_id?: string | null
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          ip_hash?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_requests_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: false
+            referencedRelation: "invites"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      workspace_request_rate_limits: {
+        Row: {
+          id: string
+          ip_hash: string
+          email: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          ip_hash: string
+          email: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          ip_hash?: string
+          email?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       access_code_rate_limits: {
         Row: {
           attempt_count: number

@@ -69,7 +69,7 @@ export interface DashboardData {
 
 export type LocFilter = "both" | LocationKind;
 
-export type NavId = "overview" | "ledger" | "staff" | "logdev";
+export type NavId = "overview" | "ledger" | "staff" | "logdev" | "requests";
 
 /** Everything a dashboard page needs, already filtered by range × location. */
 export interface PageContext {
