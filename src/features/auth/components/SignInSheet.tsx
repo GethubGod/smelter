@@ -258,7 +258,7 @@ export function SignInSheet({ visible, onClose, onComplete }: SignInSheetProps) 
         accessibilityRole="button"
         accessibilityLabel="Forgot password?"
         onPress={() => void handleResetPassword()}
-        style={{ alignItems: 'center', paddingTop: ds.spacing(space[3]) }}
+        style={{ alignItems: 'center' }}
       >
         <Text
           style={{
