@@ -77,6 +77,8 @@ export const auth = {
   accent: color.accent,
   disabled: '#C9C5BC',
   hair: 'rgba(0, 0, 0, 0.10)',
+  /** 1pt inset ring on the white provider button. */
+  buttonRing: 'rgba(0, 0, 0, 0.08)',
 } as const;
 
 /** Provider marks keep their official brand colours. */

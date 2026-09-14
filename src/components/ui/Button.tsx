@@ -156,7 +156,7 @@ function resolvePalette(
     return { background: auth.text, text: color.onAccent };
   }
   if (variant === 'white') {
-    return { background: auth.well, text: auth.text, border: auth.hair };
+    return { background: auth.well, text: auth.text, border: auth.buttonRing };
   }
   if (variant === 'destructive') {
     return { background: color.alertBg, text: color.alert };
