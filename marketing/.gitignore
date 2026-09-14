@@ -44,3 +44,7 @@ next-env.d.ts
 # playwright
 /test-results/
 /playwright-report/
+
+# Next.js auto-generated agent rules
+AGENTS.md
+CLAUDE.md
