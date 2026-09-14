@@ -1,7 +1,6 @@
 // Team-screen data helpers: works-at group <-> location id mapping (same
 // short_code convention as the backend resolver), roster location reads, the
-// manager-gated works-at write, and login-credential metadata for the
-// employee detail screen.
+// manager-gated works-at write.
 
 import { supabase } from '@/lib/supabase';
 import type { Location } from '@/types';
@@ -92,26 +91,4 @@ export function buildInviteMessageBody(name: string, joinUrl: string): string {
   return trimmed
     ? `Hi ${trimmed}, here's your Smelter setup link: ${joinUrl}`
     : `Here's your Smelter setup link: ${joinUrl}`;
-}
-
-export interface LoginCredentialInfo {
-  kind: 'pin' | 'password';
-  updatedAt: string | null;
-}
-
-/** Credential metadata (never the hash — the column grant excludes it). */
-export async function fetchLoginCredentialInfo(
-  userId: string,
-): Promise<LoginCredentialInfo | null> {
-  const { data, error } = await supabase
-    .from('login_identities')
-    .select('credential_kind, updated_at')
-    .eq('user_id', userId)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data) return null;
-  return {
-    kind: data.credential_kind === 'password' ? 'password' : 'pin',
-    updatedAt: typeof data.updated_at === 'string' ? data.updated_at : null,
-  };
 }

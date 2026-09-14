@@ -100,6 +100,7 @@ interface TeamRowProps {
   initial: string;
   title: string;
   subtitle: string;
+  badge?: string;
   onPress: () => void;
   last?: boolean;
 }
@@ -108,7 +109,7 @@ interface TeamRowProps {
  * Roster row: 38pt tint avatar, name, location/features summary, chevron.
  * TeamScreen groups these inside one flush card.
  */
-export function TeamRow({ initial, title, subtitle, onPress, last = false }: TeamRowProps) {
+export function TeamRow({ initial, title, subtitle, badge, onPress, last = false }: TeamRowProps) {
   const ds = useScaledStyles();
   const avatar = ds.icon(38);
   const pressed = useRef(new Animated.Value(0)).current;
@@ -123,7 +124,7 @@ export function TeamRow({ initial, title, subtitle, onPress, last = false }: Tea
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${title}, ${subtitle}`}
+      accessibilityLabel={`${title}, ${subtitle}${badge ? `, ${badge}` : ''}`}
       onPressIn={() => animatePress(1)}
       onPressOut={() => animatePress(0)}
       style={{ backgroundColor: color.card }}
@@ -160,16 +161,39 @@ export function TeamRow({ initial, title, subtitle, onPress, last = false }: Tea
           </Text>
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text
-            numberOfLines={1}
-            style={{
-              fontSize: ds.fontSize(typeScale.body),
-              fontWeight: weight.semibold,
-              color: color.ink,
-            }}
-          >
-            {title}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: ds.spacing(space[2]) }}>
+            <Text
+              numberOfLines={1}
+              style={{
+                flexShrink: 1,
+                fontSize: ds.fontSize(typeScale.body),
+                fontWeight: weight.semibold,
+                color: color.ink,
+              }}
+            >
+              {title}
+            </Text>
+            {badge ? (
+              <View
+                style={{
+                  paddingHorizontal: ds.spacing(space[2]),
+                  paddingVertical: ds.spacing(space[1]),
+                  borderRadius: radius.pill,
+                  backgroundColor: color.well,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: ds.fontSize(typeScale.meta),
+                    fontWeight: weight.semibold,
+                    color: color.ink2,
+                  }}
+                >
+                  {badge}
+                </Text>
+              </View>
+            ) : null}
+          </View>
           <Text
             numberOfLines={1}
             style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}

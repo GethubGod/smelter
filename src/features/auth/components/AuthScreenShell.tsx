@@ -1,9 +1,8 @@
 import React, { type ReactNode } from 'react';
 import { Keyboard, KeyboardAvoidingView, Platform, Pressable, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { auth, space } from '@/theme/tokens';
+import { auth, size, space } from '@/theme/tokens';
 import { LegalFooter } from './LegalFooter';
 
 interface AuthScreenShellProps {
@@ -14,7 +13,7 @@ interface AuthScreenShellProps {
   dismissKeyboardOnPress?: boolean;
 }
 
-/** Black full-bleed shell shared by the auth and setup screens. */
+/** Full-bleed Studio shell shared by the auth screens. */
 export function AuthScreenShell({
   children,
   showLegalFooter = true,
@@ -23,13 +22,13 @@ export function AuthScreenShell({
   const ds = useScaledStyles();
   const content = {
     flex: 1,
-    paddingHorizontal: ds.spacing(space[4]),
-    paddingTop: ds.spacing(space[4]),
+    paddingHorizontal: ds.spacing(space[5]),
+    paddingTop: ds.spacing(size.authStatusBar),
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: auth.bg }}>
-      <StatusBar style="light" />
+    <View style={{ flex: 1, backgroundColor: auth.bg }}>
+      <StatusBar style="dark" />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1, backgroundColor: auth.bg }}
@@ -43,6 +42,6 @@ export function AuthScreenShell({
         )}
         {showLegalFooter ? <LegalFooter /> : null}
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }

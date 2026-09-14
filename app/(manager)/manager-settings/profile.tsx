@@ -343,7 +343,7 @@ export default function ManagerProfileSettingsScreen() {
           <Button
             variant="secondary"
             icon="key-outline"
-            label="Change PIN or password"
+            label="Change password"
             onPress={() => setShowPasswordModal(true)}
           />
           <Button

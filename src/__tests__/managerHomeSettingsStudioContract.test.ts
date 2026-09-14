@@ -67,7 +67,6 @@ describe('manager Settings Studio contract', () => {
     ]);
     expect(groups.flatMap((group) => group.items.map((item) => item.title))).toEqual([
       'Team',
-      'Access codes',
       'Supplier contacts',
       'User management',
       'Inventory',

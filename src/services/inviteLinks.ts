@@ -4,6 +4,14 @@
 
 export type InviteFailureReason = 'used' | 'expired' | 'revoked' | 'invalid';
 
+const INVITE_TOKEN_PATTERN = /^[A-Za-z0-9_-]{22,128}$/;
+const WEB_INVITE_HOSTS = new Set(['tips.babytunasystems.com', 'smelterpos.com']);
+
+function normalizeInviteToken(value: string | null | undefined): string | null {
+  const token = value?.trim() ?? '';
+  return INVITE_TOKEN_PATTERN.test(token) ? token : null;
+}
+
 /**
  * Pull the invite token out of a join link. Handles the app scheme in its
  * common shapes (babytunasystems://join?token=…, with an extra slash, or a
@@ -14,24 +22,28 @@ export type InviteFailureReason = 'used' | 'expired' | 'revoked' | 'invalid';
 export function parseJoinToken(url: string | null | undefined): string | null {
   if (typeof url !== 'string' || !url.trim()) return null;
 
+  const trimmed = url.trim();
+  if (INVITE_TOKEN_PATTERN.test(trimmed)) return trimmed;
+
   let parsed: URL;
   try {
-    parsed = new URL(url.trim());
+    parsed = new URL(trimmed);
   } catch {
     return null;
   }
 
   const host = parsed.hostname.toLowerCase();
   const pathSegments = parsed.pathname.split('/').filter(Boolean);
-  const isHttp = parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  const isWeb = parsed.protocol === 'https:';
 
   let pathToken: string | undefined;
-  if (isHttp) {
+  if (isWeb) {
     // Web link: must be our domain, /join/<token>.
-    if (!host.endsWith('babytunasystems.com')) return null;
+    if (!WEB_INVITE_HOSTS.has(host)) return null;
     if (pathSegments[0]?.toLowerCase() !== 'join') return null;
     pathToken = pathSegments[1];
   } else {
+    if (parsed.protocol !== 'babytunasystems:') return null;
     // Scheme deep link: "join" lands in the host (scheme://join?token=…) or
     // the first path segment (scheme:///join?token=…) depending on slashes.
     if (host === 'join') {
@@ -44,14 +56,14 @@ export function parseJoinToken(url: string | null | undefined): string | null {
   }
 
   const queryToken = parsed.searchParams.get('token');
-  if (queryToken && queryToken.trim()) return queryToken.trim();
+  if (queryToken) return normalizeInviteToken(queryToken);
 
   // Path-style token: /join/<token>
   if (pathToken && pathToken.trim()) {
     try {
-      return decodeURIComponent(pathToken.trim());
+      return normalizeInviteToken(decodeURIComponent(pathToken.trim()));
     } catch {
-      return pathToken.trim();
+      return null;
     }
   }
 

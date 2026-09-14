@@ -1,0 +1,550 @@
+<title>Smelter Auth Reference</title>
+<style>
+:root{--pg-bg:#FAFAF8;--pg-ink:#1A1A1A;--pg-ink2:#5F5F5F;--pg-ink3:#9C9890;--pg-line:rgba(0,0,0,.08);--pg-card:#FFFFFF;--pg-accent:#E84D38}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--pg-bg:#141412;--pg-ink:#F1F0EC;--pg-ink2:#B9B6AE;--pg-ink3:#7E7B74;--pg-line:rgba(255,255,255,.1);--pg-card:#1F1F1C}}
+:root[data-theme="dark"]{--pg-bg:#141412;--pg-ink:#F1F0EC;--pg-ink2:#B9B6AE;--pg-ink3:#7E7B74;--pg-line:rgba(255,255,255,.1);--pg-card:#1F1F1C}
+*{box-sizing:border-box}
+body{margin:0;background:var(--pg-bg);color:var(--pg-ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:40px 24px 80px}
+h1{font-size:32px;font-weight:700;letter-spacing:-.8px;margin:0 0 8px}
+.lede{color:var(--pg-ink2);font-size:15px;line-height:1.5;max-width:66ch;margin:0 0 30px}
+.stage{display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap}
+.notes{flex:1;min-width:300px;max-width:520px;font-size:14px;line-height:1.55;color:var(--pg-ink2)}
+.notes h3{font-size:13px;font-weight:700;color:var(--pg-ink);margin:22px 0 8px;letter-spacing:.02em}
+.notes h3:first-child{margin-top:0}
+.notes ul{margin:0;padding-left:18px}
+.notes li+li{margin-top:4px}
+.notes code{font-size:12.5px;background:var(--pg-card);border:1px solid var(--pg-line);padding:1px 6px;border-radius:6px;color:var(--pg-ink)}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
+.ctl label,.ctl button{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:var(--pg-card);border:1px solid var(--pg-line);font:600 13px/1 inherit;color:var(--pg-ink);cursor:pointer;font-family:inherit}
+.ctl button:focus-visible,.ctl input:focus-visible{outline:2px solid var(--pg-accent);outline-offset:2px}
+.ctl input{accent-color:var(--pg-accent);margin:0}
+.chg{background:var(--pg-card);border:1px solid var(--pg-line);border-radius:14px;padding:12px 16px}
+
+/* ─────────── phone frame (Studio) ─────────── */
+.ph{position:relative;width:375px;height:812px;border-radius:46px;overflow:hidden;background:var(--bg);color:var(--ink);flex:none;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",Helvetica,Arial,sans-serif;
+  box-shadow:0 0 0 1px rgba(0,0,0,.12),0 30px 60px -20px rgba(0,0,0,.35);user-select:none;-webkit-user-select:none;
+  --bg:#F3F3F1;--card:#FFFFFF;--well:#EAEAE8;--hair:rgba(0,0,0,.05);--hairS:rgba(0,0,0,.14);--accent:#E84D38;--tint:#FBEAE7;--ink:#1A1A1A;--ink2:#5F5F5F;--ink3:#9C9890;--disabled:#C9C5BC;--alert:#C03520;--good:#22883E;--goodBg:#E6F4EA;--warn:#B45309;--warnBg:#FFF4DC;--scrim:rgba(20,18,14,.5);
+  --rc:22px;--rx:14px;--rs:30px;--ease:cubic-bezier(.2,.8,.2,1);--dur:280ms;--pop:cubic-bezier(.34,1.5,.64,1)}
+.ph *{box-sizing:border-box}
+.ph .sb{position:absolute;top:0;left:0;right:0;height:54px;z-index:90;display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 4px;font-size:15px;font-weight:600;pointer-events:none;transition:color 300ms}
+.ph .island{position:absolute;top:11px;left:50%;width:120px;height:34px;margin-left:-60px;border-radius:20px;background:#000;z-index:91}
+.ph .sb .r{display:flex;gap:5px;align-items:center}
+.ph .sb .r i{display:block;width:16px;height:9px;border:1.5px solid currentColor;border-radius:3px;position:relative}
+.ph .sb .r i:after{content:"";position:absolute;inset:1.5px;background:currentColor;border-radius:1px}
+.ph svg{width:1em;height:1em;display:block;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.ph .ic{display:inline-flex;font-size:20px}
+
+.ph .layer{position:absolute;inset:0;width:100%;height:100%}
+.ph .screens{transition:transform 360ms var(--ease),border-radius 360ms var(--ease),filter var(--dur)}
+.ph .screens.dim{filter:brightness(.92)}
+.ph .screens.modal{transform:scale(.93) translateY(-8px);border-radius:40px;overflow:hidden;filter:brightness(.8)}
+.ph .screen{position:absolute;inset:0;width:100%;height:100%;display:none;flex-direction:column;padding:54px 20px 0;opacity:0;transform:translateY(10px);transition:opacity 300ms var(--ease),transform 340ms var(--ease)}
+.ph .screen.on{display:flex}
+.ph .screen.in{opacity:1;transform:none}
+.ph .screen.out{opacity:0;transform:translateY(-6px);transition-duration:180ms,180ms}
+
+/* type */
+.ph .disp{font-size:30px;font-weight:700;letter-spacing:-.9px;line-height:1.1;margin:0}
+.ph .sub{font-size:13px;color:var(--ink2);line-height:1.45;margin:6px 0 0}
+.ph .fl{font-size:13px;color:var(--ink2);margin:16px 0 6px}
+.ph .or{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--ink3);margin:12px 0}
+.ph .or:before,.ph .or:after{content:"";flex:1;height:1px;background:rgba(0,0,0,.1)}
+.ph .hint{font-size:12px;color:var(--ink3);margin:8px 0 0;line-height:1.4}
+.ph .lnk{font-size:14px;font-weight:600;color:var(--ink);text-align:center;margin:12px 0 0;cursor:pointer}
+.ph .lnk.d{color:var(--ink2);font-weight:500}
+.ph .foot{margin-top:auto;padding:14px 4px 30px;text-align:center;font-size:12px;color:var(--ink3);line-height:1.5}
+.ph .foot u{text-decoration-thickness:1px;text-underline-offset:2px;cursor:pointer}
+
+/* controls */
+.ph .btn{display:flex;align-items:center;justify-content:center;gap:10px;height:52px;width:100%;border-radius:999px;border:0;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;position:relative;transition:transform 90ms ease-out,background var(--dur) var(--ease),color var(--dur),opacity var(--dur)}
+.ph .btn:active{transform:scale(.98)}
+.ph .btn.a{background:var(--accent);color:#fff}
+.ph .btn.ink{background:var(--ink);color:#fff}
+.ph .btn.w{background:var(--card);color:var(--ink);box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.ph .btn.dis{background:var(--disabled);color:#fff;pointer-events:none}
+.ph .btn+.btn{margin-top:10px}
+.ph .btn svg{width:18px;height:18px;flex:none}
+.ph .btn .g{width:18px;height:18px}
+.ph .btn.busy{pointer-events:none}
+.ph .btn.busy>*{opacity:0}
+.ph .btn.busy:after{content:"";position:absolute;width:20px;height:20px;border-radius:50%;border:2.5px solid currentColor;border-right-color:transparent;animation:spin 700ms linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ph .fld{display:flex;align-items:center;height:50px;border-radius:var(--rx);background:var(--card);padding:0 14px;gap:10px;box-shadow:inset 0 0 0 1.5px transparent;transition:box-shadow 160ms}
+.ph .fld.f{box-shadow:inset 0 0 0 1.5px var(--ink)}
+.ph .fld.bad{box-shadow:inset 0 0 0 1.5px var(--alert)}
+.ph .fld.flash{animation:flash 500ms var(--ease)}
+@keyframes flash{0%{background:var(--tint)}100%{background:var(--card)}}
+.ph .fld input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:500 15px/1 inherit;font-family:inherit;color:var(--ink);padding:0}
+.ph .fld input::placeholder{color:var(--ink3);font-weight:400}
+.ph .fld .pill{font-size:12px;font-weight:600;color:var(--ink);background:var(--well);border-radius:999px;padding:6px 10px;cursor:pointer;flex:none;transition:background 160ms}
+.ph .fld .pill:active{background:var(--disabled)}
+.ph .fld+.fld{margin-top:10px}
+.ph .err{font-size:13px;color:var(--alert);margin:8px 2px 0;line-height:1.4;max-height:0;overflow:hidden;opacity:0;transition:max-height var(--dur) var(--ease),opacity var(--dur)}
+.ph .err.on{max-height:60px;opacity:1}
+.ph .card{background:var(--card);border-radius:var(--rc);padding:4px 16px;margin-top:16px}
+.ph .card .row{display:flex;justify-content:space-between;align-items:center;font-size:14px;padding:12px 0;border-top:1px solid var(--hair)}
+.ph .card .row:first-child{border-top:0}
+.ph .card .row .k{color:var(--ink2);font-size:13px}
+.ph .card .row .v{font-weight:600}
+.ph .opt{display:flex;align-items:center;gap:14px;background:var(--card);border-radius:var(--rc);padding:16px 16px 16px 18px;cursor:pointer;transition:transform 90ms ease-out,background 160ms}
+.ph .opt:active{transform:scale(.985);background:#FBFBFA}
+.ph .opt+.opt{margin-top:10px}
+.ph .opt .t{font-size:16px;font-weight:700;margin:0 0 2px}
+.ph .opt .s{font-size:13px;color:var(--ink2)}
+.ph .opt .ch{margin-left:auto;flex:none;width:28px;height:28px;border-radius:50%;background:var(--well);display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--ink)}
+.ph .circ{width:30px;height:30px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;flex:none;color:var(--ink);transition:transform 90ms}
+.ph .circ:active{transform:scale(.92)}
+.ph .req{list-style:none;margin:12px 0 0;padding:0;font-size:13px;color:var(--ink2)}
+.ph .req li{display:flex;align-items:center;gap:9px;padding:4px 0;transition:color var(--dur)}
+.ph .req li.ok{color:var(--ink)}
+.ph .req .c{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--ink3);flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;transition:background var(--dur),box-shadow var(--dur)}
+.ph .req .c svg{stroke-width:3;transform:scale(0);transition:transform 320ms var(--pop)}
+.ph .req li.ok .c{background:var(--good);box-shadow:inset 0 0 0 1.5px var(--good)}
+.ph .req li.ok .c svg{transform:scale(1)}
+.ph .prog{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:600;color:var(--ink2);margin:0 0 22px}
+.ph .prog .bar{flex:1;height:4px;border-radius:999px;background:var(--well);overflow:hidden}
+.ph .prog .bar i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width 420ms var(--ease)}
+.ph .ring{width:88px;height:88px;border-radius:50%;background:var(--tint);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:40px;margin:80px 0 24px;transform:scale(.6);transition:transform 460ms var(--pop)}
+.ph .ring svg{stroke-width:2.8}
+.ph .screen.in .ring{transform:scale(1)}
+.ph .bottom{margin-top:auto;padding-bottom:30px}
+.ph .lockup{display:block;width:112px;height:auto;margin:22px auto 0}
+.ph .wel{margin-top:auto}
+.ph .welcome-title{margin-bottom:22px}
+
+/* pushes (wizard steps) */
+.ph .pushlayer{pointer-events:none;z-index:20}
+.ph .push{position:absolute;inset:0;width:100%;height:100%;background:var(--bg);display:flex;flex-direction:column;padding:54px 20px 0;transform:translateX(100%);transition:transform var(--dur) var(--ease),opacity 240ms var(--ease);z-index:20;box-shadow:-10px 0 30px rgba(0,0,0,.12)}
+.ph .push.in{transform:none}
+.ph .push.fade{opacity:0;transform:none;pointer-events:none}
+.ph .screens.back{transform:translateX(-24%)}
+.ph .ptop{display:flex;justify-content:flex-end;height:30px;margin:4px 0 14px}
+
+/* sheet */
+.ph .scrim{position:absolute;inset:0;width:100%;height:100%;background:var(--scrim);opacity:0;pointer-events:none;transition:opacity 240ms;z-index:50}
+.ph .scrim.on{opacity:1;pointer-events:auto}
+.ph .sheet{position:absolute;left:0;right:0;bottom:0;width:100%;background:var(--bg);border-radius:var(--rs) var(--rs) 0 0;z-index:51;transform:translateY(105%);transition:transform 320ms var(--ease),height 320ms var(--ease);display:flex;flex-direction:column;box-shadow:0 -10px 30px rgba(0,0,0,.12);touch-action:none;padding:0 20px 30px}
+.ph .sheet.in{transform:none}
+.ph .sheet.full{height:88%}
+.ph .grab{height:22px;display:flex;align-items:center;justify-content:center}
+.ph .grab i{width:36px;height:5px;border-radius:999px;background:var(--disabled)}
+.ph .shh{display:flex;align-items:center;justify-content:space-between;margin:2px 0 14px}
+.ph .shh .t{font-size:20px;font-weight:700;letter-spacing:-.2px}
+
+/* in-app browser (SFSafariViewController) */
+.ph .browser{position:absolute;inset:0;width:100%;height:100%;background:#fff;color:#1A1A1A;z-index:60;transform:translateY(100%);transition:transform 360ms var(--ease);display:flex;flex-direction:column;border-radius:12px 12px 0 0}
+.ph .browser.in{transform:none}
+.ph .wbar{height:98px;width:100%;padding:54px 12px 0;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(0,0,0,.1);background:#F9F9F9;flex:none}
+.ph .wbar .done{color:var(--accent);font-weight:600;font-size:16px;cursor:pointer;width:56px}
+.ph .wbar .url{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;background:#EDEDED;padding:7px 14px;border-radius:10px;min-width:180px;justify-content:center}
+.ph .wbar .url svg{width:11px;height:11px;stroke-width:2.6}
+.ph .wbar .url span{font-weight:400;color:#6B6B6B}
+.ph .wbar .rl{width:56px;display:flex;justify-content:flex-end;font-size:18px;color:var(--accent)}
+.ph .wview{flex:1;width:100%;position:relative;overflow:hidden;background:#fff}
+.ph .wp{position:absolute;inset:0;width:100%;height:100%;padding:26px 22px 30px;overflow-y:auto;opacity:0;transform:translateX(24px);transition:opacity 240ms var(--ease),transform 260ms var(--ease);pointer-events:none;scrollbar-width:none}
+.ph .wp.show{opacity:1;transform:none;pointer-events:auto}
+.ph .wp.back{transform:translateX(-24px)}
+.ph .wnav{display:flex;align-items:center;gap:8px;margin:0 0 26px}
+.ph .wnav img{width:26px;height:26px;border-radius:50%}
+.ph .wnav b{color:var(--accent);font-size:19px;font-weight:700;letter-spacing:-.5px}
+.ph .wnav span{margin-left:auto;font-size:13px;color:#5F5F5F;cursor:pointer}
+.ph .wp h4{font-size:26px;font-weight:700;letter-spacing:-.7px;margin:0 0 6px;line-height:1.1}
+.ph .wp .p{font-size:14px;color:#5F5F5F;margin:0 0 20px;line-height:1.45}
+.ph .wp .wl{font-size:13px;color:#5F5F5F;margin:14px 0 6px}
+.ph .wp .wi{display:flex;align-items:center;height:46px;border-radius:10px;border:1px solid rgba(0,0,0,.16);padding:0 12px;background:#fff;transition:box-shadow 160ms,border-color 160ms}
+.ph .wp .wi.f{border-color:#1A1A1A;box-shadow:0 0 0 3px rgba(26,26,26,.08)}
+.ph .wp .wi input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:400 15px/1 inherit;font-family:inherit;color:#1A1A1A;padding:0}
+.ph .wp .wi input::placeholder{color:#9C9890}
+.ph .wp .wb{height:48px;border-radius:10px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;margin:18px 0 0;cursor:pointer;position:relative;transition:opacity var(--dur)}
+.ph .wp .wb.dis{opacity:.4;pointer-events:none}
+.ph .wp .wg{height:48px;border-radius:10px;border:1px solid rgba(0,0,0,.16);display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px;font-weight:600;cursor:pointer;position:relative;background:#fff}
+.ph .wp .wg svg{width:18px;height:18px}
+.ph .wp .wor{display:flex;align-items:center;gap:12px;font-size:12px;color:#9C9890;margin:16px 0 2px}
+.ph .wp .wor:before,.ph .wp .wor:after{content:"";flex:1;height:1px;background:rgba(0,0,0,.1)}
+.ph .wp .legal{font-size:11.5px;color:#9C9890;line-height:1.5;margin:12px 0 0}
+.ph .wp .legal u{text-decoration-thickness:1px}
+.ph .wp .wfoot{font-size:13px;color:#5F5F5F;text-align:center;margin:26px 0 0}
+.ph .wp .wfoot b{color:#1A1A1A;cursor:pointer}
+.ph .wp .wsteps{display:flex;gap:6px;margin:0 0 18px}
+.ph .wp .wsteps i{flex:1;height:3px;border-radius:999px;background:#E5E5E3}
+.ph .wp .wsteps i.on{background:var(--accent)}
+.ph .wp .who{display:flex;align-items:center;gap:10px;border:1px solid rgba(0,0,0,.1);border-radius:12px;padding:10px 12px;margin:0 0 6px;font-size:13px}
+.ph .wp .who .av{width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:13px}
+.ph .wp .who b{display:block;font-size:14px}
+.ph .wp .who span{color:#5F5F5F}
+.ph .wp .seg{display:flex;gap:8px;flex-wrap:wrap}
+.ph .wp .seg span{padding:9px 14px;border-radius:999px;border:1px solid rgba(0,0,0,.16);font-size:13px;font-weight:600;cursor:pointer;transition:all 160ms}
+.ph .wp .seg span.on{background:#1A1A1A;color:#fff;border-color:#1A1A1A}
+.ph .wp .wring{width:76px;height:76px;border-radius:50%;background:#E6F4EA;color:#22883E;display:flex;align-items:center;justify-content:center;font-size:34px;margin:30px auto 22px;transform:scale(.6);transition:transform 460ms var(--pop)}
+.ph .wp.show .wring{transform:scale(1)}
+.ph .wp .wring svg{stroke-width:2.8}
+.ph .wp .center{text-align:center}
+.ph .wtool{height:78px;width:100%;flex:none;border-top:1px solid rgba(0,0,0,.1);background:#F9F9F9;display:flex;align-items:flex-start;justify-content:space-around;padding:14px 18px 0;color:var(--accent);font-size:22px}
+.ph .wtool .off{color:#C7C7C7}
+.ph .busyw{pointer-events:none;color:transparent!important}
+.ph .busyw:after{content:"";position:absolute;left:50%;top:50%;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;border:2.5px solid #1A1A1A;border-right-color:transparent;animation:spin 700ms linear infinite}
+.ph .wb.busyw:after{border-color:#fff;border-right-color:transparent}
+
+/* toast */
+.ph .toast{position:absolute;left:50%;bottom:120px;transform:translate(-50%,10px);background:var(--ink);color:#fff;font-size:13px;font-weight:600;padding:11px 16px;border-radius:14px;opacity:0;transition:opacity 180ms,transform 220ms var(--ease);z-index:95;white-space:nowrap;pointer-events:none}
+.ph .toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* order stub */
+.ph .hrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px}
+.ph .pillloc{display:inline-flex;align-items:center;gap:6px;background:var(--card);border-radius:999px;padding:8px 12px;font-size:13px;font-weight:600}
+.ph .pillloc:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.ph .lab{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);padding:20px 0 6px;display:flex;justify-content:space-between}
+.ph .lab span{font-weight:600;text-transform:none;letter-spacing:0}
+.ph .lrow{display:flex;align-items:center;gap:12px;background:var(--card);padding:12px 14px;font-size:15px;font-weight:600}
+.ph .lrow:first-of-type{border-radius:var(--rc) var(--rc) 0 0}
+.ph .lrow:last-of-type{border-radius:0 0 var(--rc) var(--rc)}
+.ph .lrow+.lrow{border-top:1px solid var(--hair)}
+.ph .lrow .chk{width:26px;height:26px;border-radius:9px;background:var(--well)}
+.ph .lrow span{color:var(--ink3);font-size:12px;font-weight:400;margin-left:auto}
+.ph .dock{position:absolute;left:14px;right:14px;bottom:12px;height:80px;border-radius:999px;background:#1A1A1A;display:flex;align-items:center;justify-content:space-around;padding:0 14px;box-shadow:0 10px 28px rgba(20,18,14,.16);color:rgba(255,255,255,.62);font-size:24px}
+.ph .dock .on{color:#fff;background:var(--accent);border-radius:999px;width:56px;height:56px;display:flex;align-items:center;justify-content:center}
+@media (prefers-reduced-motion:reduce){.ph *{transition-duration:1ms!important;animation-duration:1ms!important}}
+</style>
+
+<div class="wrap">
+  <h1>Smelter sign-in, version C</h1>
+  <p class="lede">Interactive reference for the auth flow: welcome, sign-in sheet, three-step invite onboarding, and account creation on smelterpos.com inside the in-app browser. Every control on the phone works. Same Studio tokens and Glide motion as the 2.4 reference.</p>
+
+  <div class="stage">
+    <div class="ph" id="phone"></div>
+    <div class="notes">
+      <h3>Controls</h3>
+      <div class="ctl">
+        <button data-ctl="reset">Reset phone</button>
+        <label><input type="checkbox" id="c-wrongpw"> Next email sign-in fails</label>
+        <label><input type="checkbox" id="c-expired"> Invite is expired</label>
+      </div>
+
+      <h3>Walk it</h3>
+      <ul>
+        <li><b>I was invited</b> pushes step 1. Tap <b>Paste</b> to drop in a join link, Continue checks it, step 2 confirms name, restaurant and role. Google or Apple finish there; Email and password adds step 3 with live password rules. X on any step returns to Welcome.</li>
+        <li><b>I have an account</b> opens the sign-in sheet. Google and Apple are one tap. The email form enables Sign in once both fields are filled; focusing a field lifts the sheet to the 88% detent. Drag the sheet down to dismiss.</li>
+        <li><b>I'm setting up a restaurant</b> presents smelterpos.com in the in-app browser: create the account (Google or form), name the restaurant, done. <b>Open the app</b> closes the browser and opens the sign-in sheet.</li>
+        <li>Ready pops the check ring, then <b>See today's list</b> crossfades into the Order tab. Sign out on the stub restarts.</li>
+      </ul>
+
+      <h3>Changes from the static option C</h3>
+      <div class="chg"><ul>
+        <li>Welcome is the wordmark, the word Welcome, and the three doors at the bottom. No question, no subtitle.</li>
+        <li>Every X is the same 30pt white circle used in the sheet header.</li>
+        <li>The uppercase caption label is gone from auth entirely. Field labels and the "Yes, sign me in with" line use the 13pt regular ink2 style, the same voice as "or use email".</li>
+        <li>C7 is a working website: sign-up, restaurant setup, done, with URL changes in the Safari bar.</li>
+      </ul></div>
+
+      <h3>Motion</h3>
+      <ul>
+        <li>Root screens: Glide crossfade, 10pt rise, 300ms <code>cubic-bezier(.2,.8,.2,1)</code>.</li>
+        <li>Wizard steps: push from right 280ms; the layer underneath parks at -24%. Finishing fades the stack over the Ready screen.</li>
+        <li>Sheet: 320ms slide, scrim 240ms, drag to dismiss past 90pt.</li>
+        <li>In-app browser: iOS modal, 360ms rise while the app scales to 93%.</li>
+        <li>Check marks and the Ready ring use <code>pop</code>. Nothing else overshoots.</li>
+      </ul>
+
+      <h3>Backend this needs</h3>
+      <ul>
+        <li>Google and Apple OAuth providers in Supabase plus the native Apple entitlement.</li>
+        <li>An invited email on <code>public.invites</code> so step 3 binds the password to the right person.</li>
+        <li>Retire name-plus-PIN sign-in, with a one-time password prompt for existing PIN users.</li>
+        <li>A real smelterpos.com/signup page that creates the owner, the restaurant and the first location, then tells the user to sign in on the phone with the same account.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+const LOCKUP="__LOCKUP__", MARK="__MARK__";
+const ICONS={
+  chevR:'<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>',
+  chevL:'<svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>',
+  ext:'<svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg>',
+  x:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  check:'<svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>',
+  lock:'<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>',
+  reload:'<svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-2.3-5.6M20 4v5h-5"/></svg>',
+  share:'<svg viewBox="0 0 24 24"><path d="M12 4v12M8 8l4-4 4 4M5 14v5h14v-5"/></svg>',
+  safari:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>',
+  list:'<svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>',
+  clock:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  gear:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>',
+};
+const G='<svg class="g" viewBox="0 0 48 48" style="stroke:none"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
+const APPLE='<svg viewBox="0 0 24 24" style="stroke:none;fill:currentColor"><path d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-2.987 1.57-.12 0-.23-.02-.3-.03-.01-.06-.04-.22-.04-.39 0-1.15.572-2.27 1.206-2.98.804-.94 2.142-1.64 3.248-1.68.03.13.05.28.05.43zm4.565 15.71c-.03.07-.463 1.58-1.518 3.12-.945 1.34-1.94 2.71-3.43 2.71-1.517 0-1.9-.88-3.63-.88-1.698 0-2.302.91-3.67.91-1.377 0-2.332-1.26-3.428-2.8-1.287-1.82-2.323-4.63-2.323-7.28 0-4.28 2.797-6.55 5.552-6.55 1.448 0 2.675.95 3.6.95.865 0 2.222-1.01 3.902-1.01.613 0 2.886.06 4.374 2.19-.13.09-2.383 1.37-2.383 4.19 0 3.26 2.854 4.42 2.955 4.45z"/></svg>';
+const ic=n=>`<span class="ic">${ICONS[n]}</span>`;
+const COMMON=['password','password1','12345678','123456789','qwerty123','iloveyou','sushi1234','letmein1'];
+const INVITE={name:'Maya',restaurant:'Babytuna Sushi',role:'Server',by:'Kevin C.',email:'maya@gmail.com'};
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const next=fn=>setTimeout(fn,20);
+
+function mountPhone(root){
+  const S={screen:'welcome',pushes:[],user:null,web:null};
+  root.className='ph';
+  root.innerHTML=`
+    <div class="island"></div><div class="sb"><span>9:41</span><span class="r"><i></i></span></div>
+    <div class="layer screens" id="screens">
+      <div class="screen" data-screen="welcome">
+        <img class="lockup" src="${LOCKUP}" alt="smelter">
+        <div class="wel">
+          <div class="disp welcome-title">Welcome</div>
+          <div class="opt" data-act="invite"><div><div class="t">I was invited</div><div class="s">Paste the link your manager sent</div></div><div class="ch">${ic('chevR')}</div></div>
+          <div class="opt" data-act="open-signin"><div><div class="t">I have an account</div><div class="s">Google, Apple, or email</div></div><div class="ch">${ic('chevR')}</div></div>
+          <div class="opt" data-act="web"><div><div class="t">I'm setting up a restaurant</div><div class="s">Create your account on smelterpos.com</div></div><div class="ch">${ic('ext')}</div></div>
+        </div>
+        <div class="foot"><u data-act="toast:Terms open in the in-app browser">Terms</u> · <u data-act="toast:Privacy policy opens in the in-app browser">Privacy</u></div>
+      </div>
+      <div class="screen" data-screen="ready">
+        <div class="ring">${ic('check')}</div>
+        <div class="disp">You're set, <span id="rname">Maya</span></div>
+        <p class="sub" id="rsub">Your Sushi order list is ready.</p>
+        <div class="bottom"><button class="btn a" data-act="enter">See today's list</button></div>
+      </div>
+      <div class="screen" data-screen="order">
+        <div class="hrow"><div><div class="disp">Order</div><div class="sub">11 items · 0 selected</div></div><span class="pillloc">Babytuna Sushi</span></div>
+        <div class="lab">Fish <span>0/11</span></div>
+        <div class="lrow"><span class="chk"></span>Salmon, sashimi grade<span>lb</span></div>
+        <div class="lrow"><span class="chk"></span>Ahi tuna, saku<span>lb</span></div>
+        <div class="lrow"><span class="chk"></span>Yellowtail<span>lb</span></div>
+        <div class="lab">Produce <span>0/3</span></div>
+        <div class="lrow"><span class="chk"></span>Avocado<span>case</span></div>
+        <div class="lrow"><span class="chk"></span>Cucumber<span>case</span></div>
+        <p class="lnk d" data-act="signout" style="margin-top:26px">Sign out</p>
+        <div class="dock"><span class="on">${ic('list')}</span>${ic('clock')}${ic('gear')}</div>
+      </div>
+    </div>
+    <div class="layer pushlayer" id="pushlayer"></div>
+    <div class="scrim" id="scrim" data-act="sheet-close"></div>
+    <div class="sheet" id="sheet"></div>
+    <div class="browser" id="browser"></div>
+    <div class="toast" id="toast"></div>`;
+  const $=s=>root.querySelector(s);
+  const screens=$('#screens'), pushlayer=$('#pushlayer'), scrim=$('#scrim'), sheet=$('#sheet'), browser=$('#browser'), sb=$('.sb');
+
+  /* ── root screens ── */
+  function show(name, instant){
+    const prev=S.screen; S.screen=name;
+    screens.querySelectorAll('.screen').forEach(s=>{
+      const k=s.dataset.screen;
+      if(k===name){ s.classList.remove('out'); s.classList.add('on'); void s.offsetWidth; if(instant) s.classList.add('in'); else next(()=>s.classList.add('in')); }
+      else if(k===prev && s.classList.contains('on') && !instant){ s.classList.remove('in'); s.classList.add('out'); setTimeout(()=>{ if(S.screen!==k) s.classList.remove('on','out'); },200); }
+      else s.classList.remove('on','in','out');
+    });
+  }
+  function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('on'),1800); }
+  function ready(name,restaurant){
+    S.user=name; $('#rname').textContent=name;
+    $('#rsub').textContent=`Your ${restaurant==='Babytuna Sushi'?'Sushi':'Poki & Pho'} order list is ready.`;
+    closeSheet(); show('ready');
+    // fade the wizard stack over the ready screen
+    S.pushes.forEach(el=>el.classList.add('fade')); setTimeout(()=>{ S.pushes.forEach(el=>el.remove()); S.pushes=[]; pushlayer.style.pointerEvents='none'; screens.classList.remove('back','dim'); },260);
+  }
+
+  /* ── pushes (wizard) ── */
+  function push(html){
+    const el=document.createElement('div'); el.className='push'; el.innerHTML=html;
+    pushlayer.appendChild(el); pushlayer.style.pointerEvents='auto'; S.pushes.push(el);
+    screens.classList.add('back','dim');
+    next(()=>{ el.classList.add('in'); const bar=el.querySelector('.prog .bar i'); if(bar) bar.style.width=bar.dataset.w; });
+    return el;
+  }
+  function pop(){
+    const el=S.pushes.pop(); if(!el) return;
+    el.classList.remove('in'); setTimeout(()=>el.remove(),320);
+    if(!S.pushes.length){ screens.classList.remove('back','dim'); pushlayer.style.pointerEvents='none'; }
+  }
+  function popAll(){ while(S.pushes.length) pop(); }
+  const prog=(n,w0)=>`<div class="prog"><span>Step ${n} of 3</span><div class="bar"><i data-w="${n*33.34}%" style="width:${w0}%"></i></div></div>`;
+  const xtop=`<div class="ptop"><span class="circ" data-act="wizard-close">${ic('x')}</span></div>`;
+
+  function step1(){
+    push(`${xtop}${prog(1,0)}
+      <div class="disp">Paste your invite link</div>
+      <p class="sub">Your manager sent it by text or email.</p>
+      <div class="fl">Invite link</div>
+      <div class="fld" id="inv-wrap"><input id="inv" placeholder="smelterpos.com/join/…" autocomplete="off" spellcheck="false"><span class="pill" data-act="paste">Paste</span></div>
+      <div class="err" id="inv-err"></div>
+      <p class="hint">The clipboard is only read when you tap Paste.</p>
+      <div style="margin-top:18px"><button class="btn a dis" id="inv-btn" data-act="inv-continue">Continue</button></div>`);
+  }
+  function step2(){
+    push(`${xtop}${prog(2,33.34)}
+      <div class="disp">Is this you, ${INVITE.name}?</div>
+      <p class="sub">${INVITE.by.split(' ')[0]} invited you to ${INVITE.restaurant} as a ${INVITE.role.toLowerCase()}.</p>
+      <div class="card">
+        <div class="row"><span class="k">Restaurant</span><span class="v">${INVITE.restaurant}</span></div>
+        <div class="row"><span class="k">Role</span><span class="v">${INVITE.role}</span></div>
+        <div class="row"><span class="k">Invited by</span><span class="v">${INVITE.by}</span></div>
+      </div>
+      <div class="or">Yes, sign me in with</div>
+      <button class="btn w" data-act="oauth:google:invite">${G} Google</button>
+      <button class="btn ink" data-act="oauth:apple:invite">${APPLE} Apple</button>
+      <p class="lnk" data-act="step3">Email and password</p>
+      <div class="foot">Not ${INVITE.name}? <u data-act="wizard-back">Wrong link</u></div>`);
+  }
+  function step3(){
+    push(`${xtop}${prog(3,66.68)}
+      <div class="disp">Create your login</div>
+      <p class="sub">You'll use this in the Sign in sheet next time.</p>
+      <div class="fl">Email</div>
+      <div class="fld"><input id="pw-email" value="${INVITE.email}" inputmode="email" autocomplete="off"></div>
+      <div class="fl">Password</div>
+      <div class="fld"><input id="pw" type="password" placeholder="Choose a password" autocomplete="off"><span class="pill" data-act="toggle:pw">Show</span></div>
+      <ul class="req" id="req">
+        <li data-r="len"><span class="c">${ic('check')}</span>At least 8 characters</li>
+        <li data-r="mix"><span class="c">${ic('check')}</span>A letter and a number</li>
+        <li data-r="common"><span class="c">${ic('check')}</span>Not a common password</li>
+      </ul>
+      <div style="margin-top:18px"><button class="btn a dis" id="pw-btn" data-act="pw-finish">Finish</button></div>
+      <p class="hint" style="text-align:center">Saved to iPhone autofill, so you won't retype it.</p>`);
+  }
+  function checkPw(){
+    const v=$('#pw').value, ok={len:v.length>=8, mix:/[a-zA-Z]/.test(v)&&/\d/.test(v), common:v.length>0&&!COMMON.includes(v.toLowerCase())};
+    root.querySelectorAll('#req li').forEach(li=>li.classList.toggle('ok',ok[li.dataset.r]));
+    $('#pw-btn').classList.toggle('dis',!(ok.len&&ok.mix&&ok.common));
+  }
+
+  /* ── sheet ── */
+  function openSheet(){
+    sheet.classList.remove('full');
+    sheet.innerHTML=`<div class="grab"><i></i></div>
+      <div class="shh"><span class="t">Sign in</span><span class="circ" data-act="sheet-close">${ic('x')}</span></div>
+      <button class="btn w" data-act="oauth:google:sheet">${G} Continue with Google</button>
+      <button class="btn ink" data-act="oauth:apple:sheet">${APPLE} Continue with Apple</button>
+      <div class="or">or use email</div>
+      <div class="fld"><input id="si-email" placeholder="Email" inputmode="email" autocomplete="off"></div>
+      <div class="fld"><input id="si-pw" type="password" placeholder="Password" autocomplete="off"><span class="pill" data-act="toggle:si-pw">Show</span></div>
+      <div class="err" id="si-err"></div>
+      <div style="margin-top:14px"><button class="btn a dis" id="si-btn" data-act="signin">Sign in</button></div>
+      <p class="lnk d" data-act="forgot">Forgot password?</p>`;
+    scrim.classList.add('on'); next(()=>sheet.classList.add('in'));
+  }
+  function closeSheet(){ sheet.classList.remove('in','full'); scrim.classList.remove('on'); }
+  let y0=null,dy=0,sdrag=false,t0=0;
+  sheet.addEventListener('pointerdown',e=>{ if(e.target.closest('input')) return; y0=e.clientY; dy=0; sdrag=false; t0=performance.now(); });
+  sheet.addEventListener('pointermove',e=>{ if(y0===null) return; dy=e.clientY-y0; if(!sdrag){ if(Math.abs(dy)<6) return; sdrag=true; sheet.style.transition='none'; try{sheet.setPointerCapture(e.pointerId);}catch(_){} } sheet.style.transform=`translateY(${dy>0?dy:dy*.18}px)`; });
+  const endDrag=()=>{ if(y0===null) return; const v=dy/Math.max(1,performance.now()-t0); sheet.style.transition=''; sheet.style.transform=''; if(sdrag&&(dy>90||v>.9)) closeSheet(); y0=null; };
+  sheet.addEventListener('pointerup',endDrag); sheet.addEventListener('pointercancel',endDrag);
+
+  /* ── in-app browser ── */
+  const WEB={
+    signup:{url:'smelterpos.com/signup',html:`
+      <div class="wnav"><img src="${MARK}" alt=""><b>smelter</b><span data-act="toast:Sign-in on the web is out of scope for this reference">Sign in</span></div>
+      <div class="wsteps"><i class="on"></i><i></i><i></i></div>
+      <h4>Create your account</h4>
+      <p class="p">Free for 14 days, no card needed. You'll invite your team once you're in.</p>
+      <div class="wg" data-act="wgoogle">${G} Continue with Google</div>
+      <div class="wor">or</div>
+      <div class="wl">Full name</div><div class="wi"><input id="w-name" placeholder="Kevin Chen" autocomplete="off"></div>
+      <div class="wl">Work email</div><div class="wi"><input id="w-email" placeholder="you@restaurant.com" inputmode="email" autocomplete="off"></div>
+      <div class="wl">Password</div><div class="wi"><input id="w-pw" type="password" placeholder="At least 8 characters" autocomplete="off"></div>
+      <div class="wb dis" id="w-create" data-act="wcreate">Create account</div>
+      <p class="legal">By continuing you agree to the <u>Terms</u> and <u>Privacy policy</u>.</p>
+      <p class="wfoot">Already have an account? <b data-act="toast:Sign-in on the web is out of scope for this reference">Sign in</b></p>`},
+    restaurant:{url:'smelterpos.com/signup/restaurant',html:`
+      <div class="wnav"><img src="${MARK}" alt=""><b>smelter</b></div>
+      <div class="wsteps"><i class="on"></i><i class="on"></i><i></i></div>
+      <h4>Name your restaurant</h4>
+      <p class="p">You can add more locations from the dashboard later.</p>
+      <div class="who"><span class="av" id="w-av">K</span><div><b id="w-who">Kevin Chen</b><span id="w-whoe">kevin@babytuna.com</span></div></div>
+      <div class="wl">Restaurant name</div><div class="wi"><input id="w-rest" placeholder="Babytuna Sushi" autocomplete="off"></div>
+      <div class="wl">City</div><div class="wi"><input id="w-city" placeholder="San Diego" autocomplete="off"></div>
+      <div class="wl">What do you mostly order?</div>
+      <div class="seg" id="w-seg"><span class="on">Fish</span><span>Produce</span><span>Dry goods</span><span>Packaging</span></div>
+      <div class="wb dis" id="w-finish" data-act="wfinish">Finish setup</div>`},
+    done:{url:'smelterpos.com/welcome',html:`
+      <div class="wnav"><img src="${MARK}" alt=""><b>smelter</b></div>
+      <div class="wsteps"><i class="on"></i><i class="on"></i><i class="on"></i></div>
+      <div class="wring">${ic('check')}</div>
+      <div class="center"><h4 id="w-done-title">Babytuna Sushi is set up</h4>
+      <p class="p">Your 14-day trial started. Sign in on your phone with the same account to see your order list, then invite your team from Settings.</p></div>
+      <div class="wb" data-act="wopen">Open the app</div>
+      <p class="wfoot"><b data-act="toast:The dashboard is the existing web app">Go to the dashboard instead</b></p>`}
+  };
+  function openBrowser(){
+    S.web=null;
+    browser.innerHTML=`<div class="wbar"><span class="done" data-act="browser-close">Done</span><div class="url">${ICONS.lock}<span id="wurl"></span></div><span class="rl">${ICONS.reload}</span></div>
+      <div class="wview" id="wview"></div>
+      <div class="wtool"><span class="off">${ICONS.chevL}</span><span class="off">${ICONS.chevR}</span><span>${ICONS.share}</span><span>${ICONS.safari}</span></div>`;
+    screens.classList.add('modal'); sb.style.color='#1A1A1A';
+    next(()=>browser.classList.add('in'));
+    webGo('signup',true);
+  }
+  function closeBrowser(){ browser.classList.remove('in'); screens.classList.remove('modal'); sb.style.color=''; }
+  function webGo(page,instant){
+    const view=$('#wview'), prev=view.querySelector('.wp.show');
+    const el=document.createElement('div'); el.className='wp'; el.innerHTML=WEB[page].html; view.appendChild(el);
+    $('.wbar .url').innerHTML=`${ICONS.lock}<b>smelterpos.com</b><span>${WEB[page].url.replace('smelterpos.com','')}</span>`;
+    if(prev){ prev.classList.remove('show'); prev.classList.add('back'); setTimeout(()=>prev.remove(),300); }
+    if(instant){ el.classList.add('show'); } else next(()=>el.classList.add('show'));
+    S.web=page;
+    if(page==='signup') browser.querySelectorAll('.wtool span')[0].classList.add('off'); else browser.querySelectorAll('.wtool span')[0].classList.remove('off');
+  }
+  function webCheck(){
+    if(S.web==='signup'){ const ok=$('#w-name').value.trim()&&/@/.test($('#w-email').value)&&$('#w-pw').value.length>=8; $('#w-create').classList.toggle('dis',!ok); }
+    if(S.web==='restaurant'){ $('#w-finish').classList.toggle('dis',!$('#w-rest').value.trim()); }
+  }
+
+  /* ── busy helper ── */
+  async function busy(btn,ms,cls='busy'){ btn.classList.add(cls); await wait(ms); btn.classList.remove(cls); }
+
+  /* ── actions ── */
+  root.addEventListener('click', async e=>{
+    const t=e.target.closest('[data-act]'); if(!t) return;
+    const [act,a,b]=t.dataset.act.split(':');
+    switch(act){
+      case 'invite': step1(); break;
+      case 'open-signin': openSheet(); break;
+      case 'web': openBrowser(); break;
+      case 'toast': toast(t.dataset.act.slice(6)); break;
+      case 'wizard-close': popAll(); break;
+      case 'wizard-back': pop(); break;
+      case 'sheet-close': closeSheet(); break;
+      case 'browser-close': closeBrowser(); break;
+      case 'toggle': { const i=$('#'+a); i.type=i.type==='password'?'text':'password'; t.textContent=i.type==='password'?'Show':'Hide'; break; }
+      case 'paste': { const i=$('#inv'); i.value='smelterpos.com/join/qL8s3kFm2vT9xR1pW4nZ'; $('#inv-wrap').classList.remove('bad','flash'); void $('#inv-wrap').offsetWidth; $('#inv-wrap').classList.add('flash'); $('#inv-err').classList.remove('on'); $('#inv-btn').classList.remove('dis'); break; }
+      case 'inv-continue': {
+        const v=$('#inv').value.trim(); const err=$('#inv-err');
+        if(!/join\/[A-Za-z0-9_-]{8,}/.test(v)){ $('#inv-wrap').classList.add('bad'); err.textContent="That doesn't look like an invite link. Paste the whole link from your manager."; err.classList.add('on'); return; }
+        await busy(t,900);
+        if(document.getElementById('c-expired').checked){ $('#inv-wrap').classList.add('bad'); err.textContent=`This invite has expired. Ask ${INVITE.by.split(' ')[0]} to send a new one.`; err.classList.add('on'); return; }
+        step2(); break; }
+      case 'step3': step3(); break;
+      case 'pw-finish': await busy(t,900); ready(INVITE.name,INVITE.restaurant); break;
+      case 'oauth': { await busy(t,1000); ready(b==='invite'?INVITE.name:'Maya','Babytuna Sushi'); break; }
+      case 'signin': {
+        const err=$('#si-err'); await busy(t,900);
+        if(document.getElementById('c-wrongpw').checked){ err.textContent="That password doesn't match. Try again or reset it."; err.classList.add('on'); root.querySelectorAll('#si-pw').forEach(i=>i.closest('.fld').classList.add('bad')); return; }
+        const em=$('#si-email').value; ready(em.split('@')[0].replace(/^\w/,c=>c.toUpperCase())||'Maya','Babytuna Sushi'); break; }
+      case 'forgot': { const em=$('#si-email').value; toast(em&&/@/.test(em)?`Reset link sent to ${em}`:'Enter your email first'); break; }
+      case 'enter': show('order'); break;
+      case 'signout': show('welcome'); break;
+      /* website */
+      case 'wgoogle': await busy(t,1000,'busyw'); webGo('restaurant'); break;
+      case 'wcreate': { const n=$('#w-name').value.trim(), em=$('#w-email').value.trim(); await busy(t,1000,'busyw'); webGo('restaurant'); $('#w-who').textContent=n; $('#w-whoe').textContent=em; $('#w-av').textContent=n[0].toUpperCase(); break; }
+      case 'wfinish': { const r=$('#w-rest').value.trim(); await busy(t,1100,'busyw'); webGo('done'); $('#w-done-title').textContent=`${r} is set up`; break; }
+      case 'wopen': closeBrowser(); setTimeout(openSheet,380); break;
+    }
+  });
+  root.addEventListener('click',e=>{ const s=e.target.closest('#w-seg span'); if(s){ s.parentNode.querySelectorAll('span').forEach(x=>x.classList.toggle('on',x===s)); } });
+  root.addEventListener('input',e=>{
+    const i=e.target; if(i.tagName!=='INPUT') return;
+    if(i.id==='pw') checkPw();
+    if(i.id==='inv'){ $('#inv-btn').classList.toggle('dis',!i.value.trim()); $('#inv-wrap').classList.remove('bad'); $('#inv-err').classList.remove('on'); }
+    if(i.id==='si-email'||i.id==='si-pw'){ $('#si-btn').classList.toggle('dis',!($('#si-email').value.trim()&&$('#si-pw').value)); $('#si-err').classList.remove('on'); i.closest('.fld').classList.remove('bad'); }
+    if(i.id.startsWith('w-')) webCheck();
+  });
+  root.addEventListener('focusin',e=>{ const w=e.target.closest('.fld,.wi'); if(w) w.classList.add('f'); if(e.target.closest('#sheet')) sheet.classList.add('full'); });
+  root.addEventListener('focusout',e=>{ const w=e.target.closest('.fld,.wi'); if(w) w.classList.remove('f'); });
+
+  function reset(){ popAll(); closeSheet(); closeBrowser(); show('welcome',true); }
+  reset();
+  return {reset};
+}
+const phone=mountPhone(document.getElementById('phone'));
+document.querySelector('[data-ctl="reset"]').addEventListener('click',()=>{ phone.reset(); document.getElementById('c-wrongpw').checked=false; document.getElementById('c-expired').checked=false; });
+</script>

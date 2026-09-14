@@ -26,7 +26,7 @@ export function Card({
   style,
 }: CardProps) {
   const ds = useScaledStyles();
-  const borderColor = selected ? color.accent : onDark ? auth.wellBorder : color.hairline;
+  const borderColor = selected ? color.accent : onDark ? auth.hair : color.hairline;
 
   return (
     <View

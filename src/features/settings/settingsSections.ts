@@ -71,15 +71,6 @@ export function buildManagerSettingsGroups({
           onPress: () => onNavigate(managerRoute('/(manager)/manager-settings/team')),
         },
         {
-          key: 'access-codes',
-          icon: 'key-outline',
-          title: 'Access codes',
-          subtitle: 'Employee and manager sign-up codes',
-          chevron: 'right',
-          onPress: () =>
-            onNavigate(managerRoute('/(manager)/manager-settings/access-codes')),
-        },
-        {
           key: 'supplier-contacts',
           icon: 'call-outline',
           title: 'Supplier contacts',

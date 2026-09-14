@@ -1,10 +1,8 @@
-// Invite-link signup (Phase 2b) — accept-invite edge function wrappers plus
-// the pure deep-link/token helpers behind the babytunasystems://join?token=…
-// flow. The access-code path (services/accessCodes.ts) stays fully intact;
-// invites are an alternative entry into the same signup screen.
+// Invite-link authentication edge function wrappers and the pure deep-link
+// helpers behind the babytunasystems://join?token=… flow.
 
 import { supabase } from '@/lib/supabase';
-import { UserRole } from '@/types';
+import type { UserRole } from '@/types';
 import {
   classifyInviteFailure,
   describeInviteFailure,
@@ -22,6 +20,8 @@ export type InviteLocationGroup = 'sushi' | 'poki' | 'both';
 
 export interface InvitePreview {
   invitedName: string | null;
+  invitedEmail: string | null;
+  invitedBy: string | null;
   role: UserRole | null;
   locationGroup: InviteLocationGroup;
 }
@@ -30,11 +30,11 @@ export interface AcceptInviteInput {
   token: string;
   email: string;
   password: string;
-  name: string;
 }
 
 export interface CreateInviteInput {
   invitedName: string;
+  invitedEmail?: string;
   role: 'employee' | 'manager';
   expiresInHours: number;
   modulePreset: Record<string, boolean>;
@@ -48,54 +48,68 @@ export interface CreatedInvite {
   locationGroup: InviteLocationGroup;
 }
 
-export interface OnboardingAcceptResult {
+export interface AcceptedInvite {
   role: UserRole;
   locationGroup: InviteLocationGroup;
-  /** One-shot magiclink token hash; exchange via auth.verifyOtp for a session. */
-  tokenHash: string;
 }
 
 interface FunctionErrorDetails {
   message: string | null;
   /** Structured reason from the error body, when the backend sent one. */
   reason: InviteFailureReason | null;
+  code: string | null;
+  invitedBy: string | null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function readFunctionErrorPayload(value: unknown): FunctionErrorDetails | null {
+  if (!isRecord(value) || typeof value.error !== 'string') return null;
+  return {
+    message: value.error,
+    reason: readReason(value.reason),
+    code: readString(value.reason),
+    invitedBy: readName(value.invitedBy),
+  };
 }
 
 async function getFunctionErrorDetails(error: unknown): Promise<FunctionErrorDetails> {
-  if (error && typeof error === 'object' && 'context' in error) {
-    const context = (error as { context?: any }).context;
+  if (isRecord(error)) {
+    const context = error.context;
 
     if (context) {
       // Newer supabase-js: context is the already-parsed JSON body
-      if (typeof context === 'object' && !(context instanceof Response) && typeof context.error === 'string') {
-        return { message: context.error, reason: readReason(context.reason) };
-      }
+      const directDetails = readFunctionErrorPayload(context);
+      if (directDetails) return directDetails;
 
       // Older supabase-js: context is a Response object
-      if (typeof context.json === 'function') {
+      if (isRecord(context) && typeof context.json === 'function') {
         try {
           const payload = await context.json();
-          if (typeof payload?.error === 'string') {
-            return { message: payload.error, reason: readReason(payload?.reason) };
-          }
+          const responseDetails = readFunctionErrorPayload(payload);
+          if (responseDetails) return responseDetails;
         } catch {
-          // body already consumed or not JSON – fall through
+          // Body already consumed or not JSON. Fall through to the outer error.
         }
       }
     }
-  }
 
-  if (error && typeof error === 'object' && 'message' in error) {
-    const message = (error as { message?: unknown }).message;
+    const message = error.message;
     if (
       typeof message === 'string' &&
       !message.toLowerCase().includes('edge function returned a non-2xx')
     ) {
-      return { message, reason: null };
+      return { message, reason: null, code: null, invitedBy: null };
     }
   }
 
-  return { message: null, reason: null };
+  return { message: null, reason: null, code: null, invitedBy: null };
+}
+
+function readString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
 function readRole(value: unknown): UserRole | null {
@@ -118,15 +132,49 @@ function readLocationGroup(value: unknown): InviteLocationGroup {
 
 class InviteError extends Error {
   reason: InviteFailureReason;
+  invitedBy: string | null;
 
-  constructor(reason: InviteFailureReason, message?: string) {
+  constructor(reason: InviteFailureReason, message?: string, invitedBy: string | null = null) {
     super(message ?? describeInviteFailure(reason));
     this.reason = reason;
+    this.invitedBy = invitedBy;
+  }
+}
+
+class InviteServiceError extends Error {
+  code: string | null;
+
+  constructor(message: string, code: string | null = null) {
+    super(message);
+    this.code = code;
   }
 }
 
 export function getInviteFailureReason(error: unknown): InviteFailureReason | null {
   return error instanceof InviteError ? error.reason : null;
+}
+
+export function getInviteErrorInvitedBy(error: unknown): string | null {
+  return error instanceof InviteError ? error.invitedBy : null;
+}
+
+export function isInviteAlreadyOnTeam(error: unknown): boolean {
+  return error instanceof InviteServiceError && error.code === 'already_on_team';
+}
+
+export function getInviteServiceCode(error: unknown): string | null {
+  return error instanceof InviteServiceError ? error.code : null;
+}
+
+export function isInviteNetworkError(error: unknown): boolean {
+  if (error instanceof InviteServiceError && error.code === 'service_unavailable') return true;
+  const message = error instanceof Error ? error.message.toLowerCase() : '';
+  return (
+    message.includes('network') ||
+    message.includes('fetch') ||
+    message.includes('connection') ||
+    message.includes('failed to send')
+  );
 }
 
 /**
@@ -142,32 +190,27 @@ export async function fetchInvitePreview(token: string): Promise<InvitePreview> 
   });
 
   if (error) {
-    const { message, reason } = await getFunctionErrorDetails(error);
-    throw new InviteError(reason ?? classifyInviteFailure(message), message ?? undefined);
+    const { message, reason, invitedBy } = await getFunctionErrorDetails(error);
+    throw new InviteError(reason ?? classifyInviteFailure(message), message ?? undefined, invitedBy);
   }
 
-  const payload = data as
-    | {
-        ok?: unknown;
-        valid?: unknown;
-        error?: unknown;
-        reason?: unknown;
-        invitedName?: unknown;
-        invited_name?: unknown;
-        role?: unknown;
-        locationGroup?: unknown;
-      }
-    | null;
+  const payload = isRecord(data) ? data : null;
 
   // Backend dry-run responds {valid, invitedName, role, reason}; tolerate {ok}.
   if (payload?.ok !== true && payload?.valid !== true) {
     const structured = readReason(payload?.reason);
     const message = typeof payload?.error === 'string' ? payload.error : null;
-    throw new InviteError(structured ?? classifyInviteFailure(message), message ?? undefined);
+    throw new InviteError(
+      structured ?? classifyInviteFailure(message),
+      message ?? undefined,
+      readName(payload?.invitedBy),
+    );
   }
 
   return {
     invitedName: readName(payload.invitedName) ?? readName(payload.invited_name),
+    invitedEmail: readName(payload.invitedEmail),
+    invitedBy: readName(payload.invitedBy),
     role: readRole(payload.role),
     locationGroup: readLocationGroup(payload.locationGroup),
   };
@@ -178,13 +221,12 @@ export async function fetchInvitePreview(token: string): Promise<InvitePreview> 
  * the service role, marks the invite used, and returns {ok, role}. The caller
  * then signs in with the same credentials.
  */
-export async function acceptInvite(input: AcceptInviteInput): Promise<{ role: UserRole }> {
+export async function acceptInvite(input: AcceptInviteInput): Promise<AcceptedInvite> {
   const { data, error } = await supabase.functions.invoke('accept-invite', {
     body: {
       token: input.token.trim(),
       email: input.email,
       password: input.password,
-      name: input.name,
     },
   });
 
@@ -192,21 +234,24 @@ export async function acceptInvite(input: AcceptInviteInput): Promise<{ role: Us
     // Prefer the structured reason from the 409 body (mirrors the dry-run
     // handling); keyword classification is only the fallback for older
     // backends that send just an error string.
-    const { message, reason: structuredReason } = await getFunctionErrorDetails(error);
+    const { message, reason: structuredReason, code } = await getFunctionErrorDetails(error);
     if (message || structuredReason) {
       const reason = structuredReason ?? classifyInviteFailure(message);
       if (reason !== 'invalid') {
         throw new InviteError(reason, message ?? undefined);
       }
-      throw new Error(message ?? describeInviteFailure(reason));
+      throw new InviteServiceError(message ?? describeInviteFailure(reason), code);
     }
-    throw new Error('Unable to accept the invite. Please try again.');
+    throw new InviteServiceError('Unable to accept the invite. Please try again.');
   }
 
-  const payload = data as { ok?: unknown; role?: unknown; error?: unknown } | null;
+  const payload = isRecord(data) ? data : null;
   if (payload?.ok !== true) {
     const message = typeof payload?.error === 'string' ? payload.error : null;
-    throw new Error(message ?? 'Unable to accept the invite. Please try again.');
+    throw new InviteServiceError(
+      message ?? 'Unable to accept the invite. Please try again.',
+      readString(payload?.reason),
+    );
   }
 
   const role = readRole(payload.role);
@@ -214,54 +259,44 @@ export async function acceptInvite(input: AcceptInviteInput): Promise<{ role: Us
     throw new Error('Unexpected response from accept-invite.');
   }
 
-  return { role };
+  return { role, locationGroup: readLocationGroup(payload.locationGroup) };
 }
 
-/**
- * Onboarding accept ({token, mode: 'onboarding'}): the edge function mints the
- * account without email/password and returns a one-shot session token hash.
- * The caller exchanges it with supabase.auth.verifyOtp, then stores the chosen
- * credential via setMyCredential.
- */
-export async function acceptInviteOnboarding(
-  token: string,
-  credentialKind: 'pin' | 'password',
-  credentialSecret: string,
-): Promise<OnboardingAcceptResult> {
+/** Claim an invite for the currently authenticated Google or Apple user. */
+export async function acceptInviteLink(token: string): Promise<AcceptedInvite> {
   const trimmed = token.trim();
   if (!trimmed) throw new InviteError('invalid');
 
   const { data, error } = await supabase.functions.invoke('accept-invite', {
-    body: { token: trimmed, mode: 'onboarding', credentialKind, credentialSecret },
+    body: { token: trimmed },
   });
 
   if (error) {
-    const { message, reason: structuredReason } = await getFunctionErrorDetails(error);
-    if (message || structuredReason) {
-      const reason = structuredReason ?? classifyInviteFailure(message);
-      if (reason !== 'invalid' || structuredReason === 'invalid') {
-        throw new InviteError(reason, message ?? undefined);
-      }
-      throw new Error(message ?? describeInviteFailure(reason));
+    const details = await getFunctionErrorDetails(error);
+    if (details.reason) {
+      throw new InviteError(details.reason, details.message ?? undefined, details.invitedBy);
     }
-    throw new Error('Unable to accept the invite. Check your connection and try again.');
+    throw new InviteServiceError(
+      details.message ?? 'Unable to accept the invite. Check your connection and try again.',
+      details.code,
+    );
   }
 
-  const payload = data as
-    | { ok?: unknown; role?: unknown; locationGroup?: unknown; tokenHash?: unknown; error?: unknown }
-    | null;
+  const payload = isRecord(data) ? data : null;
   if (payload?.ok !== true) {
     const message = typeof payload?.error === 'string' ? payload.error : null;
-    throw new Error(message ?? 'Unable to accept the invite. Try again.');
+    throw new InviteServiceError(
+      message ?? 'Unable to accept the invite. Try again.',
+      readString(payload?.reason),
+    );
   }
 
   const role = readRole(payload.role);
-  const tokenHash = typeof payload.tokenHash === 'string' && payload.tokenHash ? payload.tokenHash : null;
-  if (!role || !tokenHash) {
+  if (!role) {
     throw new Error('Unexpected response from accept-invite.');
   }
 
-  return { role, locationGroup: readLocationGroup(payload.locationGroup), tokenHash };
+  return { role, locationGroup: readLocationGroup(payload.locationGroup) };
 }
 
 /**
@@ -272,6 +307,7 @@ export async function createInvite(input: CreateInviteInput): Promise<CreatedInv
   const { data, error } = await supabase.functions.invoke('create-invite', {
     body: {
       invitedName: input.invitedName.trim(),
+      invitedEmail: input.invitedEmail?.trim() || undefined,
       role: input.role,
       expiresInHours: input.expiresInHours,
       modulePreset: input.modulePreset,
@@ -284,9 +320,7 @@ export async function createInvite(input: CreateInviteInput): Promise<CreatedInv
     throw new Error(message ?? 'Unable to create the invite. Try again.');
   }
 
-  const payload = data as
-    | { inviteId?: unknown; token?: unknown; joinUrl?: unknown; locationGroup?: unknown; error?: unknown }
-    | null;
+  const payload = isRecord(data) ? data : null;
   if (
     typeof payload?.inviteId !== 'string' ||
     typeof payload?.token !== 'string' ||
@@ -315,7 +349,7 @@ export async function revokeInvite(inviteId: string): Promise<void> {
     throw new Error(message ?? 'Unable to revoke the invite.');
   }
 
-  const payload = data as { ok?: unknown; error?: unknown } | null;
+  const payload = isRecord(data) ? data : null;
   if (payload?.ok !== true) {
     const message = typeof payload?.error === 'string' ? payload.error : null;
     throw new Error(message ?? 'Unable to revoke the invite.');

@@ -1,3 +1,5 @@
+import type { Session } from '@supabase/supabase-js';
+
 const mockAsyncStorage = {
   getItem: jest.fn(async () => null),
   setItem: jest.fn(async () => undefined),
@@ -6,8 +8,12 @@ const mockAsyncStorage = {
 };
 
 const signInWithPasswordMock = jest.fn();
-const signUpMock = jest.fn();
-const getSessionMock = jest.fn(async () => ({ data: { session: null } }));
+const signInWithOAuthMock = jest.fn();
+const exchangeCodeForSessionMock = jest.fn();
+const openAuthSessionAsyncMock = jest.fn();
+const getSessionMock = jest.fn(
+  async (): Promise<{ data: { session: Session | null } }> => ({ data: { session: null } }),
+);
 const onAuthStateChangeMock = jest.fn();
 const signOutMock = jest.fn(async () => ({ error: null }));
 const clearSupabaseStoredSessionMock = jest.fn(async () => undefined);
@@ -73,24 +79,19 @@ jest.mock('expo-auth-session', () => ({
 }));
 jest.mock('expo-web-browser', () => ({
   maybeCompleteAuthSession: jest.fn(),
-  openAuthSessionAsync: jest.fn(),
+  openAuthSessionAsync: openAuthSessionAsyncMock,
 }));
 
 jest.mock('@/lib/api/client', () => ({
   registerSessionGetter: jest.fn(),
 }));
 
-const validateAccessCodeMock = jest.fn();
-
-jest.mock('@/services/accessCodes', () => ({
-  validateAccessCode: validateAccessCodeMock,
-}));
-
 jest.mock('@/lib/supabase', () => ({
   supabase: {
     auth: {
       signInWithPassword: signInWithPasswordMock,
-      signUp: signUpMock,
+      signInWithOAuth: signInWithOAuthMock,
+      exchangeCodeForSession: exchangeCodeForSessionMock,
       getSession: getSessionMock,
       onAuthStateChange: onAuthStateChangeMock,
       signOut: signOutMock,
@@ -128,63 +129,6 @@ describe('useAuthStore auth flow reliability', () => {
 
   afterEach(() => {
     jest.useRealTimers();
-  });
-
-  test('returns confirmation_required when signup succeeds without an authenticated session', async () => {
-    validateAccessCodeMock.mockResolvedValue('employee');
-    signUpMock.mockResolvedValue({
-      data: {
-        user: { id: 'user-1', email: 'new.user@example.com' },
-        session: null,
-      },
-      error: null,
-    });
-
-    useAuthStore.setState(
-      {
-        ...useAuthStore.getInitialState(),
-        session: { user: { id: 'stale-user', email: 'stale@example.com' } } as any,
-        user: {
-          id: 'stale-user',
-          email: 'stale@example.com',
-          name: 'Stale User',
-          role: 'manager',
-          default_location_id: null,
-        } as any,
-        profile: {
-          id: 'stale-user',
-          email: 'stale@example.com',
-          full_name: 'Stale User',
-          role: 'manager',
-          is_suspended: false,
-          suspended_at: null,
-          suspended_by: null,
-          notifications_enabled: true,
-          last_active_at: null,
-          last_order_at: null,
-          profile_completed: true,
-          provider: 'email',
-          created_at: '2026-03-22T00:00:00.000Z',
-          updated_at: '2026-03-22T00:00:00.000Z',
-        } as any,
-        viewMode: 'manager',
-      },
-      true
-    );
-
-    await expect(
-      useAuthStore.getState().signUp('new.user@example.com', 'Password123', 'New User', '1234')
-    ).resolves.toEqual({
-      status: 'confirmation_required',
-      email: 'new.user@example.com',
-    });
-
-    const state = useAuthStore.getState();
-    expect(state.session).toBeNull();
-    expect(state.user).toBeNull();
-    expect(state.profile).toBeNull();
-    expect(state.viewMode).toBe('employee');
-    expect(fromMock).not.toHaveBeenCalled();
   });
 
   test('repairs the public.users row during sign in when auth succeeded but the app user row is missing', async () => {
@@ -247,6 +191,83 @@ describe('useAuthStore auth flow reliability', () => {
       id: 'manager-1',
       name: 'Manager One',
       role: 'manager',
+    });
+  });
+
+  test('defers provider hydration until the invite claim has completed', async () => {
+    await useAuthStore.getState().initialize();
+    const providerSession: Session = {
+      access_token: 'provider-token',
+      refresh_token: 'provider-refresh',
+      expires_in: 3600,
+      token_type: 'bearer',
+      user: {
+        id: 'provider-1',
+        email: 'provider@example.com',
+        aud: 'authenticated',
+        created_at: '2026-09-13T00:00:00.000Z',
+        user_metadata: {},
+        app_metadata: {},
+      },
+    };
+    signInWithOAuthMock.mockResolvedValue({
+      data: { url: 'https://provider.example/authorize' },
+      error: null,
+    });
+    openAuthSessionAsyncMock.mockResolvedValue({
+      type: 'success',
+      url: 'babytunasystems://auth/callback?code=provider-code',
+    });
+    exchangeCodeForSessionMock.mockImplementation(async () => {
+      authChangeCallback?.('SIGNED_IN', providerSession);
+      return { data: { session: providerSession }, error: null };
+    });
+    getSessionMock.mockResolvedValue({ data: { session: providerSession } });
+    profileMaybeSingleMock.mockResolvedValue({
+      data: {
+        id: 'provider-1',
+        email: 'provider@example.com',
+        full_name: 'Invited Person',
+        role: 'employee',
+        is_suspended: false,
+        suspended_at: null,
+        suspended_by: null,
+        notifications_enabled: true,
+        last_active_at: null,
+        last_order_at: null,
+        order_send_mode: 'review',
+        profile_completed: true,
+        provider: 'google',
+        created_at: '2026-09-13T00:00:00.000Z',
+        updated_at: '2026-09-13T00:00:00.000Z',
+      },
+      error: null,
+    });
+    userMaybeSingleMock.mockResolvedValue({
+      data: {
+        id: 'provider-1',
+        email: 'provider@example.com',
+        name: 'Invited Person',
+        role: 'employee',
+        default_location_id: null,
+        created_at: '2026-09-13T00:00:00.000Z',
+      },
+      error: null,
+    });
+
+    const session = await useAuthStore
+      .getState()
+      .signInWithOAuth('google', { deferHydration: true });
+
+    expect(session).toBe(providerSession);
+    expect(profileMaybeSingleMock).not.toHaveBeenCalled();
+    expect(rpcMock).not.toHaveBeenCalled();
+
+    await useAuthStore.getState().adoptExternalSession(providerSession);
+
+    expect(useAuthStore.getState().profile).toMatchObject({
+      full_name: 'Invited Person',
+      role: 'employee',
     });
   });
 

@@ -4,32 +4,35 @@ import {
   parseJoinToken,
 } from '@/services/inviteLinks';
 
+const token = 'invite_token_1234567890ab';
+
 describe('parseJoinToken', () => {
   it('parses the canonical deep link babytunasystems://join?token=…', () => {
-    expect(parseJoinToken('babytunasystems://join?token=tok_abc123')).toBe('tok_abc123');
+    expect(parseJoinToken(`babytunasystems://join?token=${token}`)).toBe(token);
   });
 
   it('parses the triple-slash variant babytunasystems:///join?token=…', () => {
-    expect(parseJoinToken('babytunasystems:///join?token=tok_abc123')).toBe('tok_abc123');
+    expect(parseJoinToken(`babytunasystems:///join?token=${token}`)).toBe(token);
   });
 
   it('parses a path-style deep link babytunasystems://join/<token>', () => {
-    expect(parseJoinToken('babytunasystems://join/tok_abc123')).toBe('tok_abc123');
+    expect(parseJoinToken(`babytunasystems://join/${token}`)).toBe(token);
   });
 
   it('parses the public web link https://tips.babytunasystems.com/join/<token>', () => {
-    expect(parseJoinToken('https://tips.babytunasystems.com/join/tok_abc123')).toBe(
-      'tok_abc123'
+    expect(parseJoinToken(`https://tips.babytunasystems.com/join/${token}`)).toBe(
+      token
     );
   });
 
-  it('decodes URL-encoded tokens in the path form', () => {
-    expect(parseJoinToken('https://tips.babytunasystems.com/join/a%2Fb')).toBe('a/b');
+  it('accepts bare tokens and both production web hosts', () => {
+    expect(parseJoinToken(token)).toBe(token);
+    expect(parseJoinToken(`https://smelterpos.com/join/${token}`)).toBe(token);
   });
 
   it('trims whitespace around the URL and the token', () => {
-    expect(parseJoinToken('  babytunasystems://join?token=tok_1  ')).toBe('tok_1');
-    expect(parseJoinToken('babytunasystems://join?token=%20tok_1%20')).toBe('tok_1');
+    expect(parseJoinToken(`  babytunasystems://join?token=${token}  `)).toBe(token);
+    expect(parseJoinToken(`babytunasystems://join?token=%20${token}%20`)).toBe(token);
   });
 
   it('returns null for join links without a token', () => {
@@ -42,6 +45,8 @@ describe('parseJoinToken', () => {
     expect(parseJoinToken('babytunasystems://auth/callback?code=x')).toBeNull();
     expect(parseJoinToken('https://tips.babytunasystems.com/e/somewhere')).toBeNull();
     expect(parseJoinToken('https://example.com/join/tok')).toBeNull();
+    expect(parseJoinToken(`otherapp://join?token=${token}`)).toBeNull();
+    expect(parseJoinToken('babytunasystems://join?token=short')).toBeNull();
   });
 
   it('returns null for garbage input', () => {

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Animated,
   Easing,
+  Keyboard,
   Modal,
   PanResponder,
   Pressable,
@@ -26,10 +27,16 @@ interface BottomSheetShellProps {
   header?: React.ReactNode;
   /** Content pinned below the scrolling body. */
   footer?: React.ReactNode;
+  /** Content positioned over the modal, outside the scrolling sheet body. */
+  overlay?: React.ReactNode;
+  /** Fade the presented modal during a successful transition to the next screen. */
+  fadeOut?: boolean;
   /** Gives the body its own scroll container and enables drag from its top edge. */
   scrollable?: boolean;
   /** Allows an upward drag to expand the sheet to 88% of the screen height. */
   expandable?: boolean;
+  /** Override the shared 4pt grabber for a documented surface variant. */
+  handleHeight?: number;
   horizontalPadding?: number;
   bottomPadding?: number;
   /**
@@ -58,8 +65,11 @@ export function BottomSheetShell({
   children,
   header,
   footer,
+  overlay,
+  fadeOut = false,
   scrollable = false,
   expandable = false,
+  handleHeight,
   horizontalPadding,
   bottomPadding,
   dismissible = true,
@@ -75,6 +85,7 @@ export function BottomSheetShell({
   const translateY = useRef(new Animated.Value(initialOffscreenY)).current;
   const scrimOpacity = useRef(new Animated.Value(0)).current;
   const animatedHeight = useRef(new Animated.Value(0)).current;
+  const modalOpacity = useRef(new Animated.Value(1)).current;
   const bodyScrollY = useRef(0);
   const bodyPull = useRef<{
     startX: number; startY: number; startTime: number;
@@ -188,8 +199,8 @@ export function BottomSheetShell({
     [duration, easing, maxSheetHeight, onClose, scrimDuration, scrimOpacity, stopVisibilityAnimation, translateY],
   );
 
-  const expandSheet = useCallback(() => {
-    if (!expandable || expanded.current) {
+  const expandSheet = useCallback((force = false) => {
+    if ((!expandable && !force) || expanded.current) {
       animateToRest();
       return;
     }
@@ -246,6 +257,16 @@ export function BottomSheetShell({
       setUsesAnimatedHeight(false);
     });
   }, [animateToRest, animatedHeight, duration, easing, translateY]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const showSubscription = Keyboard.addListener('keyboardDidShow', () => expandSheet(true));
+    const hideSubscription = Keyboard.addListener('keyboardDidHide', collapseSheet);
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, [collapseSheet, expandSheet, visible]);
 
   const finishDrag = useCallback(
     (distance: number, velocity: number) => {
@@ -357,6 +378,7 @@ export function BottomSheetShell({
 
   useEffect(() => {
     if (visible) {
+      if (!fadeOut) modalOpacity.setValue(1);
       const interruptedClose = closing.current;
       closing.current = false;
       if (!rendered) {
@@ -371,7 +393,17 @@ export function BottomSheetShell({
       return;
     }
     if (rendered) animateClose(false);
-  }, [animateClose, animateOpen, rendered, visible]);
+  }, [animateClose, animateOpen, fadeOut, modalOpacity, rendered, visible]);
+
+  useEffect(() => {
+    if (!fadeOut) return;
+    Animated.timing(modalOpacity, {
+      toValue: 0,
+      duration: ds.reduceMotion ? 1 : SCRIM_DURATION_MS,
+      easing,
+      useNativeDriver: true,
+    }).start();
+  }, [ds.reduceMotion, easing, fadeOut, modalOpacity]);
 
   useEffect(
     () => () => {
@@ -439,7 +471,7 @@ export function BottomSheetShell({
   );
 
   const content = (
-    <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+    <Animated.View style={{ flex: 1, justifyContent: 'flex-end', opacity: modalOpacity }}>
       <Animated.View
         pointerEvents="box-none"
         style={{
@@ -488,7 +520,7 @@ export function BottomSheetShell({
               <View
                 style={{
                   width: ds.spacing(size.sheetHandleWidth),
-                  height: ds.spacing(size.sheetHandleHeight),
+                  height: ds.spacing(handleHeight ?? size.sheetHandleHeight),
                   borderRadius: radius.pill,
                   backgroundColor: color.sheetHandle,
                 }}
@@ -500,7 +532,8 @@ export function BottomSheetShell({
           {footer}
         </Animated.View>
       </Animated.View>
-    </View>
+      {overlay}
+    </Animated.View>
   );
 
   if (presentation === 'embedded') return content;

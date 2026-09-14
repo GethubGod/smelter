@@ -183,6 +183,7 @@ export default function TeamScreen() {
                   initial={(user.full_name ?? user.email ?? '?').trim().charAt(0).toUpperCase() || '?'}
                   title={user.full_name ?? user.email ?? 'Unnamed'}
                   subtitle={summary}
+                  badge={user.legacy_name_login ? 'Needs a new invite' : undefined}
                   last={index === roster.length - 1}
                   onPress={() =>
                     router.push({

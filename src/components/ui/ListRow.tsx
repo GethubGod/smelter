@@ -82,7 +82,7 @@ export function ListRow({
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: radius.tile,
-            backgroundColor: onDark ? auth.wellBorder : color.well,
+            backgroundColor: onDark ? auth.hair : color.well,
           }}
         >
           {typeof icon === 'string' ? (
@@ -122,7 +122,7 @@ export function ListRow({
             color={onDark ? auth.dim : color.ink3}
           />
         ) : null)}
-      {!last ? <View style={{ position: 'absolute', bottom: 0, left: 14, right: 0, height: 1, backgroundColor: onDark ? auth.wellBorder : color.hairline }} /> : null}
+      {!last ? <View style={{ position: 'absolute', bottom: 0, left: 14, right: 0, height: 1, backgroundColor: onDark ? auth.hair : color.hairline }} /> : null}
     </View>
   );
 

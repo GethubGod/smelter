@@ -23,19 +23,27 @@ function hostComponent(name: string) {
 
 /** Replacement for `react-native`. */
 export function reactNative() {
+  class AnimatedValue {
+    value: number;
+
+    constructor(value: number) {
+      this.value = value;
+    }
+
+    setValue(value: number) {
+      this.value = value;
+    }
+
+    interpolate({ outputRange }: { outputRange: unknown[] }) {
+      return outputRange[this.value] ?? outputRange[0];
+    }
+  }
+
+  const start = (callback?: (result: { finished: boolean }) => void) => {
+    callback?.({ finished: true });
+  };
+
   return {
-    Animated: {
-      View: hostComponent('AnimatedView'),
-      Value: class {
-        constructor(public value: number) {}
-        interpolate({ outputRange }: { outputRange: unknown[] }) { return outputRange[this.value] ?? outputRange[0]; }
-        setValue(value: number) { this.value = value; }
-      },
-      timing: (value: { setValue: (next: number) => void }, config: { toValue: number }) => ({
-        start: () => value.setValue(config.toValue),
-        stop: () => undefined,
-      }),
-    },
     View: hostComponent('View'),
     Text: hostComponent('Text'),
     TextInput: hostComponent('TextInput'),
@@ -44,6 +52,24 @@ export function reactNative() {
     TouchableOpacity: hostComponent('TouchableOpacity'),
     ActivityIndicator: hostComponent('ActivityIndicator'),
     Modal: hostComponent('Modal'),
+    Animated: {
+      Value: AnimatedValue,
+      View: hostComponent('Animated.View'),
+      timing: (value: AnimatedValue, config: { toValue: number }) => ({
+        start: (callback?: (result: { finished: boolean }) => void) => {
+          value.setValue(config.toValue);
+          start(callback);
+        },
+        stop: () => undefined,
+      }),
+      parallel: (animations: { start: typeof start }[]) => ({
+        start: (callback?: (result: { finished: boolean }) => void) => {
+          animations.forEach((animation) => animation.start());
+          start(callback);
+        },
+      }),
+    },
+    Easing: { bezier: () => (value: number) => value },
     StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1 },
     Platform: {
       OS: 'ios',
@@ -96,15 +122,17 @@ export function bottomSheetShell() {
     header,
     children,
     footer,
+    overlay,
     ...props
   }: {
     visible: boolean;
     header?: React.ReactNode;
     children?: React.ReactNode;
     footer?: React.ReactNode;
+    overlay?: React.ReactNode;
   }) =>
     visible
-      ? React.createElement('BottomSheetShell', props, header, children, footer)
+      ? React.createElement('BottomSheetShell', props, header, children, footer, overlay)
       : null;
   return { BottomSheetShell: Shell };
 }

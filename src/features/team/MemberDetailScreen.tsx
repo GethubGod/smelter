@@ -1,5 +1,5 @@
-// Employee detail: works-at (changeable anytime), feature toggles, Reset PIN,
-// and Preview as <Name>. Toggles write user_modules live; works-at goes
+// Employee detail: works-at (changeable anytime), feature toggles, and
+// Preview as <Name>. Toggles write user_modules live; works-at goes
 // through the manager-gated set_user_default_location RPC.
 
 import { useCallback, useState } from 'react';
@@ -10,10 +10,8 @@ import { useShallow } from 'zustand/react/shallow';
 import {
   Button,
   EmptyState,
-  Input,
   Loading,
   ScreenHeader,
-  Sheet,
   getTabBarClearance,
 } from '@/components/ui';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
@@ -21,7 +19,6 @@ import { useSettingsNavigationContext } from '@/hooks/useSettingsBackRoute';
 import { useAuthStore } from '@/store';
 import { showNotice } from '@/components/ui/NoticeSheet';
 import { showStudioToast } from '@/components/ui/StudioToast';
-import { triggerNotificationHaptic, NotificationFeedbackType } from '@/lib/haptics';
 import { color, space } from '@/theme/tokens';
 import { listManagedUsers, type ManagedUser } from '@/services/userManagement';
 import { getModulesForUser, setUserModule, type ModuleKey } from '@/services/userModules';
@@ -29,7 +26,6 @@ import {
   resolveEffectiveModules,
   type EffectiveModules,
 } from '@/store/moduleStore.helpers';
-import { isValidPin, resetUserCredential } from '@/services/loginCredentials';
 import type { InviteLocationGroup } from '@/services/invites';
 import {
   fetchDefaultLocationIds,
@@ -59,11 +55,6 @@ export default function MemberDetailScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [pendingKey, setPendingKey] = useState<ModuleKey | null>(null);
   const [groupSaving, setGroupSaving] = useState(false);
-
-  const [resetVisible, setResetVisible] = useState(false);
-  const [resetPin, setResetPin] = useState('');
-  const [resetBusy, setResetBusy] = useState(false);
-  const [resetError, setResetError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!userId) {
@@ -134,27 +125,6 @@ export default function MemberDetailScreen() {
     }
   };
 
-  const handleResetSubmit = async () => {
-    if (!user) return;
-    if (!isValidPin(resetPin)) {
-      setResetError('PIN must be exactly 4 digits');
-      return;
-    }
-    setResetBusy(true);
-    setResetError(null);
-    try {
-      await resetUserCredential(user.id, resetPin);
-      void triggerNotificationHaptic(NotificationFeedbackType.Success);
-      setResetVisible(false);
-      setResetPin('');
-      showStudioToast('PIN reset');
-    } catch (error) {
-      setResetError(error instanceof Error ? error.message : 'Unable to reset the PIN.');
-    } finally {
-      setResetBusy(false);
-    }
-  };
-
   const handleBack = () => {
     if (router.canGoBack()) {
       router.back();
@@ -171,6 +141,13 @@ export default function MemberDetailScreen() {
       <ScreenHeader
         mode="pushed"
         title={displayName}
+        subtitle={
+          user?.is_suspended
+            ? 'Suspended'
+            : user?.legacy_name_login
+              ? 'Needs a new invite'
+              : undefined
+        }
         onBack={handleBack}
       />
 
@@ -236,16 +213,6 @@ export default function MemberDetailScreen() {
             >
               <Button
                 variant="secondary"
-                label={`Reset ${firstName}'s PIN`}
-                disabled={user.is_suspended}
-                onPress={() => {
-                  setResetPin('');
-                  setResetError(null);
-                  setResetVisible(true);
-                }}
-              />
-              <Button
-                variant="secondary"
                 label={`Preview as ${firstName}`}
                 onPress={() =>
                   router.push({
@@ -264,38 +231,6 @@ export default function MemberDetailScreen() {
           </>
         ) : null}
       </ScrollView>
-
-      <Sheet
-        visible={resetVisible}
-        title={`Reset ${firstName}'s PIN`}
-        subtitle="Type a new 4-digit PIN. Tell them in person."
-        dismissible={!resetBusy}
-        onClose={() => {
-          if (!resetBusy) setResetVisible(false);
-        }}
-        primary={{
-          label: 'Reset PIN',
-          loading: resetBusy,
-          disabled: resetPin.length !== 4,
-          onPress: () => void handleResetSubmit(),
-        }}
-      >
-        <Input
-          value={resetPin}
-          onChangeText={(value) => {
-            setResetPin(value.replace(/[^0-9]/g, '').slice(0, 4));
-            if (resetError) setResetError(null);
-          }}
-          accessibilityLabel="New PIN"
-          placeholder="New 4-digit PIN"
-          keyboardType="number-pad"
-          secureTextEntry
-          maxLength={4}
-          editable={!resetBusy}
-          autoFocus
-          error={resetError ?? undefined}
-        />
-      </Sheet>
     </SafeAreaView>
   );
 }

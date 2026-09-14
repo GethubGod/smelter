@@ -66,7 +66,7 @@ export function Input({
           color: onDark ? auth.text : color.ink,
           backgroundColor: onDark ? auth.well : color.well,
           borderWidth: onDark ? 1 : 0,
-          borderColor: onDark ? auth.wellBorder : undefined,
+          borderColor: onDark ? auth.hair : undefined,
         }}
       />
       {error ? (

@@ -20,6 +20,7 @@ type AuthGuardSnapshot = {
   viewMode: 'employee' | 'manager';
   isInitialized: boolean;
   isLoading: boolean;
+  readyPending?: boolean;
 };
 
 function resolveAuthRole(
@@ -34,8 +35,11 @@ function resolveAuthRole(
         ? session.user.app_metadata.role
         : null;
 
-  // Canonical role is profiles.role (DB); never prefer client-writable session metadata.
-  return profile?.role ?? user?.role ?? (metadataRole === 'manager' ? 'manager' : metadataRole === 'employee' ? 'employee' : null);
+  // Once a profile exists, its nullable role is canonical. A compatibility
+  // row in public.users and client-writable metadata must not turn an
+  // unaffiliated provider account into a team member.
+  if (profile) return profile.role;
+  return user?.role ?? (metadataRole === 'manager' ? 'manager' : metadataRole === 'employee' ? 'employee' : null);
 }
 
 export function getAuthenticatedHomeHref(
@@ -65,7 +69,7 @@ export function resolveProtectedAuthGuard(
   }
 
   if (!session) {
-    return { isChecking: false, redirectTo: '/(auth)/welcome' as Href, resolvedRole };
+    return { isChecking: false, redirectTo: '/(auth)/welcome', resolvedRole };
   }
 
   // Session exists but profile hasn't been fetched yet (transient state
@@ -87,6 +91,10 @@ export function resolveProtectedAuthGuard(
 
   if (profile.is_suspended) {
     return { isChecking: false, redirectTo: '/suspended', resolvedRole };
+  }
+
+  if (!resolvedRole) {
+    return { isChecking: false, redirectTo: '/(auth)/welcome', resolvedRole };
   }
 
   if (options?.requireManager && resolvedRole !== 'manager') {
@@ -111,7 +119,7 @@ export function resolveProtectedAuthGuard(
 export function resolveAuthScreenGuard(
   snapshot: AuthGuardSnapshot
 ): AuthScreenGuardResult {
-  const { session, user, profile, viewMode, isInitialized, isLoading } = snapshot;
+  const { session, user, profile, viewMode, isInitialized, isLoading, readyPending } = snapshot;
   const resolvedRole = resolveAuthRole(session, user, profile);
 
   if (!isInitialized) {
@@ -135,7 +143,7 @@ export function resolveAuthScreenGuard(
   // Keep the current auth screen mounted while a just-submitted auth action
   // is still finalizing. This avoids a home redirect from the guard racing
   // with a second imperative navigation from the screen itself.
-  if (isLoading) {
+  if (isLoading || readyPending) {
     return {
       isChecking: false,
       redirectTo: null,
@@ -165,6 +173,15 @@ export function resolveAuthScreenGuard(
     };
   }
 
+  if (!resolvedRole) {
+    return {
+      isChecking: false,
+      redirectTo: null,
+      resolvedRole,
+      authenticatedRedirectTo: null,
+    };
+  }
+
   const homeHref = getAuthenticatedHomeHref(resolvedRole, viewMode);
 
   return {
@@ -186,9 +203,10 @@ export function useProtectedAuthGuard(options?: {
   const viewMode = useAuthStore((state) => state.viewMode);
   const isInitialized = useAuthStore((state) => state.isInitialized);
   const isLoading = useAuthStore((state) => state.isLoading);
+  const readyPending = useAuthStore((state) => state.readyPending);
 
   return resolveProtectedAuthGuard(
-    { session, user, profile, viewMode, isInitialized, isLoading },
+    { session, user, profile, viewMode, isInitialized, isLoading, readyPending },
     options
   );
 }
@@ -200,6 +218,7 @@ export function useAuthScreenGuard(): AuthScreenGuardResult {
   const viewMode = useAuthStore((state) => state.viewMode);
   const isInitialized = useAuthStore((state) => state.isInitialized);
   const isLoading = useAuthStore((state) => state.isLoading);
+  const readyPending = useAuthStore((state) => state.readyPending);
 
   return resolveAuthScreenGuard({
     session,
@@ -208,5 +227,6 @@ export function useAuthScreenGuard(): AuthScreenGuardResult {
     viewMode,
     isInitialized,
     isLoading,
+    readyPending,
   });
 }

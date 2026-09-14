@@ -96,9 +96,6 @@ jest.mock('@/services/notificationService', () => ({
   clearDeviceNotifications: clearDeviceNotificationsMock,
   deactivateCurrentDevicePushToken: deactivateCurrentDevicePushTokenMock,
 }));
-jest.mock('@/services/accessCodes', () => ({
-  validateAccessCode: jest.fn(),
-}));
 jest.mock('@/features/stock-check/queueDrainGate', () => ({
   notifyAuthSessionRestored: notifyAuthSessionRestoredMock,
   notifyAuthSessionCleared: notifyAuthSessionClearedMock,
@@ -216,6 +213,38 @@ describe('authStore notifies the stock-check queue gate', () => {
     expect(notifyAuthSessionRestoredMock).toHaveBeenCalledTimes(1);
     // The gate needs the owner: it stamps queued stock counts with it.
     expect(notifyAuthSessionRestoredMock).toHaveBeenCalledWith('employee-1');
+  });
+
+  test('an unaffiliated provider profile never releases queued team writes', async () => {
+    signInWithPasswordMock.mockResolvedValue({
+      data: { session: sessionFor('provider-1') },
+      error: null,
+    });
+    profileMaybeSingleMock.mockResolvedValue({
+      data: {
+        ...employeeProfileRow('provider-1'),
+        role: null,
+        provider: 'google',
+        profile_completed: false,
+      },
+      error: null,
+    });
+    userMaybeSingleMock.mockResolvedValue({
+      data: {
+        id: 'provider-1',
+        email: 'provider-1@example.com',
+        name: 'Provider One',
+        role: 'employee',
+        default_location_id: null,
+        created_at: '2026-09-08T00:00:00.000Z',
+      },
+      error: null,
+    });
+
+    await useAuthStore.getState().signIn('provider-1@example.com', 'Password123');
+
+    expect(useAuthStore.getState().profile?.role).toBeNull();
+    expect(notifyAuthSessionRestoredMock).not.toHaveBeenCalled();
   });
 
   test('a cold launch with no session never reports a restored session', async () => {

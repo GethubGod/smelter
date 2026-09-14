@@ -7,9 +7,25 @@ set -euo pipefail
 
 # The historical QA UDID FCADAB49-3A22-4167-B3EB-F794BEB32D9E is not present
 # in this simulator set. This isolated replacement was created for this pass.
-BABYTUNA_SIM_UDID="EF05F833-2AC4-4383-8688-36C51B956BCF"  # Smelter Release QA iPhone 17 Pro Max, iOS 26.2
+DEFAULT_SIM_UDID="EF05F833-2AC4-4383-8688-36C51B956BCF"   # Smelter Release QA iPhone 17 Pro Max, iOS 26.2
+SECONDARY_SIM_UDID="493660C2-D09B-4B39-AC50-705FFD205948" # Authorized spare iPhone 17 Pro Max
+AUTH_FLOW_C_QA_UDID="7AF4F0F2-3D97-422A-88C0-8FDBF2B5934B" # Dedicated shutdown-only Auth Flow C QA iPhone 17 Pro Max
 NELLIT_UDID="7C0CA22A-4895-44BA-BF7E-F53BB5CAF7F8"        # Nellit's device: never target
 NELLIT_APP_ID="com.worthunion.nailit"
+AUTH_FLOW_C_QA_NAME="Smelter Auth Flow C QA"
+AUTH_FLOW_C_QA_DEVICE_TYPE="com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro-Max"
+AUTH_FLOW_C_QA_RUNTIME="com.apple.CoreSimulator.SimRuntime.iOS-26-2"
+
+# Luna may use the dedicated spare only while another worker owns the default.
+# No arbitrary simulator override is allowed.
+BABYTUNA_SIM_UDID="${SMELTER_SIM_UDID:-$DEFAULT_SIM_UDID}"
+case "$BABYTUNA_SIM_UDID" in
+  "$DEFAULT_SIM_UDID"|"$SECONDARY_SIM_UDID"|"$AUTH_FLOW_C_QA_UDID") ;;
+  *)
+    echo "sim.sh: refusing SMELTER_SIM_UDID '$BABYTUNA_SIM_UDID'. Allowed UDIDs: $DEFAULT_SIM_UDID, $SECONDARY_SIM_UDID, or $AUTH_FLOW_C_QA_UDID" >&2
+    exit 1
+    ;;
+esac
 
 for arg in "$@"; do
   if [ "$arg" = "booted" ] || [ "$arg" = "$NELLIT_UDID" ]; then
@@ -19,6 +35,13 @@ for arg in "$@"; do
 done
 
 case "${1:-}" in
+  provision-auth-flow-c-qa)
+    if xcrun simctl list devices | grep -Fq "$AUTH_FLOW_C_QA_NAME ("; then
+      echo "sim.sh: refusing to create a duplicate '$AUTH_FLOW_C_QA_NAME' simulator" >&2
+      exit 1
+    fi
+    xcrun simctl create "$AUTH_FLOW_C_QA_NAME" "$AUTH_FLOW_C_QA_DEVICE_TYPE" "$AUTH_FLOW_C_QA_RUNTIME"
+    ;;
   input)
     shift
     case "${1:-}" in
@@ -61,7 +84,7 @@ case "${1:-}" in
     xcrun simctl bootstatus "$BABYTUNA_SIM_UDID"
     ;;
   "")
-    echo "usage: scripts/sim.sh udid | assert | boot | <simctl-subcommand> [args...]" >&2
+    echo "usage: scripts/sim.sh udid | assert | boot | provision-auth-flow-c-qa | <simctl-subcommand> [args...]" >&2
     echo "  e.g. scripts/sim.sh launch com.babytuna.systems" >&2
     exit 1
     ;;

@@ -1,12 +1,17 @@
-import React from 'react';
-import { Text, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
+import React, { useRef } from 'react';
+import { Animated, Easing, Text, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { auth, color, radius, size, space, typeScale, weight } from '@/theme/tokens';
+import { auth, color, motion, radius, size, space, typeScale, weight } from '@/theme/tokens';
 import { Loading } from './Loading';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'destructive';
+export type ButtonVariant = 'primary' | 'secondary' | 'ink' | 'white' | 'destructive';
 export type ButtonSize = 'default' | 'small';
+export type ButtonShape = 'pill';
+
+const BUTTON_RADIUS: Record<ButtonShape, number> = {
+  pill: radius.pill,
+};
 
 export interface ButtonProps {
   label: string;
@@ -15,9 +20,11 @@ export interface ButtonProps {
   variant?: ButtonVariant;
   /** `small` is the inline row action (Add, Remind, Order). */
   size?: ButtonSize;
+  shape?: ButtonShape;
   loading?: boolean;
   disabled?: boolean;
   icon?: keyof typeof Ionicons.glyphMap;
+  leading?: React.ReactNode;
   /** Full width in forms (the default), hugging in rows. */
   fullWidth?: boolean;
   /** Render on the black auth surface. */
@@ -39,9 +46,11 @@ export function Button({
   onPress,
   variant = 'primary',
   size: buttonSize = 'default',
+  shape = 'pill',
   loading = false,
   disabled = false,
   icon,
+  leading,
   fullWidth,
   onDark = false,
   accessibilityHint,
@@ -49,6 +58,7 @@ export function Button({
   style,
 }: ButtonProps) {
   const ds = useScaledStyles();
+  const pressScale = useRef(new Animated.Value(1)).current;
   const isSmall = buttonSize === 'small';
   const inert = disabled || loading;
   const stretches = fullWidth ?? !isSmall;
@@ -58,16 +68,33 @@ export function Button({
   // touch target is restored with hitSlop rather than by growing the pill.
   const height = isSmall
     ? ds.spacing(size.buttonSmall)
-    : Math.max(size.touchMin, ds.spacing(size.button));
+    : Math.max(size.touchMin, ds.spacing(onDark ? size.authButton : size.button));
   const slop = Math.max(0, Math.ceil((size.touchMin - height) / 2));
   const fontSize = ds.fontSize(isSmall ? typeScale.secondary : typeScale.body);
   const iconSize = ds.icon(isSmall ? typeScale.secondary : typeScale.body) + 2;
 
+  const animatePress = (toValue: number) => {
+    Animated.timing(pressScale, {
+      toValue,
+      duration: ds.reduceMotion ? 1 : 90,
+      easing: Easing.bezier(...motion.ease),
+      useNativeDriver: true,
+    }).start();
+  };
+
   return (
+    <Animated.View
+      style={[
+        { alignSelf: stretches ? 'stretch' : 'flex-start', transform: [{ scale: pressScale }] },
+        style,
+      ]}
+    >
     <TouchableOpacity
       onPress={onPress}
+      onPressIn={() => animatePress(0.98)}
+      onPressOut={() => animatePress(1)}
       disabled={inert}
-      activeOpacity={0.85}
+      activeOpacity={1}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
@@ -79,23 +106,23 @@ export function Button({
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: ds.spacing(space[2]),
+          gap: ds.spacing(onDark ? 10 : space[2]),
           height,
           minHeight: height,
           paddingHorizontal: ds.spacing(isSmall ? space[3] + 2 : space[5]),
-          borderRadius: radius.pill,
+          borderRadius: BUTTON_RADIUS[shape],
           backgroundColor: palette.background,
           borderWidth: palette.border ? 1 : 0,
           borderColor: palette.border,
-          alignSelf: stretches ? 'stretch' : 'flex-start',
+          alignSelf: 'stretch',
         },
-        style,
       ]}
     >
       {loading ? (
         <Loading size="inline" color={palette.text} label={`${label}, working`} />
       ) : (
         <>
+          {leading}
           {icon ? <Ionicons name={icon} size={iconSize} color={palette.text} /> : null}
           <Text
             numberOfLines={1}
@@ -110,6 +137,7 @@ export function Button({
         </>
       )}
     </TouchableOpacity>
+    </Animated.View>
   );
 }
 
@@ -124,10 +152,16 @@ function resolvePalette(
   if (variant === 'primary') {
     return { background: color.accent, text: color.onAccent };
   }
+  if (variant === 'ink') {
+    return { background: auth.text, text: color.onAccent };
+  }
+  if (variant === 'white') {
+    return { background: auth.well, text: auth.text, border: auth.buttonRing };
+  }
   if (variant === 'destructive') {
     return { background: color.card, text: color.alert };
   }
   return onDark
-    ? { background: 'transparent', text: auth.text, border: auth.buttonBorder }
+    ? { background: auth.well, text: auth.text, border: auth.hair }
     : { background: color.card, text: color.ink };
 }

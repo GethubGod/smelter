@@ -7,7 +7,7 @@ import { Button, Card, Input, ScreenHeader, SectionLabel, Sheet, getTabBarCleara
 import { showStudioToast } from '@/components/ui/StudioToast';
 import { useResolvedActiveLocation } from '@/hooks/useResolvedActiveLocation';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { ChangeCredentialSheet } from '@/components/settings/ChangeCredentialSheet';
+import { ChangePasswordModal } from '@/components/settings/ChangePasswordModal';
 import {
   isRealAccountEmail,
   updateMyDisplayName,
@@ -22,11 +22,11 @@ import { SettingsCard, SettingsCardRow } from './components/SettingsCardRow';
 /**
  * Employee Profile — the App Store compliance set, all rows functional:
  * Name (editable, syncs the name sign-in identity), Email (optional, for
- * account recovery), Location (read-only, set by the manager), Change PIN or
+ * account recovery), Location (read-only, set by the manager), Change
  * password, Privacy choices, Delete account (existing deletion flow).
  */
 
-type EditSheet = 'name' | 'email' | 'credential' | 'privacy' | null;
+type EditSheet = 'name' | 'email' | 'password' | 'privacy' | null;
 
 export function EmployeeProfileScreen() {
   const ds = useScaledStyles();
@@ -207,8 +207,8 @@ export function EmployeeProfileScreen() {
         <SettingsCard>
           <SettingsCardRow
             icon="lock-closed-outline"
-            title="Change PIN or password"
-            onPress={() => openSheet('credential')}
+            title="Change password"
+            onPress={() => openSheet('password')}
             showChevron="down"
           />
           <SettingsCardRow
@@ -271,7 +271,7 @@ export function EmployeeProfileScreen() {
         />
       </Sheet>
 
-      <ChangeCredentialSheet visible={activeSheet === 'credential'} onClose={closeSheet} />
+      <ChangePasswordModal visible={activeSheet === 'password'} onClose={closeSheet} />
 
       <Sheet visible={activeSheet === 'privacy'} title="Privacy choices" onClose={closeSheet}>
         <Text style={{ fontSize: ds.fontSize(typeScale.secondary), color: color.ink2 }}>

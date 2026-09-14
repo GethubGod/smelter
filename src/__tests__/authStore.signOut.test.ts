@@ -85,10 +85,6 @@ jest.mock('@/lib/api/client', () => ({
   registerSessionGetter: jest.fn(),
 }));
 
-jest.mock('@/services/accessCodes', () => ({
-  validateAccessCode: jest.fn(),
-}));
-
 jest.mock('@/lib/supabase', () => ({
   supabase: {
     auth: {

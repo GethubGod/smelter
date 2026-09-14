@@ -56,6 +56,9 @@ describe('acceptInvite error handling', () => {
   it('returns the accepted role on success', async () => {
     mockInvoke.mockResolvedValue({ data: { ok: true, role: 'employee' }, error: null });
 
-    await expect(acceptInvite(input)).resolves.toEqual({ role: 'employee' });
+    await expect(acceptInvite(input)).resolves.toEqual({
+      role: 'employee',
+      locationGroup: 'both',
+    });
   });
 });

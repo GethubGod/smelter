@@ -17,19 +17,17 @@ describe('manager Team detail Studio contract', () => {
     expect(detail).toContain("tips: 'Tips'");
     expect(detail).toContain('<TeamSectionLabel label="Works at" />');
     expect(detail).toContain('<TeamSectionLabel label="Features" />');
-    expect(detail).toContain('label={`Reset ${firstName}\'s PIN`}');
     expect(detail).toContain('label={`Preview as ${firstName}`}');
-    expect(detail.match(/variant="secondary"/g)).toHaveLength(2);
+    expect(detail.match(/variant="secondary"/g)).toHaveLength(1);
     expect(detail).not.toContain('ordering_advanced');
     expect(detail).not.toContain('stock_check');
     expect(detail).not.toContain('ManagerScaleContainer');
   });
 
-  it('uses the shared Sheet for PIN reset and keeps errors inside it', () => {
-    expect(detail).toContain('title={`Reset ${firstName}\'s PIN`}');
-    expect(detail).toContain('subtitle="Type a new 4-digit PIN. Tell them in person."');
-    expect(detail).toContain("label: 'Reset PIN'");
-    expect(detail).toContain('error={resetError ?? undefined}');
+  it('has no PIN reset and flags legacy name logins for a new invite', () => {
+    expect(detail).not.toContain('PIN');
+    expect(detail).not.toContain('resetUserCredential');
+    expect(detail).toContain("? 'Needs a new invite'");
     expect(detail).not.toContain('Alert.alert');
   });
 

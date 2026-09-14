@@ -22,8 +22,10 @@ import { Platform } from 'react-native';
 export const color = {
   /** Screen background. */
   page: '#F3F3F1',
-  /** White cards. */
+  /** Cards, sheets, the tab bar pill. */
   card: '#FFFFFF',
+  /** Pressed welcome option card. */
+  cardPressed: '#FBFBFA',
   /** Inputs, tracks, icon tiles, segment tracks. */
   well: '#EAEAE8',
   /** Row separators and card borders. */
@@ -68,19 +70,31 @@ export const color = {
 
 /* ── Colour: auth surfaces (black) ─────────────────────────────────── */
 
-/** Setup and sign-in are black. Daily work is `color.page`. One auth look. */
+/** Auth uses the Studio page palette. */
 export const auth = {
-  bg: '#000000',
-  text: '#FFFFFF',
-  dim: 'rgba(255, 255, 255, 0.55)',
-  well: 'rgba(255, 255, 255, 0.09)',
-  wellBorder: 'rgba(255, 255, 255, 0.18)',
-  /** Secondary buttons on black use a brighter border than the wells. */
-  buttonBorder: 'rgba(255, 255, 255, 0.35)',
+  bg: '#F3F3F1',
+  text: '#1A1A1A',
+  dim: '#5F5F5F',
+  faint: '#9C9890',
+  well: '#FFFFFF',
+  wellFocus: '#1A1A1A',
+  wellError: '#C03520',
   accent: color.accent,
+  disabled: '#C9C5BC',
+  hair: 'rgba(0, 0, 0, 0.10)',
+  /** 1pt inset ring on the white provider button. */
+  buttonRing: 'rgba(0, 0, 0, 0.08)',
 } as const;
 
-/* ── Type: semantic sizes, three weights ───────────────────────────────── */
+/** Provider marks keep their official brand colours. */
+export const providerColor = {
+  googleRed: '#EA4335',
+  googleBlue: '#4285F4',
+  googleYellow: '#FBBC05',
+  googleGreen: '#34A853',
+} as const;
+
+/* ── Type sizes and weights ───────────────────────────────────────── */
 
 /**
  * Named `typeScale` rather than `type`: `import { type }` collides with
@@ -100,6 +114,8 @@ export const typeScale = {
   itemComfort: 16,
   itemDense: 14,
   meta: 12,
+  link: 14,
+  option: 16,
   quantityComfort: 19,
   hero: 17,
   stat: 22,
@@ -168,6 +184,15 @@ export const size = {
   sheetHandleHeight: 4,
   badge: 15,
   tabDivider: 22,
+  authStatusBar: 54,
+  authButton: 52,
+  authInput: 50,
+  authClose: 30,
+  authSheetHandleHeight: 5,
+  authToastBottom: 120,
+  authReadyTop: 80,
+  authReadyRing: 88,
+  authReadyCheck: 40,
 } as const;
 
 /* ── Elevation ─────────────────────────────────────────────────────── */

@@ -45,6 +45,9 @@ jest.mock('react-native', () => ({
   ActivityIndicator: 'ActivityIndicator',
   SafeAreaView: 'SafeAreaView',
   Alert: { alert: jest.fn() },
+  Keyboard: {
+    addListener: () => ({ remove: jest.fn() }),
+  },
   Platform: { OS: 'ios', select: (values: Record<string, unknown>) => values.ios ?? values.default },
   StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1, absoluteFill: {} },
   useWindowDimensions: () => ({ width: 390, height: 844 }),

@@ -335,32 +335,7 @@ begin
 end;
 $$;
 
--- ── 7. onboarding credential is installed before invite consumption ────────
-select set_config('request.jwt.claim.sub', '', false);
-select public.set_onboarding_login_credential(
-  'aaaaaaaa-0000-4000-8000-000000000004',
-  'password',
-  'durable-password'
-);
-
-do $$
-declare
-  r record;
-begin
-  select * into r from public.login_identities
-  where user_id = 'aaaaaaaa-0000-4000-8000-000000000004';
-  if r.login_name <> 'atomic invitee' or r.credential_kind <> 'password' then
-    raise exception 'FAIL: onboarding credential metadata is wrong: %', r;
-  end if;
-  if r.secret_hash = 'durable-password'
-     or r.secret_hash <> extensions.crypt('durable-password', r.secret_hash) then
-    raise exception 'FAIL: onboarding password was not hashed correctly';
-  end if;
-  raise notice 'ok: service-only onboarding credential is durable and bcrypt-hashed';
-end;
-$$;
-
--- ── 8. invite audit rows do not block account deletion ─────────────────────
+-- ── 7. invite audit rows do not block account deletion ─────────────────────
 insert into public.invites (
   token, invited_name, role, expires_at, created_by, used_at, used_by
 ) values (

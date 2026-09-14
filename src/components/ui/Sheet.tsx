@@ -1,10 +1,10 @@
-import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import React, { useRef } from 'react';
+import { Animated, Easing, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetShell } from '@/components/BottomSheetShell';
 import { useScaledStyles } from '@/hooks/useScaledStyles';
-import { color, radius, space, tracking, typeScale, weight } from '@/theme/tokens';
+import { color, motion, radius, size, space, tracking, typeScale, weight } from '@/theme/tokens';
 import { Button, type ButtonProps } from './Button';
 
 export interface SheetProps {
@@ -13,6 +13,12 @@ export interface SheetProps {
   subtitle?: string;
   onClose: () => void;
   children?: React.ReactNode;
+  /** Modal-level overlay content, such as a toast, outside the scrolling body. */
+  overlay?: React.ReactNode;
+  /** Fade the whole modal while the next screen is presented. */
+  fadeOut?: boolean;
+  /** Use the reference auth close control and grabber dimensions. */
+  authChrome?: boolean;
   /** The single action at the foot of the sheet. */
   primary?: Pick<ButtonProps, 'label' | 'onPress' | 'loading' | 'disabled' | 'variant'>;
   /** Review and order-detail sheets can expand to 88% height. */
@@ -35,6 +41,9 @@ export function Sheet({
   subtitle,
   onClose,
   children,
+  overlay,
+  fadeOut = false,
+  authChrome = false,
   primary,
   expandable = false,
   presentation = 'modal',
@@ -44,6 +53,19 @@ export function Sheet({
   const ds = useScaledStyles();
   const insets = useSafeAreaInsets();
   const sidePadding = ds.spacing(space[5]);
+  const closeScale = useRef(new Animated.Value(1)).current;
+  const closeSize = authChrome ? size.authClose : space[8];
+  const closeIconSize = authChrome ? 14 : space[4];
+  const closeHitSlop = authChrome ? 7 : 6;
+
+  const animateCloseScale = (toValue: number) => {
+    Animated.timing(closeScale, {
+      toValue,
+      duration: ds.reduceMotion ? 1 : 90,
+      easing: Easing.bezier(...motion.ease),
+      useNativeDriver: true,
+    }).start();
+  };
 
   const header = (
     <View
@@ -81,22 +103,26 @@ export function Sheet({
         ) : null}
       </View>
       {dismissible ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Close ${title}`}
-          hitSlop={ds.spacing(6)}
-          onPress={onClose}
-          style={{
-            width: ds.spacing(space[8]),
-            height: ds.spacing(space[8]),
-            borderRadius: ds.radius(radius.pill),
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: color.card,
-          }}
-        >
-          <Ionicons name="close" size={ds.icon(space[4])} color={color.ink} />
-        </Pressable>
+        <Animated.View style={{ transform: [{ scale: closeScale }] }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Close ${title}`}
+            hitSlop={ds.spacing(closeHitSlop)}
+            onPress={onClose}
+            onPressIn={() => animateCloseScale(0.92)}
+            onPressOut={() => animateCloseScale(1)}
+            style={{
+              width: ds.spacing(closeSize),
+              height: ds.spacing(closeSize),
+              borderRadius: ds.radius(radius.pill),
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: color.card,
+            }}
+          >
+            <Ionicons name="close" size={ds.icon(closeIconSize)} color={color.ink} />
+          </Pressable>
+        </Animated.View>
       ) : null}
     </View>
   );
@@ -128,6 +154,9 @@ export function Sheet({
       onClose={onClose}
       header={header}
       footer={footer}
+      overlay={overlay}
+      fadeOut={fadeOut}
+      handleHeight={authChrome ? size.authSheetHandleHeight : undefined}
       scrollable
       expandable={expandable}
       horizontalPadding={sidePadding}

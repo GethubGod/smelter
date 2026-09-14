@@ -33,7 +33,6 @@ export const settingsIconPalettes = {
   quickSearch: tile,
   users: tile,
   switchView: tile,
-  accessCodes: tile,
   inventory: tile,
   neutral: tile,
   danger,
