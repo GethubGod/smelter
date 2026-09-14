@@ -42,6 +42,10 @@ export function inviteRestaurant(locationGroup: InviteLocationGroup): string {
   }
 }
 
+function withArticle(role: string): string {
+  return `${/^[aeiou]/i.test(role) ? 'an' : 'a'} ${role.toLowerCase()}`;
+}
+
 export function inviteRole(role: InvitePreview['role']): string {
   if (role === 'manager') return 'Manager';
   if (role === 'employee') return 'Employee';
@@ -269,7 +273,7 @@ export default function InviteHelloScreen() {
       >
         <AuthCloseButton onPress={closeWizard} label="Close invite setup" />
       </View>
-      <WizardProgress step={2} startsAt={1} />
+      <WizardProgress step={2} startsAt={fromJoin ? 2 : 1} />
 
       {loadingPreview || !currentPreview ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -299,8 +303,8 @@ export default function InviteHelloScreen() {
             }}
           >
             {managerName
-              ? `${firstName(managerName)} invited you to ${restaurant}${role ? ` as a ${role.toLowerCase()}` : ''}.`
-              : `Your manager invited you to ${restaurant}${role ? ` as a ${role.toLowerCase()}` : ''}.`}
+              ? `${firstName(managerName)} invited you to ${restaurant}${role ? ` as ${withArticle(role)}` : ''}.`
+              : `Your manager invited you to ${restaurant}${role ? ` as ${withArticle(role)}` : ''}.`}
           </Text>
 
           <View
